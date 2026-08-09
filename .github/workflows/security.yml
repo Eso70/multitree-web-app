@@ -70,7 +70,7 @@ jobs:
       # The pnpm version comes from the root package.json "packageManager"
       # field, so it is never pinned twice.
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
