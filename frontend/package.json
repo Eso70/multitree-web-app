@@ -47,7 +47,7 @@
     "fast-check": "^4.8.0",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4.1.18",
-    "typescript": "^5",
+    "typescript": "^7",
     "vitest": "^4.1.9"
   }
 }
