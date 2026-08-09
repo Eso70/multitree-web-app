@@ -16,10 +16,13 @@ export function extractSubdomain(
   const hostWithoutPort = host.split(":")[0].toLowerCase().replace(/\.$/, "");
   const normalizedRoot = rootDomain?.split(":")[0].toLowerCase().replace(/\.$/, "");
   if (normalizedRoot && hostWithoutPort.endsWith(`.${normalizedRoot}`)) {
-    return hostWithoutPort.slice(0, -(normalizedRoot.length + 1)).split(".")[0] || "";
+    const prefix =
+      hostWithoutPort.slice(0, -(normalizedRoot.length + 1)).split(".")[0] ||
+      "";
+    return prefix === "www" ? "" : prefix;
   }
   // Parse from host
   const parts = hostWithoutPort.split(".");
-  if (parts.length > 2) return parts[0];
+  if (parts.length > 2) return parts[0] === "www" ? "" : parts[0];
   return "";
 }

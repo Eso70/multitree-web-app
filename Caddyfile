@@ -30,7 +30,7 @@
     }
 }
 
-sponsor.krd {
+sponsor.krd, www.sponsor.krd {
     tls {
         dns cloudflare {env.CF_API_TOKEN}
     }

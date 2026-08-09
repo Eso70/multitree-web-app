@@ -14,7 +14,7 @@ export const Subdomain = createParamDecorator(
     if (typeof xSubdomain === 'string') {
       const normalized = xSubdomain.trim().toLowerCase();
       if (/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(normalized)) {
-        return normalized;
+        return normalized === 'www' ? '' : normalized;
       }
     }
 
@@ -32,7 +32,7 @@ export const Subdomain = createParamDecorator(
     if (parts.length > 2) {
       const candidate = parts[0];
       if (/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(candidate)) {
-        return candidate;
+        return candidate === 'www' ? '' : candidate;
       }
     }
     return '';
