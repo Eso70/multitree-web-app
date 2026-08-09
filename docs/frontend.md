@@ -662,6 +662,7 @@ Assume `ROOT_DOMAIN=example.com` and a business subdomain of `acme`.
 | ------------------------------------------- | ---------------------------- |
 | `https://example.com/`                      | Platform landing page        |
 | `https://example.com/<PLATFORM_ADMIN_PATH>` | Platform console             |
+| `https://www.example.com/`                  | Treated as root domain       |
 | `https://acme.example.com/`                 | Business public landing page |
 | `https://acme.example.com/linktree/:uid`    | Public linktree              |
 | `https://acme.example.com/bio/:slug`        | Public mini-website          |
