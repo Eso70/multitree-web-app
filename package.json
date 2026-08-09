@@ -1,0 +1,62 @@
+{
+  "name": "multitree",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "dev:fe": "pnpm --filter frontend dev",
+    "dev:be": "pnpm --filter backend start:dev",
+
+    "build:fe": "node -e \"const fs = require('fs'); if (fs.existsSync('.env')) fs.copyFileSync('.env', 'frontend/.env');\" && pnpm --filter frontend build",
+    "build:be": "pnpm --filter backend build",
+    "build": "pnpm build:fe && pnpm build:be",
+
+    "lint:fe": "pnpm --filter frontend lint",
+    "lint:be": "pnpm --filter backend lint",
+    "lint": "pnpm lint:fe && pnpm lint:be",
+
+    "lint:fix:fe": "pnpm --filter frontend lint:fix",
+    "lint:fix:be": "pnpm --filter backend lint:fix",
+    "lint:fix": "pnpm lint:fix:fe && pnpm lint:fix:be",
+
+    "type-check:fe": "pnpm --filter frontend type-check",
+    "type-check:be": "pnpm --filter backend type-check",
+    "type-check:types": "pnpm --filter @linktree/types type-check",
+    "type-check": "pnpm type-check:types && pnpm type-check:fe && pnpm type-check:be",
+
+    "test:fe": "pnpm --filter frontend test",
+    "test:be": "pnpm --filter backend test",
+    "test": "pnpm test:fe && pnpm test:be",
+    "test:e2e": "pnpm --filter backend test:e2e",
+    "test:cov": "pnpm --filter backend test:cov",
+
+    "verify:fe": "pnpm type-check:fe && pnpm lint:fe && pnpm test:fe && pnpm build:fe",
+    "verify:be": "pnpm type-check:be && pnpm lint:be && pnpm test:be && pnpm build:be",
+    "verify": "pnpm type-check && pnpm lint && pnpm test && pnpm build",
+
+    "db:migrate": "pnpm --filter backend db:migrate",
+    "db:reset": "pnpm --filter backend db:reset",
+
+    "pm2:start": "pm2 start ecosystem.config.json",
+    "pm2:start:max": "pm2 start ecosystem.config.json -i max",
+    "pm2:reload": "pm2 reload ecosystem.config.json",
+    "pm2:restart": "pm2 restart ecosystem.config.json",
+    "pm2:stop": "pm2 stop ecosystem.config.json",
+    "pm2:delete": "pm2 delete ecosystem.config.json",
+    "pm2:logs": "pm2 logs",
+    "pm2:monit": "pm2 monit"
+  },
+  "pnpm": {
+    "overrides": {
+      "fastify": "5.11.3",
+      "find-my-way": "9.7.0",
+      "fast-uri": "^3.1.5",
+      "postcss": "^8.5.18",
+      "nanoid": "^3.3.17"
+    }
+  }
+}

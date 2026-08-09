@@ -1,0 +1,125 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - "**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Build, Lint, Type Check & Test
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # The pnpm version comes from the root package.json "packageManager"
+      # field, so it is never pinned twice.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type Check
+        run: pnpm type-check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Run Tests
+        run: pnpm test
+
+      - name: Build Workspace
+        run: pnpm build
+
+  e2e:
+    name: End-to-End
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 20
+
+    # The architecture matrix boots the whole AppModule, exercises both auth
+    # domains and two tenants, and runs a legacy migration fixture. Real
+    # PostgreSQL and Redis are required. This stays separate so an integration
+    # failure cannot mask the lint/type/test/build gate above.
+    services:
+      postgres:
+        # Match the version that produces the consolidated schema baseline.
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: multitree_e2e
+      DB_MAINTENANCE_NAME: postgres
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      # Throwaway value for an ephemeral container. Not a credential, and not
+      # reused anywhere — real secrets never belong in a workflow file.
+      SESSION_SECRET: github-actions-ephemeral-value-not-a-secret
+      NODE_ENV: test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply database schema
+        run: pnpm db:migrate
+
+      - name: Run critical architecture matrix
+        run: pnpm test:e2e

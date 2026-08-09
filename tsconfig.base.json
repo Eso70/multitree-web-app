@@ -1,0 +1,14 @@
+{
+  // Workspace-wide TypeScript defaults. Every application tsconfig extends
+  // this file, so strictness is defined in one place rather than drifting
+  // per application. Module/target settings deliberately stay out of here:
+  // the frontend resolves like a bundler and the backend like Node, and
+  // forcing one of those on the other breaks resolution.
+  "compilerOptions": {
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}

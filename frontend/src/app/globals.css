@@ -1,0 +1,2855 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+.mini-website-ltr,
+.mini-website-ltr * {
+  direction: ltr !important;
+}
+
+/* Every public dynamic section blurs the real page grid behind it. */
+/*
+ * Deliberately without `backdrop-filter`.
+ *
+ * This class repeats once per section, and a full mini website runs to thirty
+ * of them. Each backdrop filter is its own compositing layer that has to
+ * resample what sits behind it, and `content-visibility: auto` means a fast
+ * scroll asks all of them to do that at once as they come into view. That
+ * combination was enough to take the renderer down with STATUS_BREAKPOINT.
+ *
+ * Nothing visible was lost: a 2px blur behind a 3%-alpha fill is imperceptible.
+ * The glass reading comes from the fill and the shadow, which cost nothing.
+ * Backdrop filters remain on the one-off surfaces — hero controls, dialogs —
+ * where there are one or two of them and the effect actually shows.
+ */
+.mini-dynamic-section-glass {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 560px;
+  isolation: isolate;
+  background: rgb(148 184 200 / 0.03);
+  border: 0;
+  box-shadow:
+    0 0 14px -6px rgb(15 23 42 / 0.3),
+    0 20px 48px -28px rgb(15 23 42 / 0.36);
+  transition: box-shadow 450ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mini-dynamic-section-glass
+  :where(
+    .mini-glass-action,
+    .mini-section-icon,
+    span[style*="background"][class*="rounded"],
+    button[class*="rounded"],
+    a[class*="rounded"],
+    article[class*="rounded"],
+    figure[class*="rounded"]
+  ) {
+  background-image: linear-gradient(
+    135deg,
+    rgb(255 255 255 / 0.1),
+    rgb(148 184 200 / 0.025)
+  );
+  box-shadow:
+    0 0 10px -6px rgb(15 23 42 / 0.24),
+    0 12px 26px -20px rgb(15 23 42 / 0.32);
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mini-dynamic-section-glass
+  :where(
+    .mini-glass-action,
+    article[class*="rounded"],
+    figure[class*="rounded"],
+    button[class*="bg-white"],
+    a[class*="bg-white"]
+  ) {
+  background-color: rgb(148 184 200 / 0.06);
+  border-color: transparent;
+}
+
+.mini-public-footer-glass > footer.bg-white {
+  background: rgb(148 184 200 / 0.03) !important;
+  border: 0;
+  border-radius: 2rem;
+  box-shadow:
+    0 0 14px -6px rgb(15 23 42 / 0.3),
+    0 20px 48px -28px rgb(15 23 42 / 0.36);
+  -webkit-backdrop-filter: blur(2px) saturate(125%);
+  backdrop-filter: blur(2px) saturate(125%);
+  overflow: hidden;
+}
+
+.mini-public-footer-glass > footer > div:last-child {
+  border-color: rgb(148 184 200 / 0.14);
+}
+
+.mini-website-motion :where(a, button, [role="button"]) {
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Shared, content-measured marquee primitive. Framer Motion owns movement;
+   feature components provide only content, spacing, masks, and treatment. */
+
+.ui-marquee {
+  position: relative;
+}
+
+.ui-marquee-measure {
+  position: absolute;
+  inset: 0 auto auto 0;
+  display: flex;
+  width: max-content;
+  flex-wrap: nowrap;
+  visibility: hidden;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.ui-marquee-track {
+  display: flex;
+  width: max-content;
+  flex-wrap: nowrap;
+  will-change: transform;
+}
+
+.ui-marquee-block,
+.ui-marquee-unit {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.business-trusted-marquee {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 8%,
+    #000 92%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 8%,
+    #000 92%,
+    transparent 100%
+  );
+}
+
+.business-trusted-logo-wrap {
+  display: flex;
+  height: 4rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3.75rem;
+}
+
+.business-trusted-logo {
+  display: block;
+  width: auto;
+  height: 2.5rem;
+  max-width: 12rem;
+  object-fit: contain;
+  filter: grayscale(100%);
+  opacity: 0.55;
+  transition: filter 250ms ease, opacity 250ms ease;
+}
+
+.dark .business-trusted-logo {
+  filter: grayscale(100%) brightness(0) invert(1);
+  opacity: 0.45;
+}
+
+.business-trusted-logo-wrap:hover .business-trusted-logo,
+.business-trusted-logo-wrap:focus-visible .business-trusted-logo {
+  filter: grayscale(0%) brightness(1) invert(0);
+  opacity: 1;
+}
+
+@media (max-width: 1024px) {
+  .business-trusted-logo-wrap {
+    height: 3.5rem;
+    padding: 0 3rem;
+  }
+
+  .business-trusted-logo {
+    height: 2.125rem;
+    max-width: 10rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .business-trusted-logo-wrap {
+    height: 3rem;
+    padding: 0 2.25rem;
+  }
+
+  .business-trusted-logo {
+    height: 1.875rem;
+    max-width: 8.5rem;
+  }
+
+  .business-trusted-marquee {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 4%,
+      #000 96%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 4%,
+      #000 96%,
+      transparent 100%
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-marquee {
+    overflow-x: auto;
+  }
+
+  .business-trusted-marquee {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Becomes a plain swipeable strip when motion is unwelcome. */
+  .mini-logo-marquee {
+    overflow-x: auto;
+    mask-image: none;
+  }
+
+  .mini-website-motion :where(a, button, [role="button"]) {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* MapLibre's own chrome is disabled — zoom, the 2D/3D toggle and the credit are
+   rendered by LocationMap so they match the rest of the product. Only the
+   cooperative-gesture prompt is left to the library, restyled to suit. */
+.maplibregl-cooperative-gesture-screen {
+  border-radius: 0;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+/* Keep every standalone modal/sidebar X optically centered on touch layouts. */
+@media (max-width: 767px) {
+  button:has(> svg.lucide-x) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+  }
+
+  button:has(> svg.lucide-x) > svg.lucide-x {
+    display: block;
+    flex: none;
+    margin: 0;
+    transform-origin: center;
+  }
+}
+
+/* Toast notifications — clean floating card.
+ *
+ * A transient toast is one of the simplest surfaced surfaces, so it shares the
+ * site's core surface language: a rounded-2xl popover on the system surface and
+ * border tokens, so it picks up light and dark mode automatically with no
+ * separate per-theme rules. No wash, no capsule, no layered glow — just a quiet
+ * card whose single piece of colour is the type icon, so the kind of toast
+ * reads at a glance.
+ *
+ * Premium and calm: a soft border and one grounded shadow keep focus on the
+ * message, and the whole thing stays centred under the app's top edge.
+ */
+[data-sonner-toaster],
+[data-sonner-toaster] * {
+  font-family: "Rabar", Arial, Helvetica, sans-serif !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast].app-toast {
+  /* Neutral default. Declared from here rather than after the type classes, or
+   * the generic value would win the cascade and every toast would be the
+   * same. */
+  --toast-accent: var(--muted-foreground);
+
+  direction: rtl;
+  align-items: center;
+  width: var(--width) !important;
+  min-width: 0;
+  max-width: calc(100vw - 24px);
+  padding: 14px 20px;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--color-bg-primary);
+  color: var(--popover-foreground);
+  box-shadow: var(--toast-shadow);
+  overflow: hidden;
+}
+
+/* Sonner switches to a full-width fixed layout under 600px. Its own mobile
+ * rules give centered toasts left/right offsets, which undoes top-centring
+ * once the app overrides --width. Keep it pinned to the top and centred on
+ * phones and tablets alike; desktop keeps sonner's own centered layout. */
+@media (max-width: 1024px) {
+  [data-sonner-toaster] {
+    right: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    transform: none !important;
+  }
+
+  [data-sonner-toaster][data-y-position="top"] {
+    top: var(--mobile-offset-top, 16px) !important;
+  }
+
+  [data-sonner-toaster][data-x-position="center"] {
+    left: 0 !important;
+    right: 0 !important;
+    transform: none !important;
+  }
+
+  [data-sonner-toaster][dir="rtl"] {
+    left: 0 !important;
+    transform: none !important;
+  }
+
+  [data-sonner-toaster] [data-sonner-toast].app-toast {
+    left: 0 !important;
+    right: 0 !important;
+    margin-inline: auto;
+    width: min(340px, calc(100vw - 48px)) !important;
+    max-width: min(340px, calc(100vw - 48px));
+  }
+}
+
+/* The type-coloured icon — the only saturated shape, colour alone carries the
+ * kind of toast. */
+[data-sonner-toaster] [data-sonner-toast].app-toast [data-icon] {
+  margin: 0;
+  flex: 0 0 auto;
+  color: var(--toast-accent);
+}
+
+[data-sonner-toaster] [data-sonner-toast].app-toast [data-icon] svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.1;
+}
+
+[data-sonner-toaster] [data-sonner-toast].app-toast-success {
+  --toast-accent: var(--success-icon);
+}
+[data-sonner-toaster] [data-sonner-toast].app-toast-error {
+  --toast-accent: var(--destructive);
+}
+[data-sonner-toaster] [data-sonner-toast].app-toast-warning {
+  --toast-accent: var(--warning-icon);
+}
+[data-sonner-toaster] [data-sonner-toast].app-toast-info {
+  --toast-accent: var(--info-icon);
+}
+
+[data-sonner-toaster] [data-sonner-toast].app-toast [data-title] {
+  color: var(--popover-foreground);
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+}
+
+[data-sonner-toaster] [data-sonner-toast].app-toast [data-description] {
+  margin-top: 2px;
+  color: var(--muted-foreground);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+/* Soft rounded controls, at home in the card. */
+[data-sonner-toaster] [data-sonner-toast].app-toast [data-button] {
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: -0.005em;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12);
+}
+
+[data-sonner-toaster] [data-sonner-toast].app-toast [data-cancel] {
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  border: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+[data-sonner-toaster] [data-sonner-toast].app-toast [data-close-button] {
+  border: 0;
+  border-radius: 50%;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
+}
+[data-sonner-toaster] [data-sonner-toast].app-toast [data-close-button]:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+:root {
+  --custom-cursor-default:
+    url("data:image/svg+xml,%3Csvg%20id%3D%22Layer_1%22%20data-name%3D%22Layer%201%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%20512%20512%22%3E%20%3Cpath%20fill%3D%22%23b6f20d%22%20d%3D%22M154.64%2C27.51c1.46%2C1.23%2C2.93%2C2.46%2C4.4%2C3.69%2C2.84%2C2.39%2C5.68%2C4.79%2C8.51%2C7.22%2C4.72%2C4.01%2C9.5%2C7.93%2C14.31%2C11.85%2C5.8%2C4.74%2C11.58%2C9.5%2C17.36%2C14.27%2C4.8%2C3.96%2C9.61%2C7.92%2C14.42%2C11.88%2C9.21%2C7.56%2C18.38%2C15.17%2C27.45%2C22.89%2C5.06%2C4.3%2C10.21%2C8.44%2C15.42%2C12.56%2C4.74%2C3.83%2C9.37%2C7.78%2C14%2C11.73%2C4.2%2C3.56%2C8.44%2C7.06%2C12.75%2C10.48%2C5.82%2C4.61%2C11.47%2C9.39%2C17.13%2C14.21%2C4.2%2C3.56%2C8.44%2C7.06%2C12.75%2C10.48%2C5.07%2C4.01%2C10.02%2C8.15%2C14.94%2C12.34%2C5.83%2C4.96%2C11.74%2C9.81%2C17.73%2C14.58%2C12.46%2C9.98%2C24.73%2C20.21%2C36.88%2C30.56%2C5.06%2C4.3%2C10.21%2C8.45%2C15.42%2C12.56%2C4.74%2C3.83%2C9.37%2C7.78%2C14%2C11.73%2C4.2%2C3.56%2C8.44%2C7.06%2C12.75%2C10.48%2C24.63%2C19.61%2C37.74%2C35.69%2C39.34%2C48.25%2C1.21%2C15.76-.91%2C28.58-10.74%2C41.4-8.23%2C8.87-18.51%2C17.5-31.12%2C18.36-.89%2C0-1.79%2C0-2.71.02-1.04%2C0-2.06.02-3.13.03-1.12%2C0-2.25%2C0-3.39%2C0-1.19%2C0-2.37.02-3.6.03-2.58.02-5.17.03-7.74.05-4.1.02-8.19.05-12.3.09-11.65.09-23.31.17-34.96.23-7.13.04-14.27.1-21.4.16-2.71.02-5.41.04-8.12.05-34.65.15-65.47%2C4.63-91.74%2C29.61-6.21%2C6.42-11.33%2C13.81-16.57%2C21.01-4.1%2C5.58-8.33%2C11.04-12.54%2C16.53-6.89%2C9.03-13.74%2C18.11-20.55%2C27.21-1.6%2C2.14-3.21%2C4.28-4.81%2C6.42-3.1%2C4.13-6.18%2C8.27-9.25%2C12.42-10.97%2C14.75-21.76%2C29.2-40.92%2C32.81-17.45%2C1.11-31.56-.13-45.48-11.81-11.06-10.59-16.63-23.28-17.38-38.49-.08-1.48-.16-2.98-.23-4.51-.08-1.63-.16-3.25-.23-4.93-.09-1.75-.18-3.5-.26-5.24-.24-4.79-.48-9.6-.71-14.39-.25-5.16-.51-10.31-.77-15.47-.62-12.39-1.23-24.8-1.84-37.19-.28-5.83-.58-11.65-.86-17.48-.06-1.16-.12-2.33-.18-3.52-.12-2.35-.23-4.71-.35-7.05-.29-5.95-.59-11.89-.88-17.84-.06-1.19-.12-2.37-.18-3.59-.36-7.28-.71-14.55-1.07-21.83-1.5-30.73-3.06-61.46-4.64-92.19-.72-14-1.43-28.02-2.13-42.02-.57-11.21-1.14-22.43-1.73-33.64-.4-7.67-.79-15.32-1.17-22.99-.21-4.39-.44-8.78-.68-13.17-1.86-34.44%2C2.53-58.74%2C13.15-72.91%2C27.46-30.32%2C65.85-21.6%2C93.59%2C2.11h.02Z%22%2F%3E%20%3C%2Fsvg%3E")
+      10 2,
+    url("/cursors/customCursor.svg") 10 2, default;
+  --custom-cursor-text:
+    url("data:image/svg+xml,%3Csvg%20id%3D%22Layer_1%22%20data-name%3D%22Layer%201%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%20512%20512%22%3E%20%3Cpath%20fill%3D%22%23b6f20d%22%20d%3D%22M166.49%2C6.25c.8%2C0%2C1.6%2C0%2C2.4-.01h7.98c1.91%2C0%2C3.82%2C0%2C5.73-.03%2C5.18-.01%2C10.37-.03%2C15.55-.03h9.72c11.3-.01%2C22.6-.03%2C33.9-.03%2C10.52%2C0%2C21.06-.01%2C31.59-.05%2C9.04-.03%2C18.09-.04%2C27.13-.04%2C5.41%2C0%2C10.8%2C0%2C16.2-.03%2C5.08-.01%2C10.16-.01%2C15.24%2C0%2C1.86%2C0%2C3.73%2C0%2C5.59-.01%2C2.55-.01%2C5.09%2C0%2C7.64%2C0%2C.73%2C0%2C1.47-.03%2C2.22-.03%2C6.15.08%2C11.07%2C2.09%2C15.81%2C6.02%2C4.65%2C5.65%2C7.45%2C11.27%2C7.12%2C18.79-.83%2C5.98-2.73%2C11.41-7.11%2C15.67-23.58%2C17.11-56.17%2C5.85-83.81%2C5.85v407.37h72.11c8.29%2C3.11%2C12.24%2C5.07%2C16.57%2C12.67%2C2.94%2C7.91%2C2.73%2C14.38-.58%2C22.02-3.2%2C5.48-8.04%2C9.17-14.03%2C11.11-2.68.18-5.26.27-7.94.26-.79%2C0-1.59%2C0-2.4.01h-7.98c-1.91%2C0-3.82%2C0-5.73.03-5.18.01-10.37.03-15.55.03h-9.72c-11.3.01-22.6.03-33.9.03-10.52%2C0-21.06.01-31.59.05-9.04.03-18.09.04-27.13.04-5.41%2C0-10.8%2C0-16.2.03-5.08.01-10.16.01-15.24%2C0-1.86%2C0-3.73%2C0-5.59.01-2.55.01-5.09%2C0-7.64%2C0-.73%2C0-1.47.03-2.22.03-6.15-.08-11.07-2.09-15.83-6.02-4.65-5.65-7.45-11.27-7.12-18.79.83-5.98%2C2.73-11.41%2C7.11-15.67%2C23.58-17.11%2C56.17-5.85%2C83.81-5.85V52.31h-72.11c-8.29-3.11-12.24-5.07-16.57-12.67-2.94-7.91-2.73-14.38.58-22.02%2C5.02-8.58%2C12.43-11.41%2C21.97-11.37h.01Z%22%2F%3E%20%3C%2Fsvg%3E")
+      16 16,
+    url("/cursors/customTextSelect.svg") 16 16, text;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Brand-aware text selection for public subdomains, business dashboards, and MultiTree pages. */
+::selection {
+  background-color: color-mix(
+    in srgb,
+    var(
+        --business-website-color,
+        var(--admin-website-color, var(--theme-primary, var(--multitree-accent)))
+      )
+      30%,
+    transparent
+  );
+  color: inherit;
+  text-shadow: none;
+}
+
+::-moz-selection {
+  background-color: color-mix(
+    in srgb,
+    var(
+        --business-website-color,
+        var(--admin-website-color, var(--theme-primary, var(--multitree-accent)))
+      )
+      30%,
+    transparent
+  );
+  color: inherit;
+  text-shadow: none;
+}
+
+html.dark ::selection {
+  background-color: color-mix(
+    in srgb,
+    var(
+        --business-website-color,
+        var(--admin-website-color, var(--theme-primary, var(--multitree-accent)))
+      )
+      42%,
+    transparent
+  );
+}
+
+html.dark ::-moz-selection {
+  background-color: color-mix(
+    in srgb,
+    var(
+        --business-website-color,
+        var(--admin-website-color, var(--theme-primary, var(--multitree-accent)))
+      )
+      42%,
+    transparent
+  );
+}
+
+/* Active tabs are communicated with fill and text, never a colored outline. */
+[role="tab"][aria-selected="true"] {
+  border-color: transparent !important;
+  outline: none !important;
+}
+
+/* Custom scrollbar track bg — adapts to light/dark */
+:root {
+  --track-bg: rgba(0, 0, 0, 0.05);
+}
+.dark {
+  --track-bg: rgba(255, 255, 255, 0.06);
+}
+
+/* iPhone mockup pill buttons — dark mode override for inline styles */
+.dark .iphone-pill {
+  background-color: var(--pill-dark-bg) !important;
+  color: var(--pill-dark-text) !important;
+}
+
+@font-face {
+  font-family: "Rabar";
+  src:
+    url("/fonts/KurdishFont.woff") format("woff"),
+    url("/fonts/KurdishFont.ttf") format("truetype"),
+    url("/fonts/KurdishFont.eot") format("embedded-opentype");
+  font-display: swap;
+}
+
+/* Standard modal direction/layout contract.
+   Modal chrome stays left-to-right even when the page or text language is RTL. */
+.modal-ltr,
+.modal-ltr * {
+  direction: ltr;
+}
+
+.modal-ltr {
+  text-align: left;
+}
+
+.modal-ltr .text-right,
+.modal-ltr [class~="text-right"] {
+  text-align: left !important;
+}
+
+.modal-ltr .flex-row-reverse,
+.modal-ltr [class~="flex-row-reverse"] {
+  flex-direction: row !important;
+}
+
+.modal-ltr [dir="rtl"] {
+  direction: ltr !important;
+}
+
+/* Standard dashboard direction/layout contract for business-facing screens. */
+.dashboard-ltr,
+.dashboard-ltr * {
+  direction: ltr;
+}
+
+.dashboard-ltr {
+  text-align: left;
+}
+
+.dashboard-ltr .text-right,
+.dashboard-ltr [class~="text-right"] {
+  text-align: left !important;
+}
+
+.dashboard-ltr .flex-row-reverse,
+.dashboard-ltr [class~="flex-row-reverse"] {
+  flex-direction: row !important;
+}
+
+.dashboard-ltr [dir="rtl"] {
+  direction: ltr !important;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Rabar", Arial, Helvetica, sans-serif;
+  --font-mono: "Rabar", monospace;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  /* Brand palette derived from the single --multitree-accent source. */
+  --color-brand-50: color-mix(in srgb, var(--multitree-accent) 8%, white);
+  --color-brand-100: color-mix(in srgb, var(--multitree-accent) 20%, white);
+  --color-brand-200: color-mix(in srgb, var(--multitree-accent) 38%, white);
+  --color-brand-300: color-mix(in srgb, var(--multitree-accent) 60%, white);
+  --color-brand-400: color-mix(in srgb, var(--multitree-accent) 82%, white);
+  --color-brand-500: var(--multitree-accent);
+  --color-brand-600: color-mix(in srgb, var(--multitree-accent) 88%, black);
+  --color-brand-700: color-mix(in srgb, var(--multitree-accent) 72%, black);
+  --color-brand-800: color-mix(in srgb, var(--multitree-accent) 56%, black);
+  --color-brand-900: color-mix(in srgb, var(--multitree-accent) 43%, black);
+  --color-brand-950: color-mix(in srgb, var(--multitree-accent) 25%, black);
+
+  /* Primary color aliases for easy reference */
+  --color-primary-yellow: var(--multitree-accent);
+  --color-primary-yellow-light: color-mix(
+    in srgb,
+    var(--multitree-accent) 72%,
+    white
+  );
+  --color-primary-yellow-dark: color-mix(
+    in srgb,
+    var(--multitree-accent) 72%,
+    black
+  );
+  --color-primary-yellow-hover: color-mix(
+    in srgb,
+    var(--multitree-accent) 88%,
+    black
+  );
+
+  /* Background Colors - Easy to change globally */
+  --color-bg-primary: #ffffff;
+  --color-bg-primary-50: rgba(255, 255, 255, 0.5);
+  --color-bg-primary-80: rgba(255, 255, 255, 0.8);
+  --color-bg-primary-90: rgba(255, 255, 255, 0.9);
+  --color-bg-primary-95: rgba(255, 255, 255, 0.95);
+}
+
+:root {
+  /* --multitree-accent comes from lib/multitree-theme.ts. Everything derives from it. */
+  --multitree-accent-gradient: linear-gradient(
+    to right,
+    var(--multitree-accent),
+    var(--multitree-accent)
+  );
+  --multitree-accent-hover: color-mix(in srgb, var(--multitree-accent) 88%, black);
+  --multitree-accent-ink: #111827;
+  --multitree-accent-text: color-mix(in srgb, var(--multitree-accent) 44%, black);
+  --multitree-accent-text-muted: color-mix(
+    in srgb,
+    var(--multitree-accent) 58%,
+    black
+  );
+  --multitree-accent-text-dark: color-mix(
+    in srgb,
+    var(--multitree-accent) 72%,
+    white
+  );
+
+  /* Theme Colors - Light default */
+  --theme-bg-from: #f8fafc;
+  --theme-bg-via: #ffffff;
+  --theme-bg-to: #f1f5f9;
+
+  /* Blur orb colors - Subtle accents for light mode */
+  --theme-blur-1: #6366f1;
+  --theme-blur-1-opacity: 0.15;
+  --theme-blur-2: #a855f7;
+  --theme-blur-2-opacity: 0.12;
+  --theme-blur-3: #ec4899;
+  --theme-blur-3-opacity: 0.1;
+  --theme-blur-4: var(--multitree-accent);
+  --theme-blur-4-opacity: 0.18;
+  --theme-blur-5: #38bdf8;
+  --theme-blur-5-opacity: 0.14;
+
+  --theme-primary: #64748b;
+  --theme-css: #64748b;
+
+  /* Button colors - Light mode */
+  --theme-button-from: rgba(255, 255, 255, 0.95);
+  --theme-button-via: rgba(255, 255, 255, 1);
+  --theme-button-to: rgba(255, 255, 255, 0.95);
+  --theme-button-hover-from: rgba(248, 250, 252, 1);
+  --theme-button-hover-via: rgba(241, 245, 249, 1);
+  --theme-button-hover-to: rgba(248, 250, 252, 1);
+
+  /* Input colors - Light mode */
+  --theme-input-bg: rgba(255, 255, 255, 0.85);
+  --theme-input-border: rgba(203, 213, 225, 0.8); /* Slate-300 */
+  --theme-input-focus-border: rgba(15, 23, 42, 0.6);
+  --theme-input-focus-bg: rgba(255, 255, 255, 1);
+
+  --theme-text-primary: #0f172a; /* Slate-900 */
+  --theme-text-secondary: rgba(71, 85, 105, 1); /* Slate-600 */
+  --theme-text-placeholder: rgba(148, 163, 184, 1);
+
+  --theme-error-bg: rgba(254, 226, 226, 0.6);
+  --theme-error-border: rgba(248, 113, 113, 0.6);
+  --theme-error-text: rgba(153, 27, 27, 1);
+
+  --theme-success-bg: rgba(220, 252, 231, 0.6);
+  --theme-success-border: rgba(74, 222, 128, 0.6);
+  --theme-success-text: rgba(22, 101, 52, 1);
+
+  --theme-warning-bg: rgba(254, 249, 195, 0.6);
+  --theme-warning-border: rgba(250, 204, 21, 0.6);
+  --theme-warning-text: rgba(133, 77, 14, 1);
+
+  --theme-info-bg: rgba(219, 234, 254, 0.6);
+  --theme-info-border: rgba(96, 165, 250, 0.6);
+  --theme-info-text: rgba(30, 64, 175, 1);
+
+  --theme-logo-glow-from: #6366f1;
+  --theme-logo-glow-via: #a855f7;
+  --theme-logo-glow-to: #ec4899;
+  --theme-logo-glow-opacity: 30;
+}
+
+/* Platform administrator reusable color utilities */
+.sa-bg {
+  background: var(--multitree-accent) !important;
+  color: var(--multitree-accent-ink) !important;
+}
+
+.sa-bg-hover:hover {
+  background: var(--multitree-accent-hover) !important;
+}
+
+.sa-ink {
+  color: var(--multitree-accent-ink) !important;
+}
+
+.sa-ink-muted {
+  color: color-mix(
+    in srgb,
+    var(--multitree-accent-ink) 70%,
+    transparent
+  ) !important;
+}
+
+.sa-ink-dot {
+  background: color-mix(
+    in srgb,
+    var(--multitree-accent-ink) 35%,
+    transparent
+  ) !important;
+}
+
+.sa-ink-dot-strong {
+  background: color-mix(
+    in srgb,
+    var(--multitree-accent-ink) 55%,
+    transparent
+  ) !important;
+}
+
+.sa-gradient {
+  background: var(
+    --multitree-accent-gradient,
+    linear-gradient(to right, var(--multitree-accent), var(--multitree-accent))
+  ) !important;
+  color: var(--multitree-accent-ink) !important;
+}
+
+.sa-gradient-hover:hover {
+  background: linear-gradient(
+    to right,
+    var(--multitree-accent-hover),
+    var(--multitree-accent-hover)
+  ) !important;
+}
+
+.sa-soft {
+  background: color-mix(
+    in srgb,
+    var(--multitree-accent) 20%,
+    transparent
+  ) !important;
+  color: var(--multitree-accent-text) !important;
+}
+
+.dark .sa-soft {
+  background: color-mix(
+    in srgb,
+    var(--multitree-accent) 15%,
+    transparent
+  ) !important;
+  color: var(--multitree-accent-text-dark) !important;
+}
+
+.sa-soft-border {
+  border-color: color-mix(
+    in srgb,
+    var(--multitree-accent) 35%,
+    transparent
+  ) !important;
+}
+
+.dark .sa-soft-border {
+  border-color: color-mix(
+    in srgb,
+    var(--multitree-accent) 25%,
+    transparent
+  ) !important;
+}
+
+.sa-step-soft {
+  background: linear-gradient(
+    to bottom right,
+    color-mix(in srgb, var(--multitree-accent) 15%, transparent),
+    color-mix(in srgb, var(--multitree-accent) 15%, transparent)
+  ) !important;
+  color: var(--multitree-accent-text) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--multitree-accent) 25%,
+    transparent
+  ) !important;
+}
+
+.sa-text {
+  color: var(--multitree-accent-text) !important;
+}
+
+.sa-text-muted {
+  color: var(--multitree-accent-text-muted) !important;
+}
+
+.dark .sa-text,
+.dark .sa-text-muted {
+  color: var(--multitree-accent-text-dark) !important;
+}
+
+.group:hover .sa-group-hover-text {
+  color: var(--multitree-accent-text) !important;
+}
+
+.dark .group:hover .sa-group-hover-text {
+  color: var(--multitree-accent-text-dark) !important;
+}
+
+.sa-accent-text {
+  color: var(--multitree-accent) !important;
+}
+
+.sa-focus:focus {
+  border-color: var(--multitree-accent) !important;
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--multitree-accent) 25%, transparent) !important;
+}
+
+.sa-border-top {
+  border-top-color: var(--multitree-accent) !important;
+}
+
+.sa-upload-hover:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--multitree-accent) 60%,
+    transparent
+  ) !important;
+  background: color-mix(
+    in srgb,
+    var(--multitree-accent) 10%,
+    transparent
+  ) !important;
+}
+
+.dark .sa-upload-hover:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--multitree-accent) 35%,
+    transparent
+  ) !important;
+  background: color-mix(
+    in srgb,
+    var(--multitree-accent) 10%,
+    transparent
+  ) !important;
+}
+
+[data-multitree-theme],
+body.multitree-theme-portals {
+  --theme-primary: var(--multitree-accent);
+  --theme-css: var(--multitree-accent);
+}
+
+:is([data-multitree-theme], body.multitree-theme-portals) .text-brand-500,
+:is([data-multitree-theme], body.multitree-theme-portals) .text-brand-600,
+:is([data-multitree-theme], body.multitree-theme-portals) .text-brand-700,
+:is([data-multitree-theme], body.multitree-theme-portals) .text-brand-500\/80 {
+  color: var(--multitree-accent-text) !important;
+}
+
+.dark :is([data-multitree-theme], body.multitree-theme-portals) .text-brand-500,
+.dark :is([data-multitree-theme], body.multitree-theme-portals) .text-brand-600,
+.dark :is([data-multitree-theme], body.multitree-theme-portals) .text-brand-700,
+.dark :is([data-multitree-theme], body.multitree-theme-portals) .text-brand-500\/80 {
+  color: var(--multitree-accent-text-dark) !important;
+}
+
+:is([data-multitree-theme], body.multitree-theme-portals) .bg-brand-500 {
+  background-color: var(--multitree-accent) !important;
+  color: var(--multitree-accent-ink) !important;
+}
+
+:is([data-multitree-theme], body.multitree-theme-portals) .hover\:bg-brand-50:hover,
+:is([data-multitree-theme], body.multitree-theme-portals)
+  .hover\:bg-brand-50\/50:hover,
+:is([data-multitree-theme], body.multitree-theme-portals)
+  .hover\:bg-brand-500\/10:hover {
+  background-color: color-mix(
+    in srgb,
+    var(--multitree-accent) 10%,
+    transparent
+  ) !important;
+}
+
+:is([data-multitree-theme], body.multitree-theme-portals) .border-brand-500,
+:is([data-multitree-theme], body.multitree-theme-portals) .border-brand-500\/70,
+:is([data-multitree-theme], body.multitree-theme-portals)
+  .focus\:border-brand-500:focus,
+:is([data-multitree-theme], body.multitree-theme-portals)
+  .hover\:border-brand-300:hover,
+:is([data-multitree-theme], body.multitree-theme-portals)
+  .hover\:border-brand-500\/40:hover,
+:is([data-multitree-theme], body.multitree-theme-portals)
+  .hover\:border-brand-500:hover {
+  border-color: var(--multitree-accent) !important;
+}
+
+:is([data-multitree-theme], body.multitree-theme-portals) .ring-brand-500\/20 {
+  --tw-ring-color: color-mix(
+    in srgb,
+    var(--multitree-accent) 20%,
+    transparent
+  ) !important;
+}
+
+:is([data-multitree-theme], body.multitree-theme-portals)
+  .focus\:ring-brand-500\/30:focus,
+:is([data-multitree-theme], body.multitree-theme-portals) .ring-brand-500\/50 {
+  --tw-ring-color: color-mix(
+    in srgb,
+    var(--multitree-accent) 30%,
+    transparent
+  ) !important;
+}
+
+:is([data-multitree-theme], body.multitree-theme-portals) .shadow-brand-500\/30 {
+  --tw-shadow-color: color-mix(
+    in srgb,
+    var(--multitree-accent) 30%,
+    transparent
+  ) !important;
+}
+
+body {
+  /* Fallback for browsers that don't support CSS variables */
+  background: #ffffff;
+  /* Modern browsers with CSS variable support */
+  background: linear-gradient(
+    to bottom,
+    var(--theme-bg-from),
+    var(--theme-bg-via),
+    var(--theme-bg-to)
+  );
+  /* Safari/iOS: background-attachment: fixed has performance issues, use scroll instead */
+  background-attachment: scroll;
+  color: var(--foreground);
+  font-family: "Rabar", Arial, Helvetica, sans-serif;
+  /* iOS Safari: Use CSS variable for viewport height */
+  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
+  overflow-x: hidden;
+  /* Safari/iOS: Prevent text size adjustment */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Browser compatibility: Ensure proper rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Prevent scroll lag on iOS */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Static gradient background for all themed pages */
+[data-theme-background] {
+  background-size: 180% 180%;
+  position: relative;
+}
+
+[data-theme-background]::after {
+  content: "";
+  position: absolute;
+  inset: -40% -20%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.12),
+    transparent
+  );
+  filter: blur(70px);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* Static color swatches */
+.background-swatch {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.background-swatch::before,
+.background-swatch::after {
+  content: "";
+  position: absolute;
+  inset: -55%;
+  pointer-events: none;
+}
+
+.background-swatch::before {
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(247, 189, 67, 0.5),
+    rgba(247, 189, 67, 0)
+  );
+  opacity: 0.45;
+}
+
+.background-swatch::after {
+  background: linear-gradient(
+    120deg,
+    transparent 5%,
+    rgba(255, 255, 255, 0.45) 48%,
+    transparent 90%
+  );
+  mix-blend-mode: screen;
+  opacity: 0.5;
+}
+
+/* Reusable spotlight shimmer for buttons - static */
+.btn-spotlight {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Mobile Responsive Base Styles - Safari/iOS Optimized */
+@media (max-width: 640px) {
+  body {
+    font-size: 16px; /* Better for mobile readability */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Prevent iOS Safari bounce scrolling */
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+    /* Improve touch responsiveness on iOS */
+    -webkit-touch-callout: none;
+  }
+
+  /* Ensure touch targets are at least 44x44px (Apple HIG requirement) */
+  button,
+  a,
+  input,
+  select,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+    /* Improve touch response on iOS */
+    touch-action: manipulation;
+  }
+
+  /* Prevent zoom on input focus (iOS Safari) */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+    /* Prevent iOS Safari from zooming on input focus */
+    -webkit-appearance: none;
+  }
+
+  /* Fix iOS Safari viewport height issue */
+  html {
+    height: -webkit-fill-available;
+  }
+
+  body {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Safe area insets for mobile devices with notches */
+.safe-area-inset {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Touch manipulation for better mobile performance */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Fix touch interactions on iOS - Critical for button responsiveness */
+button,
+a,
+[role="button"],
+.clickable {
+  cursor: inherit;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+}
+
+/* Ensure interactive elements are tappable */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Fix viewport height issues on iOS */
+:root {
+  --vh: 1vh;
+}
+
+/* Use this instead of 100vh for better iOS support */
+.full-height {
+  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
+}
+
+/* Performance optimizations for background animations */
+[data-theme-background] {
+  contain: layout style;
+  isolation: isolate;
+}
+
+/* Performance: Optimize blur effects */
+.blur-\[150px\],
+.blur-\[170px\] {
+  /* Reduce blur on low-end devices for better performance */
+  @media (max-width: 768px) {
+    filter: blur(100px) !important;
+    -webkit-filter: blur(100px) !important;
+  }
+}
+
+/* Mobile Performance: Reduce expensive effects */
+@media (max-width: 768px) {
+  /* Reduce backdrop blur on mobile - very expensive */
+  [class*="backdrop-blur"] {
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+  }
+
+  /* Reduce shadow complexity on mobile */
+  [class*="shadow-"] {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1)) !important;
+  }
+
+  /* Disable mix-blend-mode on mobile - very expensive */
+  [style*="mix-blend-mode"],
+  [class*="mix-blend"] {
+    mix-blend-mode: normal !important;
+  }
+
+}
+
+/* Performance: Optimize button hover effects */
+.hover-bright {
+  filter: brightness(1.1);
+  -webkit-filter: brightness(1.1);
+}
+
+/* Performance: Reduce repaints on scroll */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Performance: Optimize image rendering */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Performance: Reduce layout shifts */
+[data-theme-background] {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 100vh;
+}
+
+:root {
+  --radius: 0.625rem;
+  /* Light app shell background */
+  --background: oklch(0.99 0.005 200);
+  --foreground: oklch(0.18 0.02 250);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.02 250);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.02 250);
+  /* Primary MultiTree accent (lime) */
+  --primary: #6f9607;
+  --primary-foreground: oklch(0.99 0.005 200);
+  /* Secondary light shell shade */
+  --secondary: #ecffc2;
+  --secondary-foreground: oklch(0.18 0.02 250);
+  --muted: oklch(0.96 0.01 200);
+  --muted-foreground: oklch(0.45 0.04 250);
+  --accent: oklch(0.92 0.04 200);
+  --accent-foreground: oklch(0.18 0.02 250);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.9 0.01 250);
+  --input: oklch(0.92 0.01 250);
+  --ring: oklch(0.7 0.12 200);
+  --chart-1: oklch(0.65 0.18 200);
+  --chart-2: oklch(0.55 0.15 200);
+  --chart-3: oklch(0.45 0.12 200);
+  --chart-4: oklch(0.75 0.1 200);
+  --chart-5: oklch(0.85 0.08 200);
+  --sidebar: oklch(0.98 0.005 200);
+  --sidebar-foreground: oklch(0.18 0.02 250);
+  --sidebar-primary: oklch(0.65 0.18 200);
+  --sidebar-primary-foreground: oklch(0.99 0.005 200);
+  --sidebar-accent: oklch(0.95 0.02 200);
+  --sidebar-accent-foreground: oklch(0.18 0.02 250);
+  --sidebar-border: oklch(0.9 0.01 250);
+  --sidebar-ring: oklch(0.7 0.12 200);
+
+  /* Toast status accents — system-level semantic colours, lighter in dark
+     mode for contrast on the dark surface. */
+  --success-icon: #10b981;
+  --warning-icon: #f59e0b;
+  --info-icon: #0ea5e9;
+  --toast-shadow:
+    0 2px 4px -2px rgb(15 23 42 / 0.04),
+    0 16px 40px -16px rgb(15 23 42 / 0.18);
+
+  /* Scoped Primary background overrides for Light Mode (default) */
+  --color-bg-primary: #ffffff;
+  --color-bg-primary-50: rgba(255, 255, 255, 0.5);
+  --color-bg-primary-80: rgba(255, 255, 255, 0.8);
+  --color-bg-primary-90: rgba(255, 255, 255, 0.9);
+  --color-bg-primary-95: rgba(255, 255, 255, 0.95);
+
+  --color-bg-secondary: #f8fafc;
+  --color-bg-tertiary: #f1f5f9;
+  --color-bg-elevated: #ffffff;
+  --color-bg-input: #ffffff;
+}
+
+.dark {
+  --background: oklch(0.141 0.005 285.823);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.21 0.006 285.885);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.21 0.006 285.885);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.92 0.004 286.32);
+  --primary-foreground: oklch(0.21 0.006 285.885);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.274 0.006 286.033);
+  --muted-foreground: oklch(0.705 0.015 286.067);
+  --accent: oklch(0.274 0.006 286.033);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.552 0.016 285.938);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.21 0.006 285.885);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.274 0.006 286.033);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.552 0.016 285.938);
+
+  /* Toast status accents — system-level semantic colours, lighter in dark
+     mode for contrast on the dark surface. */
+  --success-icon: #34d399;
+  --warning-icon: #fbbf24;
+  --info-icon: #38bdf8;
+  --toast-shadow:
+    0 2px 4px -2px rgb(0 0 0 / 0.4),
+    0 16px 40px -16px rgb(0 0 0 / 0.6);
+
+  /* Dark primary background overrides */
+  --color-bg-primary: #161b22;
+  --color-bg-primary-50: rgba(22, 27, 34, 0.5);
+  --color-bg-primary-80: rgba(22, 27, 34, 0.8);
+  --color-bg-primary-90: rgba(22, 27, 34, 0.9);
+  --color-bg-primary-95: rgba(22, 27, 34, 0.95);
+
+  --color-bg-secondary: #1b222b;
+  --color-bg-tertiary: #202832;
+  --color-bg-elevated: #121820;
+  --color-bg-input: #1e2630;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Brand color utilities - Use these instead of hardcoded yellow/amber */
+  .bg-brand-50 {
+    background-color: var(--color-brand-50);
+  }
+  .bg-brand-100 {
+    background-color: var(--color-brand-100);
+  }
+  .bg-brand-200 {
+    background-color: var(--color-brand-200);
+  }
+  .bg-brand-300 {
+    background-color: var(--color-brand-300);
+  }
+  .bg-brand-400 {
+    background-color: var(--color-brand-400);
+  }
+  .bg-brand-500 {
+    background-color: var(--color-brand-500);
+  }
+  .bg-brand-600 {
+    background-color: var(--color-brand-600);
+  }
+  .bg-brand-700 {
+    background-color: var(--color-brand-700);
+  }
+  .bg-brand-800 {
+    background-color: var(--color-brand-800);
+  }
+  .bg-brand-900 {
+    background-color: var(--color-brand-900);
+  }
+  .bg-brand-950 {
+    background-color: var(--color-brand-950);
+  }
+
+  .text-brand-50 {
+    color: var(--color-brand-50);
+  }
+  .text-brand-100 {
+    color: var(--color-brand-100);
+  }
+  .text-brand-200 {
+    color: var(--color-brand-200);
+  }
+  .text-brand-300 {
+    color: var(--color-brand-300);
+  }
+  .text-brand-400 {
+    color: var(--color-brand-400);
+  }
+  .text-brand-500 {
+    color: var(--color-brand-500);
+  }
+  .text-brand-600 {
+    color: var(--color-brand-600);
+  }
+  .text-brand-700 {
+    color: var(--color-brand-700);
+  }
+  .text-brand-800 {
+    color: var(--color-brand-800);
+  }
+  .text-brand-900 {
+    color: var(--color-brand-900);
+  }
+  .text-brand-950 {
+    color: var(--color-brand-950);
+  }
+
+  .border-brand-50 {
+    border-color: var(--color-brand-50);
+  }
+  .border-brand-100 {
+    border-color: var(--color-brand-100);
+  }
+  .border-brand-200 {
+    border-color: var(--color-brand-200);
+  }
+  .border-brand-300 {
+    border-color: var(--color-brand-300);
+  }
+  .border-brand-400 {
+    border-color: var(--color-brand-400);
+  }
+  .border-brand-500 {
+    border-color: var(--color-brand-500);
+  }
+  .border-brand-600 {
+    border-color: var(--color-brand-600);
+  }
+  .border-brand-700 {
+    border-color: var(--color-brand-700);
+  }
+  .border-brand-800 {
+    border-color: var(--color-brand-800);
+  }
+  .border-brand-900 {
+    border-color: var(--color-brand-900);
+  }
+  .border-brand-950 {
+    border-color: var(--color-brand-950);
+  }
+
+  /* Dynamic theme focus states - ensures inputs use the business's website color */
+  [data-theme-active] input:focus,
+  [data-theme-active] textarea:focus,
+  [data-theme-active] select:focus {
+    --tw-ring-color: color-mix(
+      in srgb,
+      var(--theme-primary, var(--color-brand-500)) 30%,
+      transparent
+    ) !important;
+    border-color: var(--theme-primary, var(--color-brand-500)) !important;
+  }
+
+  [data-theme-active] .modal-standard-input:focus {
+    --tw-ring-color: rgb(203 213 225 / 0.6) !important;
+    border-color: rgb(148 163 184) !important;
+  }
+
+  [data-theme-active] .modal-standard-input-error:focus {
+    --tw-ring-color: rgb(239 68 68 / 0.2) !important;
+    border-color: rgb(239 68 68) !important;
+  }
+
+  /* Prevent iOS/Safari from overriding border-radius on inputs */
+  input,
+  textarea,
+  select,
+  button {
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: inherit;
+  }
+
+  /* Ensure rounded-full always applies */
+  .rounded-full {
+    border-radius: 9999px !important;
+  }
+
+  /* Primary background utilities - Use these instead of hardcoded white */
+  .bg-primary {
+    background-color: var(--color-bg-primary);
+  }
+  .bg-primary-50 {
+    background-color: var(--color-bg-primary-50);
+  }
+  .bg-primary-80 {
+    background-color: var(--color-bg-primary-80);
+  }
+  .bg-primary-90 {
+    background-color: var(--color-bg-primary-90);
+  }
+  .bg-primary-95 {
+    background-color: var(--color-bg-primary-95);
+  }
+
+  /* Ensure table rows have white backgrounds by default */
+  table tbody tr {
+    background-color: var(--color-bg-primary) !important;
+  }
+
+  table thead tr {
+    background-color: var(--color-bg-primary) !important;
+  }
+
+  /* Override root layout background for login and business pages */
+  body > div[data-theme-background] > div:has([href*="/login"]) {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    background-image: none !important;
+  }
+
+  /* Ensure login page container has white background */
+  [href*="/login"] ~ * {
+    background: #ffffff !important;
+  }
+
+  /* Force themed background for business dashboard on all screen sizes */
+  body > div[data-theme-background] > div:has([data-business-dashboard]) {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    background-image: none !important;
+    transition: background-color 0.3s ease;
+  }
+
+  html.dark
+    body
+    > div[data-theme-background]
+    > div:has([data-business-dashboard]),
+  body > div[data-theme-background] > div:has([data-business-dashboard].dark) {
+    background: var(--color-bg-primary) !important;
+    background-color: var(--color-bg-primary) !important;
+    background-image: none !important;
+  }
+
+  /* Ensure business dashboard wrapper has correct background */
+  [data-business-dashboard] {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    background-image: none !important;
+    transition: background-color 0.3s ease;
+  }
+
+  html.dark [data-business-dashboard],
+  [data-business-dashboard].dark {
+    background: var(--color-bg-primary) !important;
+    background-color: var(--color-bg-primary) !important;
+    background-image: none !important;
+  }
+
+  /* Ensure business main content area has correct background */
+  [data-business-dashboard] > main {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    background-image: none !important;
+    transition: background-color 0.3s ease;
+  }
+
+  html.dark [data-business-dashboard] > main,
+  [data-business-dashboard].dark > main {
+    background: var(--color-bg-primary) !important;
+    background-color: var(--color-bg-primary) !important;
+    background-image: none !important;
+  }
+
+  /* Brand gradient utilities - Use these for all yellow/amber gradient buttons */
+  .bg-gradient-brand {
+    background: linear-gradient(
+      to right,
+      var(--color-brand-400),
+      var(--color-brand-400),
+      var(--color-brand-400)
+    );
+  }
+  .bg-gradient-brand-hover {
+    background: linear-gradient(
+      to right,
+      var(--color-brand-500),
+      var(--color-brand-500),
+      var(--color-brand-500)
+    );
+  }
+  .bg-gradient-brand-button {
+    background: linear-gradient(
+      to right,
+      var(--color-brand-400),
+      var(--color-brand-400),
+      var(--color-brand-400)
+    );
+  }
+  .bg-gradient-brand-button:hover {
+    background: linear-gradient(
+      to right,
+      var(--color-brand-500),
+      var(--color-brand-500),
+      var(--color-brand-500)
+    );
+  }
+
+  /* Cursor pointer for all interactive elements */
+  button,
+  [role="button"],
+  a,
+  select,
+  input[type="submit"],
+  input[type="button"],
+  input[type="reset"],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="file"],
+  label,
+  [role="menuitem"],
+  [role="option"],
+  [role="tab"],
+  [role="switch"],
+  [role="combobox"],
+  [role="listbox"],
+  summary,
+  [tabindex]:not([tabindex="-1"]) {
+    @apply cursor-pointer;
+  }
+
+  /* Clickable divs and spans (common pattern for custom buttons) */
+  div[onclick],
+  span[onclick],
+  div[class*="button"],
+  div[class*="clickable"],
+  [data-clickable="true"] {
+    @apply cursor-pointer;
+  }
+
+  /* Disabled elements should not have pointer cursor */
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  input:disabled,
+  select:disabled,
+  a[aria-disabled="true"],
+  [aria-disabled="true"] {
+    @apply cursor-not-allowed;
+  }
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+  animation-fill-mode: both;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+  animation-fill-mode: both;
+}
+
+.delay-400 {
+  animation-delay: 0.4s;
+  animation-fill-mode: both;
+}
+
+.delay-500 {
+  animation-delay: 0.5s;
+  animation-fill-mode: both;
+}
+
+.delay-1000 {
+  animation-delay: 1s;
+}
+
+.delay-2000 {
+  animation-delay: 2s;
+}
+
+/* Custom Scrollbar for DateTimePicker */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Scoped Dark Mode Overrides for Business Dashboard */
+/* Scoped Dark Mode Overrides for Business Dashboard - Obsidian Charcoal Onyx Theme */
+.dark.bg-slate-950,
+.dark .bg-white,
+.dark [data-business-dashboard] .bg-white,
+.dark .bg-white\/95,
+.dark [data-business-dashboard] .bg-white\/95,
+.dark .bg-white\/90,
+.dark [data-business-dashboard] .bg-white\/90 {
+  background-color: var(--color-bg-primary) !important;
+}
+
+.dark .bg-white\/80,
+.dark [data-business-dashboard] .bg-white\/80 {
+  background-color: var(--color-bg-secondary) !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-gray-50,
+.dark [data-business-dashboard] .bg-slate-50,
+.dark [data-business-dashboard] .bg-gray-50 {
+  background-color: var(--color-bg-secondary) !important;
+}
+
+.dark .text-slate-700,
+.dark [data-business-dashboard] .text-slate-700 {
+  color: #f3f4f6 !important;
+}
+
+.dark .text-slate-650,
+.dark .text-slate-600,
+.dark [data-business-dashboard] .text-slate-600 {
+  color: #9ca3af !important;
+}
+
+.dark .text-slate-500,
+.dark [data-business-dashboard] .text-slate-500,
+.dark .text-slate-400,
+.dark [data-business-dashboard] .text-slate-400,
+.dark .text-gray-400,
+.dark [data-business-dashboard] .text-gray-400 {
+  color: #6b7280 !important;
+}
+
+.dark .text-gray-900,
+.dark [data-business-dashboard] .text-gray-900 {
+  color: #f9fafb !important;
+}
+
+.dark .text-gray-700,
+.dark [data-business-dashboard] .text-gray-700 {
+  color: #d1d5db !important;
+}
+
+.dark .text-gray-650,
+.dark .text-gray-600,
+.dark [data-business-dashboard] .text-gray-600 {
+  color: #9ca3af !important;
+}
+
+.dark .border-gray-200,
+.dark [data-business-dashboard] .border-gray-200,
+.dark .border-slate-200,
+.dark [data-business-dashboard] .border-slate-200,
+.dark .border-gray-300,
+.dark [data-business-dashboard] .border-gray-300,
+.dark .border-slate-300,
+.dark [data-business-dashboard] .border-slate-300 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark .border-slate-100,
+.dark [data-business-dashboard] .border-slate-100,
+.dark .border-gray-100,
+.dark [data-business-dashboard] .border-gray-100,
+.dark .border-gray-100\/50,
+.dark [data-business-dashboard] .border-gray-100\/50,
+.dark .border-slate-100\/50,
+.dark [data-business-dashboard] .border-slate-100\/50 {
+  border-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.dark input[type="text"],
+.dark input[type="password"],
+.dark select,
+.dark textarea,
+.dark [data-business-dashboard] input[type="text"],
+.dark [data-business-dashboard] input[type="password"],
+.dark [data-business-dashboard] select,
+.dark [data-business-dashboard] textarea {
+  background-color: var(--color-bg-input) !important;
+  color: #f3f4f6 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.dark input[type="text"]:focus,
+.dark input[type="password"]:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #64748b !important;
+  box-shadow: 0 0 0 2px rgba(1, 18, 44, 0.2) !important;
+}
+
+/* Modals background, backdrop, and layout overrides for dark mode */
+.dark .fixed.inset-0.z-50,
+.dark .fixed.inset-0.z-\[60\] {
+  background-color: rgba(8, 12, 17, 0.68) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.dark [role="dialog"],
+.dark .bg-primary-95,
+.dark [data-business-dashboard] .bg-primary-95,
+.dark .relative.w-full.max-w-md.rounded-2xl.bg-white\/95,
+.dark .relative.w-full.max-w-lg.rounded-2xl.bg-white\/95 {
+  background-color: var(--color-bg-elevated) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .bg-linear-to-r.from-white.to-slate-50\/30,
+.dark .bg-gradient-to-br.from-white.to-slate-50\/30,
+.dark .bg-gradient-to-br.from-white.to-slate-50\/20,
+.dark .bg-linear-to-br.from-white.to-slate-50\/20 {
+  background: linear-gradient(
+    to right,
+    var(--color-bg-elevated),
+    rgba(27, 34, 43, 0.42)
+  ) !important;
+}
+
+.dark .bg-linear-to-r.from-slate-50\/50.to-gray-50\/50,
+.dark .bg-gradient-to-r.from-slate-50\/50.to-gray-50\/50 {
+  background: linear-gradient(
+    to right,
+    rgba(27, 34, 43, 0.78),
+    rgba(32, 40, 50, 0.78)
+  ) !important;
+}
+
+.dark .bg-linear-to-br.from-slate-50.to-gray-50,
+.dark .bg-gradient-to-br.from-slate-50.to-gray-50 {
+  background: linear-gradient(
+    to bottom right,
+    var(--color-bg-secondary),
+    var(--color-bg-tertiary)
+  ) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #e5e7eb !important;
+}
+
+.dark .bg-linear-to-br.from-slate-50.to-gray-50:hover,
+.dark .bg-gradient-to-br.from-slate-50.to-gray-50:hover {
+  background: linear-gradient(
+    to bottom right,
+    var(--color-bg-secondary),
+    var(--color-bg-tertiary)
+  ) !important;
+}
+
+.dark .bg-linear-to-r.from-white.to-\[\#b6f20d\]\/10,
+.dark .bg-gradient-to-r.from-white.to-\[\#b6f20d\]\/10,
+.dark .bg-linear-to-r.from-white.to-brand-100\/10 {
+  background: linear-gradient(
+    to left,
+    var(--color-bg-elevated),
+    rgba(27, 34, 43, 0.68)
+  ) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark .text-slate-600.hover\:text-slate-700.hover\:bg-linear-to-r {
+  color: #9ca3af !important;
+}
+
+.dark .text-slate-600.hover\:text-slate-700.hover\:bg-linear-to-r:hover {
+  color: #f3f4f6 !important;
+  background: var(--color-bg-secondary) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Header Action Buttons Overrides */
+.dark header .bg-gradient-to-br.from-slate-50.to-gray-50,
+.dark header .bg-linear-to-br.from-slate-50.to-gray-50 {
+  background: var(--color-bg-secondary) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #9ca3af !important;
+}
+
+.dark header .bg-gradient-to-br.from-slate-50.to-gray-50:hover,
+.dark header .bg-linear-to-br.from-slate-50.to-gray-50:hover {
+  background: var(--color-bg-secondary) !important;
+  color: #f3f4f6 !important;
+}
+
+.dark header .bg-gradient-to-br.from-rose-50.to-pink-50,
+.dark header .bg-linear-to-br.from-rose-50.to-pink-50 {
+  background: rgba(244, 63, 94, 0.1) !important;
+  border-color: rgba(244, 63, 94, 0.2) !important;
+  color: #f87171 !important;
+}
+
+.dark header .bg-gradient-to-br.from-rose-50.to-pink-50:hover,
+.dark header .bg-linear-to-br.from-rose-50.to-pink-50:hover {
+  background: rgba(244, 63, 94, 0.18) !important;
+  color: #fca5a5 !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+
+/* Hover Utility Classes to prevent bright white flash */
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-slate-100:hover,
+.dark .hover\:bg-gray-100:hover {
+  background-color: var(--color-bg-primary) !important;
+}
+
+.dark .hover\:text-slate-700:hover,
+.dark .hover\:text-gray-700:hover {
+  color: #f3f4f6 !important;
+}
+
+.dark .hover\:text-slate-900:hover,
+.dark .hover\:text-gray-900:hover {
+  color: #f9fafb !important;
+}
+
+/* Scrollbar overrides for dark mode */
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background-color: transparent !important;
+}
+
+/* Custom Dropdown Menus (Kurdish Theme Selector & Profile Menu) */
+.dark [role="menu"],
+.dark .absolute.right-0.mt-2.w-32.rounded-xl.bg-white,
+.dark header .absolute.right-0.mt-2.w-32 {
+  background-color: var(--color-bg-elevated) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.5),
+    0 4px 6px -2px rgba(0, 0, 0, 0.5) !important;
+}
+
+.dark [role="menuitem"],
+.dark [role="menu"] button,
+.dark header .absolute.right-0.mt-2.w-32 button {
+  color: #d1d5db !important;
+}
+
+.dark [role="menuitem"]:hover,
+.dark [role="menu"] button:hover,
+.dark header .absolute.right-0.mt-2.w-32 button:hover {
+  background-color: var(--color-bg-secondary) !important;
+  color: #f3f4f6 !important;
+}
+
+.dark [role="menuitem"].bg-\[\#b6f20d\]\/10,
+.dark [role="menu"] button.bg-\[\#b6f20d\]\/10,
+.dark header .absolute.right-0.mt-2.w-32 button.bg-\[\#b6f20d\]\/10 {
+  background-color: rgba(1, 18, 44, 0.15) !important;
+  color: #b3c5de !important;
+}
+
+/* Profile Dropdown Overrides in Dark Mode */
+.dark .absolute.top-full.right-0.mt-2.w-56 {
+  background-color: var(--color-bg-elevated) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.5),
+    0 4px 6px -2px rgba(0, 0, 0, 0.5) !important;
+}
+
+.dark .absolute.top-full.right-0.mt-2.w-56 .p-2 {
+  background: transparent !important;
+}
+
+/* Profile button (first item) */
+.dark .absolute.top-full.right-0.mt-2.w-56 button:first-child {
+  background: linear-gradient(
+    to right,
+    var(--color-bg-secondary),
+    rgba(32, 40, 50, 0.45)
+  ) !important;
+  border-color: transparent !important;
+  color: #e5e7eb !important;
+}
+
+.dark .absolute.top-full.right-0.mt-2.w-56 button:first-child:hover {
+  background: linear-gradient(
+    to right,
+    rgba(1, 18, 44, 0.08),
+    rgba(1, 18, 44, 0.12)
+  ) !important;
+  border-color: rgba(1, 18, 44, 0.2) !important;
+  color: #b3c5de !important;
+}
+
+/* Logout button (last item) */
+.dark .absolute.top-full.right-0.mt-2.w-56 button:last-child {
+  background: linear-gradient(
+    to right,
+    var(--color-bg-secondary),
+    rgba(244, 63, 94, 0.04)
+  ) !important;
+  border-color: transparent !important;
+  color: #e5e7eb !important;
+}
+
+.dark .absolute.top-full.right-0.mt-2.w-56 button:last-child:hover {
+  background: linear-gradient(
+    to right,
+    rgba(244, 63, 94, 0.08),
+    rgba(244, 63, 94, 0.12)
+  ) !important;
+  border-color: rgba(244, 63, 94, 0.2) !important;
+  color: #f87171 !important;
+}
+
+/* Logout icon container override */
+.dark .absolute.top-full.right-0.mt-2.w-56 button:last-child > div {
+  background: rgba(244, 63, 94, 0.1) !important;
+  border-color: rgba(244, 63, 94, 0.2) !important;
+}
+
+/* Divider inside profile dropdown */
+.dark .absolute.top-full.right-0.mt-2.w-56 .h-px {
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  ) !important;
+}
+
+/* Card Grid & Table Action Buttons Overrides in Dark Mode */
+.dark .bg-purple-50,
+.dark [data-business-dashboard] .bg-purple-50,
+.dark .hover\:bg-purple-50:hover,
+.dark [data-business-dashboard] .hover\:bg-purple-50:hover,
+.dark .hover\:bg-purple-50:hover:hover {
+  background-color: rgba(168, 85, 247, 0.1) !important;
+  color: #c084fc !important;
+  border-color: rgba(168, 85, 247, 0.25) !important;
+}
+
+.dark .bg-purple-50:hover,
+.dark [data-business-dashboard] .bg-purple-50:hover,
+.dark .hover\:bg-purple-50:hover:hover:hover {
+  background-color: rgba(168, 85, 247, 0.18) !important;
+  color: #e9d5ff !important;
+  border-color: rgba(168, 85, 247, 0.35) !important;
+}
+
+.dark .bg-red-50,
+.dark [data-business-dashboard] .bg-red-50,
+.dark .hover\:bg-red-50:hover,
+.dark [data-business-dashboard] .hover\:bg-red-50:hover,
+.dark .hover\:bg-red-50:hover:hover {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  color: #f87171 !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
+}
+
+.dark .bg-red-50:hover,
+.dark [data-business-dashboard] .bg-red-50:hover,
+.dark .hover\:bg-red-50:hover:hover:hover {
+  background-color: rgba(239, 68, 68, 0.18) !important;
+  color: #fca5a5 !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+
+.dark .hover\:bg-brand-50:hover,
+.dark [data-business-dashboard] .hover\:bg-brand-50:hover,
+.dark .hover\:bg-brand-50:hover:hover {
+  background-color: rgba(1, 18, 44, 0.1) !important;
+  color: #b3c5de !important;
+}
+
+.dark .hover\:bg-brand-50:hover:hover:hover,
+.dark [data-business-dashboard] .hover\:bg-brand-50:hover:hover:hover {
+  background-color: rgba(1, 18, 44, 0.18) !important;
+  color: #d9e2ee !important;
+}
+
+/* Edit buttons with brand border overrides in grid */
+.dark .border-\[\#b6f20d\]\/30 {
+  border-color: rgba(1, 18, 44, 0.25) !important;
+}
+
+.dark .bg-\[\#b6f20d\]\/10 {
+  background-color: rgba(1, 18, 44, 0.1) !important;
+  color: #b3c5de !important;
+}
+
+.dark .bg-\[\#b6f20d\]\/10:hover,
+.dark .hover\:bg-\[\#b6f20d\]\/20:hover {
+  background-color: rgba(1, 18, 44, 0.18) !important;
+  border-color: rgba(1, 18, 44, 0.45) !important;
+  color: #d9e2ee !important;
+}
+
+/* Card layout wrapper overrides */
+.dark .group.relative.bg-white {
+  background-color: var(--color-bg-secondary) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark .group.relative.bg-white:hover {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.4),
+    0 4px 6px -2px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* External Link / View action buttons inside cards */
+.dark .bg-gray-50,
+.dark [data-business-dashboard] .bg-gray-50,
+.dark .bg-gray-50.hover\:bg-gray-100 {
+  background-color: var(--color-bg-secondary) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #9ca3af !important;
+}
+
+.dark .bg-gray-50:hover,
+.dark [data-business-dashboard] .bg-gray-50:hover,
+.dark .bg-gray-50.hover\:bg-gray-100:hover {
+  background-color: var(--color-bg-tertiary) !important;
+  color: #f3f4f6 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Icon colors override inside tables/lists */
+.dark .text-purple-600 {
+  color: #c084fc !important;
+}
+.dark .text-purple-600:hover {
+  color: #e9d5ff !important;
+}
+.dark .text-brand-600 {
+  color: #b3c5de !important;
+}
+.dark .text-brand-600:hover {
+  color: #d9e2ee !important;
+}
+.dark .text-red-600 {
+  color: #f87171 !important;
+}
+.dark .text-red-600:hover {
+  color: #fca5a5 !important;
+}
+
+/* Modals & Portal Sub-Components Overrides in Dark Mode */
+.dark .bg-slate-100,
+.dark [data-business-dashboard] .bg-slate-100,
+.dark .bg-gray-100,
+.dark [data-business-dashboard] .bg-gray-100 {
+  background-color: var(--color-bg-secondary) !important;
+  color: #9ca3af !important;
+}
+
+.dark .text-slate-800,
+.dark [data-business-dashboard] .text-slate-800,
+.dark .text-gray-800,
+.dark [data-business-dashboard] .text-gray-800 {
+  color: #e5e7eb !important;
+}
+
+.dark .hover\:text-slate-800:hover,
+.dark .hover\:text-gray-800:hover {
+  color: #f3f4f6 !important;
+}
+
+.dark .hover\:bg-red-100:hover {
+  background-color: rgba(239, 68, 68, 0.18) !important;
+}
+
+.dark .hover\:bg-slate-100:hover {
+  background-color: var(--color-bg-tertiary) !important;
+}
+
+/* Modal Dialog and Portal close buttons */
+.dark [role="dialog"] .bg-linear-to-br.from-slate-50.to-gray-50,
+.dark [role="dialog"] .bg-gradient-to-br.from-slate-50.to-gray-50,
+.dark .fixed .bg-linear-to-br.from-slate-50.to-gray-50,
+.dark .fixed .bg-gradient-to-br.from-slate-50.to-gray-50 {
+  background: var(--color-bg-secondary) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #9ca3af !important;
+}
+
+.dark [role="dialog"] .bg-linear-to-br.from-slate-50.to-gray-50:hover,
+.dark [role="dialog"] .bg-gradient-to-br.from-slate-50.to-gray-50:hover,
+.dark .fixed .bg-linear-to-br.from-slate-50.to-gray-50:hover,
+.dark .fixed .bg-gradient-to-br.from-slate-50.to-gray-50:hover {
+  background: var(--color-bg-secondary) !important;
+  color: #f3f4f6 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* CountrySelector and other list modal items hover overrides */
+.dark [data-business-dashboard] .overflow-y-auto button.w-full,
+.dark [role="dialog"] .overflow-y-auto button.w-full {
+  border-color: transparent !important;
+  transition: all 0.3s ease !important;
+}
+
+.dark [data-business-dashboard] .overflow-y-auto button.w-full:hover,
+.dark [role="dialog"] .overflow-y-auto button.w-full:hover {
+  background: var(--color-bg-secondary) !important;
+  color: #f3f4f6 !important;
+}
+
+.dark
+  [data-business-dashboard]
+  .overflow-y-auto
+  button.w-full.bg-linear-to-r.from-\[\#b6f20d\]\/10,
+.dark
+  [data-business-dashboard]
+  .overflow-y-auto
+  button.w-full.bg-gradient-to-r.from-\[\#b6f20d\]\/10,
+.dark
+  [role="dialog"]
+  .overflow-y-auto
+  button.w-full.bg-linear-to-r.from-\[\#b6f20d\]\/10,
+.dark
+  [role="dialog"]
+  .overflow-y-auto
+  button.w-full.bg-gradient-to-r.from-\[\#b6f20d\]\/10 {
+  background: rgba(1, 18, 44, 0.15) !important;
+  color: #b3c5de !important;
+  border-color: rgba(1, 18, 44, 0.25) !important;
+}
+
+/* Scroll Loading Sentinels and Spinners */
+.dark .border-t-slate-500 {
+  border-top-color: var(--multitree-accent) !important;
+}
+
+/* Platform selection buttons (unselected state) */
+.dark .border-gray-300.bg-white,
+.dark .border-gray-300.bg-white:hover {
+  background-color: var(--color-bg-tertiary) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark .border-gray-300.bg-white:hover {
+  background-color: var(--color-bg-secondary) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Custom Dark Mode Palette */
+.dark {
+  /* Dark backgrounds - already declared in the .dark block above, kept here as a safety net
+     so any later dark-mode override still finds the canonical values. */
+  --color-bg-primary: #161b22;
+  --color-bg-primary-50: rgba(22, 27, 34, 0.5);
+  --color-bg-primary-80: rgba(22, 27, 34, 0.8);
+  --color-bg-primary-90: rgba(22, 27, 34, 0.9);
+  --color-bg-primary-95: rgba(22, 27, 34, 0.95);
+
+  --color-bg-secondary: #1b222b;
+  --color-bg-tertiary: #202832;
+  --color-bg-elevated: #121820;
+  --color-bg-input: #1e2630;
+}
+
+/* Keep explicit #161B22 utilities as the primary dark surface. More specific rules above move panels, inputs, and elevated areas to nearby shades. */
+.dark .bg-\[\#161B22\],
+.dark .dark\:bg-\[\#161B22\] {
+  background-color: var(--color-bg-primary) !important;
+}
+
+/* Translucent utility classes overrides */
+.dark .bg-\[\#161B22\]\/80,
+.dark .dark\:bg-\[\#161B22\]\/80 {
+  background-color: var(--color-bg-primary-80) !important;
+}
+
+.dark .bg-\[\#161B22\]\/95,
+.dark .dark\:bg-\[\#161B22\]\/95 {
+  background-color: rgba(18, 24, 32, 0.95) !important;
+}
+
+/* Form input background styling hover fixes */
+.dark .bg-slate-50\/60,
+.dark .dark\:bg-slate-50\/60,
+.dark .bg-slate-50\/70,
+.dark .dark\:bg-slate-50\/70 {
+  background-color: rgba(30, 38, 48, 0.74) !important;
+}
+
+.dark .hover\:bg-gray-100:hover,
+.dark .dark\:hover\:bg-gray-100:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark .bg-slate-100\/70,
+.dark .dark\:bg-slate-100\/70 {
+  background-color: rgba(32, 40, 50, 0.78) !important;
+}
+
+.dark .hover\:bg-\[\#161B22\]:hover,
+.dark .dark\:hover\:bg-\[\#161B22\]:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Custom cursor system -----------------------------------------------------
+   Apply directly to every rendered element instead of relying on cursor
+   inheritance or a pointer media query. This keeps the cursor stable during
+   refresh, hydration, and browser pointer-capability re-evaluation. */
+html,
+body,
+body * {
+  cursor: var(--custom-cursor-default) !important;
+}
+
+:where(
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  span,
+  label,
+  li,
+  td,
+  th,
+  blockquote,
+  figcaption,
+  code,
+  pre,
+  input:not([type]),
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="number"],
+  textarea,
+  [contenteditable="true"]
+) {
+  cursor: var(--custom-cursor-text) !important;
+}
+
+:where(
+  a,
+  button,
+  summary,
+  select,
+  option,
+  [role="button"],
+  [role="link"],
+  [role="menuitem"],
+  [role="tab"],
+  [role="switch"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="range"],
+  input[type="color"],
+  input[type="file"]
+),
+:where(a, button, summary, [role="button"], [role="link"]) *,
+[data-cursor-interactive],
+[data-cursor-interactive] * {
+  cursor: var(--custom-cursor-default) !important;
+}
+
+:where(:disabled, [aria-disabled="true"]) {
+  cursor: not-allowed !important;
+}
+
+:where(.cursor-wait, [aria-busy="true"]) {
+  cursor: wait !important;
+}
+
+:where(.cursor-move, [draggable="true"]) {
+  cursor: move !important;
+}
+
+:where(.cursor-grab) {
+  cursor: grab !important;
+}
+
+:where(.cursor-grabbing) {
+  cursor: grabbing !important;
+}
+
+/* Touch-only devices do not display a pointer and retain native semantics. */
+@media (hover: none) and (pointer: coarse) {
+  html,
+  body,
+  body * {
+    cursor: auto !important;
+  }
+}
+/* These public templates are intentionally light-only. Keep dashboard/global
+   dark-mode utility overrides from recoloring them in previews or public pages. */
+.dark [data-force-light-template] {
+  color-scheme: light;
+}
+
+.dark [data-force-light-template] .bg-white,
+.dark [data-force-light-template].bg-white {
+  background-color: #ffffff !important;
+}
+
+.dark [data-force-light-template] .bg-gray-50,
+.dark [data-force-light-template] .bg-slate-50 {
+  background-color: #f9fafb !important;
+}
+
+.dark [data-force-light-template] .bg-gray-100,
+.dark [data-force-light-template] .bg-slate-100 {
+  background-color: #f3f4f6 !important;
+}
+
+.dark [data-force-light-template] .text-gray-900,
+.dark [data-force-light-template] .text-slate-900 {
+  color: #111827 !important;
+}
+
+.dark [data-force-light-template] .text-gray-800,
+.dark [data-force-light-template] .text-slate-800 {
+  color: #1f2937 !important;
+}
+
+.dark [data-force-light-template] .text-gray-700,
+.dark [data-force-light-template] .text-slate-700 {
+  color: #374151 !important;
+}
+
+.dark [data-force-light-template] .text-gray-600,
+.dark [data-force-light-template] .text-slate-600 {
+  color: #4b5563 !important;
+}
+
+.dark [data-force-light-template] .text-gray-500,
+.dark [data-force-light-template] .text-slate-500 {
+  color: #6b7280 !important;
+}
+
+.dark [data-force-light-template] .border-gray-100,
+.dark [data-force-light-template] .border-slate-100 {
+  border-color: #f3f4f6 !important;
+}
+
+.dark [data-force-light-template] .border-gray-200,
+.dark [data-force-light-template] .border-slate-200 {
+  border-color: #e5e7eb !important;
+}
+
+/* Shared viewport contract for every public template and admin preview. */
+.public-template-shell {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--template-viewport-height, 100svh);
+  overflow: hidden;
+  box-sizing: border-box;
+  isolation: isolate;
+}
+
+.public-template-shell > * {
+  width: 100% !important;
+  min-width: 0;
+  min-height: var(--template-viewport-height, 100svh) !important;
+  box-sizing: border-box;
+}
+
+.public-template-shell *,
+.public-template-shell *::before,
+.public-template-shell *::after {
+  box-sizing: border-box;
+}
+
+.public-template-shell img,
+.public-template-shell svg {
+  max-width: 100%;
+}
+
+.public-template-shell button,
+.public-template-shell a {
+  max-width: 100%;
+  font-family: inherit;
+}
+
+/* Consistent component scale for regular templates. Hero Image intentionally
+   keeps its own image-led proportions and button hierarchy. */
+.public-template-shell:not([data-template-key="hero-image"])
+  :is(.max-w-sm, .max-w-md) {
+  width: 100%;
+  max-width: 28rem !important;
+}
+
+.public-template-shell:not([data-template-key="hero-image"]) h1 {
+  font-size: 1.5rem !important;
+  line-height: 2rem !important;
+  font-weight: 700 !important;
+  text-wrap: balance;
+}
+
+.public-template-shell:not([data-template-key="hero-image"])
+  :is(img.rounded-full, .rounded-full:has(> img), [data-template-avatar]) {
+  width: 7rem !important;
+  height: 7rem !important;
+  min-width: 7rem !important;
+  min-height: 7rem !important;
+  max-width: 7rem !important;
+  max-height: 7rem !important;
+  flex: 0 0 7rem;
+  object-fit: cover;
+}
+
+.public-template-shell:not([data-template-key="hero-image"])
+  :is(button.w-full, button.block) {
+  width: 100% !important;
+  min-height: 3.5rem;
+  padding: 0.75rem 1.25rem !important;
+  font-size: 1rem !important;
+  line-height: 1.5rem !important;
+}
+
+.public-template-shell:not([data-template-key="hero-image"])
+  :is(button.w-full, button.block)
+  > * {
+  max-width: 100%;
+}
+
+/* Every shared phone renders a real logical mobile viewport, then scales the
+   whole surface into its hardware screen. This keeps responsive templates
+   independent from the decorative mockup size and strictly clipped. */
+.phone-mockup-screen {
+  container-type: inline-size;
+  contain: strict;
+}
+
+.phone-mockup-canvas {
+  width: 390px;
+  height: 858px;
+  overflow: hidden;
+  zoom: calc(100cqw / 390px);
+}
+
+.phone-mockup-canvas .public-template-shell {
+  min-height: 858px !important;
+  padding-bottom: 50px !important;
+}
+
+.phone-mockup-canvas .mini-website-ltr {
+  width: 100% !important;
+  max-width: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.phone-mockup-canvas
+  .public-template-shell:not([data-template-key="hero-image"])
+  h1 {
+  font-size: 1.2rem !important;
+  line-height: 1.55rem !important;
+}
+
+.phone-mockup-canvas
+  .public-template-shell:not([data-template-key="hero-image"])
+  :is(img.rounded-full, .rounded-full:has(> img), [data-template-avatar]) {
+  width: 5.5rem !important;
+  height: 5.5rem !important;
+  min-width: 5.5rem !important;
+  min-height: 5.5rem !important;
+  max-width: 5.5rem !important;
+  max-height: 5.5rem !important;
+  flex-basis: 5.5rem;
+}
+
+.phone-mockup-canvas
+  .public-template-shell:not([data-template-key="hero-image"])
+  :is(button.w-full, button.block) {
+  min-height: 3rem;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+}
+
+.phone-mockup-canvas
+  .public-template-shell:not([data-template-key="hero-image"])
+  :is(button.w-full, button.block)
+  svg {
+  width: 1.15rem !important;
+  height: 1.15rem !important;
+}
+
+.phone-mockup-canvas .public-template-shell footer {
+  padding-top: 0.65rem !important;
+  padding-bottom: 0.65rem !important;
+}
+
+.phone-mockup-canvas .public-template-shell footer p,
+.phone-mockup-canvas .public-template-shell footer button {
+  font-size: 0.7rem !important;
+  line-height: 1rem !important;
+}
+
+.phone-mockup-canvas .public-template-shell footer button {
+  min-height: 0;
+  padding: 0.4rem 1rem !important;
+}
+
+.monitor-preview-frame {
+  container-type: inline-size;
+  scrollbar-width: thin;
+}
+
+.monitor-preview-canvas {
+  --monitor-content-width: 1040px;
+  width: var(--monitor-content-width);
+  zoom: calc(100cqw / var(--monitor-content-width));
+}
+
+/*
+ * The real public mini-website page renders full-bleed (fullPage: no
+ * border/shadow/rounding). The preview uses embeddedPreview instead (fullPage
+ * would hijack document.body/root background + dark class, leaking outside
+ * this card). Strip the "windowed" shell chrome here so the preview matches
+ * the deployed page's look exactly, with only the monitor bezel framing it.
+ */
+.monitor-preview-canvas .mini-website-ltr {
+  max-width: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+[data-create-template] > span {
+  display: none;
+}
+
+[data-responsive-create] > span {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  [data-create-template] > span {
+    display: inline;
+  }
+}
+
+@media (min-width: 1280px) {
+  [data-responsive-create] > span {
+    display: inline;
+  }
+}
+
+/* Global MultiTree scrollbar ------------------------------------------------
+   Mirrors the homepage lime thumb for every nested scroll surface: dashboard
+   mains, sidebars, tables, modals, pickers, search results, and public pages. */
+html,
+body,
+* {
+  scrollbar-width: thin !important;
+  scrollbar-color: var(
+      --business-website-color,
+      var(--admin-website-color, var(--theme-primary, var(--multitree-accent)))
+    )
+    transparent !important;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
+*::-webkit-scrollbar-track {
+  background: transparent !important;
+  border-radius: 999px;
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-thumb {
+  min-height: 24px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(
+    --business-website-color,
+    var(--admin-website-color, var(--theme-primary, var(--multitree-accent)))
+  ) !important;
+  background-clip: padding-box !important;
+  box-shadow: 0 0 6px
+    color-mix(
+      in srgb,
+      var(
+          --business-website-color,
+          var(--admin-website-color, var(--theme-primary, var(--multitree-accent)))
+        )
+        35%,
+      transparent
+    );
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover,
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(
+    in srgb,
+    var(
+        --business-website-color,
+        var(--admin-website-color, var(--theme-primary, var(--multitree-accent)))
+      )
+      84%,
+    #000
+  ) !important;
+}
+
+html::-webkit-scrollbar-corner,
+body::-webkit-scrollbar-corner,
+*::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+/* Pages that mount the floating custom page scrollbar must not also expose the
+   globally themed native document scrollbar. This follows the global rules so
+   the custom thumb remains the single visible page-scroll control. */
+html.custom-scrollbar-active,
+html.custom-scrollbar-active body {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html.custom-scrollbar-active::-webkit-scrollbar,
+html.custom-scrollbar-active body::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Keep activity-search modal and dropdown scrolling identical to the homepage. */
+.lime-custom-scrollbar {
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--multitree-accent) transparent !important;
+}
+
+.lime-custom-scrollbar::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+.lime-custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+  border-radius: 999px;
+}
+
+.lime-custom-scrollbar::-webkit-scrollbar-thumb {
+  min-height: 24px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--multitree-accent) !important;
+  background-clip: padding-box !important;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--multitree-accent) 35%, transparent) !important;
+}
+
+.lime-custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--multitree-accent-hover) !important;
+}
+
+/* Business-aware scrollbar used by analytics and other themed surfaces. */
+.theme-custom-scrollbar,
+.theme-custom-scrollbar * {
+  scrollbar-width: thin !important;
+  scrollbar-color: var(
+      --business-website-color,
+      var(--theme-primary, var(--multitree-accent))
+    )
+    transparent !important;
+}
+
+.theme-custom-scrollbar::-webkit-scrollbar,
+.theme-custom-scrollbar *::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+.theme-custom-scrollbar::-webkit-scrollbar-track,
+.theme-custom-scrollbar *::-webkit-scrollbar-track {
+  background: transparent !important;
+  border-radius: 999px;
+}
+
+.theme-custom-scrollbar::-webkit-scrollbar-thumb,
+.theme-custom-scrollbar *::-webkit-scrollbar-thumb {
+  min-height: 24px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(
+    --business-website-color,
+    var(--theme-primary, var(--multitree-accent))
+  ) !important;
+  background-clip: padding-box !important;
+  box-shadow: 0 0 6px
+    color-mix(
+      in srgb,
+      var(--business-website-color, var(--theme-primary, var(--multitree-accent)))
+        35%,
+      transparent
+    ) !important;
+}
+
+.theme-custom-scrollbar::-webkit-scrollbar-thumb:hover,
+.theme-custom-scrollbar *::-webkit-scrollbar-thumb:hover {
+  background: color-mix(
+    in srgb,
+    var(--business-website-color, var(--theme-primary, var(--multitree-accent)))
+      84%,
+    #000
+  ) !important;
+}
+
+/*
+ * Mini-website editor collections stay flat inside their single glass section.
+ * A quiet divider preserves scanning and reorder context without introducing a
+ * second card/container around every repeated item.
+ */
+.mini-website-editor-item {
+  border-bottom: 1px solid rgb(226 232 240 / 0.72);
+  padding-bottom: 1rem;
+}
+
+.mini-website-editor-item + .mini-website-editor-item {
+  margin-top: 0 !important;
+  padding-top: 1rem;
+}
+
+.dark .mini-website-editor-item {
+  border-bottom-color: rgb(255 255 255 / 0.07);
+}
+
+/* Rabar is the single product typeface. Native controls and SVG labels do not
+   consistently inherit the document font without an explicit rule. */
+:where(button, input, textarea, select, optgroup, option),
+svg text {
+  font-family: inherit;
+}
+
+/* Requirement markers for simple mini-website fields that keep their input
+   directly inside a label. Complex controls render the same marker component. */
+.mini-website-editor-item
+  label:has(> input:not([type="file"]), > textarea)
+  > span:first-child:not(.mini-website-requirement-label)::after {
+  margin-inline-start: 0.25rem;
+  color: var(--theme-primary, #64748b);
+  content: " (ئارەزوومەندانە)";
+  font-weight: 700;
+}
+
+.mini-website-editor-item
+  label:has(> input[required], > textarea[required])
+  > span:first-child:not(.mini-website-requirement-label)::after {
+  content: " *";
+}

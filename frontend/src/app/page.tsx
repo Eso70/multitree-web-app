@@ -1,0 +1,171 @@
+import { headers } from "next/headers";
+import { HomeLanding } from "@/components/home/HomeLanding";
+import { BusinessLanding } from "@/components/business/BusinessLanding";
+import { extractSubdomain } from "@/lib/subdomain-utils";
+import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import type { ComponentProps } from "react";
+import { BusinessServiceUnavailablePage } from "@/components/error-pages/BusinessServiceUnavailablePage";
+import { BusinessBadGatewayPage } from "@/components/error-pages/BusinessBadGatewayPage";
+import { BusinessGatewayTimeoutPage } from "@/components/error-pages/BusinessGatewayTimeoutPage";
+import { classifyUpstreamFailure } from "@/lib/api/upstream-failure";
+import { businessTabTitle } from "@/lib/utils/tab-title";
+
+export const dynamic = "force-dynamic";
+
+const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost")
+  .split(":")[0]
+  .toLowerCase();
+
+const ROOT_HOSTS = new Set([
+  "localhost",
+  "lvh.me",
+  "127.0.0.1",
+  ROOT_DOMAIN,
+  `www.${ROOT_DOMAIN}`,
+]);
+
+async function isRootRequest(): Promise<boolean> {
+  const headerStore = await headers();
+  const hostname = (headerStore.get("host") || "").split(":")[0].toLowerCase();
+  return /^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname) || ROOT_HOSTS.has(hostname);
+}
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+export default async function Home() {
+  if (await isRootRequest()) return <HomeLanding />;
+
+  const headerStore = await headers();
+  const host = headerStore.get("host") || "";
+  const subdomain = extractSubdomain(host, undefined, ROOT_DOMAIN);
+  if (!subdomain) return <HomeLanding />;
+
+  let landingProps: ComponentProps<typeof BusinessLanding> | null = null;
+  let badGateway = false;
+  let serviceUnavailable = false;
+  let gatewayTimeout = false;
+  try {
+    const headers_ = { "x-subdomain": subdomain };
+    const signal = AbortSignal.timeout(30_000);
+    const [businessRes, linktreesRes, miniWebsitesRes] = await Promise.all([
+      fetch(`${BACKEND_URL}/api/public/business`, {
+        headers: headers_,
+        cache: "no-store",
+        signal,
+      }),
+      fetch(`${BACKEND_URL}/api/public/linktrees`, {
+        headers: headers_,
+        cache: "no-store",
+        signal,
+      }),
+      fetch(`${BACKEND_URL}/api/public/mini-websites`, {
+        headers: headers_,
+        cache: "no-store",
+        signal,
+      }),
+    ]);
+
+    badGateway = [businessRes, linktreesRes, miniWebsitesRes].some(
+      (response) => response.status === 502,
+    );
+    serviceUnavailable = [businessRes, linktreesRes, miniWebsitesRes].some(
+      (response) => response.status === 503,
+    );
+    gatewayTimeout = [businessRes, linktreesRes, miniWebsitesRes].some(
+      (response) => response.status === 504,
+    );
+
+    if (
+      !badGateway &&
+      !serviceUnavailable &&
+      !gatewayTimeout &&
+      businessRes.ok
+    ) {
+      const businessJson = await businessRes.json();
+      const business = businessJson?.data;
+      if (business) {
+        let linktrees: ComponentProps<typeof BusinessLanding>["linktrees"] = [];
+        if (linktreesRes.ok) {
+          const ltJson = await linktreesRes.json();
+          linktrees = Array.isArray(ltJson?.data) ? ltJson.data : [];
+        }
+
+        let miniWebsites: ComponentProps<
+          typeof BusinessLanding
+        >["miniWebsites"] = [];
+        if (miniWebsitesRes.ok) {
+          const mwJson = await miniWebsitesRes.json();
+          miniWebsites = Array.isArray(mwJson?.data) ? mwJson.data : [];
+        }
+
+        landingProps = { business, linktrees, miniWebsites };
+      }
+    }
+  } catch (error) {
+    const failure = classifyUpstreamFailure(error);
+    gatewayTimeout = failure.status === 504;
+    serviceUnavailable = failure.status === 503;
+  }
+
+  if (badGateway) return <BusinessBadGatewayPage />;
+  if (serviceUnavailable) return <BusinessServiceUnavailablePage />;
+  if (gatewayTimeout) return <BusinessGatewayTimeoutPage />;
+  if (!landingProps) return <HomeLanding />;
+  return <BusinessLanding {...landingProps} />;
+}
+
+export async function generateMetadata() {
+  const headerStore = await headers();
+  const host = (headerStore.get("host") || "").split(":")[0].toLowerCase();
+  const subdomain = extractSubdomain(host, undefined, ROOT_DOMAIN);
+
+  if (subdomain) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/public/business`, {
+        headers: { "x-subdomain": subdomain },
+        cache: "no-store",
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const business = json?.data;
+        if (business) {
+          const icons: Record<
+            string,
+            string | { url: string; sizes?: string; type?: string }[]
+          > = {};
+          const iconEntries: { url: string; sizes?: string; type?: string }[] =
+            [];
+          iconEntries.push({
+            url: business.favicon || "/images/Logo.jpg",
+            type: "image/x-icon",
+          });
+          iconEntries.push({
+            url: business.logo || "/images/Logo.jpg",
+            sizes: "32x32",
+            type: "image/jpeg",
+          });
+          iconEntries.push({
+            url: business.default_avatar || "/images/DefaultAvatar.png",
+            sizes: "180x180",
+            type: "image/jpeg",
+          });
+          icons.icon = iconEntries;
+          icons.apple = business.logo || "/images/Logo.jpg";
+          return {
+            title: businessTabTitle(business.name, "Home"),
+            description: `Explore ${business.name}'s official public pages and contact information.`,
+            icons,
+            themeColor: business.website_color || MULTITREE_ACCENT_COLOR,
+          };
+        }
+      }
+    } catch {}
+  }
+
+  return {
+    title: "MultiTree",
+    description:
+      "Create branded public link pages, manage multiple businesses, and understand every connection from one secure platform.",
+  };
+}

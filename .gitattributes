@@ -1,0 +1,114 @@
+###############################################################################
+# MultiTree Git Attributes
+###############################################################################
+
+# Normalize all text files to LF in the repository
+* text=auto eol=lf
+
+###############################################################################
+# Source Code
+###############################################################################
+
+*.ts          text
+*.tsx         text
+*.js          text
+*.jsx         text
+*.mjs         text
+*.cjs         text
+*.json        text
+*.jsonc       text
+*.css         text
+*.scss        text
+*.html        text
+*.md          text
+*.mdx         text
+*.yml         text
+*.yaml        text
+*.sql         text
+*.env.example text
+*.sh          text
+*.ps1         text
+*.bat         text
+*.dockerfile  text
+Dockerfile    text
+*.gitignore   text
+*.gitattributes text
+.editorconfig text
+
+###############################################################################
+# Binary Files
+###############################################################################
+
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.svg  text
+*.ico  binary
+*.bmp  binary
+*.tiff binary
+
+*.mp4  binary
+*.webm binary
+*.mov  binary
+*.avi  binary
+*.mp3  binary
+*.wav  binary
+*.ogg  binary
+
+*.zip  binary
+*.gz   binary
+*.tar  binary
+*.7z   binary
+*.rar  binary
+
+*.pdf  binary
+
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.eot   binary
+
+###############################################################################
+# Lock Files
+###############################################################################
+
+package-lock.json -merge
+pnpm-lock.yaml    -merge
+yarn.lock         -merge
+
+###############################################################################
+# Generated Files
+###############################################################################
+
+*.min.js  -diff
+*.min.css -diff
+
+###############################################################################
+# SQL
+###############################################################################
+
+*.sql text diff
+
+###############################################################################
+# Markdown
+###############################################################################
+
+*.md text diff=markdown
+
+###############################################################################
+# Images
+###############################################################################
+
+*.png  -diff
+*.jpg  -diff
+*.jpeg -diff
+*.gif  -diff
+*.webp -diff
+*.ico  -diff
+
+###############################################################################
+# End
+###############################################################################

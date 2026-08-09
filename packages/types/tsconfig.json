@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // This package ships raw .ts consumed by both applications, so it emits
+    // nothing of its own. The only job here is to prove the contracts type
+    // check independently of whichever app happens to import them.
+    "noEmit": true,
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "isolatedModules": true
+  },
+  "include": ["**/*.ts"]
+}

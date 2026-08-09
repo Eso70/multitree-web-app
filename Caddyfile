@@ -1,0 +1,56 @@
+# Caddyfile for MultiTree Platform
+# This reverse proxy handles:
+# - Wildcard TLS for *.kurdishsponser.cloud
+# - Subdomain routing to the Next.js frontend
+# - All /api/* traffic proxied to NestJS backend (port 4000)
+# - Host header preservation for subdomain extraction in the Next.js proxy
+
+*.kurdishsponser.cloud {
+    tls {
+        dns cloudflare {env.CF_API_TOKEN}
+    }
+
+    # Never trust a tenant header supplied by an external client. The backend
+    # derives the tenant from the preserved Host header for direct API traffic.
+    request_header -x-subdomain
+
+    @api path /api/*
+    reverse_proxy @api localhost:4000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    reverse_proxy localhost:3011 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
+
+kurdishsponser.cloud {
+    tls {
+        dns cloudflare {env.CF_API_TOKEN}
+    }
+
+    # Never trust a tenant header supplied by an external client. The backend
+    # derives the tenant from the preserved Host header for direct API traffic.
+    request_header -x-subdomain
+
+    @api path /api/*
+    reverse_proxy @api localhost:4000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    reverse_proxy localhost:3011 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
