@@ -19,7 +19,7 @@ The current deployment model targets a single production host running clustered 
 
 The development environment requires:
 
-- Node.js 20 or newer
+- Node.js 22 or newer; Node.js 24 is the pinned deployment and CI version
 - pnpm 9 or newer
 - PostgreSQL with `pgcrypto` and `pg_trgm`
 - Redis
@@ -169,19 +169,21 @@ after the replacement database has already been prepared and verified.
 
 Before deploying:
 
-1. Back up PostgreSQL.
-2. Back up `UPLOAD_DIR` (default: `<repository>/.runtime/uploads`) and, during
+1. Use Node.js 24 (the version pinned in `.nvmrc`); Node.js 22 is the minimum
+   supported runtime because current workspace dependencies require it.
+2. Back up PostgreSQL.
+3. Back up `UPLOAD_DIR` (default: `<repository>/.runtime/uploads`) and, during
    the compatibility period, the former `frontend/public/images/upload`
    directory if it still contains files.
-3. Deploy the new application version.
-4. Install dependencies.
-5. Run:
+4. Deploy the new application version.
+5. Install dependencies.
+6. Run:
 
 ```bash
 pnpm db:migrate
 ```
 
-6. Build:
+7. Build:
 
 ```bash
 pnpm build

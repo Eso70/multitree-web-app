@@ -35,7 +35,7 @@ The billing system manages subscriptions, plans, permissions, entitlements, and 
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 22+ (Node.js 24 recommended and pinned in `.nvmrc`)
 - pnpm 9+
 - PostgreSQL
 - Redis
