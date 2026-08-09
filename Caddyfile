@@ -1,11 +1,11 @@
 # Caddyfile for MultiTree Platform
 # This reverse proxy handles:
-# - Wildcard TLS for *.kurdishsponser.cloud
+# - Wildcard TLS for *.sponsor.krd
 # - Subdomain routing to the Next.js frontend
 # - All /api/* traffic proxied to NestJS backend (port 4000)
 # - Host header preservation for subdomain extraction in the Next.js proxy
 
-*.kurdishsponser.cloud {
+*.sponsor.krd {
     tls {
         dns cloudflare {env.CF_API_TOKEN}
     }
@@ -30,7 +30,7 @@
     }
 }
 
-kurdishsponser.cloud {
+sponsor.krd {
     tls {
         dns cloudflare {env.CF_API_TOKEN}
     }

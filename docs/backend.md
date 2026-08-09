@@ -294,8 +294,8 @@ for exactly what each key protects.
 | `MAX_FILE_SIZE_MB`        | Backend multipart hard limit; default `10`                                                        |
 | `UPLOAD_DIR`              | Optional local-storage root override                                                              |
 
-`NEXT_PUBLIC_APP_NAME` remains present in `.env.example` but is not read by
-the current application code.
+`NEXT_PUBLIC_APP_NAME` was removed from `.env.example`; it is not read by the
+current application code.
 
 In development, an invalid or absent `PLATFORM_ADMIN_PATH` falls back to
 `/platform-console`. In production, an invalid value disables the browser

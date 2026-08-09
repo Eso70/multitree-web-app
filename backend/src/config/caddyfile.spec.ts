@@ -3,7 +3,7 @@ import * as path from 'path';
 
 /**
  * Smoke test: Validates the Caddyfile contains required configuration
- * for wildcard subdomain routing on kurdishsponser.cloud.
+ * for wildcard subdomain routing on sponsor.krd.
  *
  * Validates: Requirements 8.1, 8.2, 8.3
  */
@@ -21,7 +21,7 @@ describe('Caddyfile Configuration Validation', () => {
     caddyfileContent = fs.readFileSync(caddyfilePath, 'utf-8');
   });
 
-  it('should contain wildcard entry for *.kurdishsponser.cloud', () => {
+  it('should contain wildcard entry for *.sponsor.krd', () => {
     expect(caddyfileContent).toMatch(/\*\.kurdishsponser\.cloud/);
   });
 
@@ -37,8 +37,8 @@ describe('Caddyfile Configuration Validation', () => {
     expect(caddyfileContent).toMatch(/dns\s+cloudflare/);
   });
 
-  it('should contain kurdishsponser.cloud root domain entry (separate from wildcard)', () => {
-    // Match "kurdishsponser.cloud {" that is NOT preceded by "*."
+  it('should contain sponsor.krd root domain entry (separate from wildcard)', () => {
+    // Match "sponsor.krd {" that is NOT preceded by "*."
     expect(caddyfileContent).toMatch(/^kurdishsponser\.cloud\s*\{/m);
   });
 

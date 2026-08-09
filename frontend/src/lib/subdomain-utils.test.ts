@@ -20,9 +20,9 @@ const arbSimpleSubdomain = fc
   .map((chars) => chars.join(""))
   .filter((s) => !s.startsWith("-") && !s.endsWith("-") && s.length >= 1);
 
-/** Valid domain suffix (e.g., "kurdishsponser.cloud", "example.com") */
+/** Valid domain suffix (e.g., "sponsor.krd", "example.com") */
 const arbDomainSuffix = fc.constantFrom(
-  "kurdishsponser.cloud",
+  "sponsor.krd",
   "example.com",
   "test.org",
   "my-app.dev",
@@ -35,7 +35,7 @@ const arbHostWithSubdomain = fc
 
 /** Host header without subdomain: {domain}.{tld} (exactly 2 parts) */
 const arbHostWithoutSubdomain = fc.constantFrom(
-  "kurdishsponser.cloud",
+  "sponsor.krd",
   "example.com",
   "localhost.dev",
   "my-site.org",

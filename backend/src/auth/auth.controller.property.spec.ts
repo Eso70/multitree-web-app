@@ -8,7 +8,7 @@ import * as fc from 'fast-check';
  * This ensures cross-subdomain cookie isolation.
  */
 describe('AuthController - Property Tests', () => {
-  const ROOT_DOMAIN = 'kurdishsponser.cloud';
+  const ROOT_DOMAIN = 'sponsor.krd';
 
   /**
    * Pure function that replicates the cookie domain construction logic
@@ -48,19 +48,19 @@ describe('AuthController - Property Tests', () => {
         fc.property(subdomainArbitrary, (subdomain: string) => {
           const cookieDomain = constructCookieDomain(subdomain, ROOT_DOMAIN);
 
-          // Assert cookie domain equals `.${subdomain}.kurdishsponser.cloud`
+          // Assert cookie domain equals `.${subdomain}.sponsor.krd`
           expect(cookieDomain).toBe(`.${subdomain}.${ROOT_DOMAIN}`);
         }),
         { numRuns: 100 },
       );
     });
 
-    it('cookie domain never equals the wildcard root domain (.kurdishsponser.cloud)', async () => {
+    it('cookie domain never equals the wildcard root domain (.sponsor.krd)', async () => {
       fc.assert(
         fc.property(subdomainArbitrary, (subdomain: string) => {
           const cookieDomain = constructCookieDomain(subdomain, ROOT_DOMAIN);
 
-          // Assert cookie domain does NOT equal `.kurdishsponser.cloud`
+          // Assert cookie domain does NOT equal `.sponsor.krd`
           expect(cookieDomain).not.toBe(`.${ROOT_DOMAIN}`);
         }),
         { numRuns: 100 },
@@ -96,7 +96,7 @@ describe('AuthController - Property Tests', () => {
         fc.property(subdomainArbitrary, (subdomain: string) => {
           const cookieDomain = constructCookieDomain(subdomain, ROOT_DOMAIN);
 
-          // The format should be: .subdomain.kurdishsponser.cloud
+          // The format should be: .subdomain.sponsor.krd
           // Split after removing leading dot: ["subdomain", "sponsor", "krd"]
           const withoutLeadingDot = cookieDomain.slice(1);
           const segments = withoutLeadingDot.split('.');

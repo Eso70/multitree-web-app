@@ -61,7 +61,7 @@ describe('Auth Examples - Subdomain Business Routing', () => {
         sessionToken?: string;
       } = {
         cookies: { platform_admin_session: 'valid-platform-token-123' },
-        headers: { host: 'kurdishsponser.cloud' },
+        headers: { host: 'sponsor.krd' },
       };
       const context = {
         switchToHttp: () => ({
@@ -79,7 +79,7 @@ describe('Auth Examples - Subdomain Business Routing', () => {
     it('should reject access when no MultiTree session cookie is present', async () => {
       const request = {
         cookies: {},
-        headers: { host: 'kurdishsponser.cloud' },
+        headers: { host: 'sponsor.krd' },
       };
       const context = {
         switchToHttp: () => ({
@@ -104,7 +104,7 @@ describe('Auth Examples - Subdomain Business Routing', () => {
 
       const request = {
         cookies: { platform_admin_session: 'business-token' },
-        headers: { host: 'kurdishsponser.cloud' },
+        headers: { host: 'sponsor.krd' },
       };
       const context = {
         switchToHttp: () => ({
@@ -127,10 +127,10 @@ describe('Auth Examples - Subdomain Business Routing', () => {
       };
       mockSessionService.getSessionUser.mockResolvedValue(platformAdminUser);
 
-      // Root domain request — no x-subdomain header, host is just kurdishsponser.cloud
+      // Root domain request — no x-subdomain header, host is just sponsor.krd
       const request = {
         cookies: { platform_admin_session: 'root-platform-session' },
-        headers: { host: 'kurdishsponser.cloud' },
+        headers: { host: 'sponsor.krd' },
       };
       const context = {
         switchToHttp: () => ({
@@ -268,7 +268,7 @@ describe('Auth Examples - Subdomain Business Routing', () => {
       expect(cookieOptions.domain).toBeUndefined();
     });
 
-    it('should NOT set cookie with wildcard domain .kurdishsponser.cloud', async () => {
+    it('should NOT set cookie with wildcard domain .sponsor.krd', async () => {
       mockAuthService.login.mockResolvedValue({
         sessionToken: '7d3c9e4a-2f5b-4c8d-a1e0-9b4f2d6c8e13',
         user: {
@@ -425,7 +425,7 @@ describe('Auth Examples - Subdomain Business Routing', () => {
       );
     });
 
-    it('business "subdomain" logs in on subdomain.kurdishsponser.cloud with a host-only cookie', async () => {
+    it('business "subdomain" logs in on subdomain.sponsor.krd with a host-only cookie', async () => {
       // Mock: AuthService.login resolves with session for business "subdomain"
       mockAuthService.login.mockResolvedValue({
         sessionToken: '9e4d0f5b-3a6c-4d9e-b2f1-0c5a3e7d9f24',
@@ -495,7 +495,7 @@ describe('Auth Examples - Subdomain Business Routing', () => {
       expect(setCookieMock.mock.calls[0][2].domain).toBeUndefined();
     });
 
-    it('business "subdomain" login rejected on wrong subdomain "karwan.kurdishsponser.cloud"', async () => {
+    it('business "subdomain" login rejected on wrong subdomain "karwan.sponsor.krd"', async () => {
       // Mock: AuthService.login rejects due to subdomain mismatch
       mockAuthService.login.mockRejectedValue(
         new UnauthorizedException('ئەم هەژمارە بۆ ئەم سەبدۆمەینە نییە'),
@@ -540,7 +540,7 @@ describe('Auth Examples - Subdomain Business Routing', () => {
       >();
       const mockReq = {
         headers: {
-          host: 'kurdishsponser.cloud',
+          host: 'sponsor.krd',
           'user-agent': 'Test',
         },
       } as unknown as FastifyRequest;

@@ -171,8 +171,8 @@ async function bootstrap() {
     'http://localhost:3011',
   );
   // CORS_ORIGIN accepts a comma-separated list. Each entry may be an exact
-  // origin (e.g. "https://kurdishsponser.cloud") or a wildcard subdomain
-  // pattern (e.g. "https://*.kurdishsponser.cloud"). We compile the list once
+  // origin (e.g. "https://sponsor.krd") or a wildcard subdomain
+  // pattern (e.g. "https://*.sponsor.krd"). We compile the list once
   // at boot so the per-request callback is cheap.
   const allowedOrigins = corsOriginRaw
     .split(',')

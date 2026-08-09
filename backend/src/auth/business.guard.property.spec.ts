@@ -14,7 +14,7 @@ import { AccessRuleEnforcementService } from './access-rule-enforcement.service'
  * For any session with subdomain X and request subdomain X, the guard allows.
  */
 describe('BusinessGuard - Property Tests', () => {
-  const ROOT_DOMAIN = 'kurdishsponser.cloud';
+  const ROOT_DOMAIN = 'sponsor.krd';
 
   // Custom arbitrary for valid subdomain format: lowercase alphanumeric + hyphens, 1-100 chars
   const subdomainArbitrary = fc
