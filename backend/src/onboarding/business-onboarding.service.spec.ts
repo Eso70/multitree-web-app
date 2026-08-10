@@ -660,7 +660,7 @@ describe('BusinessOnboardingService invitations', () => {
           return '/ops-9c741e5b2f8a4d63b017ce95';
         }
         if (key === 'APP_BASE_URL') return 'http://lvh.me:3011';
-        if (key === 'SMTP_USER') return 'multitree-mail@gmail.com';
+        if (key === 'SMTP_USER') return 'multitree-sender@example.test';
         return fallback;
       }),
       getOrThrow: jest.fn().mockReturnValue('test-session-secret'),
