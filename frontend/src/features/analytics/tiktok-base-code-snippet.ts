@@ -43,7 +43,7 @@ export function tiktokBaseCodeSnippet(pixelIds: string[]): string {
   if (!ids.length) return "";
   const list = ids.map((pixelId) => JSON.stringify(pixelId)).join(",");
   return [
-    "!function(w,d,t){var ttq=w[t]=w[t]||[];",
+    "!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];",
     // The stub's `setAndDefer` methods are the same list the SDK ships.
     'if(!ttq.methods){ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"];',
     "ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};",
@@ -59,7 +59,7 @@ export function tiktokBaseCodeSnippet(pixelIds: string[]): string {
     'var s=document.createElement("script");s.type="text/javascript";s.async=!0;s.src=r+"?sdkid="+e+"&lib="+t;',
     'var a=document.getElementsByTagName("script")[0]||document.head;',
     "a.parentNode.insertBefore(s,a);",
-    "}}",
+    "}",
     "}(window,document,'ttq');",
   ].join("");
 }

@@ -67,6 +67,8 @@ interface TikTokInstance {
 
 declare global {
   interface Window {
+    /** Named stub holder the real SDK resolves through; `"ttq"`. */
+    TiktokAnalyticsObject?: string;
     ttq?: {
       track?: (
         event: PublicPageTikTokEvent,
@@ -90,6 +92,12 @@ declare global {
  * immediately falls into.
  */
 function queue(): TikTokQueue {
+  // The real SDK finds the stub through this global — the snippet sets it too,
+  // but the loader must not depend on the inline script having run (cached
+  // HTML, a render that skipped it, a path where the server had no pixel).
+  if (typeof window !== "undefined" && !window.TiktokAnalyticsObject) {
+    window.TiktokAnalyticsObject = "ttq";
+  }
   const existing = (window.ttq || []) as TikTokQueue;
   if (!window.ttq) window.ttq = existing;
   existing.methods ||= TIKTOK_METHODS;

@@ -147,4 +147,21 @@ describe("tiktokBaseCodeSnippet", () => {
 
     expect(snippet).toContain("if(ttq._i[e])continue;");
   });
+
+  it("parses as valid script", () => {
+    // This snippet is injected into the HTML verbatim (see TikTokPixelBaseCode):
+    // a syntax error kills the whole IIFE in the browser — `window.ttq` never
+    // gets created and the page console fills with thrown script errors.
+    const snippet = tiktokBaseCodeSnippet(["PIXELABC", "PIXELDEF"]);
+
+    expect(() => new Function(snippet)).not.toThrow();
+  });
+
+  it("registers the stub the real SDK resolves through", () => {
+    // events.js boots by reading `window[window.TiktokAnalyticsObject]`; without
+    // this global the SDK cannot find the queue and throws on `._env`.
+    expect(tiktokBaseCodeSnippet(["PIXELABC"])).toContain(
+      "w.TiktokAnalyticsObject=t;",
+    );
+  });
 });
