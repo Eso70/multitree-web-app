@@ -36,7 +36,9 @@ Three things enforce it, so a mistake fails loudly rather than quietly shipping:
 
 1. `frontend/src/components/analytics/pixel-placement.spec.ts` fails if
    `TikTokPixel` is mounted anywhere but those two files, or if any file other
-   than `features/analytics/tiktok-dispatch.ts` touches `window.ttq`.
+   than `features/analytics/tiktok-dispatch.ts` (the queue), the pure snippet
+   builder `features/analytics/tiktok-base-code-snippet.ts`, or the debug
+   reporter touches `window.ttq`.
 2. `forwardsToTikTok` in
    `backend/src/analytics/unified-analytics.service.ts` decides whether an
    ingested event gets a `marketing_event_outbox` row. It applies two rules:

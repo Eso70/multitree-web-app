@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo } from "react";
 import {
-  isValidPixelId,
   loadTikTokPixel,
   reportTikTokPageView,
 } from "@/features/analytics/tiktok-dispatch";
+import { isValidPixelId } from "@/features/analytics/tiktok-base-code-snippet";
 import { analyticsConsent } from "@/lib/utils/client-queue";
 
 interface TikTokPixelProps {

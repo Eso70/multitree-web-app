@@ -92,12 +92,14 @@ describe("TikTok pixel placement", () => {
     expect(mounts.some((file) => file.includes("advertising"))).toBe(false);
   });
 
-  it("touches ttq from the dispatcher and the debug reporter only", () => {
+  it("touches ttq from the dispatcher, the snippet, and the debug reporter only", () => {
     const files = filesMounting(/\bttq\b/);
 
-    // The dispatcher owns the queue. The debug reporter reads it to answer
-    // "did the pixel load?" on a live page and never calls it.
+    // The dispatcher owns the queue. The snippet builder generates the string
+    // the server renders into the HTML. The debug reporter reads the queue to
+    // answer "did the pixel load?" on a live page and never calls it.
     expect(files.sort()).toEqual([
+      "features/analytics/tiktok-base-code-snippet.ts",
       "features/analytics/tiktok-debug.ts",
       "features/analytics/tiktok-dispatch.ts",
     ]);
@@ -116,13 +118,14 @@ describe("TikTok pixel placement", () => {
       "app/linktree/[uid]/page.tsx",
     ]);
 
-    // And the snippet itself is generated in the dispatcher, the one owner of
-    // everything that mentions ttq.
+    // And the snippet is generated in the shared builder — plain, without
+    // "use client", so the server component may call it — with the component
+    // that embeds it as the other holder.
     const holders = filesMounting(/tiktokBaseCodeSnippet/);
 
     expect(holders.sort()).toEqual([
       "components/analytics/TikTokPixelBaseCode.tsx",
-      "features/analytics/tiktok-dispatch.ts",
+      "features/analytics/tiktok-base-code-snippet.ts",
     ]);
   });
 

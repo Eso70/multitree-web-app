@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { tiktokBaseCodeSnippet, trackTikTokEvent } from "./tiktok-dispatch";
+import { trackTikTokEvent } from "./tiktok-dispatch";
+import { tiktokBaseCodeSnippet } from "./tiktok-base-code-snippet";
 
 /**
  * How an event reaches the pixel.

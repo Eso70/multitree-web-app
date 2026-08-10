@@ -1,4 +1,4 @@
-import { tiktokBaseCodeSnippet } from "@/features/analytics/tiktok-dispatch";
+import { tiktokBaseCodeSnippet } from "@/features/analytics/tiktok-base-code-snippet";
 
 interface TikTokPixelBaseCodeProps {
   pixelIds?: string[] | null;
