@@ -110,8 +110,8 @@ Follow the architecture documented in `docs/backend.md`.
 
 When modifying the database:
 
-- update the consolidated `full_schema.sql`
-- do not create dated forward migration files
+- never edit the consolidated `full_schema.sql` baseline
+- create a new dated forward migration file in `backend/src/database/migrations/`
 - reset only disposable databases; plan explicit replacement for valuable data
 - review indexes where appropriate
 

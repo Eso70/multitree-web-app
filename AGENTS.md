@@ -255,15 +255,24 @@ Redis should only be used for:
 * rate limiting
 * temporary data
 
-The repository uses one consolidated schema baseline. Schema changes must be
-folded into `backend/src/database/migrations/full_schema.sql`; do not create
-dated forward migration files. `db:migrate` does not upgrade old databases.
-Reset only disposable databases, and use an explicitly reviewed backup and
-replacement procedure for valuable environments.
+The repository uses one consolidated schema baseline
+(`backend/src/database/migrations/full_schema.sql`) for fresh installs.
+Never edit that baseline for a schema change. Every schema change must be
+delivered as a new dated forward migration file in
+`backend/src/database/migrations/` (for example
+`2026-08-10_add_tiktok_consent.sql`) so existing databases can be upgraded
+in place. Reset only disposable databases, and use an explicitly reviewed
+backup and replacement procedure for valuable environments.
 
 Never modify production schemas manually.
 
 ---
+
+# Git
+
+Never update the git repository. Do not stage, commit, amend, push, or create
+branches, tags, or pull requests. The owner manages all version control
+actions. Leave all changes uncommitted in the working tree.
 
 # Security
 

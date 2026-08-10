@@ -332,10 +332,11 @@ owned key patterns and must never flush unrelated Redis data.
 
 The complete PostgreSQL definition is maintained in
 `backend/src/database/migrations/full_schema.sql`. `pnpm db:migrate` applies
-that file transactionally to a fresh database. The repository intentionally
-keeps no dated forward migration files: every schema change is folded into
-`full_schema.sql`. `db:migrate` verifies existing databases but does not
-upgrade an old schema, and production startup never applies schema changes.
+that file transactionally to a fresh database. That baseline is never edited
+for a schema change: every schema change is delivered as a new dated forward
+migration file in `backend/src/database/migrations/` so existing databases
+can be upgraded in place, and `db:migrate` verifies existing databases after
+applying them. Production startup never applies schema changes.
 
 An existing database is baselined only after its required tables, columns,
 indexes, removed columns, and catalog data pass compatibility checks. A

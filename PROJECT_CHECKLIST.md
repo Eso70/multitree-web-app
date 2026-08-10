@@ -51,8 +51,8 @@ If an item does not apply, explicitly verify that it is not relevant.
 
 # Database
 
-- [ ] Schema changes are folded into `full_schema.sql` with no dated migration files.
-- [ ] `full_schema.sql` was updated if required.
+- [ ] Schema changes were delivered as new dated forward migration files (the `full_schema.sql` baseline was not edited).
+- [ ] A forward migration file was created if required.
 - [ ] Indexes were reviewed.
 - [ ] Queries are efficient.
 - [ ] No unnecessary database calls were introduced.

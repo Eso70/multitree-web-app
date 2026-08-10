@@ -154,10 +154,11 @@ recorded in `uploaded_media_assets` with `scope = 'advertising'`.
 
 ## Data model
 
-New tables, to be folded into `backend/src/database/migrations/full_schema.sql`
-in an `-- ADVERTISING SERVICE SCHEMA BEGIN/END` block placed after the mini
-website block and before the unified public-page block (it must precede the
-`public_pages` changes that reference it).
+New tables, to be delivered as a new dated forward migration file in
+`backend/src/database/migrations/` with an `-- ADVERTISING SERVICE SCHEMA
+BEGIN/END` block placed after the mini website block and before the unified
+public-page block (it must precede the `public_pages` changes that reference
+it). Never edit the `full_schema.sql` baseline.
 
 ### `advertising_pages`
 
@@ -796,12 +797,13 @@ businesses an editor that creates data no visitor can see.
 
 ## Rollout
 
-The repository has one consolidated baseline and no dated forward migrations,
-so this lands as one folded schema change plus one code change:
+The repository has one consolidated baseline for fresh installs, so this
+lands as a new dated forward migration file plus one code change:
 
-1. Fold every statement above into `full_schema.sql`, and add the new tables to
-   the schema-groups table in [docs/database.md](database.md#schema-groups) in
-   the same commit.
+1. Put every statement above in a new dated forward migration file in
+   `backend/src/database/migrations/` (never edit `full_schema.sql`), and add
+   the new tables to the schema-groups table in
+   [docs/database.md](database.md#schema-groups) in the same change.
 2. Add the `auth_permissions`, `billing_plan_permissions`, and
    `billing_entitlements` seed rows, and extend the `db:migrate` catalog
    verification list.

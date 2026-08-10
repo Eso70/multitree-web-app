@@ -88,12 +88,21 @@ schema.
 
 Application startup does not run migrations.
 
-This repository intentionally has no dated forward migration files.
-`db:migrate` does not upgrade an older deployed schema. A schema change must be
-folded directly into `full_schema.sql`; disposable environments must then be
-reset, while valuable environments require an explicitly reviewed backup,
-data-transfer, and database-replacement procedure. Never use `db:reset` as a
-production upgrade command.
+## Applying schema changes
+
+The repository uses one consolidated schema baseline
+(`backend/src/database/migrations/full_schema.sql`) for fresh installs and
+`db:reset`. Never edit that baseline for a schema change. Every schema change
+must be delivered as a new dated forward migration file in
+`backend/src/database/migrations/` (for example
+`2026-08-10_add_tiktok_consent.sql`) so existing databases can be upgraded
+in place. Apply forward migrations with the same migration command, and
+verify existing databases after applying them.
+
+Disposable environments may be reset from the baseline, while valuable
+environments require an explicitly reviewed backup, data-transfer, and
+database-replacement procedure that includes the forward migrations. Never
+use `db:reset` as a production upgrade command.
 
 The post-migration helpers perform only idempotent seed/data work. They do not
 create tables, alter columns, create indexes, or modify constraints.

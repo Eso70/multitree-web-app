@@ -89,8 +89,8 @@ Avoid mixing unrelated concerns.
 
 If the feature requires schema changes:
 
-- update the consolidated `full_schema.sql`
-- do not create dated forward migration files
+- never edit the consolidated `full_schema.sql` baseline
+- create a new dated forward migration file in `backend/src/database/migrations/`
 - reset only disposable databases
 - plan an explicitly reviewed data transfer and replacement for valuable data
 - add indexes when appropriate
@@ -251,7 +251,7 @@ Before marking a feature complete, verify:
 - Existing architecture was followed.
 - Existing components were reused where possible.
 - No duplicate business logic was introduced.
-- Database changes are folded into `full_schema.sql`.
+- Database changes were delivered as a new dated forward migration file.
 - API follows project standards.
 - Tenant isolation is preserved.
 - Authorization is enforced.

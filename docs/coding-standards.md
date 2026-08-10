@@ -180,6 +180,9 @@ Keep application startup schema-neutral.
 
 Run migrations explicitly.
 
+Apply every schema change as a new dated forward migration file; never edit the
+`full_schema.sql` baseline.
+
 Never modify production schemas manually.
 
 Optimize queries before adding caches.
