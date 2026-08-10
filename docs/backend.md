@@ -237,9 +237,20 @@ Copy the example to the workspace root and replace every placeholder:
 cp .env.example .env
 ```
 
-The backend configuration module and migration scripts load the root `.env`.
-Root build tooling copies it to `frontend/.env` before a frontend production
-build. **Do not commit `.env`.**
+The backend configuration module and migration scripts load the root `.env`,
+which is the single source of truth for both applications.
+
+Next.js only reads environment files from its own package directory, so
+`frontend/.env` is generated from the root file by
+`frontend/scripts/sync-env.mjs` before `dev`, `build`, and `start`. The
+generator copies only the variables the frontend actually reads; database,
+Redis, SMTP, Google OAuth, and administrator credentials are never written
+into the frontend build context. Adding a frontend variable therefore means
+adding it to the root `.env` and to that allowlist. Do not edit
+`frontend/.env` by hand and do not add a `frontend/.env.local`, which Next.js
+loads afterwards and which would silently override the generated values.
+
+**Do not commit `.env`.**
 
 ### Database and Redis
 
@@ -296,6 +307,19 @@ for exactly what each key protects.
 
 `NEXT_PUBLIC_APP_NAME` was removed from `.env.example`; it is not read by the
 current application code.
+
+`ROOT_DOMAIN` and `NEXT_PUBLIC_ROOT_DOMAIN` may include the frontend port in
+development (`lvh.me:3011`) so that generated URLs are reachable without a
+reverse proxy. `backend/src/common/root-domain.ts` owns that interpretation:
+host comparisons use `rootDomainHostname`, which strips the port, because
+`URL.hostname` never carries one, and origin construction takes the port from
+a single source so it is never appended twice. In production both are the bare
+domain (`sponsor.krd`).
+
+Local development uses `lvh.me`, a public DNS name resolving to `127.0.0.1`
+for itself and every subdomain, so tenant subdomain routing works without
+hosts-file changes. Production values are listed alongside each development
+default in `.env.example`.
 
 In development, an invalid or absent `PLATFORM_ADMIN_PATH` falls back to
 `/platform-console`. In production, an invalid value disables the browser

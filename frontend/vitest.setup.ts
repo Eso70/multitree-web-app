@@ -34,7 +34,10 @@ if (!("IntersectionObserver" in globalThis)) {
 
 // jsdom has no layout engine, so this is absent; several UI components call it
 // when scrolling a newly selected item into view.
-if (!Element.prototype.scrollIntoView) {
+//
+// Guarded on `Element` itself because this setup file also runs for specs that
+// opt into the node environment, where none of the DOM globals exist.
+if (typeof Element !== "undefined" && !Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = function scrollIntoView() {};
 }
 

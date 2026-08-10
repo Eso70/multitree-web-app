@@ -6,10 +6,10 @@ import { AuthenticationShell } from "@/components/shared/AuthenticationShell";
 
 export default function PlatformAdminLoginPage() {
   return (
-    <AuthenticationShell brandDescription="بە پاراستن و سادەیی پلاتفۆرمەکەت بەڕێوە ببە">
+    <AuthenticationShell brandDescription="بڕۆ ژوورەوە بۆ بەڕێوەبردنی پلاتفۆڕم">
       <AuthenticationCard
         title="چوونەژوورەوەی بەڕێوەبەر"
-        description="بە گوگڵ یان کۆدی یەکجارەی ئیمەیڵ بچۆ ژوورەوە"
+        description="بە گوگڵ یان ئیمێڵ بڕۆ ژوورەوە"
       >
         <AuthenticationMethods
           rememberDevice

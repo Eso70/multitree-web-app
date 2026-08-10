@@ -53,8 +53,32 @@ Default local addresses:
 
 | Service | Address |
 |---------|---------|
-| Frontend | http://localhost:3011 |
+| Frontend | http://lvh.me:3011 |
 | Backend | http://localhost:4000 |
+| Business subdomain | http://<subdomain>.lvh.me:3011 |
+
+`lvh.me` is a public DNS name that resolves to `127.0.0.1` for itself and for
+every subdomain, so tenant subdomain routing can be exercised locally without
+editing the hosts file or running Caddy. Use it rather than `localhost`
+whenever the behavior under test depends on the subdomain, which includes
+business login, the business dashboard, and public tenant pages: a business
+session cookie is tenant-bound and is rejected on a host with no subdomain.
+
+## Environment files
+
+The repository-root `.env` is the single source of truth. Next.js only reads
+environment files from its own package directory, so `frontend/.env` is
+generated from the root file by `frontend/scripts/sync-env.mjs`, which runs
+automatically before `dev`, `build`, and `start`.
+
+The generator copies only the variables the frontend actually reads. Database,
+Redis, SMTP, Google OAuth, and platform-administrator credentials stay in the
+backend's environment and are never written into the frontend build context.
+
+Never edit `frontend/.env` by hand; it is overwritten on the next run. Add new
+frontend variables to the root `.env` and to the allowlist in the generator.
+Avoid creating `frontend/.env.local`: Next.js loads it after `.env`, so it
+silently overrides the generated values and reintroduces drift.
 
 See:
 

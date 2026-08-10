@@ -14,6 +14,10 @@ import {
 } from "@/lib/security/request-origin";
 import { extractSubdomain } from "@/lib/subdomain-utils";
 import { classifyUpstreamFailure } from "@/lib/api/upstream-failure";
+import {
+  INTERNAL_PROXY_KEY_HEADER,
+  internalProxyKey,
+} from "@/lib/security/internal-proxy-key";
 
 /**
  * Catch-all API proxy route handler.
@@ -67,6 +71,10 @@ async function proxyRequest(
   // Build headers to forward
   const headers = new Headers();
   headers.set("x-subdomain", subdomain);
+  const proxyKey = internalProxyKey();
+  if (proxyKey) {
+    headers.set(INTERNAL_PROXY_KEY_HEADER, proxyKey);
+  }
   headers.set(
     "x-forwarded-for",
     request.headers.get("x-forwarded-for") ||

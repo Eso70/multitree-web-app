@@ -22,7 +22,7 @@ describe('Caddyfile Configuration Validation', () => {
   });
 
   it('should contain wildcard entry for *.sponsor.krd', () => {
-    expect(caddyfileContent).toMatch(/\*\.kurdishsponser\.cloud/);
+    expect(caddyfileContent).toMatch(/\*\.sponsor\.krd/);
   });
 
   it('should contain Host header preservation (header_up Host {host})', () => {
@@ -39,7 +39,7 @@ describe('Caddyfile Configuration Validation', () => {
 
   it('should contain sponsor.krd root domain entry (separate from wildcard)', () => {
     // Match "sponsor.krd {" that is NOT preceded by "*."
-    expect(caddyfileContent).toMatch(/^kurdishsponser\.cloud\s*\{/m);
+    expect(caddyfileContent).toMatch(/^sponsor\.krd\s*[,{]/m);
   });
 
   it('should contain proxy to frontend (localhost:3011)', () => {

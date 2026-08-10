@@ -8,7 +8,7 @@ describe("BackgroundColorPicker", () => {
       <BackgroundColorPicker value="#ffffff" onChange={vi.fn()} />,
     );
 
-    expect(screen.getByTitle("دڵخواز")).toBeInTheDocument();
+    expect(screen.getByTitle("ئارەزوومەندانەیە")).toBeInTheDocument();
     expect(screen.getByTitle("White")).toBeInTheDocument();
     expect(screen.getByTitle("Black")).toBeInTheDocument();
     expect(screen.getByTitle("Green")).toBeInTheDocument();

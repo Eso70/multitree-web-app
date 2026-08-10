@@ -53,7 +53,7 @@ export function AuthenticationMethods({
       />
       {rememberDevice ? (
         <CheckboxField
-          compact
+          bare
           checked={remember}
           onChange={setRemember}
           label="Keep me signed in on this device"

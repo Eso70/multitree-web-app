@@ -3,6 +3,20 @@ function getLocalBaseUrl(): string {
   return `http://localhost:${port}`;
 }
 
+/**
+ * The scheme absolute URLs should be built with on the server.
+ *
+ * Taken from the configured application URL rather than assumed to be https,
+ * because local development is served over plain http and a hardcoded https
+ * link is simply unreachable there.
+ */
+function getAppProtocol(): string {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (appUrl?.startsWith("http://")) return "http:";
+  if (appUrl?.startsWith("https://")) return "https:";
+  return process.env.NODE_ENV === "production" ? "https:" : "http:";
+}
+
 export function getAppBaseUrl(): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
   if (appUrl) {
@@ -34,7 +48,7 @@ export function getSubdomainLoginUrl(subdomain?: string): string {
 
   if (typeof window === "undefined") {
     const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost";
-    return `https://${subdomain}.${root}/business/login`;
+    return `${getAppProtocol()}//${subdomain}.${root}/business/login`;
   }
 
   const protocol = window.location.protocol;

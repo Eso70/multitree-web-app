@@ -11,7 +11,7 @@
     "dev:fe": "pnpm --filter frontend dev",
     "dev:be": "pnpm --filter backend start:dev",
 
-    "build:fe": "node -e \"const fs = require('fs'); if (fs.existsSync('.env')) fs.copyFileSync('.env', 'frontend/.env');\" && pnpm --filter frontend build",
+    "build:fe": "pnpm --filter frontend build",
     "build:be": "pnpm --filter backend build",
     "build": "pnpm build:fe && pnpm build:be",
 

@@ -45,7 +45,7 @@ export function InvitationEntryPage() {
 
   if (state === "expired") {
     return (
-      <AuthenticationShell brandDescription="هەژماری بزنسەکەت بە پاراستن و بەڕێوەبردنی MultiTree دروست بکە">
+      <AuthenticationShell brandDescription="هەژماری بزنسەکەت دروست بکە">
         <ErrorPagePanel
           {...ERROR_PAGE_COPY.invitationExpired}
           theme={MULTITREE_ERROR_THEME}
@@ -56,10 +56,10 @@ export function InvitationEntryPage() {
   }
 
   return (
-    <AuthenticationShell brandDescription="هەژماری بزنسەکەت بە پاراستن و بەڕێوەبردنی MultiTree دروست بکە">
+    <AuthenticationShell brandDescription="هەژماری بزنسەکەت دروست بکە">
       <AuthenticationCard
         title="دروستکردنی هەژماری بزنس"
-        description="بانگهێشتنامەکەت پشتڕاست بکەوە و بە Google یان ئیمەیڵ بەردەوام بە"
+        description="بانگێشت نامەکەت پشتڕاست بکەوە بە گوگڵ یاخود ئیمەیڵ"
       >
         {state === "loading" ? (
           <div className="flex min-h-40 flex-col items-center justify-center gap-3 text-sm text-slate-500">

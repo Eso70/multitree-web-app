@@ -22,9 +22,11 @@ invite signup page offer the same Google or email-code choice, with the email
 option verifying identity before it creates a platform/application session.
 `/business/auth/consume` exchanges the single-use handoff while rendering only
 a loading state; invalid or expired handoffs return automatically to the tenant
-login without exposing a stale retry screen. Tenant login loads the public
-business name, logo, favicon, and website color before applying the shared
-authentication design. Handoff consumption is guarded against duplicate React
+login without exposing a stale retry screen. Tenant login loads the public business name, logo, favicon, and website color before
+applying the shared authentication design; the tenant color reaches the page's text selection and window scrollbar through the
+same document-level theme variables used by the public pages. Tenant-free shells (platform admin login, invite signup, signup
+wizard) mark their surface with `data-multitree-theme` instead, so text selection, scrollbars, and brand utilities resolve to the
+MultiTree lime everywhere on the auth sheet. Handoff consumption is guarded against duplicate React
 effects, uses an eight-second client/proxy deadline, and performs a hard
 dashboard navigation after the session cookie is stored. Initial dashboard
 session, access-manifest, and page requests run concurrently.

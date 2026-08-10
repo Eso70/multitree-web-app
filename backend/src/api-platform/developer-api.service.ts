@@ -19,6 +19,7 @@ import type { ApiPrincipal } from './api-platform.types';
 import { WebhookDeliveryService } from './webhook-delivery.service';
 import type { SyncLinkInput } from '../links/link.types';
 import { toText } from '../common/coerce';
+import { rootDomainHostname, rootDomainPort } from '../common/root-domain';
 import type {
   BulkLinktreeDto,
   CloneLinktreeDto,
@@ -89,7 +90,14 @@ export class DeveloperApiService {
     config: ConfigService,
   ) {
     this.rootDomain = config.get<string>('ROOT_DOMAIN', 'localhost');
-    const fallback = `${config.get<string>('NODE_ENV') === 'production' ? 'https' : 'http'}://${this.rootDomain}${config.get<string>('NODE_ENV') === 'production' ? '' : ':3011'}`;
+    // In development the root domain may already include the frontend port; the
+    // fallback must not add a second one.
+    const isProduction = config.get<string>('NODE_ENV') === 'production';
+    const fallbackHost = rootDomainHostname(this.rootDomain);
+    const fallbackPort = isProduction
+      ? ''
+      : rootDomainPort(this.rootDomain) || ':3011';
+    const fallback = `${isProduction ? 'https' : 'http'}://${fallbackHost}${fallbackPort}`;
     try {
       this.publicBase = new URL(
         config.get<string>('NEXT_PUBLIC_APP_URL') || fallback,
@@ -490,8 +498,11 @@ export class DeveloperApiService {
   }
 
   private publicUrl(subdomain: string, slug: string) {
+    // The configured root domain may itself carry a development port. The port
+    // is taken from the public base URL only, so it is never appended twice.
+    const host = rootDomainHostname(this.rootDomain);
     const port = this.publicBase.port ? `:${this.publicBase.port}` : '';
-    const origin = `${this.publicBase.protocol}//${subdomain}.${this.rootDomain}${port}`;
+    const origin = `${this.publicBase.protocol}//${subdomain}.${host}${port}`;
     return `${origin}/linktree/${encodeURIComponent(slug)}`;
   }
 }

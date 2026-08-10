@@ -40,6 +40,7 @@ export function AuthenticationShell({
 
   return (
     <main
+      data-multitree-theme={accent ? undefined : true}
       className={`${accent ? "custom-scrollbar theme-custom-scrollbar" : ""} relative h-screen overflow-hidden bg-[#f7f8fa] text-slate-900 transition-colors dark:bg-[#0d0f12] dark:text-white`}
       style={themeStyle}
     >

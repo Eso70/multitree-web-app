@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { createRuntimeId } from "@/lib/utils/random-id";
 import type { NextFetchEvent, NextRequest } from "next/server";
 import { createContentSecurityPolicy } from "@/lib/security/content-security-policy";
+import {
+  INTERNAL_PROXY_KEY_HEADER,
+  internalProxyKey,
+} from "@/lib/security/internal-proxy-key";
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost";
 const PLATFORM_ADMIN_PATH = normalizePrivatePath(
@@ -129,6 +133,7 @@ async function isRegisteredSubdomain(
     const res = await fetch(`${backendUrl}/api/auth/subdomain-check`, {
       headers: {
         "x-subdomain": subdomain,
+        [INTERNAL_PROXY_KEY_HEADER]: internalProxyKey() || "",
         "x-middleware-check": "1",
       },
       // No cache - we need live data so deleted businesses are locked out immediately
@@ -235,6 +240,10 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // Set subdomain header for downstream handlers
   if (subdomain) {
     requestHeaders.set("x-subdomain", subdomain);
+    const proxyKey = internalProxyKey();
+    if (proxyKey) {
+      requestHeaders.set(INTERNAL_PROXY_KEY_HEADER, proxyKey);
+    }
   }
 
   // The old physical console route is internal-only and always concealed.

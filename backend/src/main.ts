@@ -23,6 +23,7 @@ import { ApiResponseInterceptor } from './common/api-response.interceptor';
 import { apiErrorEnvelope } from './common/api-response';
 import { AccessRuleEnforcementService } from './auth/access-rule-enforcement.service';
 import { requestIp } from './common/request-context';
+import { isRootDomainHost } from './common/root-domain';
 
 /**
  * Both plugins ship a CommonJS and an ESM shape, so the resolved value is
@@ -202,10 +203,9 @@ async function bootstrap() {
           return true;
         }
       }
-      if (
-        url.hostname === rootDomain ||
-        url.hostname.endsWith(`.${rootDomain}`)
-      ) {
+      // ROOT_DOMAIN may carry a development port (lvh.me:3011); `url.hostname`
+      // never does, so the comparison is made on the hostname alone.
+      if (isRootDomainHost(url.hostname, rootDomain)) {
         if (nodeEnv === 'production' && url.protocol !== 'https:') {
           return false;
         }

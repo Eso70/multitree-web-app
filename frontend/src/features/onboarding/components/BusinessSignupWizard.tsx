@@ -155,7 +155,7 @@ export function BusinessSignupWizard() {
     const pending = application.status === "pending";
     return (
       <AuthenticationShell
-        brandDescription="داواکارییەکەت لەلایەن بەڕێوەبەری MultiTree پشکنین دەکرێت"
+        brandDescription="پشکنین بۆ داواکارییەکەت دەکەین"
         headerAction={
           pending ? (
             <AuthenticationRefreshButton
@@ -176,9 +176,9 @@ export function BusinessSignupWizard() {
           description={
             application.reviewReason ||
             (pending
-              ? "بەڕێوەبەر زانیارییەکانت پشکنین دەکات."
+              ? "بەزووترین کات داواکارییەکەت وەڵام ئەدرێتەوە، تکایە دوای سێ خولەک پەنجە لە دوگمەی ڕیفرێش بدە"
               : approved
-                ? "ئێستا دەتوانیت بچیتە ژوورەوە و ڕێکخستنی سەرەتایی تەواو بکەیت."
+                ? "ئێستا دەتوانیت بچیتە ژوورەوە و ڕێکخستنی سەرەتایی تەواو بکەیت"
                 : "بۆ زانیاری زیاتر پەیوەندی بە بەڕێوەبەرەوە بکە.")
           }
         >

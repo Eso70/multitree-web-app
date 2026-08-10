@@ -5,6 +5,10 @@ import { BusinessGuard } from './business.guard';
 import { SessionService, SessionUser } from './session.service';
 import { AccessRuleEnforcementService } from './access-rule-enforcement.service';
 
+const INTERNAL_PROXY_KEY = 'test-internal-proxy-key-at-least-32-chars-long';
+const ORIGINAL_SESSION_SECRET = process.env.SESSION_SECRET;
+const ORIGINAL_REQUEST_TRACKING_SECRET = process.env.REQUEST_TRACKING_SECRET;
+
 /**
  * Property 1: Subdomain Mismatch Rejection
  * Property 2: Subdomain Match Grants Access
@@ -15,6 +19,16 @@ import { AccessRuleEnforcementService } from './access-rule-enforcement.service'
  */
 describe('BusinessGuard - Property Tests', () => {
   const ROOT_DOMAIN = 'sponsor.krd';
+
+  beforeAll(() => {
+    process.env.SESSION_SECRET = INTERNAL_PROXY_KEY;
+    delete process.env.REQUEST_TRACKING_SECRET;
+  });
+
+  afterAll(() => {
+    process.env.SESSION_SECRET = ORIGINAL_SESSION_SECRET;
+    process.env.REQUEST_TRACKING_SECRET = ORIGINAL_REQUEST_TRACKING_SECRET;
+  });
 
   // Custom arbitrary for valid subdomain format: lowercase alphanumeric + hyphens, 1-100 chars
   const subdomainArbitrary = fc
@@ -65,6 +79,7 @@ describe('BusinessGuard - Property Tests', () => {
       cookies: { business_session: sessionToken },
       headers: {
         'x-subdomain': subdomain,
+        'x-tenant-proxy-key': INTERNAL_PROXY_KEY,
       },
     };
 
@@ -256,6 +271,7 @@ describe('BusinessGuard - Property Tests', () => {
             cookies: { business_session: 'test-session-token' },
             headers: {
               'x-subdomain': subdomain,
+              'x-tenant-proxy-key': INTERNAL_PROXY_KEY,
             },
           };
 

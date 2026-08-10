@@ -180,7 +180,7 @@ export function BusinessTikTokPixelConfigPage() {
       <PageHeader
         icon={KeyRound}
         title="پەیوەستکردنی TikTok"
-        description="Pixel ID بۆ شوێنکەوتنی وێبگەڕ پێویستە. Events API token دڵخوازە و تەنها کاتێک بەکار دەکەوێت کە دابنرێت."
+        description="Pixel ID بۆ شوێنکەوتنی وێبگەڕ پێویستە. Events API token ئارەزوومەندانەیەە و تەنها کاتێک بەکار دەکەوێت کە دابنرێت."
       />
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5 dark:border-white/5">
@@ -284,7 +284,7 @@ export function BusinessTikTokPixelConfigPage() {
                 <span className="mb-2 flex items-center justify-between gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
                   <span>
                     Events API token{" "}
-                    <span className="text-slate-400">(دڵخواز)</span>
+                    <span className="text-slate-400">(ئارەزوومەندانەیە)</span>
                   </span>
                   {config.has_events_token && (
                     <button

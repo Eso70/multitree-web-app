@@ -9,6 +9,11 @@ import { SessionService } from './session.service';
 import type { SessionUser } from './session.service';
 import type { FastifyRequest } from 'fastify';
 import { requestIp } from '../common/request-context';
+import { rootDomainHostname } from '../common/root-domain';
+import {
+  INTERNAL_PROXY_KEY_HEADER,
+  isTrustedInternalProxy,
+} from '../common/internal-proxy-trust';
 import { AccessRuleEnforcementService } from './access-rule-enforcement.service';
 
 type BusinessRequest = FastifyRequest & {
@@ -73,15 +78,28 @@ export class BusinessGuard implements CanActivate {
 
   /**
    * Extract subdomain from the request.
-   * Priority: x-subdomain header > host header parsing.
+   * Priority: x-subdomain header (only from a verified internal proxy call)
+   * > host header parsing.
    * Returns null/empty string if no subdomain can be determined (root domain).
    */
   private extractSubdomain(request: BusinessRequest): string | null {
-    // Check x-subdomain header first (set by Next.js middleware)
-    const xSubdomain = this.firstHeaderValue(request.headers?.['x-subdomain']);
-    const normalizedHeader = this.normalizeSubdomain(xSubdomain);
-    if (normalizedHeader) {
-      return normalizedHeader;
+    // The x-subdomain header is only authoritative when accompanied by a
+    // valid internal proxy key: see internal-proxy-trust.ts for why an
+    // unverified header must never be trusted here. An external caller that
+    // reaches this process directly falls through to Host-header parsing,
+    // which it cannot forge into a different tenant's subdomain.
+    if (
+      isTrustedInternalProxy(
+        this.firstHeaderValue(request.headers?.[INTERNAL_PROXY_KEY_HEADER]),
+      )
+    ) {
+      const xSubdomain = this.firstHeaderValue(
+        request.headers?.['x-subdomain'],
+      );
+      const normalizedHeader = this.normalizeSubdomain(xSubdomain);
+      if (normalizedHeader) {
+        return normalizedHeader;
+      }
     }
 
     // Fallback: parse from host header
@@ -90,11 +108,8 @@ export class BusinessGuard implements CanActivate {
     );
 
     // Remove port if present
-    const hostWithoutPort = host.split(':')[0].toLowerCase().replace(/\.$/, '');
-    const rootDomain = this.rootDomain
-      .split(':')[0]
-      .toLowerCase()
-      .replace(/\.$/, '');
+    const hostWithoutPort = rootDomainHostname(host);
+    const rootDomain = rootDomainHostname(this.rootDomain);
 
     // Check if host ends with the root domain
     const rootDomainSuffix = `.${rootDomain}`;

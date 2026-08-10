@@ -88,11 +88,11 @@ export function BackgroundColorPicker({
                   ? "border-brand-500 scale-110 ring-1 ring-brand-500/50 shadow-sm z-10"
                   : "border-gray-300 hover:border-gray-400 hover:scale-105"
               }`}
-              title="دڵخواز"
+              title="ئارەزوومەندانەیە"
             >
               <span className="absolute inset-0" style={customSwatchStyle(value)} />
             </button>
-            <span className="text-[8px] text-gray-500 leading-tight text-center w-7 truncate">دڵخواز</span>
+            <span className="text-[8px] text-gray-500 leading-tight text-center w-7 truncate">ئارەزوومەندانەیە</span>
           </div>
         )}
 

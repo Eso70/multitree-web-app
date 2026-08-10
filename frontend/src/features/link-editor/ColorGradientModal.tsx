@@ -180,7 +180,7 @@ export function ColorGradientModal({
   onClose,
   solidFallback = "#000000",
   gradientFallback = "#0066ff",
-  title = "ڕەنگی دڵخواز",
+  title = "ڕەنگی ئارەزوومەندانەیە",
   subtitle = "ڕەنگی تاک یان گرادیێنت دروست بکە",
   allowGradient = true,
 }: ColorGradientModalProps) {

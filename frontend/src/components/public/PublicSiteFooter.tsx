@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { VerifiedBadge } from "./VerifiedBadge";
+import { getAppBaseUrl } from "@/lib/utils/app-url";
 
 export type PublicFooterLink = {
   label: string;
@@ -244,7 +245,7 @@ export function PublicSiteFooter({
             ))}
             {showPoweredBy && (
               <a
-                href={`https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN || "multitree.link"}`}
+                href={getAppBaseUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 rounded-full border border-black/8 bg-black/[0.02] px-3 py-1.5 text-xs opacity-80 transition-all hover:border-[var(--public-footer-accent)]/40 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--public-footer-accent)]/30 dark:border-white/10 dark:bg-white/[0.04]"

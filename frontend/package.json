@@ -4,8 +4,11 @@
   "private": true,
   "scripts": {
     "sync:maplibre": "node scripts/sync-maplibre-worker.mjs",
-    "predev": "pnpm run sync:maplibre",
-    "prebuild": "pnpm run sync:maplibre",
+    "sync:env": "node scripts/sync-env.mjs",
+    "predev": "pnpm run sync:env && pnpm run sync:maplibre",
+    "prebuild": "pnpm run sync:env && pnpm run sync:maplibre",
+    "prestart": "pnpm run sync:env",
+    "prestart:prod": "pnpm run sync:env",
     "dev": "next dev --webpack -p 3011",
     "build": "next build",
     "start": "next start -p 3011",

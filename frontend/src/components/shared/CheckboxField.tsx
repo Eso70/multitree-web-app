@@ -9,6 +9,7 @@ interface CheckboxFieldProps {
   description?: string;
   disabled?: boolean;
   compact?: boolean;
+  bare?: boolean;
 }
 
 export function CheckboxField({
@@ -18,10 +19,11 @@ export function CheckboxField({
   description,
   disabled = false,
   compact = false,
+  bare = false,
 }: CheckboxFieldProps) {
   return (
     <label
-      className={`group flex cursor-pointer items-center gap-3 rounded-xl border transition ${compact ? "p-2.5" : "p-3.5"} ${checked ? "border-[var(--multitree-accent)] bg-[color-mix(in_srgb,var(--multitree-accent)_8%,transparent)]" : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/70 dark:border-white/10 dark:bg-white/[0.02] dark:hover:bg-white/5"} ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+      className={`group flex cursor-pointer items-center gap-3 transition ${bare ? "" : `rounded-xl border ${compact ? "p-2.5" : "p-3.5"} ${checked ? "border-[var(--multitree-accent)] bg-[color-mix(in_srgb,var(--multitree-accent)_8%,transparent)]" : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/70 dark:border-white/10 dark:bg-white/[0.02] dark:hover:bg-white/5"}`} ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
     >
       <input
         type="checkbox"

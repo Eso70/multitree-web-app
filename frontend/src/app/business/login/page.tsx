@@ -22,14 +22,14 @@ export default function BusinessLoginPage() {
 
   return (
     <AuthenticationShell
-      brandDescription="بە پاراستن بچۆ ژوورەوە و بەڕێوەبردنی پەڕە و پەیوەندییەکانی بزنەسەکەت بەردەوام بکە"
+      brandDescription="بڕۆ ژوورەوە بۆ بەڕێوەبردنی بزنس"
       brandName={theme?.name || "MultiTree"}
       brandLogo={theme?.logo}
       accentColor={theme?.websiteColor.raw}
     >
       <AuthenticationCard
         title="چوونەژوورەوەی بزنس"
-        description="بە گوگڵ یان کۆدی یەکجارەی ئیمەیڵ بچۆ ژوورەوە"
+        description="بە گوگڵ یان ئیمێڵ بڕۆ ژوورەوە"
       >
         <AuthenticationMethods
           rememberDevice

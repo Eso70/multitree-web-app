@@ -30,9 +30,7 @@ export function AuthenticationPreviewPanel({
           {brandName}
         </p>
         <h2 className="mt-4 text-4xl font-black leading-tight tracking-tight">
-          {brandName === "MultiTree"
-            ? "پەیوەندییەکانت بە شێوەیەکی جوان بەڕێوە ببە"
-            : `بەخێربێیتەوە بۆ ${brandName}`}
+          {brandName === "MultiTree" ? "پانێڵی پلاتفۆڕم" : "پانێڵی بزنس"}
         </h2>
         <p className="mx-auto mt-5 max-w-sm text-sm font-medium leading-7 text-slate-900/65">
           {description}

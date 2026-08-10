@@ -92,7 +92,15 @@ callback; single-use state and PKCE protect that callback from login CSRF.
 - `BusinessGuard` re-derives the subdomain from the request (`x-subdomain`
   header or `Host`) on **every** protected request, not just at login, and
   rejects if it no longer matches the subdomain stored in the session. A
-  session issued on one subdomain cannot be replayed against another.
+  session issued on one subdomain cannot be replayed against another. The
+  `x-subdomain` header itself is trusted only when paired with a matching
+  `x-tenant-proxy-key` header proving the request came from the Next.js
+  proxy (`backend/src/common/internal-proxy-trust.ts`, constant-time
+  comparison against `REQUEST_TRACKING_SECRET`/`SESSION_SECRET`); Caddy
+  strips any inbound `x-subdomain` before it reaches either process, but
+  that is infrastructure, not application, defense, so a caller that
+  reaches the backend directly without the proxy key falls back to `Host`
+  parsing instead of an unverified header.
 
 ## Authorization
 
