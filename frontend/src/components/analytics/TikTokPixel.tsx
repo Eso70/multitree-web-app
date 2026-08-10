@@ -6,6 +6,7 @@ import {
   loadTikTokPixel,
   reportTikTokPageView,
 } from "@/features/analytics/tiktok-dispatch";
+import { analyticsConsent } from "@/lib/utils/client-queue";
 
 interface TikTokPixelProps {
   pixelIds?: string[] | null;
@@ -37,10 +38,14 @@ export function TikTokPixel({
     [pixelIds],
   );
 
+  // Consent is read per mount: a page loaded after a denial must not start the
+  // SDK at all. This mirrors the tracker's own gate — one rule, both halves.
+  const consentDenied = useMemo(() => analyticsConsent() === "denied", []);
+
   // Compared by value, not identity. A parent that rebuilds its props array on
   // every render would otherwise re-run the effects below each time and report
   // a page view per render.
-  const pixelKey = normalizedPixelIds.join(",");
+  const pixelKey = consentDenied ? "" : normalizedPixelIds.join(",");
 
   useEffect(() => {
     if (!pixelKey) return;

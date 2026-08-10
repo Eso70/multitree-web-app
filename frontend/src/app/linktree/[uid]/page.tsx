@@ -14,6 +14,7 @@ import { BusinessBadGatewayPage } from "@/components/error-pages/BusinessBadGate
 import { BusinessGatewayTimeoutPage } from "@/components/error-pages/BusinessGatewayTimeoutPage";
 import { classifyUpstreamFailure } from "@/lib/api/upstream-failure";
 import { shortTabTitle } from "@/lib/utils/tab-title";
+import { TikTokPixelBaseCode } from "@/components/analytics/TikTokPixelBaseCode";
 
 // Dynamically import LinktreePage to reduce initial bundle size
 const LinktreePage = dynamicImport(
@@ -150,9 +151,19 @@ export default async function LinktreePublicPage({ params }: PageProps) {
 
   const { linktree, links, analytics } = result;
 
+  // A template for the page the pixel belongs to, in the HTML itself: TikTok's
+  // verifier reads the served document, and the base code has to be there at
+  // parse time rather than after hydration. The tracker still reports the
+  // page view and fires events; this only makes the tag present and loadable.
+  const headerStore = await headers();
+  const nonce = headerStore.get("x-nonce") || "";
+
   // Reporting is the page's own job; see docs/tracking.md.
   return (
-    <LinktreePage linktree={linktree} links={links} analytics={analytics} />
+    <>
+      <TikTokPixelBaseCode pixelIds={analytics.pixelIds} nonce={nonce} />
+      <LinktreePage linktree={linktree} links={links} analytics={analytics} />
+    </>
   );
 }
 

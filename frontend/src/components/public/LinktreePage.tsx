@@ -51,6 +51,9 @@ function clickEventName(platform: string): PageEventName {
     case "whatsapp":
     case "telegram":
     case "viber":
+    case "messenger":
+    case "signal":
+    case "line":
       return "whatsapp_click";
     case "phone":
     case "tel":

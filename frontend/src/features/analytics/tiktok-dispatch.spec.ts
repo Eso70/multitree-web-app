@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { trackTikTokEvent } from "./tiktok-dispatch";
+import { tiktokBaseCodeSnippet, trackTikTokEvent } from "./tiktok-dispatch";
 
 /**
  * How an event reaches the pixel.
@@ -99,5 +99,51 @@ describe("trackTikTokEvent", () => {
     trackTikTokEvent("Contact", properties, "event-1", ["ONE", "TWO"]);
 
     expect(track).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("tiktokBaseCodeSnippet", () => {
+  it("returns nothing when no pixel id is usable", () => {
+    expect(tiktokBaseCodeSnippet([])).toBe("");
+    expect(tiktokBaseCodeSnippet([""])).toBe("");
+    expect(tiktokBaseCodeSnippet(["<script>alert(1)</script>"])).toBe("");
+  });
+
+  it("embeds only valid pixel ids, deduplicated and capped at three", () => {
+    const snippet = tiktokBaseCodeSnippet([
+      "PIXELABC",
+      "PIXELABC",
+      "PIXELDEF",
+      "PIXELGHI",
+      "PIXELJKL",
+      "BAD ID!!",
+    ]);
+
+    // Only the distinct valid ids reach the array literal.
+    expect(snippet).toContain('var ids=["PIXELABC","PIXELDEF","PIXELGHI"];');
+    expect(snippet).not.toContain("PIXELJKL");
+    expect(snippet).not.toContain("BAD ID");
+  });
+
+  it("loads each pixel by sdkid from events.js", () => {
+    const snippet = tiktokBaseCodeSnippet(["PIXELABC"]);
+
+    expect(snippet).toContain(
+      "https://analytics.tiktok.com/i18n/pixel/events.js",
+    );
+    expect(snippet).toContain('"?sdkid="+e+"&lib="+t');
+  });
+
+  it("never reports a page view of its own", () => {
+    // The first PageView is the tracker's job: it is the half that carries the
+    // shared event_id. A `page()` here would be a second, undeduplicated view.
+    expect(tiktokBaseCodeSnippet(["PIXELABC"])).not.toMatch(/\.page\(\)/);
+    expect(tiktokBaseCodeSnippet(["PIXELABC"])).not.toMatch(/ttq\.page/);
+  });
+
+  it("is idempotent for a pixel it already initialised", () => {
+    const snippet = tiktokBaseCodeSnippet(["PIXELABC"]);
+
+    expect(snippet).toContain("if(ttq._i[e])continue;");
   });
 });

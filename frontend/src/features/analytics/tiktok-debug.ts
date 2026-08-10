@@ -15,16 +15,36 @@
 
 export interface TikTokDebugEntry {
   at: string;
-  kind: "pixel" | "queue" | "error";
+  kind:
+    | "pixel"
+    | "queue"
+    | "error"
+    | "pixel_loaded"
+    | "pixel_failed"
+    | "flush";
   eventName: string;
   eventId?: string;
   actionKey?: string;
   pixelDispatched?: boolean;
+  pixelId?: string;
   detail?: string;
 }
 
+/** The last outcome of a queue flush, for the "did the server accept it?" row. */
+export interface TikTokFlushResult {
+  at: string;
+  ok: boolean;
+  statusCode?: number;
+  accepted?: number;
+  deduplicated?: number;
+  total?: number;
+  retryable?: boolean;
+}
+
 const MAX_ENTRIES = 200;
+const MAX_FLUSH_RESULTS = 10;
 const entries: TikTokDebugEntry[] = [];
+const flushResults: TikTokFlushResult[] = [];
 let enabled: boolean | null = null;
 
 function cookie(name: string): string | undefined {
@@ -63,18 +83,27 @@ export function recordTikTokDebug(entry: Omit<TikTokDebugEntry, "at">): void {
 /** What the page can see about its own tracking, for the console report. */
 export function tikTokDebugSnapshot() {
   const loaded = typeof window !== "undefined" && Boolean(window.ttq);
-  const pixelIds =
-    typeof window !== "undefined" && window.ttq
-      ? Object.keys(
-          (window.ttq as unknown as { _i?: Record<string, unknown> })._i || {},
-        )
-      : [];
+  const registry =
+    typeof window !== "undefined"
+      ? (window.ttq as unknown as { _i?: Record<string, unknown> })._i
+      : undefined;
+  const pixelIds = registry ? Object.keys(registry).filter(Boolean) : [];
   const dispatched = entries.filter((entry) => entry.kind === "pixel");
   const queued = entries.filter((entry) => entry.kind === "queue");
   const ids = queued.map((entry) => entry.eventId).filter(Boolean);
+  const pixelStatus = Object.fromEntries(
+    pixelIds.map((pixelId) => {
+      if (entries.some((entry) => entry.kind === "pixel_failed" && entry.pixelId === pixelId))
+        return [pixelId, "failed"];
+      if (entries.some((entry) => entry.kind === "pixel_loaded" && entry.pixelId === pixelId))
+        return [pixelId, "loaded"];
+      return [pixelId, "loading"];
+    }),
+  );
   return {
     pixelLoaded: loaded,
     pixelIds,
+    pixelStatus,
     route: typeof window !== "undefined" ? window.location.pathname : "",
     url: typeof window !== "undefined" ? window.location.href : "",
     ttp: cookie("_ttp") ?? null,
@@ -88,6 +117,9 @@ export function tikTokDebugSnapshot() {
     // pair TikTok is meant to collapse would instead be counted twice.
     duplicateEventIds: ids.filter((id, index) => ids.indexOf(id) !== index),
     missingEventIds: queued.filter((entry) => !entry.eventId).length,
+    // The server answers per batch: accepted/deduplicated counts and a retry
+    // flag. This row turns "did it send?" into "did it land?".
+    flushes: [...flushResults],
     errors: entries.filter((entry) => entry.kind === "error"),
     entries: [...entries],
   };
@@ -95,17 +127,48 @@ export function tikTokDebugSnapshot() {
 
 let reporterInstalled = false;
 
+/**
+ * Listens for the queue's flush outcomes.
+ *
+ * `client-queue` dispatches `mt:analytics-flush` on every batch result; the
+ * server's per-event verdicts (`accepted`, `deduplicated`) are what turn this
+ * report from "the queue handed off" into "the server recorded it".
+ */
+function installFlushListener(): void {
+  if (typeof window === "undefined") return;
+  const record = (event: Event) => {
+    const detail = (event as CustomEvent<TikTokFlushResult>).detail;
+    if (!detail) return;
+    flushResults.push({ ...detail, at: new Date().toISOString() });
+    if (flushResults.length > MAX_FLUSH_RESULTS)
+      flushResults.splice(0, flushResults.length - MAX_FLUSH_RESULTS);
+    entries.push({
+      at: new Date().toISOString(),
+      kind: "flush",
+      eventName: "batch",
+      detail: `status=${detail.statusCode ?? "none"} accepted=${detail.accepted ?? "?"} deduplicated=${detail.deduplicated ?? "?"}`,
+    });
+    if (entries.length > MAX_ENTRIES)
+      entries.splice(0, entries.length - MAX_ENTRIES);
+  };
+  window.addEventListener("mt:analytics-flush", record);
+}
+
 function installReporter(): void {
   if (reporterInstalled || typeof window === "undefined") return;
   reporterInstalled = true;
+  installFlushListener();
   (window as unknown as { __ttDebug: unknown }).__ttDebug = {
     report: () => {
       const snapshot = tikTokDebugSnapshot();
-       
+
       console.table(snapshot.entries);
       return snapshot;
     },
     snapshot: tikTokDebugSnapshot,
-    clear: () => entries.splice(0, entries.length),
+    clear: () => {
+      entries.splice(0, entries.length);
+      flushResults.splice(0, flushResults.length);
+    },
   };
 }

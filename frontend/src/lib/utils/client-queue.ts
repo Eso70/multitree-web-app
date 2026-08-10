@@ -145,6 +145,27 @@ function attribution(): {
   };
 }
 
+export type AnalyticsConsentState = "unknown" | "granted" | "denied";
+
+/**
+ * The visitor's analytics consent, if a consent manager has recorded one.
+ *
+ * No UI sets this yet; it exists so a consent manager (or a privacy toggle)
+ * has one place to write to. Values come from `localStorage.mt:analytics-consent`.
+ * Absent means "unknown", which every consumer treats as allowed — matching
+ * how the backend already treats `consentState !== 'denied'`.
+ */
+export function analyticsConsent(): AnalyticsConsentState {
+  if (typeof window === "undefined") return "unknown";
+  try {
+    const stored = window.localStorage.getItem("mt:analytics-consent");
+    if (stored === "granted" || stored === "denied") return stored;
+  } catch {
+    // Private-mode storage refusals fall back to unknown, i.e. allowed.
+  }
+  return "unknown";
+}
+
 function add(event: QueuedAnalyticsEvent): void {
   const queue = readQueue();
   if (queue.some((stored) => stored.eventId === event.eventId)) return;
@@ -173,7 +194,9 @@ function createEvent(input: {
     sessionId: getAnalyticsSessionId(),
     occurredAt: new Date().toISOString(),
     ...attribution(),
-    consentState: "unknown",
+    // Read per event: a visitor who revokes consent mid-session flips the
+    // next report rather than only the one that happened to be queued first.
+    consentState: analyticsConsent(),
     browserDispatched: input.browserDispatched || false,
     browserEventName: input.browserEventName,
     conversionValue: input.conversionValue,
@@ -212,6 +235,22 @@ async function flushQueue(): Promise<void> {
       keepalive: true,
       body: JSON.stringify({ events: snapshot.slice(0, 50) }),
     });
+    // Report the outcome to `?ttdebug=1` (when enabled) so a live page can
+    // answer "did the server accept it?" without querying the database. The
+    // listener is installed only once debug is on.
+    const report = (detail: {
+      ok: boolean;
+      statusCode?: number;
+      accepted?: number;
+      deduplicated?: number;
+      total: number;
+      retryable?: boolean;
+    }) => {
+      if (typeof window === "undefined") return;
+      window.dispatchEvent(
+        new CustomEvent("mt:analytics-flush", { detail }),
+      );
+    };
     // A 4xx is the server saying this batch will never be accepted — a
     // malformed event, a page that no longer exists, a payload a newer server
     // rejects. Retrying it forever would block every event queued behind it,
@@ -226,9 +265,34 @@ async function flushQueue(): Promise<void> {
             !snapshot.some((sent) => sent.eventId === event.eventId),
         ),
       ]);
+      report({
+        ok: false,
+        statusCode: response.status,
+        retryable: false,
+        total: snapshot.length,
+      });
       return;
     }
     if (!response.ok) throw new Error(`Analytics HTTP ${response.status}`);
+    let accepted: number | undefined;
+    let deduplicated: number | undefined;
+    try {
+      const payload = (await response.json()) as {
+        data?: { accepted?: number; deduplicated?: number };
+      };
+      accepted = payload.data?.accepted;
+      deduplicated = payload.data?.deduplicated;
+    } catch {
+      // The batch landed; the summary is only for diagnostics, so a body that
+      // fails to parse changes nothing about delivery.
+    }
+    report({
+      ok: true,
+      statusCode: response.status,
+      accepted,
+      deduplicated,
+      total: snapshot.length,
+    });
     const remaining = snapshot.slice(50);
     writeQueue([
       ...remaining,
@@ -246,6 +310,13 @@ async function flushQueue(): Promise<void> {
       }
     }
     writeQueue(restored);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("mt:analytics-flush", {
+          detail: { ok: false, retryable: true, total: snapshot.length },
+        }),
+      );
+    }
     throw new Error("Analytics delivery failed");
   } finally {
     flushing = false;

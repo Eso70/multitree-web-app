@@ -138,6 +138,20 @@ insert, so the server half stops at the same moment the browser half does.
 It is deliberately **not** in the linktree Redis cache. Content is safe to cache
 for two hours; entitlement and action identity are not.
 
+### Base code delivery
+
+The pixel base code is server-rendered inline into the initial HTML of both
+public pages (`TikTokPixelBaseCode`, carrying the request CSP nonce), not
+injected only after hydration. TikTok's "verify Pixel setup" and Event Builder
+read the served document, and a tag that appears only once React has hydrated
+is invisible to a snapshot taken before that — Pixel Helper still sees it
+because it runs inside the live page. The inline snippet loads `events.js` at
+parse time and is idempotent (`ttq._i` is consulted per pixel), so a soft
+navigation that re-renders the page never injects the SDK twice. It does not
+call `ttq.page()`: the first page view is the client tracker's job, and it is
+the half that carries the shared `event_id`. `pixel-placement.spec.ts` pins
+the base-code component to the same two pages the client pixel is pinned to.
+
 ---
 
 ## Adding tracking to a new feature
@@ -235,6 +249,18 @@ still carries the click id it was earned by.
 
 ---
 
+## Consent
+
+The tracker reads `localStorage["mt:analytics-consent"]` on page mount —
+`"granted"`, `"denied"`, or absent (unknown, treated as allowed, matching the
+backend's `consentState !== 'denied'` rule). No UI writes it yet; the read
+exists so a consent manager or privacy toggle has one place to set it. A
+denied visitor gets a page with no SDK loaded (`TikTokPixel` skips it) and no
+pixel fired, while every queued event carries the denial so the ingest records
+internal analytics but never writes a `marketing_event_outbox` row. Consent is
+read per tracker construction and per queued event, so a mid-session revocation
+stops both halves on the next report.
+
 ## Debugging a live page
 
 Append `?ttdebug=1`, then in the console:
@@ -246,6 +272,13 @@ window.__ttDebug.report()
 It lists every pixel dispatch and queue handoff with its event name, event id
 and action key — enough to confirm the two halves share an id. `?ttdebug=0`
 turns it off. It costs one disabled boolean check when off.
+
+With debug on, `loadTikTokPixel` also records the SDK script's own `onload` /
+`onerror` under a `pixel_loaded` / `pixel_failed` entry — a pixel blocked by an
+ad blocker or refused by the network is visible in the report instead of being
+silent. The report's `flushes` row answers "did the server accept it?": the
+queue dispatches `mt:analytics-flush` on every batch outcome with the HTTP
+status and the server's `accepted` / `deduplicated` counts.
 
 ---
 

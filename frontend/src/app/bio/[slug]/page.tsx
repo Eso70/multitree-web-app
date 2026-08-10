@@ -8,6 +8,7 @@ import { BusinessBadGatewayPage } from "@/components/error-pages/BusinessBadGate
 import { BusinessGatewayTimeoutPage } from "@/components/error-pages/BusinessGatewayTimeoutPage";
 import { classifyUpstreamFailure } from "@/lib/api/upstream-failure";
 import { shortTabTitle } from "@/lib/utils/tab-title";
+import { TikTokPixelBaseCode } from "@/components/analytics/TikTokPixelBaseCode";
 
 export const dynamic = "force-dynamic";
 
@@ -72,8 +73,16 @@ export default async function BusinessBioPage({
     return <BusinessGonePage />;
   }
   if (!result) notFound();
+  const headerStore = await headers();
+  const nonce = headerStore.get("x-nonce") || "";
   return (
-    <PublicMiniWebsite profile={result.profile} subdomain={result.subdomain} />
+    <>
+      <TikTokPixelBaseCode
+        pixelIds={result.profile.analytics?.pixelIds}
+        nonce={nonce}
+      />
+      <PublicMiniWebsite profile={result.profile} subdomain={result.subdomain} />
+    </>
   );
 }
 

@@ -53,7 +53,9 @@ function filesMounting(pattern: RegExp): string[] {
 
 describe("TikTok pixel placement", () => {
   it("is mounted only on public surfaces", () => {
-    const mounts = filesMounting(/<TikTokPixel|from "@\/components\/analytics\/TikTokPixel"/);
+    // `\b` keeps `<TikTokPixelBaseCode` (the SSR half of the same feature) from
+    // being read as a client pixel mount: it is pinned separately below.
+    const mounts = filesMounting(/<TikTokPixel\b|from "@\/components\/analytics\/TikTokPixel"/);
 
     expect([...mounts].sort()).toEqual([...ALLOWED].sort());
   });
@@ -97,6 +99,29 @@ describe("TikTok pixel placement", () => {
     // "did the pixel load?" on a live page and never calls it.
     expect(files.sort()).toEqual([
       "features/analytics/tiktok-debug.ts",
+      "features/analytics/tiktok-dispatch.ts",
+    ]);
+  });
+
+  it("server-renders the base code from the two public pages only", () => {
+    // The inline base code is what TikTok's verifier finds in the served
+    // HTML, so it is subject to the same placement rule as the client pixel:
+    // the linktree and mini-website public pages, and nowhere else.
+    const pages = filesMounting(
+      /from "@\/components\/analytics\/TikTokPixelBaseCode"/,
+    );
+
+    expect(pages.sort()).toEqual([
+      "app/bio/[slug]/page.tsx",
+      "app/linktree/[uid]/page.tsx",
+    ]);
+
+    // And the snippet itself is generated in the dispatcher, the one owner of
+    // everything that mentions ttq.
+    const holders = filesMounting(/tiktokBaseCodeSnippet/);
+
+    expect(holders.sort()).toEqual([
+      "components/analytics/TikTokPixelBaseCode.tsx",
       "features/analytics/tiktok-dispatch.ts",
     ]);
   });

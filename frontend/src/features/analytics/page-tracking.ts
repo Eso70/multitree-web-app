@@ -1,7 +1,11 @@
 "use client";
 
 import type { PublicPageAnalytics } from "@linktree/types";
-import { flushNow, queueAnalyticsEvent } from "@/lib/utils/client-queue";
+import {
+  analyticsConsent,
+  flushNow,
+  queueAnalyticsEvent,
+} from "@/lib/utils/client-queue";
 import { createRuntimeId } from "@/lib/utils/random-id";
 import { trackTikTokEvent } from "./tiktok-dispatch";
 import { recordTikTokDebug } from "./tiktok-debug";
@@ -162,7 +166,18 @@ export function createPageTracker(options: PageTrackerOptions): PageTracker {
   const reportedOnce = new Set<string>();
   let viewSent = false;
 
-  const hasPixel = () => options.analytics.pixelIds.length > 0;
+  /**
+   * Whether this page may fire the pixel at all.
+   *
+   * Consent is read once per tracker construction — the lifetime of the page —
+   * so a report is never half-gated: pixel and queue make the same decision
+   * per event. When consent is denied the browser fires nothing and the queued
+   * event carries the denial, which the ingest reads before it would ever
+   * write a `marketing_event_outbox` row. Both halves stop together.
+   */
+  const deniedConsent = analyticsConsent() === "denied";
+  const hasPixel = () =>
+    !deniedConsent && options.analytics.pixelIds.length > 0;
 
   /**
    * Suppresses a repeat of the same key inside the dedupe window.
