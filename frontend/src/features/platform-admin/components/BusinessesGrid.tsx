@@ -2,8 +2,8 @@
 
 import { memo, useState } from "react";
 import Image from "next/image";
-import { Edit, Trash2, Eye, ExternalLink, Globe, ShieldCheck } from "lucide-react";
-import { getRootDomain, getSubdomainLoginUrl } from "@/lib/utils/linktree-utils";
+import { Edit, Trash2, Eye, Globe, ShieldCheck, LogIn } from "lucide-react";
+import { getRootDomain } from "@/lib/utils/linktree-utils";
 import type { PlatformBusiness as Business } from "@linktree/types";
 import {
   getBusinessPlanBadgeClasses,
@@ -16,6 +16,7 @@ interface BusinessesGridProps {
   onDelete?: (id: string, name: string) => void;
   onViewAnalytics?: (business: Business) => void;
   onManageSessions?: (business: Business) => void;
+  onOpenDashboard?: (business: Business) => void;
 }
 
 const BusinessCard = memo(function BusinessCard({
@@ -26,6 +27,7 @@ const BusinessCard = memo(function BusinessCard({
   onDelete,
   onViewAnalytics,
   onManageSessions,
+  onOpenDashboard,
 }: {
   item: Business;
   index: number;
@@ -34,6 +36,7 @@ const BusinessCard = memo(function BusinessCard({
   onDelete?: (id: string, name: string) => void;
   onViewAnalytics?: (business: Business) => void;
   onManageSessions?: (business: Business) => void;
+  onOpenDashboard?: (business: Business) => void;
 }) {
   const [imgError, setImgError] = useState(false);
   const avatarUrl = item.logo || item.default_avatar;
@@ -132,9 +135,11 @@ const BusinessCard = memo(function BusinessCard({
             <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" /><span className="hidden sm:inline">سڕینەوە</span>
           </button>
         )}
-        <button onClick={() => window.open(getSubdomainLoginUrl(item.subdomain), "_blank", "noopener,noreferrer")} className="flex items-center justify-center rounded-lg sm:rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-700 transition-all cursor-pointer" title="کردنەوە">
-          <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-        </button>
+        {onOpenDashboard && item.subdomain && item.status === "active" && (
+          <button onClick={() => onOpenDashboard(item)} className="flex items-center justify-center rounded-lg sm:rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-2 py-2 text-indigo-700 hover:bg-indigo-500/20 transition-all cursor-pointer" title="Open dashboard as this business" aria-label={`Open the dashboard as ${item.name}`}>
+            <LogIn className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -146,6 +151,7 @@ export const BusinessesGrid = memo(function BusinessesGrid({
   onDelete,
   onViewAnalytics,
   onManageSessions,
+  onOpenDashboard,
 }: BusinessesGridProps) {
   if (data.length === 0) {
     return (
@@ -171,6 +177,7 @@ export const BusinessesGrid = memo(function BusinessesGrid({
           onDelete={onDelete}
           onViewAnalytics={onViewAnalytics}
           onManageSessions={onManageSessions}
+          onOpenDashboard={onOpenDashboard}
         />
       ))}
     </div>

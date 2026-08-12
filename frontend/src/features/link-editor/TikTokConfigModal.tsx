@@ -6,6 +6,7 @@ import { Plus, Trash2, X } from "lucide-react";
 import { modalInputClass } from "./modal-input-styles";
 import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 import { RequiredMark } from "@/components/shared/RequiredMark";
+import { AccentActionButton } from "@/components/shared/AccentActionButton";
 
 interface TikTokConfigModalProps {
   isOpen: boolean;
@@ -169,14 +170,9 @@ export function TikTokConfigModal({
             <Plus className="h-4 w-4" />
             زیادکردنی گرووپ
           </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full sm:w-auto rounded-xl text-white py-2.5 px-6 text-sm font-semibold shadow-lg hover:shadow-xl hover:opacity-90 transition-all duration-300"
-            style={{ background: "var(--theme-css, #64748b)" }}
-          >
+          <AccentActionButton onClick={onClose} className="w-full sm:w-auto">
             تەواو
-          </button>
+          </AccentActionButton>
         </div>
       </div>
     </>,

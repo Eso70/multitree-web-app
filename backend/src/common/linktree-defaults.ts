@@ -14,7 +14,7 @@
  */
 
 /** Included in every plan, so a new business can always render it. */
-export const DEFAULT_LINKTREE_TEMPLATE_KEY = 'colorful-pills';
+export const DEFAULT_LINKTREE_TEMPLATE_KEY = 'spectrum';
 
 /** A white canvas, matching the link editor's `pure-white` swatch. */
 export const DEFAULT_LINKTREE_BACKGROUND_COLOR = '#ffffff';

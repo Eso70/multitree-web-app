@@ -43,3 +43,14 @@ export function getBusinessAnalyticsSummary(
 export async function logoutBusiness(): Promise<void> {
   await apiRequest("/api/auth/logout", { method: "POST" });
 }
+
+/**
+ * Ends a platform-administrator impersonation of this business and returns the
+ * console URL to go back to. Distinct from `logoutBusiness` so the server can
+ * record the end of administrator access rather than an owner sign-out.
+ */
+export function exitBusinessImpersonation(): Promise<{ consoleUrl: string }> {
+  return apiRequest<{ consoleUrl: string }>("/api/auth/impersonation/exit", {
+    method: "POST",
+  });
+}

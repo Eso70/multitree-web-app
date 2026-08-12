@@ -17,10 +17,14 @@ describe('TikTokOutboxProcessor', () => {
     recordWorkerRun: jest.fn(),
     recordWorkerJob: jest.fn(),
   };
+  const communications = {
+    notifyPlatformOfTikTokFailure: jest.fn().mockResolvedValue(undefined),
+  };
 
   const job = {
     id: '4a99ddda-789c-47a7-b27b-48b8d735774e',
     attempt_count: 1,
+    business_id: 'd0f1a2b3-4c5d-4e6f-8a9b-0c1d2e3f4a5b',
     destination_id: '8542ca4c-8483-4c97-a449-5bc4f0da0209',
     pixel_id: 'pixel-code',
     encrypted_events_token: Buffer.from('encrypted'),
@@ -63,6 +67,7 @@ describe('TikTokOutboxProcessor', () => {
       secrets,
       config,
       metrics as never,
+      communications as never,
     );
 
     const result = await processor['send']([job]);
@@ -88,6 +93,7 @@ describe('TikTokOutboxProcessor', () => {
       secrets,
       config,
       metrics as never,
+      communications as never,
     );
 
     const result = await processor['send']([job]);

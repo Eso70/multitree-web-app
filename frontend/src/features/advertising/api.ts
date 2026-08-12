@@ -37,10 +37,10 @@ export function fetchAdvertisingDraft(): Promise<AdvertisingDraftConfig> {
 /**
  * Saves and publishes in one request.
  *
- * This page has no separate publish control, so the two always happen together
- * and the server does them in one transaction. As two calls, a publish that
- * failed after a successful save left the draft written and visitors still on
- * the previous content, with nothing in the UI saying so.
+ * The editor's Save button is the page's primary publish path, so the two
+ * happen together and the server does them in one transaction. As two calls,
+ * a publish that failed after a successful save left the draft written and
+ * visitors still on the previous content, with nothing in the UI saying so.
  *
  * A field that is absent is left alone; a field that is present replaces its
  * whole value.
@@ -57,6 +57,21 @@ export function saveAndPublishAdvertising(
     },
     "نەتوانرا پاشەکەوت بکرێت",
   );
+}
+
+/**
+ * Makes the currently persisted draft live. Used by the Ads page's header
+ * toggle, which is its separate publish control: the editor's Save still
+ * publishes in the same request, and this endpoint lets the same state be
+ * flipped without rewriting the draft.
+ */
+export function publishAdvertising(): Promise<AdvertisingDraftConfig> {
+  return request("/publish", { method: "POST" }, "نەتوانرا بڵاوکرایەوە");
+}
+
+/** Takes the page down. Visitors get a 404 until it is published again. */
+export function unpublishAdvertising(): Promise<AdvertisingDraftConfig> {
+  return request("/unpublish", { method: "POST" }, "نەتوانرا وەستێنرێت");
 }
 
 /**

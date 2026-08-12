@@ -1,8 +1,6 @@
 import { GoneException, UnauthorizedException } from '@nestjs/common';
-import {
-  buildTenantUrl,
-  BusinessOnboardingService,
-} from './business-onboarding.service';
+import { BusinessOnboardingService } from './business-onboarding.service';
+import { buildTenantUrl } from '../common/root-domain';
 
 function createService() {
   const database = { query: jest.fn() };

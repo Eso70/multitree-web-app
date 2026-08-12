@@ -86,6 +86,32 @@ describe("getSubdomainLoginUrl on the server", () => {
   });
 });
 
+describe("getSubdomainPageUrl on the server", () => {
+  it("builds a subdomain path with the served scheme", async () => {
+    const { getSubdomainPageUrl } = await loadAppUrl({
+      NEXT_PUBLIC_APP_URL: "http://lvh.me:3011",
+      NEXT_PUBLIC_ROOT_DOMAIN: "lvh.me:3011",
+      NODE_ENV: "development",
+    });
+
+    expect(getSubdomainPageUrl("acme", "/advertising")).toBe(
+      "http://acme.lvh.me:3011/advertising",
+    );
+  });
+
+  it("normalizes a path without a leading slash", async () => {
+    const { getSubdomainPageUrl } = await loadAppUrl({
+      NEXT_PUBLIC_APP_URL: "https://sponsor.krd",
+      NEXT_PUBLIC_ROOT_DOMAIN: "sponsor.krd",
+      NODE_ENV: "production",
+    });
+
+    expect(getSubdomainPageUrl("acme", "advertising/video-code")).toBe(
+      "https://acme.sponsor.krd/advertising/video-code",
+    );
+  });
+});
+
 describe("getAppBaseUrl", () => {
   it("returns the configured local application URL", async () => {
     const { getAppBaseUrl } = await loadAppUrl({

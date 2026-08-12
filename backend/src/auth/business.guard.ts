@@ -1,6 +1,7 @@
 ﻿import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -15,6 +16,7 @@ import {
   isTrustedInternalProxy,
 } from '../common/internal-proxy-trust';
 import { AccessRuleEnforcementService } from './access-rule-enforcement.service';
+import { impersonationDenialReason } from './impersonation-policy';
 
 type BusinessRequest = FastifyRequest & {
   user?: SessionUser;
@@ -67,6 +69,19 @@ export class BusinessGuard implements CanActivate {
     // Attach user and session token to request for decorators
     request.user = user;
     request.sessionToken = sessionToken;
+
+    // Every business route passes through this guard, so it is the one place
+    // the impersonation restriction policy is applied. Route handlers must not
+    // grow private exceptions of their own; see impersonation-policy.ts.
+    if (user.impersonation) {
+      const denial = impersonationDenialReason(
+        request.method,
+        request.url || '',
+      );
+      if (denial) {
+        throw new ForbiddenException(denial);
+      }
+    }
 
     await this.accessRules.assertAllowed(requestIp(request), [
       { scope: 'business', businessId: user.id },

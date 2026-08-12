@@ -3,6 +3,8 @@
  * Used to generate accent colors, highlights, and other UI colors from the main theme
  */
 
+import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+
 /**
  * Convert hex color to RGB
  */
@@ -61,6 +63,29 @@ function getBrightness(hex: string): number {
 
   // Using relative luminance formula
   return (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+}
+
+function primaryHexColor(value: string | null | undefined): string | null {
+  const match = value?.match(/#[0-9a-f]{3}(?:[0-9a-f]{3})?/i);
+  if (!match) return null;
+
+  const hex = match[0];
+  if (hex.length === 7) return hex.toLowerCase();
+  return `#${hex
+    .slice(1)
+    .split("")
+    .map((character) => character.repeat(2))
+    .join("")}`.toLowerCase();
+}
+
+/**
+ * Resolves the tenant's configured business color for template subtitles.
+ * Gradient values use their first color stop.
+ */
+export function deriveSubtitleColor(
+  tenantAccent: string | null | undefined,
+): string {
+  return primaryHexColor(tenantAccent) || MULTITREE_ACCENT_COLOR;
 }
 
 /**

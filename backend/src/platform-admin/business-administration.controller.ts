@@ -33,8 +33,11 @@ import { RequireCapabilities } from '../auth/require-capabilities.decorator';
 import { validateImageUpload } from '../storage/image-upload';
 import { AuditInterceptor } from '../auth/audit.interceptor';
 import { AuditEvent } from '../auth/audit-event.decorator';
-import { SessionService } from '../auth/session.service';
+import { SessionService, type SessionUser } from '../auth/session.service';
 import { BusinessListQueryDto } from '../common/dto/admin-list-query.dto';
+import { ImpersonationService } from '../auth/impersonation.service';
+import { StartImpersonationDto } from './dto/start-impersonation.dto';
+import { requestIp } from '../common/request-context';
 
 @Controller('api/platform/businesses')
 @UseGuards(PlatformAdminGuard, AuthorizationGuard)
@@ -44,7 +47,13 @@ export class BusinessAdministrationController {
     private readonly businessAdministrationService: BusinessAdministrationService,
     private readonly storageService: StorageService,
     private readonly sessionService: SessionService,
+    private readonly impersonationService: ImpersonationService,
   ) {}
+
+  private firstHeaderValue(value: string | string[] | undefined): string {
+    const first = Array.isArray(value) ? value[0] : value;
+    return typeof first === 'string' ? first.split(',')[0].trim() : '';
+  }
 
   private getMultipartField(
     data: Awaited<ReturnType<FastifyRequest['file']>>,
@@ -204,6 +213,43 @@ export class BusinessAdministrationController {
   ) {
     await this.sessionService.revokeBusinessSession(id, sessionId);
     return { success: true };
+  }
+
+  /**
+   * Mints a single-use handoff that opens this business's dashboard as the
+   * business. The administrator never receives a tenant credential: the code
+   * is exchanged for a host-only session cookie by the tenant's own consume
+   * endpoint, and the administrator's root-domain console session is left
+   * intact so exiting returns to it.
+   */
+  // No `@AuditEvent` here: `ImpersonationService` is the single owner of this
+  // action's audit trail. It records every outcome, including the rejections
+  // that never reach a handler result, with the target subdomain and support
+  // reason a generic route event cannot carry.
+  @Post(':id/impersonation')
+  @RequireCapabilities(Capability.PlatformBusinessesImpersonate)
+  @HttpCode(HttpStatus.OK)
+  async startImpersonation(
+    @Param('id') id: string,
+    @Body() dto: StartImpersonationDto,
+    @Req() req: FastifyRequest & { user?: SessionUser },
+  ) {
+    const admin = req.user;
+    if (!admin) {
+      throw new BadRequestException('Platform administrator session required');
+    }
+    return {
+      success: true,
+      data: await this.impersonationService.start({
+        businessId: id,
+        admin: { id: admin.id, name: admin.name || admin.username },
+        reason: dto.reason ?? null,
+        context: {
+          ipAddress: requestIp(req),
+          userAgent: this.firstHeaderValue(req.headers['user-agent']),
+        },
+      }),
+    };
   }
 
   @Patch(':id')

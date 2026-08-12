@@ -79,7 +79,7 @@ export function PublicAdvertisingService({
         Boolean(item),
       )}
       action={{
-        label: "داواکاری بکە",
+        label: "نامە بنێرە",
         href: whatsappHref,
         external: whatsappHref.startsWith("http"),
       }}

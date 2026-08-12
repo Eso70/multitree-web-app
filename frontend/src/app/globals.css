@@ -2478,20 +2478,20 @@ body * {
 
 /* Consistent component scale for regular templates. Hero Image intentionally
    keeps its own image-led proportions and button hierarchy. */
-.public-template-shell:not([data-template-key="hero-image"])
+.public-template-shell
   :is(.max-w-sm, .max-w-md) {
   width: 100%;
   max-width: 28rem !important;
 }
 
-.public-template-shell:not([data-template-key="hero-image"]) h1 {
+.public-template-shell h1 {
   font-size: 1.5rem !important;
   line-height: 2rem !important;
   font-weight: 700 !important;
   text-wrap: balance;
 }
 
-.public-template-shell:not([data-template-key="hero-image"])
+.public-template-shell
   :is(img.rounded-full, .rounded-full:has(> img), [data-template-avatar]) {
   width: 7rem !important;
   height: 7rem !important;
@@ -2503,7 +2503,7 @@ body * {
   object-fit: cover;
 }
 
-.public-template-shell:not([data-template-key="hero-image"])
+.public-template-shell
   :is(button.w-full, button.block) {
   width: 100% !important;
   min-height: 3.5rem;
@@ -2512,7 +2512,7 @@ body * {
   line-height: 1.5rem !important;
 }
 
-.public-template-shell:not([data-template-key="hero-image"])
+.public-template-shell
   :is(button.w-full, button.block)
   > * {
   max-width: 100%;
@@ -2547,14 +2547,14 @@ body * {
 }
 
 .phone-mockup-canvas
-  .public-template-shell:not([data-template-key="hero-image"])
+  .public-template-shell
   h1 {
   font-size: 1.2rem !important;
   line-height: 1.55rem !important;
 }
 
 .phone-mockup-canvas
-  .public-template-shell:not([data-template-key="hero-image"])
+  .public-template-shell
   :is(img.rounded-full, .rounded-full:has(> img), [data-template-avatar]) {
   width: 5.5rem !important;
   height: 5.5rem !important;
@@ -2566,7 +2566,7 @@ body * {
 }
 
 .phone-mockup-canvas
-  .public-template-shell:not([data-template-key="hero-image"])
+  .public-template-shell
   :is(button.w-full, button.block) {
   min-height: 3rem;
   padding: 0.5rem 1rem !important;
@@ -2575,7 +2575,7 @@ body * {
 }
 
 .phone-mockup-canvas
-  .public-template-shell:not([data-template-key="hero-image"])
+  .public-template-shell
   :is(button.w-full, button.block)
   svg {
   width: 1.15rem !important;

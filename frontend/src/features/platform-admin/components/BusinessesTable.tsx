@@ -2,8 +2,8 @@
 
 import { memo, useState } from "react";
 import Image from "next/image";
-import { Edit, Trash2, Eye, ShieldCheck } from "lucide-react";
-import { formatDate, getRootDomain, getSubdomainLoginUrl } from "@/lib/utils/linktree-utils";
+import { Edit, Trash2, Eye, ShieldCheck, LogIn } from "lucide-react";
+import { formatDate, getRootDomain } from "@/lib/utils/linktree-utils";
 import type { PlatformBusiness as Business } from "@linktree/types";
 import {
   getBusinessPlanBadgeClasses,
@@ -16,6 +16,7 @@ interface BusinessesTableProps {
   onDelete?: (id: string, name: string) => void;
   onViewAnalytics?: (business: Business) => void;
   onManageSessions?: (business: Business) => void;
+  onOpenDashboard?: (business: Business) => void;
 }
 
 function AvatarCell({ item }: { item: Business }) {
@@ -49,12 +50,14 @@ const TableRow = memo(function TableRow({
   onDelete,
   onViewAnalytics,
   onManageSessions,
+  onOpenDashboard,
 }: {
   item: Business;
   onEdit?: (business: Business) => void;
   onDelete?: (id: string, name: string) => void;
   onViewAnalytics?: (business: Business) => void;
   onManageSessions?: (business: Business) => void;
+  onOpenDashboard?: (business: Business) => void;
 }) {
   return (
     <tr
@@ -79,14 +82,9 @@ const TableRow = memo(function TableRow({
       </td>
       <td className="px-3 py-3 hidden lg:table-cell">
         {item.subdomain ? (
-          <a
-            href={getSubdomainLoginUrl(item.subdomain)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-sky-600 hover:text-sky-800 font-mono truncate hover:underline cursor-pointer block"
-          >
+          <div className="text-xs text-gray-600 font-mono truncate">
             {item.subdomain}.{getRootDomain()}
-          </a>
+          </div>
         ) : (
           <div className="text-xs text-gray-400">—</div>
         )}
@@ -131,6 +129,16 @@ const TableRow = memo(function TableRow({
               <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-600 hover:text-yellow-700" />
             </button>
           )}
+          {onOpenDashboard && item.subdomain && item.status === "active" && (
+            <button
+              onClick={() => onOpenDashboard(item)}
+              className="p-1 sm:p-1.5 rounded hover:bg-indigo-50 transition-colors duration-200 shrink-0 cursor-pointer"
+              title="Open dashboard as this business"
+              aria-label={`Open the dashboard as ${item.name}`}
+            >
+              <LogIn className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-600 hover:text-indigo-700" />
+            </button>
+          )}
           {onManageSessions && (
             <button onClick={() => onManageSessions(item)} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-emerald-50 transition-colors duration-200 shrink-0 cursor-pointer sm:h-9 sm:w-9" title="Manage sessions" aria-label={`Manage sessions for ${item.name}`}>
               <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-600" />
@@ -157,12 +165,14 @@ const MobileCard = memo(function MobileCard({
   onDelete,
   onViewAnalytics,
   onManageSessions,
+  onOpenDashboard,
 }: {
   item: Business;
   onEdit?: (business: Business) => void;
   onDelete?: (id: string, name: string) => void;
   onViewAnalytics?: (business: Business) => void;
   onManageSessions?: (business: Business) => void;
+  onOpenDashboard?: (business: Business) => void;
 }) {
   const [imgError, setImgError] = useState(false);
   const avatarUrl = item.logo || item.default_avatar;
@@ -191,15 +201,16 @@ const MobileCard = memo(function MobileCard({
           <div className="flex items-center gap-1 shrink-0">
             {onViewAnalytics && <button onClick={() => onViewAnalytics(item)} className="flex items-center justify-center p-2 rounded-lg hover:bg-sky-50 transition-colors cursor-pointer"><Eye className="h-4 w-4 text-sky-600" /></button>}
             {onEdit && <button onClick={() => onEdit(item)} className="flex items-center justify-center p-2 rounded-lg hover:bg-yellow-50 transition-colors cursor-pointer"><Edit className="h-4 w-4 text-yellow-600" /></button>}
+            {onOpenDashboard && item.subdomain && item.status === "active" && <button onClick={() => onOpenDashboard(item)} className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-indigo-50 transition-colors cursor-pointer" title="Open dashboard as this business" aria-label={`Open the dashboard as ${item.name}`}><LogIn className="h-4 w-4 text-indigo-600" /></button>}
             {onManageSessions && <button onClick={() => onManageSessions(item)} className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-emerald-50 transition-colors cursor-pointer" title="Manage sessions" aria-label={`Manage sessions for ${item.name}`}><ShieldCheck className="h-4 w-4 text-emerald-600" /></button>}
             {onDelete && <button onClick={() => onDelete(item.id, item.name)} className="flex items-center justify-center p-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"><Trash2 className="h-4 w-4 text-red-600" /></button>}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs text-gray-700">
           {item.subdomain ? (
-            <a href={getSubdomainLoginUrl(item.subdomain)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-50 border border-gray-200 font-mono text-sky-600 hover:text-sky-800 hover:underline cursor-pointer">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-50 border border-gray-200 font-mono text-gray-700">
               {item.subdomain}.{getRootDomain()}
-            </a>
+            </span>
           ) : (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-50 border border-gray-200 font-mono text-gray-400">
               no-subdomain
@@ -225,6 +236,7 @@ export const BusinessesTable = memo(function BusinessesTable({
   onDelete,
   onViewAnalytics,
   onManageSessions,
+  onOpenDashboard,
 }: BusinessesTableProps) {
   return (
     <div className="w-full" dir="ltr">
@@ -241,6 +253,7 @@ export const BusinessesTable = memo(function BusinessesTable({
               onDelete={onDelete}
               onViewAnalytics={onViewAnalytics}
               onManageSessions={onManageSessions}
+              onOpenDashboard={onOpenDashboard}
             />
           ))
         )}
@@ -289,6 +302,7 @@ export const BusinessesTable = memo(function BusinessesTable({
                   onDelete={onDelete}
                   onViewAnalytics={onViewAnalytics}
                   onManageSessions={onManageSessions}
+                  onOpenDashboard={onOpenDashboard}
                 />
               ))
             )}

@@ -18,6 +18,7 @@ import { ensurePlatformMedia } from './ensure-platform-media';
 import { ensureAdvertisingPages } from './ensure-advertising-pages';
 import { seedPlatformAdmin } from './seed-platform-admin';
 import { assertSupportedSchema } from '../src/database/migration-compatibility';
+import { applyForwardMigrations } from '../src/database/forward-migrations';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -166,6 +167,15 @@ async function migrate() {
         }
         await assertSupportedSchema(client);
       }
+    }
+
+    const forwardMigrations = await applyForwardMigrations(
+      client,
+      migrationsDir,
+    );
+    appliedCount += forwardMigrations.length;
+    if (forwardMigrations.length) {
+      await assertSupportedSchema(client);
     }
 
     await seedPlatformAdmin(client);

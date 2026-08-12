@@ -15,6 +15,7 @@ import { SecurityAuditService } from './security-audit.service';
 import { SessionService } from './session.service';
 import { AccessRuleEnforcementService } from './access-rule-enforcement.service';
 import { GoogleIdentityService } from './google-identity.service';
+import { ImpersonationService } from './impersonation.service';
 
 @Module({
   imports: [BillingModule, StorageModule],
@@ -32,6 +33,7 @@ import { GoogleIdentityService } from './google-identity.service';
     AuditInterceptor,
     AccessRuleEnforcementService,
     GoogleIdentityService,
+    ImpersonationService,
   ],
   exports: [
     SessionService,
@@ -45,6 +47,7 @@ import { GoogleIdentityService } from './google-identity.service';
     AuditInterceptor,
     AccessRuleEnforcementService,
     GoogleIdentityService,
+    ImpersonationService,
   ],
 })
 export class AuthModule {}

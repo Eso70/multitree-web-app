@@ -3,8 +3,8 @@ import { vi } from "vitest";
 import { TemplateSelector } from "./TemplateSelector";
 
 const basicTemplates = new Set([
-  "colorful-pills",
-  "mobile-spotlight",
+  "spectrum",
+  "spotlight",
 ]);
 
 vi.mock("@/hooks/useTemplateAccess", () => ({
@@ -20,15 +20,15 @@ describe("TemplateSelector", () => {
       <TemplateSelector
         isOpen
         onClose={vi.fn()}
-        selectedTemplate="colorful-pills"
+        selectedTemplate="spectrum"
         onSelectTemplate={vi.fn()}
       />,
     );
 
     expect(
-      await screen.findByRole("button", { name: /Colorful Pills/i }),
+      await screen.findByRole("button", { name: /Spectrum/i }),
     ).toBeEnabled();
-    expect(screen.getByRole("button", { name: /Frosted Outline/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /Dark Card/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Frost/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Serenity/i })).toBeDisabled();
   });
 });

@@ -26,6 +26,7 @@ import { ColorGradientModal } from "@/features/link-editor/ColorGradientModal";
 import { PageHeaderSection } from "@/components/shared/PageHeaderSection";
 import { SegmentedTabs } from "@/components/shared/SegmentedTabs";
 import { TabSaveButton } from "@/components/shared/TabSaveButton";
+import { AccentActionButton } from "@/components/shared/AccentActionButton";
 import { StatCard } from "@/components/shared/StatCard";
 import { Skeleton, SkeletonDashboardPage } from "@/components/shared/Skeleton";
 import { TemplateCombobox } from "@/components/ui/TemplateCombobox";
@@ -83,7 +84,7 @@ const emptySettings: SettingsData = {
   // spreads these under the API response, so a field the server omits is shown
   // from here — two different answers to "what is the default" would surface as
   // the form disagreeing with the page it configures.
-  default_template: "colorful-pills",
+  default_template: "spectrum",
   default_background_color: "#ffffff",
   default_footer_hidden: true,
   default_whatsapp_enabled: false,
@@ -807,15 +808,9 @@ export function BusinessSettingsPage() {
                         یەکەم پەڕەت دروست بکە تا وەک پەیجی بنەڕەتی بزنسەکەت
                         کاربکات
                       </p>
-                      <button
-                        type="button"
+                      <AccentActionButton
                         onClick={() => void handleCreateDefaultPage()}
                         disabled={creatingDefault}
-                        className="inline-flex h-10 items-center gap-1.5 rounded-xl px-4 text-sm font-bold shadow-sm transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-                        style={{
-                          background: "var(--theme-css)",
-                          color: "var(--theme-ink)",
-                        }}
                       >
                         {creatingDefault ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -825,7 +820,7 @@ export function BusinessSettingsPage() {
                         {creatingDefault
                           ? "دروستکردن..."
                           : "دروستکردنی پەیجی بنەڕەت"}
-                      </button>
+                      </AccentActionButton>
                     </div>
                   )}
                 </div>

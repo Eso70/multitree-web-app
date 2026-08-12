@@ -256,11 +256,11 @@ export class AdvertisingRepository {
   /**
    * Writes a config and publishes it in one transaction.
    *
-   * The editor has no separate publish control — pressing Save is what makes
-   * content live — so the two halves must not be able to land apart. As two
-   * requests, a publish that failed after a successful save left the draft
-   * written and visitors still on the previous content, with nothing in the UI
-   * saying so.
+   * The editor's Save is what makes content live, but publish may also arrive
+   * on its own from the dashboard header — the two halves must not be able to
+   * land apart. As two requests, a publish that failed after a successful save
+   * left the draft written and visitors still on the previous content, with
+   * nothing in the UI saying so.
    */
   async saveAndPublish(
     pageId: string,

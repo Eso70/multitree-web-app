@@ -27,6 +27,13 @@ import {
 } from "@/features/analytics/page-tracking";
 
 /**
+ * How long a visitor stays before the visit counts as engaged rather than a
+ * bounce. Matches the mini website's threshold so both pages report the same
+ * fact on the same scale.
+ */
+const ENGAGED_AFTER_MS = 15_000;
+
+/**
  * The action key the database registers for a link.
  *
  * Written once here and once in `fn_sync_linktree_public_page` in
@@ -195,6 +202,26 @@ export const LinktreePage = memo(function LinktreePage({ linktree: rawLinktree, 
   // under React's development double-invoke as well as a re-render.
   useEffect(() => {
     tracker.trackView();
+  }, [tracker]);
+
+  /**
+   * Separates a visit from a bounce.
+   *
+   * A linktree is one screen, so there are no sections to measure the way a
+   * mini website has — but "arrived" and "stayed" are still different facts,
+   * and a page whose only signal is `page_view` cannot tell an ad click that
+   * bounced in two seconds from a visitor who read the whole thing and left.
+   * Internal only: `engaged_view` is in the server's `ENGAGEMENT_ONLY_EVENTS`,
+   * so it never reaches TikTok and cannot inflate what the ad algorithm
+   * optimises on. Same dwell threshold as the mini website, so the two pages
+   * stay comparable in one report.
+   */
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => tracker.trackEngagement("engaged_view", { once: true }),
+      ENGAGED_AFTER_MS,
+    );
+    return () => window.clearTimeout(timer);
   }, [tracker]);
   // Get background gradient or solid color based on background_color
   const baseTheme = useMemo(() => {
@@ -409,7 +436,15 @@ export const LinktreePage = memo(function LinktreePage({ linktree: rawLinktree, 
   const handleLinkClick = useCallback((linkId: string, url: string, platform: string, defaultMessage?: string | null) => {
     if (platform === "whatsapp" && whatsappModalConfig?.questions?.length) {
       // The click is not an intent to message yet — the visitor still has to
-      // pick a question — so it is held until they do.
+      // pick a question — so the conversion is held until they do. Opening the
+      // chooser is still real engagement, and recording it is what makes an
+      // abandoned modal visible: without it, a visitor who opened the
+      // questions and closed them is indistinguishable from one who never
+      // tapped WhatsApp at all. Engagement only, so it never reaches TikTok.
+      tracker.trackEngagement("action_open", {
+        actionKey: `${linkActionKey(linkId)}:questions`,
+        label: "WhatsApp questions",
+      });
       pendingWhatsAppRef.current = { url, linkId, platform };
       setPendingWhatsAppUrl(url);
       setIsWhatsAppModalOpen(true);
@@ -419,7 +454,7 @@ export const LinktreePage = memo(function LinktreePage({ linktree: rawLinktree, 
     const finalUrl = appendMessageToUrl(url, platform, defaultMessage);
     reportLinkClick(linkId, platform, finalUrl);
     openUrl(finalUrl);
-  }, [whatsappModalConfig, openUrl, reportLinkClick]);
+  }, [whatsappModalConfig, openUrl, reportLinkClick, tracker]);
 
   // Handle WhatsApp question selection
   const handleWhatsAppQuestionSelect = useCallback((message: string) => {
@@ -427,8 +462,11 @@ export const LinktreePage = memo(function LinktreePage({ linktree: rawLinktree, 
     if (!pending) return;
 
     const finalUrl = appendMessageToUrl(pending.url, "whatsapp", message);
-    openUrl(finalUrl);
+    // Report before navigating, exactly as the direct path does. `trackAction`
+    // flushes immediately, and a click that leaves the page must not race the
+    // send that records it.
     reportLinkClick(pending.linkId, pending.platform, finalUrl);
+    openUrl(finalUrl);
 
     // Reset state
     pendingWhatsAppRef.current = null;

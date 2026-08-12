@@ -182,15 +182,6 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     { id: "other", text: "پرسیارێکی تر", message: "سڵاو" },
   ]);
   
-  // Dark Card template-specific state
-  const [darkCardDescTitle, setDarkCardDescTitle] = useState("");
-  const [darkCardDescText, setDarkCardDescText] = useState("");
-  const [darkCardDescImage, setDarkCardDescImage] = useState<File | null>(null);
-  const [darkCardDescImagePreview, setDarkCardDescImagePreview] = useState<string | null>(null);
-  const [darkCardTiktokUsername, setDarkCardTiktokUsername] = useState("");
-  const [darkCardTiktokLink, setDarkCardTiktokLink] = useState("");
-  const darkCardDescImageInputRef = useRef<HTMLInputElement>(null);
-
   // Validation errors state
   const [errors, setErrors] = useState<{
     name?: string;
@@ -433,38 +424,8 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     }
   }, [businessDefaults]);
 
-  // Dark Card description image handlers
-  const handleDarkCardDescImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const validationError = validateUploadFile(file, {
-        allowedMimeTypes: ["image/png", "image/jpeg"],
-        maxBytes: 10 * 1024 * 1024,
-      });
-      if (validationError) {
-        setUploadError(validationError);
-        return;
-      }
-      setUploadError(null);
-      setDarkCardDescImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setDarkCardDescImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  }, []);
-
-  const handleDarkCardDescImageRemove = useCallback(() => {
-    setDarkCardDescImage(null);
-    setDarkCardDescImagePreview(null);
-    if (darkCardDescImageInputRef.current) {
-      darkCardDescImageInputRef.current.value = "";
-    }
-  }, []);
-
   // Upload image to local file system storage
-  const uploadImage = async (file: File, assetType: "profile-image" | "dark-card-description"): Promise<string | null> => {
+  const uploadImage = async (file: File, assetType: "profile-image"): Promise<string | null> => {
     return enqueueImageUpload(async () => {
       setUploadError(null);
       try {
@@ -604,16 +565,6 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       }
 
       // Load Dark Card config from template_config
-      const darkCard = (linktree.template_config as Record<string, unknown> | null)?.dark_card;
-      if (darkCard && typeof darkCard === 'object' && !Array.isArray(darkCard)) {
-        const dc = darkCard as Record<string, unknown>;
-        if (typeof dc.desc_title === 'string') setDarkCardDescTitle(dc.desc_title);
-        if (typeof dc.desc_text === 'string') setDarkCardDescText(dc.desc_text);
-        if (typeof dc.desc_image === 'string' && dc.desc_image) setDarkCardDescImagePreview(dc.desc_image);
-        if (typeof dc.tiktok_username === 'string') setDarkCardTiktokUsername(dc.tiktok_username);
-        if (typeof dc.tiktok_link === 'string') setDarkCardTiktokLink(dc.tiktok_link);
-      }
-
       // Sanitize footer text (max 200 chars)
       const sanitizedFooterText = (linktree.footer_text || "").trim().slice(0, 200);
       // Always default to "MultiTree" if empty
@@ -736,13 +687,6 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
         { id: "price", text: "زانینی نرخ", message: "سڵاو بەڕێز، نرخی چەندە ؟" },
         { id: "other", text: "پرسیارێکی تر", message: "سڵاو" },
       ]);
-      // Reset dark card fields
-      setDarkCardDescTitle("");
-      setDarkCardDescText("");
-      setDarkCardDescImage(null);
-      setDarkCardDescImagePreview(null);
-      setDarkCardTiktokUsername("");
-      setDarkCardTiktokLink("");
       setCurrentStep("basic");
       resetSubmission();
       initializedLinktreeIdRef.current = "create";
@@ -1199,20 +1143,6 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       // If no image provided, imageUrl stays null - UI will show default avatar
 
       // ============================================
-      // UPLOAD DARK CARD DESCRIPTION IMAGE
-      // ============================================
-      let darkCardDescImageUrl: string | null = null;
-      if (darkCardDescImage) {
-        try {
-          darkCardDescImageUrl = await uploadImage(darkCardDescImage, "dark-card-description");
-        } catch {
-          // Non-critical - continue without desc image
-        }
-      } else if (darkCardDescImagePreview && !darkCardDescImage) {
-        darkCardDescImageUrl = darkCardDescImagePreview;
-      }
-
-      // ============================================
       // PROCESS LINKS DATA
       // ============================================
       const normalizedLinks = normalizeSelectedSocialLinks(socialLinks, selectedPlatforms);
@@ -1275,14 +1205,6 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
             subtitle: whatsappModalSubtitle.trim() || "پرسیارێک هەڵبژێرە",
             questions: whatsappQuestions.filter(q => q.text.trim() && q.message.trim()),
           } : {}),
-        },
-        // Include dark_card config
-        dark_card: {
-          desc_title: darkCardDescTitle.trim() || null,
-          desc_text: darkCardDescText.trim() || null,
-          desc_image: darkCardDescImageUrl || null,
-          tiktok_username: darkCardTiktokUsername.trim() || null,
-          tiktok_link: darkCardTiktokLink.trim() || null,
         },
       };
       const normalizedTemplateConfig = normalizeTemplateConfig(selectedTemplateKey, templateConfigWithMessage);
@@ -1614,18 +1536,6 @@ if (!isOpen) return null;
             onWhatsappModalTitleChange={setWhatsappModalTitle}
             onWhatsappModalSubtitleChange={setWhatsappModalSubtitle}
             onWhatsappQuestionsChange={setWhatsappQuestions}
-            darkCardDescTitle={darkCardDescTitle}
-            darkCardDescText={darkCardDescText}
-            darkCardDescImagePreview={darkCardDescImagePreview}
-            darkCardTiktokUsername={darkCardTiktokUsername}
-            darkCardTiktokLink={darkCardTiktokLink}
-            darkCardDescImageInputRef={darkCardDescImageInputRef}
-            onDarkCardDescTitleChange={setDarkCardDescTitle}
-            onDarkCardDescTextChange={setDarkCardDescText}
-            onDarkCardDescImageChange={handleDarkCardDescImageChange}
-            onDarkCardDescImageRemove={handleDarkCardDescImageRemove}
-            onDarkCardTiktokUsernameChange={setDarkCardTiktokUsername}
-            onDarkCardTiktokLinkChange={setDarkCardTiktokLink}
           />
         )}
 

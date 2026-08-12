@@ -53,7 +53,7 @@ export const ENTITLEMENT = {
  * The template every plan includes, used when a page still names one the plan
  * no longer carries.
  */
-export const FALLBACK_TEMPLATE_KEY = 'colorful-pills';
+export const FALLBACK_TEMPLATE_KEY = 'spectrum';
 
 /**
  * A page's template key, downgraded to the free default when the plan no longer

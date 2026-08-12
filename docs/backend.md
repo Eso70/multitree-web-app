@@ -89,6 +89,22 @@ server-side and return only `INTERNAL_SERVER_ERROR`. `/api/v1` errors include
 version metadata while retaining their established top-level compatibility
 fields.
 
+## Business impersonation
+
+`POST /api/platform/businesses/:id/impersonation` returns a single-use tenant
+URL that opens that business's dashboard as the business. It requires
+`platform:businesses:impersonate` and accepts an optional `reason` (200
+characters), which is stored on the session row and the audit event.
+
+The tenant side reuses `POST /api/auth/handoff`; `GET /api/auth/session`
+returns a non-null `impersonation` object for the duration, and
+`POST /api/auth/impersonation/exit` ends the session and returns the console
+URL. `ImpersonationService` owns minting and ending; `impersonation-policy.ts`
+owns what such a session may not do. See
+[docs/security.md](security.md#platform-administrator-impersonation) for the
+complete control set — this feature is a security boundary, not a convenience,
+and that section is mandatory reading before changing it.
+
 ## Administration list queries
 
 Platform business, billing-subscription, API-client, webhook, and rate-policy
@@ -182,9 +198,17 @@ those same two page types are inserted into a durable marketing outbox; a
 background processor batches them per destination, records every delivery
 attempt, and retries failed work.
 
+`GET /api/analytics/v2/tiktok/errors` returns what TikTok answered when
+delivery failed, grouped by pixel, status code and message, under the same
+`business:analytics:tiktok-health-read` capability as `tiktok/health`. It is a
+separate endpoint because the business Dashboard reads the health summary on
+every load and has no use for error rows. A permanent failure also raises a
+throttled `tiktok_delivery_failure` notification for platform administrators;
+`AnalyticsModule` imports `CommunicationModule` for that one call.
+
 [docs/tracking.md](tracking.md) is the full contract: what is allowed to
-report, how a browser event and a server event deduplicate, and the procedure
-for adding tracking to a new feature.
+report, how a browser event and a server event deduplicate, the procedure
+for adding tracking to a new feature, and what happens when delivery breaks.
 
 The platform Activity page combines `security_audit_events`,
 `http_request_events`, `analytics_events`, and `marketing_delivery_attempts`

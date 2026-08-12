@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Upload, X } from "lucide-react";
+import { AccentActionButton } from "@/components/shared/AccentActionButton";
 
 export const DEFAULT_AVATAR_SRC = "/images/DefaultAvatar.png";
 
@@ -94,19 +95,13 @@ export function AvatarImageUpload({
       </div>
       {error && <p className="text-center font-kurdish text-xs text-red-500">{error}</p>}
       {onUploadClick ? (
-        <button
-          type="button"
-          onClick={onUploadClick}
-          className="group relative flex cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-md transition-all duration-200 hover:opacity-90 hover:shadow-lg sm:rounded-xl sm:px-6 sm:py-3"
-          style={{ background: "var(--theme-css, #64748b)" }}
-        >
+        <AccentActionButton onClick={onUploadClick}>
           <Upload className="h-4 w-4" />
           <span>{uploadLabel}</span>
-        </button>
+        </AccentActionButton>
       ) : (
         <label
-          className="group relative flex cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white shadow-md transition-all duration-200 hover:opacity-90 hover:shadow-lg sm:rounded-xl sm:px-6 sm:py-3"
-          style={{ background: "var(--theme-css, #64748b)" }}
+          className="group relative flex h-10 cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95"
         >
           <Upload className="h-4 w-4" />
           <span>{uploadLabel}</span>

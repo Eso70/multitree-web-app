@@ -198,6 +198,7 @@ describe('Auth Theming - Unit Tests', () => {
         mockSessionService,
         mockRedisService,
         accessRules,
+        {} as never,
       );
     });
 
@@ -297,6 +298,7 @@ describe('Auth Theming - Unit Tests', () => {
         mockSessionService,
         mockRedisService,
         accessRules,
+        {} as never,
       );
     });
 

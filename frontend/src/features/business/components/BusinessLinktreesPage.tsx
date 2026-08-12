@@ -21,6 +21,7 @@ import {
 import { StatCard } from "@/components/shared/StatCard";
 import { DashboardSurface } from "@/components/shared/DashboardSurface";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { AccentActionButton } from "@/components/shared/AccentActionButton";
 import { SkeletonCardGrid, SkeletonTable } from "@/components/shared/Skeleton";
 import type { BusinessLinktreeSummary as Linktree } from "@linktree/types";
 import { useRegisterBusinessDashboardRefresh } from "@/features/business/dashboard-refresh";
@@ -238,15 +239,13 @@ export function BusinessLinktreesPage({
                   <Table2 className="h-4 w-4 shrink-0" />
                 </button>
               </div>
-              <button
+              <AccentActionButton
                 onClick={onCreate}
-                className="group relative flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-white text-xs sm:text-sm font-bold shadow-md transition-all duration-300 whitespace-nowrap flex-shrink-0 cursor-pointer hover:opacity-85"
-                style={{ background: "var(--theme-css, #64748b)" }}
                 title="دروستکردنی پەیجی نوێ"
               >
                 <Plus className="h-4 w-4 transition-transform group-hover:scale-110" />
                 <span>پەیجی نوێ</span>
-              </button>
+              </AccentActionButton>
             </div>
           }
         />

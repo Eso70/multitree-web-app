@@ -455,6 +455,26 @@ export class BusinessUnifiedAnalyticsController {
     };
   }
 
+  /**
+   * The errors behind a failing connection. Separate from `tiktok/health`
+   * because the Dashboard reads that summary on every load and has no use for
+   * error rows; only the TikTok configuration page asks for these.
+   */
+  @Get('tiktok/errors')
+  @RequireCapabilities(Capability.BusinessAnalyticsTikTokHealthRead)
+  async tikTokErrors(
+    @CurrentUser() business: SessionUser,
+    @Query('limit') limit?: string,
+  ) {
+    return {
+      success: true,
+      data: await this.reads.getTikTokDeliveryErrors(
+        business.id,
+        Number(limit) || 20,
+      ),
+    };
+  }
+
   @Post('tiktok/retry-failed')
   @RequireCapabilities(Capability.BusinessAnalyticsTikTokHealthRead)
   async retryFailedTikTok(

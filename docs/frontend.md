@@ -41,6 +41,26 @@ separate step. It also shows the verified owner account name and email as
 read-only identity fields. The legacy `/business/getting-started` URL only
 redirects to `/business`; onboarding never uses a separate authentication page.
 
+## Platform-administrator impersonation
+
+The platform business directory exposes an "open dashboard" action on every
+active business that has a subdomain, in both the table and grid views. It is a
+button, not a link: it posts to the impersonation endpoint and navigates to the
+single-use URL that comes back. `PlatformAdminDashboard` opens the target tab
+synchronously on the click and assigns its location once the response lands,
+because a `window.open` issued after an `await` is treated as an unrequested
+popup and blocked. The returned URL is single-use and short-lived; it must
+never be stored, logged, or shared.
+
+While such a session is active, the business dashboard layout renders
+`BusinessImpersonationBanner` above `BusinessDashboard`. The banner is
+deliberately non-dismissible, names both the business and the administrator,
+and owns the exit action, which performs a full navigation rather than a router
+push because the session cookie is cleared server-side. Its presence is driven
+by the `impersonation` object on `GET /api/auth/session` — never by a client
+flag. See
+[docs/security.md](security.md#platform-administrator-impersonation).
+
 ## Large feature composition
 
 Large pages and templates compose focused modules rather than owning every

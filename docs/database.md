@@ -46,6 +46,17 @@ The active schema is grouped as follows:
 | Developer API                    | `api_clients`, `api_rate_limit_policies`, `api_usage_daily`, `api_idempotency_keys`, `api_external_resource_mappings`, `api_assets`, `api_webhook_endpoints`, `api_webhook_subscriptions`, `api_webhook_events`, `api_webhook_deliveries`, `api_webhook_delivery_attempts`, `api_versions`, `api_catalog_groups`, `api_linktree_schedules`                                         |
 | Operations and media             | `http_request_events`, `http_request_event_daily_stats`, `platform_data_retention_settings`, `platform_data_retention_runs`, `platform_media_settings`, `uploaded_media_assets`, `schema_migrations`                                                                                                                                                                               |
 
+`business_sessions.impersonated_by_platform_admin_id`,
+`business_sessions.impersonation_reason`, and
+`business_sessions.impersonation_started_at` mark a session that a platform
+administrator opened rather than the owner. They are added by
+`2026-08-12_add_business_session_impersonation.sql`, which also registers the
+`platform:businesses:impersonate` row in `auth_permissions` — the application
+refuses to boot when a catalog permission has no row, so a capability and its
+catalog entry always ship in the same migration. A `NULL` value in the first
+column is an ordinary owner session; the partial index covers only the
+impersonated rows, which are excluded from the per-business session cap.
+
 `trg_business_default_subscription` creates a default subscription immediately
 after a business row is inserted. Any workflow that creates a business with an
 explicit reviewed plan must upsert `business_subscriptions` on `business_id` so

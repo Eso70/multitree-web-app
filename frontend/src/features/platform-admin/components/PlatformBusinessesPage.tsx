@@ -52,6 +52,7 @@ interface PlatformBusinessesPageProps {
   onDelete: (id: string) => void;
   onViewAnalytics: (business: Business) => void;
   onManageSessions: (business: Business) => void;
+  onOpenDashboard: (business: Business) => void;
 }
 
 export function PlatformBusinessesPage({
@@ -72,6 +73,7 @@ export function PlatformBusinessesPage({
   onDelete,
   onViewAnalytics,
   onManageSessions,
+  onOpenDashboard,
 }: PlatformBusinessesPageProps) {
   const [section, setSection] =
     useState<BusinessManagementSection>("businesses");
@@ -248,6 +250,7 @@ export function PlatformBusinessesPage({
             onDelete={onDelete}
             onViewAnalytics={onViewAnalytics}
             onManageSessions={onManageSessions}
+            onOpenDashboard={onOpenDashboard}
           />
         </div>
       </div>

@@ -200,6 +200,13 @@ Modal field markup lives in one shared system so every dialog looks identical:
   avatar/logo picker (hover overlay, red remove badge, full-width choose-image
   button) used by the linktree editor and the advertising testimonials modal.
   It exports `DEFAULT_AVATAR_SRC`.
+- `components/shared/AccentActionButton` is the standard tenant-accent action
+  button (e.g. publish toggles, create/save/export actions, wizard next/submit).
+  It uses the business accent (`var(--theme-css)` background with
+  `var(--theme-ink)` foreground), a fixed `h-10` pill, and a `busy` prop that
+  sets `aria-busy` plus the wait cursor. Prefer it over hand-rolled inline
+  `var(--theme-*)` button styles; segmented controls, toggle switches, and
+  circular icon buttons keep their own patterns.
 - `features/link-editor/BackgroundColorPicker` is the background-color field
   used by the linktree editor. It renders the preset swatch grid plus an
   optional "custom" toggle that opens `ColorGradientModal`. Pass

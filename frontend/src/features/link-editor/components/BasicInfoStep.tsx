@@ -1,16 +1,13 @@
 ﻿"use client";
 
-import { memo, useState, useMemo, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { X, Upload, Layout, Plus, Trash2, GripVertical, MessageCircle, FileText } from "lucide-react";
-import Image from "next/image";
+import { memo, useState, useMemo } from "react";
+import { Layout, Plus, Trash2, GripVertical, MessageCircle } from "lucide-react";
 import { DEFAULT_FOOTER_PHONE } from "../modal-constants";
 import { modalChoiceButtonClass, modalInputClass, modalTextareaClass } from "../modal-input-styles";
 import { TEMPLATE_OPTIONS, type TemplateKey } from "@/lib/templates/config";
 import { TemplateSelector } from "../TemplateSelector";
 import type { WhatsAppQuestion } from "@/components/public/WhatsAppQuestionModal";
 import { BackgroundColorPicker } from "../BackgroundColorPicker";
-import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 import { AvatarImageUpload } from "@/components/shared/AvatarImageUpload";
 import { EditorField } from "@/components/shared/EditorField";
 
@@ -62,19 +59,6 @@ interface BasicInfoStepProps {
   onWhatsappModalTitleChange: (value: string) => void;
   onWhatsappModalSubtitleChange: (value: string) => void;
   onWhatsappQuestionsChange: (questions: WhatsAppQuestion[]) => void;
-  // Dark Card template-specific fields
-  darkCardDescTitle: string;
-  darkCardDescText: string;
-  darkCardDescImagePreview: string | null;
-  darkCardTiktokUsername: string;
-  darkCardTiktokLink: string;
-  darkCardDescImageInputRef: React.RefObject<HTMLInputElement | null>;
-  onDarkCardDescTitleChange: (value: string) => void;
-  onDarkCardDescTextChange: (value: string) => void;
-  onDarkCardDescImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onDarkCardDescImageRemove: () => void;
-  onDarkCardTiktokUsernameChange: (value: string) => void;
-  onDarkCardTiktokLinkChange: (value: string) => void;
   hideFooterHidden?: boolean;
   hideWhatsappQuestions?: boolean;
   hideFooterSection?: boolean;
@@ -122,18 +106,6 @@ export const BasicInfoStep = memo(function BasicInfoStep({
   onWhatsappModalTitleChange,
   onWhatsappModalSubtitleChange,
   onWhatsappQuestionsChange,
-  darkCardDescTitle,
-  darkCardDescText,
-  darkCardDescImagePreview,
-  darkCardTiktokUsername,
-  darkCardTiktokLink,
-  darkCardDescImageInputRef,
-  onDarkCardDescTitleChange,
-  onDarkCardDescTextChange,
-  onDarkCardDescImageChange,
-  onDarkCardDescImageRemove,
-  onDarkCardTiktokUsernameChange,
-  onDarkCardTiktokLinkChange,
   hideFooterHidden = false,
   hideWhatsappQuestions = false,
   hideFooterSection = false,
@@ -146,19 +118,6 @@ export const BasicInfoStep = memo(function BasicInfoStep({
   hideRemoveImage = false,
 }: BasicInfoStepProps) {
   const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
-  const [isDarkCardModalOpen, setIsDarkCardModalOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useModalKeyboard({
-    isOpen: isDarkCardModalOpen && mounted,
-    onEscape: () => setIsDarkCardModalOpen(false),
-    onEnter: () => setIsDarkCardModalOpen(false),
-  });
-
-  useEffect(() => {
-
-    setMounted(true);
-  }, []);
 
   // Helper functions for managing WhatsApp questions
   const handleAddQuestion = () => {
@@ -236,31 +195,20 @@ export const BasicInfoStep = memo(function BasicInfoStep({
             </EditorField>
           ) : (
             <EditorField label="ناونیشانی کورت">
-              {templateKey === "dark-card" ? (
-                <button
-                  type="button"
-                  onClick={() => setIsDarkCardModalOpen(true)}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-medium text-indigo-700 transition-all hover:border-indigo-400 hover:bg-indigo-100 sm:rounded-xl sm:px-4 sm:py-3 sm:text-sm"
-                >
-                  <FileText className="h-4 w-4" />
-                  ڕێکخستنی کارتی وەسف
-                </button>
-              ) : (
-                <input
-                  id="subtitle"
-                  type="text"
-                  value={subtitle}
-                  onChange={(e) => onSubtitleChange(e.target.value)}
-                  className={modalInputClass()}
-                  placeholder="بۆ نموونە: خاوەن براند و بەڕێوەبەری فرۆشتن"
-                  dir="auto"
-                />
-              )}
+              <input
+                id="subtitle"
+                type="text"
+                value={subtitle}
+                onChange={(e) => onSubtitleChange(e.target.value)}
+                className={modalInputClass()}
+                placeholder="بۆ نموونە: خاوەن براند و بەڕێوەبەری فرۆشتن"
+                dir="auto"
+              />
             </EditorField>
           )}
         </div>
 
-        {!onUploadClick && templateKey !== "dark-card" && (
+        {!onUploadClick && (
           <EditorField label="دەقی ڕوونکردنەوە">
             <textarea
               id="description"
@@ -556,167 +504,6 @@ export const BasicInfoStep = memo(function BasicInfoStep({
           </div>
         )}
       </div>
-
-      {/* Dark Card Description Modal */}
-      {isDarkCardModalOpen && mounted && createPortal(
-        <>
-          {/* Backdrop with blur */}
-          <div
-            className="fixed inset-0 z-100 bg-black/30 backdrop-blur-lg   duration-300"
-            onClick={() => setIsDarkCardModalOpen(false)}
-            aria-hidden
-          />
-
-          {/* Modal container */}
-          <div
-            className="modal-ltr fixed z-101 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] sm:w-[85vw] md:w-[75vw] max-w-md max-h-[85vh] overflow-hidden rounded-2xl bg-white/95 backdrop-blur-sm border border-gray-100/50 shadow-2xl    duration-300"
-            dir="ltr"
-          >
-            {/* Header */}
-            <div className="border-b border-gray-100/50 ">
-              <div className="flex items-center justify-between p-3 sm:p-4">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="rounded-xl p-1.5 sm:p-2 shadow-sm border" style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary, #64748b) 10%, transparent)', borderColor: 'color-mix(in srgb, var(--theme-primary, #64748b) 30%, transparent)' }}>
-                    <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" style={{ color: 'var(--theme-primary, #64748b)' }} />
-                  </div>
-                  <div>
-                    <h2 className="text-base sm:text-lg font-bold text-slate-700">
-                      ڕێکخستنی کارتی وەسف
-                    </h2>
-                    <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">
-                      سەردێڕ، وەسف، وێنە و تیکتۆک
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setIsDarkCardModalOpen(false)}
-                  className="shrink-0 rounded-xl p-1.5 sm:p-2 bg-linear-to-br from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 text-slate-500 hover:text-slate-700 transition-all duration-300 border border-slate-100 shadow-sm hover:shadow"
-                  aria-label="Close"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div
-              className="overflow-y-auto p-4 sm:p-5 space-y-4 bg-linear-to-br from-white to-slate-50/20"
-              style={{
-                maxHeight: 'calc(85vh - 70px)',
-                scrollbarWidth: 'thin',
-                scrollbarColor: 'rgba(156,163,175,0.5) transparent',
-              }}
-            >
-              {/* Description Title */}
-              <EditorField label="سەردێڕی وەسف">
-                <input
-                  type="text"
-                  value={darkCardDescTitle}
-                  onChange={(e) => onDarkCardDescTitleChange(e.target.value)}
-                  placeholder="باشترین تراکسوود و جلی ماڵەوە تەنها بە جوملە"
-                  className={modalInputClass()}
-                  dir="ltr"
-                />
-              </EditorField>
-
-              {/* Description Text */}
-              <EditorField label="دەقی وەسف">
-                <textarea
-                  value={darkCardDescText}
-                  onChange={(e) => onDarkCardDescTextChange(e.target.value)}
-                  placeholder="نوێترین مۆدێلەکان و کوالێتی بەرز..."
-                  rows={3}
-                  className={modalTextareaClass(false, "min-h-0")}
-                  dir="ltr"
-                />
-              </EditorField>
-
-              {/* Description Image */}
-              <EditorField label="وێنەی وەسف">
-                <div className="flex items-center gap-3">
-                  {darkCardDescImagePreview ? (
-                    <div className="relative h-14 w-14 rounded-full overflow-hidden border border-gray-300">
-                      <Image
-                        src={darkCardDescImagePreview}
-                        alt="Description image"
-                        width={56}
-                        height={56}
-                        className="h-full w-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={onDarkCardDescImageRemove}
-                        className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs shadow"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="h-14 w-14 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-gray-400 transition-colors">
-                      <Upload className="h-5 w-5 text-gray-400" />
-                      <input
-                        ref={darkCardDescImageInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={onDarkCardDescImageChange}
-                        className="hidden"
-                      />
-                    </label>
-                  )}
-                  <span className="text-xs text-gray-500">
-                    وێنەیەک بۆ ناو کارتی وەسف
-                  </span>
-                </div>
-              </EditorField>
-
-              {/* TikTok Section */}
-              <div className="pt-3 border-t border-gray-200 space-y-3">
-                <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.88 2.89 2.89 0 0 1-2.88-2.88 2.89 2.89 0 0 1 2.88-2.88c.28 0 .56.04.82.1v-3.5a6.37 6.37 0 0 0-.82-.05A6.34 6.34 0 0 0 3.15 15.6a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V9.4a8.16 8.16 0 0 0 4.76 1.52v-3.4a4.85 4.85 0 0 1-1-.83z" />
-                  </svg>
-                  تیکتۆک
-                </h4>
-
-                <EditorField label="ناوی بەکارهێنەر">
-                  <input
-                    type="text"
-                    value={darkCardTiktokUsername}
-                    onChange={(e) => onDarkCardTiktokUsernameChange(e.target.value)}
-                    placeholder="@sea_homewear"
-                    className={modalInputClass()}
-                    dir="ltr"
-                  />
-                </EditorField>
-
-                <EditorField label="لینکی تیکتۆک">
-                  <input
-                    type="text"
-                    value={darkCardTiktokLink}
-                    onChange={(e) => onDarkCardTiktokLinkChange(e.target.value)}
-                    placeholder="https://tiktok.com/@sea_homewear"
-                    className={modalInputClass()}
-                    dir="ltr"
-                  />
-                </EditorField>
-              </div>
-
-              {/* Done Button */}
-              <button
-                type="button"
-                onClick={() => setIsDarkCardModalOpen(false)}
-                className="w-full rounded-xl text-white py-2.5 sm:py-3 text-sm font-medium transition-all shadow-sm hover:shadow-md hover:opacity-90"
-                style={{ background: 'var(--theme-css, #64748b)' }}
-              >
-                تەواو
-              </button>
-            </div>
-          </div>
-        </>,
-        document.body
-      )}
 
       <TemplateSelector
         isOpen={isTemplateSelectorOpen}

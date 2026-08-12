@@ -11,25 +11,22 @@ describe('TemplateAccessService', () => {
   it('returns only templates assigned to the business plan', async () => {
     redis.get.mockResolvedValue(null);
     database.query.mockResolvedValue({
-      rows: [
-        { template_key: 'colorful-pills' },
-        { template_key: 'aurora-pills' },
-      ],
+      rows: [{ template_key: 'spectrum' }, { template_key: 'aurora' }],
     });
 
     await expect(service.getEffectiveKeys('business-id')).resolves.toEqual([
-      'colorful-pills',
-      'aurora-pills',
+      'spectrum',
+      'aurora',
     ]);
     expect(redis.set).toHaveBeenCalledWith(
       'templates:business:business-id',
-      { keys: ['colorful-pills', 'aurora-pills'] },
+      { keys: ['spectrum', 'aurora'] },
       60,
     );
   });
 
   it('rejects a template outside the assigned plan', async () => {
-    redis.get.mockResolvedValue({ keys: ['colorful-pills'] });
+    redis.get.mockResolvedValue({ keys: ['spectrum'] });
 
     await expect(
       service.assertAllowed('business-id', 'dark-card'),

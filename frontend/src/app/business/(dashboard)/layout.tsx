@@ -2,6 +2,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ComponentProps, ReactNode } from "react";
 import { BusinessDashboard } from "@/components/business/BusinessDashboard";
+import { BusinessImpersonationBanner } from "@/components/business/BusinessImpersonationBanner";
 import { extractSubdomain } from "@/lib/subdomain-utils";
 import type { EffectiveAccessManifest } from "@linktree/types";
 import { ErrorPage } from "@/components/error-pages/ErrorPage";
@@ -11,6 +12,10 @@ import { fetchAuthenticatedBusinessTheme } from "@/lib/utils/business-error-them
 import { BusinessBadGatewayPage } from "@/components/error-pages/BusinessBadGatewayPage";
 import { BusinessGatewayTimeoutPage } from "@/components/error-pages/BusinessGatewayTimeoutPage";
 import { classifyUpstreamFailure } from "@/lib/api/upstream-failure";
+import {
+  INTERNAL_PROXY_KEY_HEADER,
+  internalProxyKey,
+} from "@/lib/security/internal-proxy-key";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -38,6 +43,11 @@ interface BusinessProfile {
   onboarding_step?: number;
 }
 
+interface SessionImpersonation {
+  platform_admin_name: string;
+  started_at: string;
+}
+
 export default async function BusinessDashboardLayout({
   children,
 }: {
@@ -63,6 +73,7 @@ export default async function BusinessDashboardLayout({
   const requestHeaders: Record<string, string> = {
     Cookie: `business_session=${sessionToken}`,
     "x-subdomain": subdomain,
+    [INTERNAL_PROXY_KEY_HEADER]: internalProxyKey() || "",
   };
 
   if (clientIp) {
@@ -70,6 +81,7 @@ export default async function BusinessDashboardLayout({
   }
 
   let currentUser: BusinessProfile | null = null;
+  let impersonation: SessionImpersonation | null = null;
   let effectiveAccess: EffectiveAccessManifest | null = null;
   let accessForbidden = false;
   let authenticationInvalid = false;
@@ -130,6 +142,7 @@ export default async function BusinessDashboardLayout({
       } else {
         const sessionData = await sessionResponse.json();
         currentUser = sessionData.user || null;
+        impersonation = sessionData.impersonation || null;
       }
     }
   } catch (error) {
@@ -206,6 +219,12 @@ export default async function BusinessDashboardLayout({
 
   return (
     <>
+      {impersonation && (
+        <BusinessImpersonationBanner
+          businessName={currentUser.name}
+          platformAdminName={impersonation.platform_admin_name}
+        />
+      )}
       <BusinessDashboard
         initialLinktrees={initialLinktrees}
         currentUsername={currentUser.username}

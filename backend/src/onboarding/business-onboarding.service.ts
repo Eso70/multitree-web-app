@@ -37,6 +37,14 @@ import type {
 } from './dto/onboarding.dto';
 import { SecurityAuditService } from '../auth/security-audit.service';
 import { MailService } from '../mail/mail.service';
+import { buildTenantUrl } from '../common/root-domain';
+import {
+  authHandoffKey,
+  createAuthHandoffCode,
+  AUTH_HANDOFF_TTL_SECONDS,
+  IMPERSONATION_SESSION_TTL_SECONDS,
+  type AuthHandoffPayload,
+} from '../auth/auth-handoff';
 
 export const TERMS_VERSION = '2026-08-09';
 export const PRIVACY_VERSION = '2026-08-09';
@@ -51,16 +59,6 @@ interface OAuthState {
   subdomain?: string;
   invitationId?: string;
   rememberDevice?: boolean;
-}
-
-export function buildTenantUrl(
-  applicationBaseUrl: string,
-  subdomain: string,
-  path: string,
-): string {
-  const tenantBase = new URL(applicationBaseUrl);
-  tenantBase.hostname = `${subdomain}.${tenantBase.hostname}`;
-  return new URL(path, tenantBase).toString();
 }
 
 interface SignupSession {
@@ -1132,12 +1130,17 @@ export class BusinessOnboardingService {
         metadata: { provider: 'google', method: 'verified_signup_email' },
       });
     }
-    const handoff = this.randomToken();
+    const handoff = createAuthHandoffCode();
+    const payload: AuthHandoffPayload = {
+      ...membership,
+      kind: 'login',
+      rememberDevice: Boolean(oauth.rememberDevice),
+    };
     await Promise.all([
       this.redis.set(
-        `auth:handoff:${this.hash(handoff)}`,
-        { ...membership, rememberDevice: Boolean(oauth.rememberDevice) },
-        60,
+        authHandoffKey(handoff),
+        payload,
+        AUTH_HANDOFF_TTL_SECONDS,
       ),
       this.database.query(
         `UPDATE users SET last_login_at = NOW() WHERE id = $1`,
@@ -1160,24 +1163,34 @@ export class BusinessOnboardingService {
     userAgent: string;
   }) {
     this.assertTemporaryStore();
-    const handoff = await this.redis.consume<{
-      user_id: string;
-      business_id: string;
-      subdomain: string;
-      username?: string;
-      business_name?: string;
-      rememberDevice?: boolean;
-    }>(`auth:handoff:${this.hash(input.code || '')}`);
+    const handoff = await this.redis.consume<AuthHandoffPayload>(
+      authHandoffKey(input.code || ''),
+    );
     const subdomain = this.normalizeSubdomain(input.subdomain);
     if (!handoff || handoff.subdomain !== subdomain) {
       throw new UnauthorizedException('Sign-in handoff expired');
     }
+    // One consume path produces both session kinds. An impersonation handoff
+    // yields a short, marked, non-rememberable session; anything else is an
+    // ordinary owner sign-in.
+    const impersonation =
+      handoff.kind === 'impersonation' ? handoff.impersonation : undefined;
     return this.sessions.createBusinessSession({
       businessId: handoff.business_id,
       userId: handoff.user_id,
       ipAddress: input.ipAddress,
       userAgent: input.userAgent,
-      rememberDevice: Boolean(handoff.rememberDevice),
+      rememberDevice: impersonation ? false : Boolean(handoff.rememberDevice),
+      ...(impersonation
+        ? {
+            ttlSeconds: IMPERSONATION_SESSION_TTL_SECONDS,
+            impersonation: {
+              platformAdminId: impersonation.platformAdminId,
+              platformAdminName: impersonation.platformAdminName,
+              reason: impersonation.reason ?? null,
+            },
+          }
+        : {}),
       sessionUser:
         handoff.username && handoff.business_name
           ? {

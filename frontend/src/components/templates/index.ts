@@ -20,13 +20,11 @@ function createDynamicTemplate(factory: () => Promise<TemplateComponent>): Templ
 }
 
 export const TEMPLATE_COMPONENTS: Record<TemplateKey, TemplateComponent> = {
-  "colorful-pills": createDynamicTemplate(() => import("./ColorfulPillsTemplate").then((m) => m.ColorfulPillsTemplate)),
-  "mobile-spotlight": createDynamicTemplate(() => import("./ModernGlassTemplate").then((m) => m.ModernGlassTemplate)),
-  "frosted-outline": createDynamicTemplate(() => import("./FrostedOutlineTemplate").then((m) => m.FrostedOutlineTemplate)),
-  "aurora-pills": createDynamicTemplate(() => import("./AuroraPillsTemplate").then((m) => m.AuroraPillsTemplate)),
-  "gentle-flow": createDynamicTemplate(() => import("./GentleFlowTemplate").then((m) => m.GentleFlowTemplate)),
-  "hero-image": createDynamicTemplate(() => import("./HeroImageTemplate").then((m) => m.HeroImageTemplate)),
-  "dark-card": createDynamicTemplate(() => import("./DarkCardTemplate").then((m) => m.DarkCardTemplate)),
+  spectrum: createDynamicTemplate(() => import("./SpectrumTemplate").then((m) => m.SpectrumTemplate)),
+  spotlight: createDynamicTemplate(() => import("./SpotlightTemplate").then((m) => m.SpotlightTemplate)),
+  frost: createDynamicTemplate(() => import("./FrostTemplate").then((m) => m.FrostTemplate)),
+  aurora: createDynamicTemplate(() => import("./AuroraTemplate").then((m) => m.AuroraTemplate)),
+  serenity: createDynamicTemplate(() => import("./SerenityTemplate").then((m) => m.SerenityTemplate)),
 };
 
 export { TEMPLATE_DEFAULT_ID, TEMPLATE_OPTIONS };

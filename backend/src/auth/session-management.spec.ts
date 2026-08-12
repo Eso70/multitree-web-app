@@ -119,6 +119,9 @@ describe('SessionService business session management', () => {
       '127.0.0.1',
       'test-agent',
       true,
+      // An owner sign-in carries no impersonation marker or reason.
+      null,
+      null,
     ]);
     expect(String(mockArg(database.query, 1, 0))).toContain('OFFSET 5');
   });

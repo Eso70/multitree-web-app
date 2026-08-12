@@ -8,6 +8,10 @@ import type {
   PublicPageAnalytics,
 } from "@linktree/types";
 import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import {
+  INTERNAL_PROXY_KEY_HEADER,
+  internalProxyKey,
+} from "@/lib/security/internal-proxy-key";
 import { BusinessServiceUnavailablePage } from "@/components/error-pages/BusinessServiceUnavailablePage";
 import { BusinessGonePage } from "@/components/error-pages/BusinessGonePage";
 import { BusinessBadGatewayPage } from "@/components/error-pages/BusinessBadGatewayPage";
@@ -85,6 +89,7 @@ async function fetchLinktreeData(
 
     const fetchHeaders: Record<string, string> = {
       "x-subdomain": subdomain,
+      [INTERNAL_PROXY_KEY_HEADER]: internalProxyKey() || "",
     };
     if (clientIp) {
       fetchHeaders["x-forwarded-for"] = clientIp;

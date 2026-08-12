@@ -15,7 +15,9 @@ import {
   Check,
   CircleHelp,
   CloudUpload,
+  ExternalLink,
   Eye,
+  EyeOff,
   LayoutDashboard,
   MonitorPlay,
   Pencil,
@@ -39,6 +41,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { IconActionButton } from "@/components/shared/IconActionButton";
 import { StatCard } from "@/components/shared/StatCard";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
+import { AccentActionButton } from "@/components/shared/AccentActionButton";
 import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
 import { ManagementModal } from "@/components/shared/ManagementModal";
 import { ModalFooterActions } from "@/components/shared/ModalFooterActions";
@@ -49,6 +52,7 @@ import { SegmentedTabs, type SegmentedTab } from "@/components/shared/SegmentedT
 import { TabSaveButton } from "@/components/shared/TabSaveButton";
 import { modalInputClass, modalTextareaClass } from "@/features/link-editor/modal-input-styles";
 import { BackgroundColorPicker, RAINBOW_BACKGROUND_COLORS } from "@/features/link-editor/BackgroundColorPicker";
+import { getSubdomainPageUrl } from "@/lib/utils/app-url";
 import { cn } from "@/lib/utils";
 import { AdvertisingVideoPlayer } from "./AdvertisingVideoPlayer";
 import { PROVIDER_LOGOS as PAYMENT_PROVIDER_LOGOS } from "./AdvertisingPaymentStep";
@@ -66,7 +70,9 @@ import { FaqCarousel } from "./AdvertisingFaqSection";
 import type { AdvertisingPriceRow } from "../pricing-data";
 import {
   fetchAdvertisingDraft,
+  publishAdvertising,
   saveAndPublishAdvertising,
+  unpublishAdvertising,
   uploadAdvertisingImage,
 } from "../api";
 import type {
@@ -223,7 +229,10 @@ const inputClass = modalInputClass();
 const textareaClass = modalTextareaClass(false, "min-h-28");
 
 
-type AdvertisingServicePageProps = AdvertisingBusinessBranding;
+type AdvertisingServicePageProps = AdvertisingBusinessBranding & {
+  /** Business subdomain where the public `/advertising` page is served. */
+  subdomain: string;
+};
 
 function createId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -249,19 +258,6 @@ async function uploadPickedImage(
   } catch (error) {
     toast.error(error instanceof Error ? error.message : "نەتوانرا وێنەکە باربکرێت");
   }
-}
-
-/** Primary "add" button used in each manageable tab's header; carries the tenant accent. */
-function TabCreateButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex h-10 items-center gap-1.5 rounded-xl bg-[var(--theme-primary)] px-3.5 text-xs font-black text-white shadow-sm transition hover:brightness-95"
-    >
-      <Plus className="h-4 w-4" /> {label}
-    </button>
-  );
 }
 
 /**
@@ -1088,7 +1084,7 @@ function PaymentProviderModal({
  * arrived: every handler below it dereferences `config` freely, which is only
  * safe because this component does not render the editor until it exists.
  */
-export function AdvertisingServicePage({ accentColor }: AdvertisingServicePageProps) {
+export function AdvertisingServicePage({ accentColor, subdomain }: AdvertisingServicePageProps) {
   const [draft, setDraft] = useState<AdvertisingDraftConfig | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -1134,14 +1130,51 @@ export function AdvertisingServicePage({ accentColor }: AdvertisingServicePagePr
     );
   }
 
-  return <AdvertisingServiceEditor accentColor={accentColor} initialDraft={draft} />;
+  return (
+    <AdvertisingServiceEditor
+      accentColor={accentColor}
+      subdomain={subdomain}
+      initialDraft={draft}
+    />
+  );
+}
+
+/**
+ * The whole draft as a save patch. Shared by the editor's Save and the header
+ * Publish toggle, which flushes unsaved edits before publishing so the live
+ * page always matches what the editor shows.
+ */
+function savePatchFor(config: AdvertisingServiceConfig): Record<string, unknown> {
+  return {
+    title: config.title,
+    description: config.description,
+    whatsappNumber: config.whatsappNumber,
+    sections: config.sections,
+    closingCta: config.closingCta,
+    packageCategories: config.packageCategories.map((category) => ({
+      id: category.id,
+      label: category.label,
+      color: category.color,
+      tiers: config.packageTiers[category.id] ?? [],
+    })),
+    results: config.results,
+    testimonials: config.testimonials,
+    faqs: config.faqs,
+    paymentProviders: config.paymentProviders,
+    videoUrl: config.videoUrl,
+    videoTutorialTitle: config.videoTutorialTitle,
+    tutorialSteps: config.tutorialSteps,
+    receiptExampleImageUrl: config.receiptExampleImageUrl ?? null,
+  };
 }
 
 function AdvertisingServiceEditor({
   accentColor,
+  subdomain,
   initialDraft,
 }: {
   accentColor?: string | null;
+  subdomain: string;
   initialDraft: AdvertisingDraftConfig;
 }) {
   const [activeTab, setActiveTab] = useState<AdvertisingTab>("texts");
@@ -1187,31 +1220,12 @@ function AdvertisingServiceEditor({
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Saving is publishing: this page has no separate publish control, so
-      // both halves travel in one request and land in one transaction. The
-      // version snapshot is still written every time, so history and rollback
-      // data keep accumulating even though nothing in this header exposes them.
-      const published = await saveAndPublishAdvertising({
-        title: config.title,
-        description: config.description,
-        whatsappNumber: config.whatsappNumber,
-        sections: config.sections,
-        closingCta: config.closingCta,
-        packageCategories: config.packageCategories.map((category) => ({
-          id: category.id,
-          label: category.label,
-          color: category.color,
-          tiers: config.packageTiers[category.id] ?? [],
-        })),
-        results: config.results,
-        testimonials: config.testimonials,
-        faqs: config.faqs,
-        paymentProviders: config.paymentProviders,
-        videoUrl: config.videoUrl,
-        videoTutorialTitle: config.videoTutorialTitle,
-        tutorialSteps: config.tutorialSteps,
-        receiptExampleImageUrl: config.receiptExampleImageUrl ?? null,
-      });
+      // Saving is publishing: the editor's Save and the page's header toggle
+      // can land apart, so the primary path travels in one request and one
+      // transaction. The version snapshot is still written every time, so
+      // history and rollback data keep accumulating even though nothing in
+      // this header exposes them.
+      const published = await saveAndPublishAdvertising(savePatchFor(config));
       setConfig(published);
       setDirty(false);
       toast.success("گۆڕانکاریەکان پاشەکەوت کران و بڵاوکرانەوە");
@@ -1219,6 +1233,34 @@ function AdvertisingServiceEditor({
       toast.error(error instanceof Error ? error.message : "نەتوانرا پاشەکەوت بکرێت");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const [publishing, setPublishing] = useState(false);
+  const isPublished = config.status === "published";
+
+  /**
+   * The header toggle. Publishing a page that is not live is the default
+   * action; while the page is live the same button unpublishes it. Unsaved
+   * edits are flushed first so what goes live is exactly what the editor
+   * shows, matching the Save button's behaviour.
+   */
+  const handleTogglePublish = async () => {
+    const wasPublished = config.status === "published";
+    setPublishing(true);
+    try {
+      const next = wasPublished
+        ? await unpublishAdvertising()
+        : dirty
+          ? await saveAndPublishAdvertising(savePatchFor(config))
+          : await publishAdvertising();
+      setConfig(next);
+      setDirty(false);
+      toast.success(wasPublished ? "پەیجەکە وەستێنرا" : "پەیجەکە بڵاوکرایەوە");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "نەتوانرا بڵاوکرایەوە");
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -1418,7 +1460,53 @@ function AdvertisingServiceEditor({
             icon={LayoutDashboard}
             title="دەقی سەرەکی و کۆتایی"
             description="دەقی سەرەتای پەڕە و بەشی بانگهێشتی کۆتایی."
-            action={<TabSaveButton dirty={dirty} saving={saving} onSave={() => void handleSave()} />}
+            action={
+              <>
+                <a
+                  href={getSubdomainPageUrl(subdomain, "/advertising")}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-disabled={!isPublished}
+                  title={isPublished ? "کردنەوەی پەیجی گشتی" : "پەیجەکە نابڵاوکراوە"}
+                  className={cn(
+                    "flex h-10 shrink-0 items-center gap-2 rounded-xl border px-3.5 text-xs font-black transition",
+                    isPublished
+                      ? "border-slate-200 bg-white text-slate-600 shadow-sm hover:border-slate-300 hover:text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+                      : "pointer-events-none border-dashed border-slate-200 text-slate-400 dark:border-white/10 dark:text-slate-500",
+                  )}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  کردنەوە
+                </a>
+                <AccentActionButton
+                  onClick={() => void handleTogglePublish()}
+                  busy={publishing}
+                  title={
+                    isPublished
+                      ? "کرتە بکە بۆ وەستاندنی پەیج"
+                      : "بڵاوکردنەوەی پەیج"
+                  }
+                >
+                  {isPublished ? (
+                    <EyeOff aria-hidden="true" className="h-4 w-4" />
+                  ) : (
+                    <Eye aria-hidden="true" className="h-4 w-4" />
+                  )}
+                  {publishing
+                    ? isPublished
+                      ? "وەستاندن..."
+                      : "بڵاوکردنەوە..."
+                    : isPublished
+                      ? "بڵاوکراوە"
+                      : "بڵاوکردنەوە"}
+                </AccentActionButton>
+                <TabSaveButton
+                  dirty={dirty}
+                  saving={saving}
+                  onSave={() => void handleSave()}
+                />
+              </>
+            }
           >
             <div className="sm:col-span-2 grid gap-6 sm:grid-cols-2 sm:divide-x sm:divide-slate-100 sm:dark:divide-white/5">
               <div className="space-y-4 sm:pe-6">
@@ -1509,7 +1597,10 @@ function AdvertisingServiceEditor({
             action={
               <>
                 <TabSaveButton dirty={dirty} saving={saving} onSave={() => void handleSave()} />
-                <TabCreateButton label="شێوازێکی نوێ" onClick={() => setPaymentProviderModal({ mode: "create" })} />
+                <AccentActionButton onClick={() => setPaymentProviderModal({ mode: "create" })}>
+                  <Plus aria-hidden="true" className="h-4 w-4" />
+                  شێوازێکی نوێ
+                </AccentActionButton>
               </>
             }
           >
@@ -1705,7 +1796,10 @@ function AdvertisingServiceEditor({
                   onChange={(checked) => updateConfig("sections", { ...config.sections, results: checked })}
                 />
                 <TabSaveButton dirty={dirty} saving={saving} onSave={() => void handleSave()} />
-                <TabCreateButton label="نموونەی نوێ" onClick={() => setResultModal({ mode: "create" })} />
+                <AccentActionButton onClick={() => setResultModal({ mode: "create" })}>
+                  <Plus aria-hidden="true" className="h-4 w-4" />
+                  نموونەی نوێ
+                </AccentActionButton>
               </>
             }
           >
@@ -1790,7 +1884,10 @@ function AdvertisingServiceEditor({
             action={
               <>
                 <TabSaveButton dirty={dirty} saving={saving} onSave={() => void handleSave()} />
-                <TabCreateButton label="جۆری نوێ" onClick={() => setCategoryModal({ mode: "create" })} />
+                <AccentActionButton onClick={() => setCategoryModal({ mode: "create" })}>
+                  <Plus aria-hidden="true" className="h-4 w-4" />
+                  جۆری نوێ
+                </AccentActionButton>
               </>
             }
           >
@@ -1938,7 +2035,10 @@ function AdvertisingServiceEditor({
                   onChange={(checked) => updateConfig("sections", { ...config.sections, testimonials: checked })}
                 />
                 <TabSaveButton dirty={dirty} saving={saving} onSave={() => void handleSave()} />
-                <TabCreateButton label="ڕایەکی نوێ" onClick={() => setTestimonialModal({ mode: "create" })} />
+                <AccentActionButton onClick={() => setTestimonialModal({ mode: "create" })}>
+                  <Plus aria-hidden="true" className="h-4 w-4" />
+                  ڕایەکی نوێ
+                </AccentActionButton>
               </>
             }
           >
@@ -2018,7 +2118,10 @@ function AdvertisingServiceEditor({
                   onChange={(checked) => updateConfig("sections", { ...config.sections, faq: checked })}
                 />
                 <TabSaveButton dirty={dirty} saving={saving} onSave={() => void handleSave()} />
-                <TabCreateButton label="پرسیاری نوێ" onClick={() => setFaqModal({ mode: "create" })} />
+                <AccentActionButton onClick={() => setFaqModal({ mode: "create" })}>
+                  <Plus aria-hidden="true" className="h-4 w-4" />
+                  پرسیاری نوێ
+                </AccentActionButton>
               </>
             }
           >

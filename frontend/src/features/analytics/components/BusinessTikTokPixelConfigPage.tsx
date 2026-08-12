@@ -20,6 +20,8 @@ import { DashboardSurface } from "@/components/shared/DashboardSurface";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SkeletonDashboardPage } from "@/components/shared/Skeleton";
+import { AccentActionButton } from "@/components/shared/AccentActionButton";
+import { TikTokDeliveryStatusPanel } from "@/features/analytics/components/TikTokDeliveryStatusPanel";
 
 interface PixelConfig {
   id?: string;
@@ -354,14 +356,13 @@ export function BusinessTikTokPixelConfigPage() {
         </div>
       )}
 
+      <TikTokDeliveryStatusPanel />
+
       <div className="mt-5 flex justify-end border-t border-slate-100 pt-5 dark:border-white/5">
-        <button
-          type="button"
+        <AccentActionButton
           onClick={() => void save()}
-          aria-busy={saving}
-          disabled={saving || hasInvalidRows}
-          className="flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold shadow-md transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
-          style={{ background: "var(--theme-css)", color: "var(--theme-ink)" }}
+          busy={saving}
+          disabled={hasInvalidRows}
         >
           {saving ? (
             <MotionSpinner><Loader2 className="h-4 w-4 "  /></MotionSpinner>
@@ -369,7 +370,7 @@ export function BusinessTikTokPixelConfigPage() {
             <Save className="h-4 w-4" />
           )}
           {saving ? "پاشەکەوتکردن..." : "پاشەکەوتکردن"}
-        </button>
+        </AccentActionButton>
       </div>
     </DashboardSurface>
   );

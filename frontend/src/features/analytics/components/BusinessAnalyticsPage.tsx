@@ -50,6 +50,7 @@ import {
 } from "@/components/shared/SegmentedTabs";
 import { StatCard } from "@/components/shared/StatCard";
 import { SkeletonDashboardPage } from "@/components/shared/Skeleton";
+import { AccentActionButton } from "@/components/shared/AccentActionButton";
 import { FunnelChart, RetentionGrid } from "@/features/analytics/components/AnalyticsWidgets";
 import { AnalyticsOverviewStory } from "@/features/analytics/components/AnalyticsOverviewStory";
 import { useRegisterBusinessDashboardRefresh } from "@/features/business/dashboard-refresh";
@@ -1521,16 +1522,10 @@ export function BusinessAnalyticsPage({
                 </button>
               )}
               {surface === "crm" && (
-                <button
-                  type="button"
+                <AccentActionButton
                   onClick={() => void exportCrmLeads()}
-                  aria-busy={exportingCrm}
-                  disabled={!selectedAsset || exportingCrm}
-                  className="flex h-10 items-center justify-center gap-2 rounded-xl px-3.5 text-xs font-bold shadow-sm transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
-                  style={{
-                    background: "var(--theme-css)",
-                    color: "var(--theme-ink)",
-                  }}
+                  busy={exportingCrm}
+                  disabled={!selectedAsset}
                   title="هەناردەکردنی داتای کڕیاران"
                 >
                   {exportingCrm ? (
@@ -1539,7 +1534,7 @@ export function BusinessAnalyticsPage({
                     <Download className="h-4 w-4" />
                   )}
                   <span className="hidden sm:inline">هەناردەکردن</span>
-                </button>
+                </AccentActionButton>
               )}
             </div>
           }
@@ -1737,14 +1732,12 @@ export function BusinessAnalyticsPage({
                   </div>
                 </div>
                 {tiktok.failed > 0 && (
-                  <button
-                    type="button"
+                  <AccentActionButton
                     onClick={() => void retryTikTok()}
-                    className="mt-4 h-10 rounded-xl px-4 text-xs font-bold text-slate-900 shadow-sm"
-                    style={{ background: "var(--theme-primary)" }}
+                    className="mt-4"
                   >
                     دووبارە هەوڵدانەوە
-                  </button>
+                  </AccentActionButton>
                 )}
               </Section>
               <Section
@@ -1929,16 +1922,13 @@ export function BusinessAnalyticsPage({
             >
               پاشگەزبوونەوە
             </button>
-            <button
-              type="button"
+            <AccentActionButton
               onClick={() => void saveNote()}
-              aria-busy={saving}
-              disabled={saving || !note.trim()}
-              className="h-10 rounded-xl px-5 text-xs font-bold text-slate-900 disabled:opacity-50"
-              style={{ background: "var(--theme-primary)" }}
+              busy={saving}
+              disabled={!note.trim()}
             >
               {saving ? "پاراستن..." : "پاراستن"}
-            </button>
+            </AccentActionButton>
           </>
         }
       >

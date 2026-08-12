@@ -1,6 +1,7 @@
 import { MotionSpinner } from "@/components/motion/MotionPrimitives";
 import { Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/shared/Skeleton";
+import { AccentActionButton } from "@/components/shared/AccentActionButton";
 
 interface ModalWizardActionsProps {
   variant?: "themed" | "multitree";
@@ -75,27 +76,31 @@ export function ModalWizardActions({
       {isLoadingData ? (
         <Skeleton className="h-11 w-full sm:flex-1" />
       ) : !isFinalStep ? (
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={
-            isSubmitting || (disableWhenInvalid && !canContinue)
-          }
-          className={nextClassName}
-          style={variant === "themed" ? { background: "var(--theme-css, #64748b)" } : undefined}
-        >
-          <span>بەردەوام بە</span>
-        </button>
-      ) : (
+        variant === "multitree" ? (
+          <button
+            type="button"
+            onClick={onNext}
+            disabled={isSubmitting || (disableWhenInvalid && !canContinue)}
+            className={nextClassName}
+          >
+            <span>بەردەوام بە</span>
+          </button>
+        ) : (
+          <AccentActionButton
+            onClick={onNext}
+            disabled={isSubmitting || (disableWhenInvalid && !canContinue)}
+            className="w-full sm:flex-1 sm:text-sm"
+          >
+            <span>بەردەوام بە</span>
+          </AccentActionButton>
+        )
+      ) : variant === "multitree" ? (
         <button
           type="button"
           onClick={onSubmit}
           aria-busy={isSubmitting}
-          disabled={
-            isSubmitting || (disableWhenInvalid && !canContinue)
-          }
+          disabled={isSubmitting || (disableWhenInvalid && !canContinue)}
           className={submitClassName}
-          style={variant === "themed" ? { background: "var(--theme-css, #64748b)" } : undefined}
         >
           {isSubmitting ? (
             <>
@@ -106,6 +111,22 @@ export function ModalWizardActions({
             <span>{submitLabel}</span>
           )}
         </button>
+      ) : (
+        <AccentActionButton
+          onClick={onSubmit}
+          busy={isSubmitting}
+          disabled={disableWhenInvalid && !canContinue}
+          className="w-full sm:flex-1 sm:text-sm"
+        >
+          {isSubmitting ? (
+            <>
+              <MotionSpinner><Loader2 className="h-4 w-4 "  /></MotionSpinner>
+              <span>پاشەکەوتکردن...</span>
+            </>
+          ) : (
+            <span>{submitLabel}</span>
+          )}
+        </AccentActionButton>
       )}
     </div>
   );

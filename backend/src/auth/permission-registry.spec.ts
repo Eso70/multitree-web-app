@@ -66,6 +66,9 @@ describe('application permission registry', () => {
         'effective-access',
         'subdomain-theme/:subdomain',
         'subdomain-check',
+        // Ends an already-authorized impersonated session; the platform
+        // capability is enforced where the session is minted.
+        'impersonation/exit',
       ],
       'platform-auth.controller.ts': [
         'login',

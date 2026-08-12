@@ -657,6 +657,15 @@ const ALL_PERMISSION_DEFINITIONS = [
     displayOrder: 590,
   }),
   permission({
+    key: 'platform:businesses:impersonate',
+    category: 'Business administration',
+    resource: 'platform.businesses',
+    action: 'impersonate',
+    description: 'Open a business dashboard as that business',
+    riskLevel: 'critical',
+    displayOrder: 600,
+  }),
+  permission({
     key: 'platform:businesses:profile-requests-read',
     category: 'Business administration',
     resource: 'platform.businesses',
@@ -1160,6 +1169,7 @@ export const Capability = {
   PlatformBusinessesLinktreesExport: 'platform:businesses:linktrees-export',
   PlatformBusinessesLinktreesImport: 'platform:businesses:linktrees-import',
   PlatformBusinessesTikTokUpdate: 'platform:businesses:tiktok-update',
+  PlatformBusinessesImpersonate: 'platform:businesses:impersonate',
   PlatformBusinessesProfileRequestsRead:
     'platform:businesses:profile-requests-read',
   PlatformBusinessesProfileRequestsReview:

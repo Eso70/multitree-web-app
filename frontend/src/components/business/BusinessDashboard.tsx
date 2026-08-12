@@ -2043,6 +2043,7 @@ export const BusinessDashboard = memo(function BusinessDashboard({
                       logo={logo}
                       accentColor={parseWebsiteColor(wColor).primary}
                       phone={phone}
+                      subdomain={currentUsername}
                     />
                   ) : activeTab === "settings" ? (
                     <BusinessSettingsPage />

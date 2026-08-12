@@ -17,6 +17,7 @@ interface PlatformBusinessDirectoryContentProps {
   onDelete: (id: string) => void;
   onViewAnalytics: (business: Business) => void;
   onManageSessions: (business: Business) => void;
+  onOpenDashboard: (business: Business) => void;
 }
 
 export function PlatformBusinessDirectoryContent({
@@ -30,6 +31,7 @@ export function PlatformBusinessDirectoryContent({
   onDelete,
   onViewAnalytics,
   onManageSessions,
+  onOpenDashboard,
 }: PlatformBusinessDirectoryContentProps) {
   return (
     <div>
@@ -52,6 +54,7 @@ export function PlatformBusinessDirectoryContent({
           onDelete={onDelete}
           onViewAnalytics={onViewAnalytics}
           onManageSessions={onManageSessions}
+          onOpenDashboard={onOpenDashboard}
         />
       ) : (
         <BusinessesTable
@@ -60,6 +63,7 @@ export function PlatformBusinessDirectoryContent({
           onDelete={onDelete}
           onViewAnalytics={onViewAnalytics}
           onManageSessions={onManageSessions}
+          onOpenDashboard={onOpenDashboard}
         />
       )}
       <TablePagination

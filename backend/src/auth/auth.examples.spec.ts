@@ -176,6 +176,7 @@ describe('Auth Examples - Subdomain Business Routing', () => {
         mockSessionService,
         mockRedisService,
         accessRules,
+        {} as never,
       );
     });
 
@@ -422,6 +423,7 @@ describe('Auth Examples - Subdomain Business Routing', () => {
         mockSessionService,
         mockRedisService,
         accessRules,
+        {} as never,
       );
     });
 

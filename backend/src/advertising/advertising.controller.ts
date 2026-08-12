@@ -70,8 +70,9 @@ export class AdvertisingController {
    * Saving is publishing on this page, and the two must not be able to land
    * apart, so they share one request and one transaction. `PATCH` and
    * `POST /publish` remain separately available for API consumers that want
-   * to stage a draft. Requires the publish capability as well as update,
-   * because that is what it does.
+   * to stage a draft; the Ads page's header toggle uses `POST /publish` and
+   * `POST /unpublish` directly. Requires the publish capability as well as
+   * update, because that is what it does.
    */
   @Post('save-and-publish')
   @RequireCapabilities(

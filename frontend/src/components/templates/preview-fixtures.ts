@@ -5,17 +5,17 @@ import type {
 import type { TemplateKey } from "@/lib/templates/config";
 import type { TemplateTheme } from "@/components/templates/types";
 
+const DEFAULT_PREVIEW_SUBTITLE = "Digital Presence Platform";
+
 export const LINKTREE_TEMPLATE_PREVIEW_THEMES: Record<
   TemplateKey,
   TemplateTheme
 > = {
-  "colorful-pills": { from: "#ffffff", via: "#ffffff", to: "#ffffff", isSolid: true },
-  "mobile-spotlight": { from: "#000000", via: "#000000", to: "#000000", isSolid: true },
-  "frosted-outline": { from: "#000000", via: "#000000", to: "#000000", isSolid: true },
-  "aurora-pills": { from: "#000000", via: "#000000", to: "#000000", isSolid: true },
-  "gentle-flow": { from: "#ffffff", via: "#ffffff", to: "#ffffff", isSolid: true },
-  "hero-image": { from: "#000000", via: "#000000", to: "#000000", isSolid: true },
-  "dark-card": { from: "#000000", via: "#000000", to: "#000000", isSolid: true },
+  spectrum: { from: "#ffffff", via: "#ffffff", to: "#ffffff", isSolid: true },
+  spotlight: { from: "#000000", via: "#000000", to: "#000000", isSolid: true },
+  frost: { from: "#000000", via: "#000000", to: "#000000", isSolid: true },
+  aurora: { from: "#000000", via: "#000000", to: "#000000", isSolid: true },
+  serenity: { from: "#ffffff", via: "#ffffff", to: "#ffffff", isSolid: true },
 };
 
 function normalizedPhone(value?: string | null) {
@@ -63,7 +63,7 @@ export function createBusinessContactPreviewLinks(
 export function createLinktreeTemplatePreview({
   templateId,
   businessName = "MultiTree",
-  subtitle,
+  subtitle = DEFAULT_PREVIEW_SUBTITLE,
   description,
   businessLogo = "/images/Logo.jpg",
   phoneNumber,
@@ -78,13 +78,6 @@ export function createLinktreeTemplatePreview({
   accentColor?: string;
 }): Linktree {
   const templateConfig: Record<string, unknown> = { templateKey: templateId };
-  if (templateId === "dark-card") {
-    templateConfig.dark_card = {
-      desc_title: "زانیاری دەربارەی ئێمە",
-      desc_text: "هەموو ڕێگاکانی پەیوەندی لە یەک پەڕەی ڕوون و خێرادا.",
-      desc_image: businessLogo,
-    };
-  }
 
   return {
     id: `preview-${templateId}`,

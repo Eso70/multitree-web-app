@@ -36,6 +36,7 @@ import {
 } from "./types";
 import { useBusinessAnalyticsTotals } from "@/features/business/hooks/useBusinessAnalyticsTotals";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
+import { AccentActionButton } from "@/components/shared/AccentActionButton";
 
 type ViewMode = "grid" | "table";
 
@@ -513,16 +514,13 @@ export function MiniWebsitesPage({
                   <Table2 className="h-4 w-4 shrink-0" />
                 </button>
               </div>
-              <button
-                type="button"
+              <AccentActionButton
                 onClick={openCreate}
-                className="group relative flex h-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-4 text-xs font-bold text-white shadow-md transition-all duration-300 hover:opacity-85 sm:text-sm"
-                style={{ background: "var(--theme-css, #64748b)" }}
                 title="دروستکردنی مینی وێبسایتی نوێ"
               >
                 <Plus className="h-4 w-4 transition-transform group-hover:scale-110" />
                 <span>مینی وێبسایتی نوێ</span>
-              </button>
+              </AccentActionButton>
             </div>
           }
         />

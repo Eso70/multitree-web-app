@@ -272,6 +272,13 @@ sanitized metadata. Sensitive field values are never stored; only safe
 changed-field names are retained, with a fixed denylist of field names
 (password, tokens, etc.) stripped before logging.
 
+A mutation made while a platform administrator is impersonating a business
+keeps the business as its effective actor, so every business-scoped audit read
+continues to work unchanged; the administrator behind the session is recorded
+in the event's metadata instead. Impersonation start and end are separate
+`platform-admin`-attributed events. See
+[docs/security.md](security.md#platform-administrator-impersonation).
+
 Platform audit queries live in `platform-admin/AuditLogService` and require
 separate read/export capabilities. The query API is paginated and
 parameterized, and CSV exports are bounded. There is no application path for

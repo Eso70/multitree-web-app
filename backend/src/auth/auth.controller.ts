@@ -44,6 +44,7 @@ import {
   UpdateBusinessOnboardingDto,
 } from './dto/business-onboarding.dto';
 import { compactSettingsPayload } from './settings-payload';
+import { ImpersonationService } from './impersonation.service';
 
 @Controller('api/auth')
 @UseInterceptors(AuditInterceptor)
@@ -53,6 +54,7 @@ export class AuthController {
     private readonly sessionService: SessionService,
     private readonly redisService: RedisService,
     private readonly accessRules: AccessRuleEnforcementService,
+    private readonly impersonationService: ImpersonationService,
     @Optional() private readonly authorizationService?: AuthorizationService,
     @Optional() private readonly approvalService?: ApprovalService,
     @Optional() private readonly storageService?: StorageService,
@@ -237,7 +239,52 @@ export class AuthController {
         onboarding_required: !business.onboarding_completed_at,
         onboarding_step: business.onboarding_step ?? 1,
       },
+      // Present only while a platform administrator is signed in as this
+      // business. The dashboard uses it to render its permanent banner, so an
+      // impersonated session can never be mistaken for the owner's own.
+      impersonation: user.impersonation
+        ? {
+            platform_admin_name: user.impersonation.platformAdminName,
+            started_at: user.impersonation.startedAt,
+          }
+        : null,
     };
+  }
+
+  /**
+   * Ends an impersonated session from inside the tenant.
+   *
+   * Separate from `logout` so the audit trail distinguishes an administrator
+   * releasing borrowed access from an owner signing themselves out, and so the
+   * caller receives the console URL to return to.
+   */
+  @Post('impersonation/exit')
+  @UseGuards(BusinessGuard)
+  @HttpCode(HttpStatus.OK)
+  async exitImpersonation(
+    @Req() req: FastifyRequest & { sessionToken?: string },
+    @Res({ passthrough: true }) res: FastifyReply,
+    @CurrentUser() user: SessionUser,
+  ) {
+    const result = await this.impersonationService.end({
+      sessionToken: req.sessionToken || '',
+      user,
+      context: {
+        ipAddress: requestIp(req),
+        userAgent: this.firstHeader(req.headers['user-agent']),
+      },
+    });
+
+    const forwardedProto = this.firstHeader(req.headers['x-forwarded-proto']);
+    res.setCookie('business_session', '', {
+      expires: new Date(0),
+      httpOnly: true,
+      secure: forwardedProto === 'https' || req.protocol === 'https',
+      sameSite: 'lax',
+      path: '/',
+    });
+
+    return result;
   }
 
   @Get('onboarding')

@@ -977,6 +977,80 @@ export class AnalyticsReadService {
     };
   }
 
+  /**
+   * The errors behind a failing TikTok connection, grouped so an owner sees
+   * problems rather than a log.
+   *
+   * `getTikTokHealth` answers "how many failed"; a count alone is unactionable
+   * — a wrong Events API token and a malformed payload both read as a number
+   * going up. This returns what TikTok actually said, per pixel, so the owner
+   * can tell "token rejected" from "this one event was invalid".
+   *
+   * Grouped by pixel, status code, and message: eight retry attempts across
+   * fifty queued events are one problem, and listing them individually buries
+   * it. `attempts` and the first/last timestamps carry the scale instead.
+   *
+   * The summary comes from TikTok's own response body or a network error
+   * message; the Events API token travels only as a request header and is
+   * never echoed into it. That matters because this text reaches both the
+   * business owner and the platform notification centre.
+   */
+  async getTikTokDeliveryErrors(businessId: string, limit = 20) {
+    const result = await this.database.query<{
+      pixel_id: string | null;
+      destination_id: string;
+      status_code: number | null;
+      response_summary: string | null;
+      outcome: string;
+      attempts: string;
+      events: string;
+      first_seen_at: Date;
+      last_seen_at: Date;
+      permanently_failed: string;
+    }>(
+      `SELECT destination.pixel_id,
+              outbox.destination_id,
+              attempt.status_code,
+              attempt.response_summary,
+              attempt.outcome,
+              COUNT(*)::bigint AS attempts,
+              COUNT(DISTINCT outbox.id)::bigint AS events,
+              MIN(attempt.created_at) AS first_seen_at,
+              MAX(attempt.created_at) AS last_seen_at,
+              COUNT(DISTINCT outbox.id) FILTER (
+                WHERE outbox.status = 'failed_permanently'
+              )::bigint AS permanently_failed
+         FROM marketing_delivery_attempts attempt
+         JOIN marketing_event_outbox outbox ON outbox.id = attempt.outbox_id
+         LEFT JOIN business_tiktok_pixels destination
+           ON destination.id = outbox.destination_id
+        WHERE outbox.business_id = $1
+          AND attempt.outcome <> 'success'
+        GROUP BY destination.pixel_id, outbox.destination_id,
+                 attempt.status_code, attempt.response_summary, attempt.outcome
+        ORDER BY MAX(attempt.created_at) DESC
+        LIMIT $2`,
+      [businessId, Math.min(Math.max(limit, 1), 50)],
+    );
+
+    return {
+      items: result.rows.map((row) => ({
+        pixelId: row.pixel_id,
+        destinationId: row.destination_id,
+        statusCode: row.status_code,
+        // `outcome` is the honest severity: 'retry' may still succeed on the
+        // next pass, 'failure' will not without a configuration change.
+        severity: row.outcome === 'failure' ? 'permanent' : 'retrying',
+        message: row.response_summary || 'No detail returned by TikTok',
+        attempts: Number(row.attempts),
+        events: Number(row.events),
+        permanentlyFailed: Number(row.permanently_failed),
+        firstSeenAt: row.first_seen_at,
+        lastSeenAt: row.last_seen_at,
+      })),
+    };
+  }
+
   async retryFailedTikTokEvents(
     businessId: string,
     pageId?: string,

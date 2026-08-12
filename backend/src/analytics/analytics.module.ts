@@ -12,9 +12,17 @@ import { AnalyticsReadRepository } from './analytics-read.repository';
 import { PublicPageAnalyticsService } from './public-page-analytics.service';
 import { BillingModule } from '../billing/billing.module';
 import { ObservabilityModule } from '../observability/observability.module';
+import { CommunicationModule } from '../communications/communication.module';
 
 @Module({
-  imports: [AuthModule, BillingModule, ObservabilityModule],
+  // CommunicationModule so a permanent TikTok delivery failure can reach the
+  // platform administrators' notification centre.
+  imports: [
+    AuthModule,
+    BillingModule,
+    ObservabilityModule,
+    CommunicationModule,
+  ],
   controllers: [
     AnalyticsController,
     PublicUnifiedAnalyticsController,

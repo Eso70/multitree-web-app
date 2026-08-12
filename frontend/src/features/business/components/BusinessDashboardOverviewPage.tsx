@@ -15,6 +15,7 @@ import type { EffectiveAccessManifest } from "@linktree/types";
 import { MotionSpinner } from "@/components/motion/MotionPrimitives";
 import { CustomSelect } from "@/components/shared/CustomSelect";
 import { DashboardSurface } from "@/components/shared/DashboardSurface";
+import { AccentActionButton } from "@/components/shared/AccentActionButton";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SkeletonDashboardPage } from "@/components/shared/Skeleton";
 import { StatCard } from "@/components/shared/StatCard";
@@ -67,14 +68,12 @@ function BusinessDashboardOverviewContent({
         <p className="mt-2 text-xs text-slate-400">
           پەیوەندییەکە بپشکنە و دووبارە هەوڵ بدەوە
         </p>
-        <button
-          type="button"
+        <AccentActionButton
           onClick={() => void overview.refresh()}
-          className="mt-4 rounded-xl px-4 py-2 text-xs font-bold text-white"
-          style={{ background: "var(--theme-primary, #64748b)" }}
+          className="mt-4"
         >
           دووبارە هەوڵ بدەوە
-        </button>
+        </AccentActionButton>
       </DashboardSurface>
     );
   }

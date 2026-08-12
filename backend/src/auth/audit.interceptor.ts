@@ -99,6 +99,17 @@ export class AuditInterceptor implements NestInterceptor {
         method: request.method,
         path: request.url.split('?')[0],
         changedFields: this.safeFieldNames(body),
+        // The effective principal stays the business, so business-scoped audit
+        // reads keep working unchanged. The administrator behind a borrowed
+        // session is recorded here, which is what makes impersonated mutations
+        // distinguishable and searchable after the fact.
+        ...(user?.impersonation
+          ? {
+              impersonatedByPlatformAdminId: user.impersonation.platformAdminId,
+              impersonatedByPlatformAdminName:
+                user.impersonation.platformAdminName,
+            }
+          : {}),
         ...(error
           ? {
               error: {

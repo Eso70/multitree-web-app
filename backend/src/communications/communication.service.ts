@@ -954,6 +954,64 @@ export class CommunicationService implements OnModuleInit, OnModuleDestroy {
     );
   }
 
+  /**
+   * Tells every platform administrator that a business's TikTok Events API
+   * delivery has stopped working.
+   *
+   * A permanent delivery failure is invisible to the business — conversions
+   * simply stop arriving in Events Manager and the page looks fine — so it has
+   * to reach someone who can act on it. The content is operational, not
+   * private correspondence, so it is stored in the plain `title`/`body`
+   * columns rather than `encrypted_content`; `decryptContent` returns those
+   * unchanged when no ciphertext is present.
+   *
+   * Throttled per pixel, not per business or per event: `deliver()` retries a
+   * rejected batch one event at a time, so a single bad token would otherwise
+   * raise one notification per queued event. One per destination per window is
+   * what an operator can act on, and a business running three pixels still
+   * learns which one broke. Two backend instances failing simultaneously can
+   * both pass this check and produce a duplicate; that is cheaper than the
+   * locking required to prevent it.
+   */
+  async notifyPlatformOfTikTokFailure(input: {
+    businessId: string;
+    destinationId: string;
+    pixelCode: string;
+    statusCode?: number | null;
+    summary?: string | null;
+    throttleHours?: number;
+  }): Promise<void> {
+    const businessName = await this.database.query<{ name: string }>(
+      `SELECT name FROM businesses WHERE id = $1`,
+      [input.businessId],
+    );
+    const label = businessName.rows[0]?.name || 'Unknown business';
+    const reason = (input.summary || 'No detail returned').slice(0, 300);
+    const status = input.statusCode ? `HTTP ${input.statusCode}` : 'no status';
+
+    await this.database.query(
+      `INSERT INTO communication_notifications
+        (recipient_type, platform_admin_id, kind, priority, title, body,
+         source_type, source_id, action_url)
+       SELECT 'platform-admin', admin.id, 'tiktok_delivery_failure', 'important',
+              $1, $2, 'tiktok_destination', $3::uuid, '/businesses'
+       FROM platform_admins admin
+       WHERE NOT EXISTS (
+         SELECT 1 FROM communication_notifications existing
+         WHERE existing.kind = 'tiktok_delivery_failure'
+           AND existing.source_id = $3::uuid
+           AND existing.platform_admin_id = admin.id
+           AND existing.created_at > now() - make_interval(hours => $4::integer)
+       )`,
+      [
+        `TikTok delivery failing: ${label}`.slice(0, 160),
+        `Pixel ${input.pixelCode} stopped accepting events (${status}). ${reason}`,
+        input.destinationId,
+        Math.max(1, input.throttleHours ?? 6),
+      ],
+    );
+  }
+
   private async notifyConversationRecipient(
     client: PoolClient,
     sender: SessionUser,

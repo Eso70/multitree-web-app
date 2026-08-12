@@ -5,6 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { CommunicationService } from '../../communications/communication.service';
 import { SecretCryptoService } from '../../auth/secret-crypto.service';
 import { DatabaseService } from '../../database/database.service';
 import { OperationalMetricsService } from '../../observability/operational-metrics.service';
@@ -12,6 +13,7 @@ import { OperationalMetricsService } from '../../observability/operational-metri
 interface OutboxRow {
   id: string;
   attempt_count: number;
+  business_id: string;
   destination_id: string;
   pixel_id: string;
   encrypted_events_token: Buffer;
@@ -59,6 +61,7 @@ export class TikTokOutboxProcessor implements OnModuleInit, OnModuleDestroy {
     private readonly secrets: SecretCryptoService,
     private readonly config: ConfigService,
     private readonly metrics: OperationalMetricsService,
+    private readonly communications: CommunicationService,
   ) {}
 
   onModuleInit(): void {
@@ -155,7 +158,8 @@ export class TikTokOutboxProcessor implements OnModuleInit, OnModuleDestroy {
            AND destination.id = outbox.destination_id
            AND destination.status = 'active'
            AND destination.encrypted_events_token IS NOT NULL
-         RETURNING outbox.id, outbox.attempt_count, outbox.destination_id,
+         RETURNING outbox.id, outbox.attempt_count, outbox.business_id,
+                   outbox.destination_id,
                    destination.pixel_id, destination.encrypted_events_token,
                    outbox.payload`,
         [BATCH_SIZE],
@@ -448,5 +452,32 @@ export class TikTokOutboxProcessor implements OnModuleInit, OnModuleDestroy {
         );
       }
     });
+
+    // Raised only once the attempt row and the terminal status are committed,
+    // and never allowed to throw. Inside the transaction a failed insert would
+    // roll back the `failed_permanently` status with it, and the same event
+    // would be retried forever — the notification about a stuck queue would be
+    // the thing keeping it stuck. Same reasoning as the security audit writer.
+    const permanentlyFailed =
+      !result.success &&
+      (!result.retryable ||
+        jobs.every((job) => job.attempt_count >= MAX_ATTEMPTS));
+    if (permanentlyFailed) {
+      try {
+        await this.communications.notifyPlatformOfTikTokFailure({
+          businessId: jobs[0].business_id,
+          destinationId: jobs[0].destination_id,
+          pixelCode: jobs[0].pixel_id,
+          statusCode: result.statusCode ?? null,
+          summary: result.summary ?? null,
+        });
+      } catch (error) {
+        this.logger.warn(
+          `Failed to notify platform administrators of a TikTok delivery failure: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    }
   }
 }

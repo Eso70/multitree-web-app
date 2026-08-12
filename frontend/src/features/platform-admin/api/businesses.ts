@@ -23,8 +23,29 @@ export interface BusinessListPage {
   summary: BusinessSummary;
 }
 
+export interface BusinessImpersonationHandoff {
+  /** Single-use tenant URL that exchanges the handoff for a session cookie. */
+  redirectUrl: string;
+  expiresInSeconds: number;
+}
+
 export function getBusinesses(
   params: URLSearchParams,
 ): Promise<BusinessListPage> {
   return apiRequest<BusinessListPage>(`/api/platform/businesses?${params}`);
+}
+
+/**
+ * Opens a business dashboard as that business. The response is a short-lived
+ * single-use URL, so it must be navigated to immediately and never stored,
+ * logged, or shared.
+ */
+export function startBusinessImpersonation(
+  businessId: string,
+  reason?: string,
+): Promise<BusinessImpersonationHandoff> {
+  return apiRequest<BusinessImpersonationHandoff>(
+    `/api/platform/businesses/${businessId}/impersonation`,
+    { method: "POST", json: reason ? { reason } : {} },
+  );
 }

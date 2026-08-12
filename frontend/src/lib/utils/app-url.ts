@@ -43,18 +43,23 @@ export function getRootDomain(): string {
   return `${hostname}${port}`;
 }
 
-export function getSubdomainLoginUrl(subdomain?: string): string {
-  if (!subdomain) return "/login";
+export function getSubdomainPageUrl(subdomain: string, path: string): string {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 
   if (typeof window === "undefined") {
     const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost";
-    return `${getAppProtocol()}//${subdomain}.${root}/business/login`;
+    return `${getAppProtocol()}//${subdomain}.${root}${normalizedPath}`;
   }
 
   const protocol = window.location.protocol;
   const root = getRootDomain();
 
-  return `${protocol}//${subdomain}.${root}/business/login`;
+  return `${protocol}//${subdomain}.${root}${normalizedPath}`;
+}
+
+export function getSubdomainLoginUrl(subdomain?: string): string {
+  if (!subdomain) return "/login";
+  return getSubdomainPageUrl(subdomain, "/business/login");
 }
 
 export function getAbsolutePublicUrl(pathPrefix: string, slug: string): string {

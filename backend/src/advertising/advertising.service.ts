@@ -76,9 +76,9 @@ export class AdvertisingService {
   /**
    * The editor's Save. Writes the draft and makes it live in one transaction.
    *
-   * There is no separate publish control on the Ads tab, so these two always
-   * happen together; as two requests they could land apart, leaving a saved
-   * draft that visitors never saw and nothing in the UI saying so.
+   * The editor and the dashboard-header publish toggle both publish; as two
+   * requests they could land apart, leaving a saved draft that visitors never
+   * saw and nothing in the UI saying so.
    */
   async saveAndPublish(
     businessId: string,

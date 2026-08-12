@@ -9,6 +9,10 @@ import {
 } from "./business-error-theme";
 import { parseWebsiteColor } from "./parse-website-color";
 import { businessTabTitle } from "./tab-title";
+import {
+  INTERNAL_PROXY_KEY_HEADER,
+  internalProxyKey,
+} from "@/lib/security/internal-proxy-key";
 
 export async function fetchBusinessSubdomainThemeFromHeaders(): Promise<BusinessSubdomainTheme> {
   const subdomain = await getBusinessSubdomainFromHeaders();
@@ -41,6 +45,7 @@ export async function fetchAuthenticatedBusinessTheme(): Promise<BusinessSubdoma
       headers: {
         cookie: `business_session=${sessionToken}`,
         "x-subdomain": subdomain,
+        [INTERNAL_PROXY_KEY_HEADER]: internalProxyKey() || "",
       },
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),

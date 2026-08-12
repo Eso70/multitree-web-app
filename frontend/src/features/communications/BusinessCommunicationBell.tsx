@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { SkeletonList } from "@/components/shared/Skeleton";
 import { ManagementModal } from "@/components/shared/ManagementModal";
+import { AccentActionButton } from "@/components/shared/AccentActionButton";
 import { useTheme } from "@/lib/contexts/ThemeProvider";
 import { communicationRequest } from "./api";
 import { usePolling } from "@/lib/utils/usePolling";
@@ -301,15 +302,14 @@ export function BusinessCommunicationBell() {
               </button>
               {selectedNotification.sourceType === "conversation" &&
                 selectedNotification.sourceId && (
-                  <button
-                    type="button"
+                  <AccentActionButton
                     onClick={() =>
                       navigateToRespond(selectedNotification.sourceId!)
                     }
-                    className="flex w-full flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--theme-primary)] px-4 py-2.5 text-xs font-semibold text-white shadow-lg transition-all hover:brightness-95 hover:shadow-xl sm:py-3 sm:text-sm"
+                    className="w-full flex-1"
                   >
                     وەڵامدانەوە
-                  </button>
+                  </AccentActionButton>
                 )}
             </>
           ) : null

@@ -44,14 +44,12 @@ type TemplateConfig = Record<string, unknown> & {
   buttonStyle?: string;
   buttonGradient?: boolean;
   whatsapp_modal?: Record<string, unknown>;
-  dark_card?: Record<string, unknown>;
 };
 
 /** What `normalizeTemplateConfig` guarantees once it has filled the defaults. */
 type NormalizedTemplateConfig = TemplateConfig & {
   templateKey: string;
   whatsapp_modal: Record<string, unknown>;
-  dark_card: Record<string, unknown>;
 };
 
 type BusinessDefaultsRow = {
@@ -219,12 +217,11 @@ export class LinktreesService {
         ? (JSON.parse(templateConfig || '{}') as TemplateConfig)
         : { ...(templateConfig || {}) };
 
-    config.templateKey = config.templateKey || templateKey || 'colorful-pills';
+    config.templateKey = config.templateKey || templateKey || 'spectrum';
     config.type = config.type || 'simple';
     config.buttonStyle = config.buttonStyle || 'pill';
     config.buttonGradient = config.buttonGradient !== false;
     config.whatsapp_modal = config.whatsapp_modal || {};
-    config.dark_card = config.dark_card || {};
     return config as NormalizedTemplateConfig;
   }
 

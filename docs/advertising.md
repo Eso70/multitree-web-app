@@ -99,18 +99,28 @@ already runs twice, not an imported pattern.
 `enabled` disappears — `status` is the single source of truth for whether the
 page is live, so there is no way for the two to disagree.
 
-### 4a. Save publishes; there is no publish control
+### 4a. Save publishes; the dashboard header holds the publish toggle
 
 **This supersedes the editor design above**, at the product owner's direction
 (2026-08-05). The Ads tab header carried a publish/unpublish pair; both are
 gone. Per-tab Save now writes the draft and immediately promotes it, so what
 the editor shows and what visitors see never diverge.
 
+A separate publish control lives in the Ads page's own content header
+(2026-08-11), shown only on the first tab: an Eye/EyeOff toggle sits beside the
+Save button and drives `POST /api/advertising/publish` and
+`POST /api/advertising/unpublish`. Publishing a page that is not live is the
+default action; while live, the same button unpublishes. If the editor holds
+unsaved edits, the toggle flushes them through `save-and-publish` first so the
+live page matches the editor. Next to it, an open button links to the public
+page on the business subdomain (built through `getSubdomainPageUrl`) and stays
+inert while the page is not published, since the public route 404s.
+
 What this keeps: every save still writes an immutable
 `advertising_page_versions` row, so history, rollback data and the record of
 what the page said when a given lead arrived all keep accumulating. The
-machinery is intact and unexposed, which means restoring a control later is a
-UI change rather than a migration.
+machinery is intact, which means restoring a control later is a UI change
+rather than a migration.
 
 Because every save publishes, that history is bounded: `publish` prunes to the
 newest `VERSION_HISTORY_LIMIT` (50) snapshots per page, which is the same number
@@ -120,15 +130,16 @@ session alone could add dozens of jsonb blobs that nothing ever removed — the
 read cap hid that growth rather than bounding it.
 
 What this gives up, deliberately: there is no staging step. A half-finished
-edit reaches visitors the moment Save is pressed, and a business cannot take
-its own page down from this screen — removal is the platform's job, through
-the `feature.advertising_page` entitlement.
+edit reaches visitors the moment Save is pressed, and while a business can now
+take its own page down from the dashboard header toggle, permanently removing
+the page is the platform's job, through the `feature.advertising_page`
+entitlement.
 
 `POST /api/advertising/unpublish`, `PATCH /api/advertising` and
-`POST /api/advertising/publish` all remain on the server as API surface for a
-consumer that wants to stage a draft, but nothing in the frontend calls any of
-them — the editor uses `save-and-publish` alone. Their client helpers were
-deleted rather than left orphaned.
+`POST /api/advertising/publish` remain on the server: the header toggle calls
+publish and unpublish directly, and the endpoints stay available for API
+consumers that want to stage a draft. The editor itself uses
+`save-and-publish` alone.
 
 Unpublishing retracts both halves of "is this live?": the page status becomes
 `paused` **and** the version's `published` flag is cleared, in one transaction.

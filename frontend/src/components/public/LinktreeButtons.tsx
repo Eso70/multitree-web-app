@@ -115,7 +115,7 @@ export function getPlatformName(platform: string): string {
  * A platform's brand mark, honoring uploaded and hand-picked icon overrides.
  *
  * Fill is inherited from the caller's own classes, because templates tint glyphs
- * to match their palettes (GentleFlow draws them on a white chip). Brands that
+ * to match their palettes (Serenity draws them on a white chip). Brands that
  * need a keyline still get one. For a glyph on the brand
  * background, prefer `<PlatformBadge>` or `<PlatformIcon tone="brand">`.
  */

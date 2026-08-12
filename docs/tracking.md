@@ -176,6 +176,15 @@ Nothing is trackable until the database says it exists.
 Only register things that actually go somewhere. An action row for a card with
 no button reports a permanent zero and pads every breakdown with noise.
 
+The reverse is just as easy to miss: a link the trigger registers but the page
+renders through something other than the normal button list. `splitGpsLinks`
+pulls the GPS link out of the rendered buttons and `GpsLocationDisplay` draws
+its own "open in Google Maps" anchor, so for a while that row reported a
+permanent zero while a visitor asking for directions went uncounted. The
+component takes an `onOpen` callback and every template hands it the same
+`onLinkClick` the buttons use. Anything that renders a link outside the button
+list must route back through that one handler.
+
 ### 2. Report it from the page
 
 ```tsx
@@ -244,12 +253,63 @@ per active pixel — and delivered by `TikTokOutboxProcessor` every two seconds.
   half to deduplicate against — but a dashboard watcher will read it as a
   regression unless told.
 
+### When delivery breaks
+
+A permanent failure is invisible from the configuration form — the fields are
+filled in and conversions simply stop arriving — so it is surfaced in two
+places.
+
+The business sees it on its own TikTok configuration page
+(`TikTokDeliveryStatusPanel`, reading `GET /api/analytics/v2/tiktok/errors`).
+That endpoint groups `marketing_delivery_attempts` by pixel, status code and
+message, because eight retries across fifty queued events are one problem, not
+four hundred lines. `retrying` and `permanent` are distinguished: the first may
+still succeed on the next pass, the second needs a configuration change.
+
+Platform administrators get a `tiktok_delivery_failure` notification when an
+event reaches `failed_permanently`. It is raised **after** the delivery
+transaction commits and can never throw into it — inside the transaction a
+failed insert would roll back the terminal status, and the event would retry
+forever because of the notification about it being stuck. It is throttled to
+one per pixel per six hours, scoped on `source_id = destination_id`, so a
+business running three pixels still learns which one broke.
+
+Note what is *not* reported: a pixel that fails in the visitor's browser leaves
+no server-side record, so there is no error to quote for it. The panel derives
+that case instead — events queued while none carried a browser dispatch is what
+a pixel that never fires looks like from the server — and labels it as derived.
+`?ttdebug=1` remains the only way to see a real `pixel_failed`, and only for
+the person with the console open.
+
 `ttclid` arrives once, on the ad click that starts the session, and the URL
 loses it at the first soft navigation. `analytics_sessions` keeps the first
 value it saw and the ingest reads it back, so a conversion three taps later
 still carries the click id it was earned by.
 
 ---
+
+## What each public page reports on its own
+
+Beyond the clicks a visitor makes, both pages report two page-level facts:
+
+| Signal | When | Reaches TikTok |
+| ------ | ---- | -------------- |
+| `page_view` | on mount, once per tracker | yes, as `ViewContent` |
+| `engaged_view` | after 15 seconds on the page, once | no |
+
+`engaged_view` is what separates a visit from a bounce, and both pages use the
+same threshold so one report can compare them. The mini website additionally
+reports `action_open` per section reached, because it is long enough that
+"nobody scrolls to the pricing table" is a finding; a linktree is one screen
+and has nothing equivalent to measure.
+
+The linktree also reports `action_open` when the WhatsApp question chooser is
+opened, keyed `link:<uuid>:questions`. A visitor who opens the chooser and
+picks a question therefore produces both that engagement signal and the
+`whatsapp_click` conversion — the first is internal-only, the second is the one
+TikTok sees, and the conversion is deliberately withheld until a question is
+actually chosen. Opening the chooser and abandoning it is now visible instead
+of looking identical to never tapping WhatsApp at all.
 
 ## Consent
 

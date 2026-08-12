@@ -33,6 +33,7 @@ import { PlatformSettingsPage } from "@/features/platform-admin/components/Platf
 import { BillingPage } from "@/features/platform-admin/components/BillingPage";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
+import { startBusinessImpersonation } from "@/features/platform-admin/api/businesses";
 import { useBusinesses } from "@/features/platform-admin/hooks/useBusinesses";
 import type { PlatformBusiness as Business } from "@linktree/types";
 import { PlatformBusinessesPage } from "@/features/platform-admin/components/PlatformBusinessesPage";
@@ -261,6 +262,37 @@ export function PlatformAdminDashboard() {
 
   const handleViewAnalytics = useCallback((business: Business) => {
     setAnalyticsBusiness(business);
+  }, []);
+
+  /**
+   * Opens the business dashboard as that business in a new tab.
+   *
+   * The tab is opened synchronously on the click so the browser attributes it
+   * to a user gesture; the single-use handoff URL is only assigned once the
+   * request returns. Waiting for the response before calling `window.open`
+   * would be treated as an unrequested popup and blocked.
+   */
+  const handleOpenDashboard = useCallback((business: Business) => {
+    const tenantTab = window.open("about:blank", "_blank");
+    if (tenantTab) {
+      tenantTab.opener = null;
+    }
+    startBusinessImpersonation(business.id)
+      .then(({ redirectUrl }) => {
+        if (tenantTab) {
+          tenantTab.location.href = redirectUrl;
+          return;
+        }
+        window.location.href = redirectUrl;
+      })
+      .catch((error: unknown) => {
+        tenantTab?.close();
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to open the business dashboard",
+        );
+      });
   }, []);
 
   const confirmDelete = async () => {
@@ -859,6 +891,7 @@ export function PlatformAdminDashboard() {
                 onDelete={handleDelete}
                 onViewAnalytics={handleViewAnalytics}
                 onManageSessions={setSessionsBusiness}
+                onOpenDashboard={handleOpenDashboard}
               />
             ) : activePage === "templates" ? (
               <TemplatesPage />

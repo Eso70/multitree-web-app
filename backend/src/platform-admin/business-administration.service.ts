@@ -229,12 +229,11 @@ export class BusinessAdministrationService {
 
   private defaultTemplateConfig(templateKey?: string | null) {
     return {
-      templateKey: templateKey || 'colorful-pills',
+      templateKey: templateKey || 'spectrum',
       type: 'simple',
       buttonStyle: 'pill',
       buttonGradient: true,
       whatsapp_modal: { enabled: false, questions: [] },
-      dark_card: {},
     };
   }
 
@@ -982,7 +981,7 @@ export class BusinessAdministrationService {
           resolved.default_background_color ||
             resolved.website_color ||
             '#0f121d',
-          resolved.default_template || 'colorful-pills',
+          resolved.default_template || 'spectrum',
           JSON.stringify(templateConfig),
           resolved.default_whatsapp_enabled ?? false,
           resolved.default_footer_text || null,
@@ -1497,7 +1496,7 @@ export class BusinessAdministrationService {
             page.footer_text || null,
             page.footer_phone || null,
             !!page.footer_hidden,
-            page.template_key || 'colorful-pills',
+            page.template_key || 'spectrum',
             JSON.stringify(page.template_config || {}),
             !!page.whatsapp_modal_enabled,
             page.status === 'inactive' ? 'inactive' : 'active',

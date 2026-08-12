@@ -5,6 +5,18 @@ import { RedisService } from '../redis/redis.service';
 import { createHash, randomBytes } from 'crypto';
 import { isIP } from 'net';
 
+/**
+ * A business session created by a platform administrator rather than by the
+ * owner. Carried on the session itself so every consumer — guards, the audit
+ * interceptor, and the dashboard banner — sees the same fact, including after
+ * a Redis eviction rebuilds the session from PostgreSQL.
+ */
+export interface SessionImpersonation {
+  platformAdminId: string;
+  platformAdminName: string;
+  startedAt: string;
+}
+
 export interface SessionUser {
   id: string;
   username: string;
@@ -12,6 +24,7 @@ export interface SessionUser {
   role: 'business' | 'platform-admin';
   subdomain?: string;
   userId?: string;
+  impersonation?: SessionImpersonation;
 }
 
 export interface ManagedSession {
@@ -23,6 +36,8 @@ export interface ManagedSession {
   session_expires_at: Date;
   remembered: boolean;
   is_current: boolean;
+  /** Set when a platform administrator opened this session, not the owner. */
+  impersonated_by: string | null;
 }
 
 export interface LoginActivity {
@@ -48,11 +63,16 @@ export class SessionService {
 
   async createBusinessSession(input: {
     businessId: string;
-    userId: string;
+    userId: string | null;
     ipAddress: string;
     userAgent: string;
     ttlSeconds?: number;
     rememberDevice?: boolean;
+    impersonation?: {
+      platformAdminId: string;
+      platformAdminName: string;
+      reason?: string | null;
+    };
     sessionUser?: {
       username: string;
       name: string;
@@ -61,16 +81,26 @@ export class SessionService {
   }): Promise<{ sessionToken: string; ttlSeconds: number }> {
     const sessionToken = randomBytes(32).toString('base64url');
     const tokenHash = this.businessTokenHash(sessionToken);
+    // An impersonated session is never remembered: it is short by construction
+    // so an administrator who walks away cannot leave a live tenant session
+    // behind. Its lifetime is supplied by the caller.
     const ttlSeconds =
       input.ttlSeconds ??
       (input.rememberDevice ? 30 * 24 * 60 * 60 : 12 * 60 * 60);
+    const impersonatedBy = input.impersonation?.platformAdminId ?? null;
 
-    await this.databaseService.query(
+    const inserted = await this.databaseService.query<{
+      impersonation_started_at: Date | null;
+    }>(
       `INSERT INTO business_sessions
         (business_id, user_id, session_token_hash, session_expires_at,
-         ip_address, user_agent, remembered, last_used_at)
+         ip_address, user_agent, remembered, last_used_at,
+         impersonated_by_platform_admin_id, impersonation_reason,
+         impersonation_started_at)
        VALUES ($1, $2, $3, NOW() + ($4::int * INTERVAL '1 second'),
-               NULLIF($5, '')::inet, $6, $7, NOW())`,
+               NULLIF($5, '')::inet, $6, $7, NOW(),
+               $8, $9, CASE WHEN $8::uuid IS NULL THEN NULL ELSE NOW() END)
+       RETURNING impersonation_started_at`,
       [
         input.businessId,
         input.userId,
@@ -78,9 +108,15 @@ export class SessionService {
         ttlSeconds,
         input.ipAddress === 'unknown' ? '' : input.ipAddress,
         input.userAgent,
-        Boolean(input.rememberDevice),
+        impersonatedBy ? false : Boolean(input.rememberDevice),
+        impersonatedBy,
+        input.impersonation?.reason?.trim() || null,
       ],
     );
+    // The per-business session cap only ever evicts real sign-ins, and is only
+    // ever counted over them. An administrator opening a dashboard must not
+    // push a real owner's oldest session out, and an impersonated session must
+    // not survive at a real session's expense either.
     const revoked = await this.databaseService.query<{
       session_token_hash: string;
     }>(
@@ -88,6 +124,7 @@ export class SessionService {
        WHERE id IN (
          SELECT id FROM business_sessions
          WHERE business_id = $1
+           AND impersonated_by_platform_admin_id IS NULL
          ORDER BY created_at DESC
          OFFSET 5
        )
@@ -103,11 +140,22 @@ export class SessionService {
     if (input.sessionUser) {
       const user: SessionUser = {
         id: input.businessId,
-        userId: input.userId,
+        ...(input.userId ? { userId: input.userId } : {}),
         username: input.sessionUser.username,
         name: input.sessionUser.name,
         subdomain: input.sessionUser.subdomain,
         role: 'business',
+        ...(input.impersonation
+          ? {
+              impersonation: {
+                platformAdminId: input.impersonation.platformAdminId,
+                platformAdminName: input.impersonation.platformAdminName,
+                startedAt: (
+                  inserted.rows[0]?.impersonation_started_at ?? new Date()
+                ).toISOString(),
+              },
+            }
+          : {}),
       };
       await Promise.all([
         this.redisService.set(`session:${tokenHash}`, user, ttlSeconds),
@@ -198,6 +246,9 @@ export class SessionService {
 
     // 2. Cache miss: Query Database
     // Check if it is a regular business session
+    // The impersonation columns are part of this projection so a Redis
+    // eviction cannot silently rebuild an administrator's borrowed session as
+    // an ordinary owner session.
     const businessResult = await this.databaseService.query<{
       business_id: string;
       user_id: string | null;
@@ -205,10 +256,17 @@ export class SessionService {
       name: string;
       subdomain: string | null;
       session_expires_at: string;
+      impersonated_by_platform_admin_id: string | null;
+      impersonated_by_name: string | null;
+      impersonation_started_at: Date | null;
     }>(
-      `SELECT a.id as business_id, s.user_id, a.username, a.name, a.subdomain, s.session_expires_at
+      `SELECT a.id as business_id, s.user_id, a.username, a.name, a.subdomain, s.session_expires_at,
+              s.impersonated_by_platform_admin_id,
+              admin.name AS impersonated_by_name,
+              s.impersonation_started_at
        FROM business_sessions s
        INNER JOIN businesses a ON s.business_id = a.id
+       LEFT JOIN platform_admins admin ON admin.id = s.impersonated_by_platform_admin_id
        WHERE s.session_token_hash = $1
          AND s.session_expires_at > NOW()
          AND a.status = 'active'`,
@@ -224,6 +282,18 @@ export class SessionService {
         role: 'business',
         ...(business.subdomain ? { subdomain: business.subdomain } : {}),
         ...(business.user_id ? { userId: business.user_id } : {}),
+        ...(business.impersonated_by_platform_admin_id
+          ? {
+              impersonation: {
+                platformAdminId: business.impersonated_by_platform_admin_id,
+                platformAdminName:
+                  business.impersonated_by_name || 'Platform administrator',
+                startedAt: (
+                  business.impersonation_started_at ?? new Date()
+                ).toISOString(),
+              },
+            }
+          : {}),
       };
 
       // Cache session in Redis
@@ -323,12 +393,16 @@ export class SessionService {
       : '';
     const [sessions, activity] = await Promise.all([
       this.databaseService.query<ManagedSession>(
-        `SELECT id, host(ip_address) AS ip_address, user_agent, last_used_at,
-                created_at, session_expires_at, remembered,
-                ($2 != '' AND session_token_hash = $2) AS is_current
-         FROM business_sessions
-         WHERE business_id = $1 AND session_expires_at > NOW()
-         ORDER BY is_current DESC, last_used_at DESC`,
+        // Administrator access is disclosed to the owner rather than hidden:
+        // an impersonated session appears in the owner's own device list.
+        `SELECT s.id, host(s.ip_address) AS ip_address, s.user_agent, s.last_used_at,
+                s.created_at, s.session_expires_at, s.remembered,
+                ($2 != '' AND s.session_token_hash = $2) AS is_current,
+                admin.name AS impersonated_by
+         FROM business_sessions s
+         LEFT JOIN platform_admins admin ON admin.id = s.impersonated_by_platform_admin_id
+         WHERE s.business_id = $1 AND s.session_expires_at > NOW()
+         ORDER BY is_current DESC, s.last_used_at DESC`,
         [businessId, currentHash],
       ),
       this.databaseService.query<LoginActivity>(

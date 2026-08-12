@@ -2,6 +2,10 @@ import { headers } from "next/headers";
 import type { AdvertisingServiceConfig } from "@linktree/types";
 import { extractSubdomain } from "@/lib/subdomain-utils";
 import { parseWebsiteColor } from "@/lib/utils/parse-website-color";
+import {
+  INTERNAL_PROXY_KEY_HEADER,
+  internalProxyKey,
+} from "@/lib/security/internal-proxy-key";
 
 /**
  * The server-side read behind both public advertising routes.
@@ -61,7 +65,10 @@ async function readPublic<T>(
 ): Promise<T | null> {
   try {
     const response = await fetch(`${BACKEND_URL}${path}`, {
-      headers: { "x-subdomain": subdomain },
+      headers: {
+        "x-subdomain": subdomain,
+        [INTERNAL_PROXY_KEY_HEADER]: internalProxyKey() || "",
+      },
       cache: "no-store",
       signal: AbortSignal.timeout(30_000),
     });

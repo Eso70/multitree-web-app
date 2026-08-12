@@ -85,14 +85,14 @@ function getGpsLabel(link: Link): { label: string; coords: string } | null {
   const coords = parseGpsCoordinates(raw);
   if (coords) {
     return {
-      label: link.display_name || "GPS Location",
+      label: link.display_name || "شوێنی GPS",
       coords: `${coords.lat}, ${coords.lng}`,
     };
   }
 
   if (isGoogleMapsUrl(raw)) {
     return {
-      label: link.display_name || "GPS Location",
+      label: link.display_name || "شوێنی GPS",
       coords: formatMapsLabel(raw),
     };
   }
@@ -105,11 +105,30 @@ export const GpsLocationDisplay = memo(function GpsLocationDisplay({
   textColor,
   textSecondaryColor,
   className,
+  onOpen,
 }: {
   gpsLink?: Link;
   textColor?: string;
   textSecondaryColor?: string;
   className?: string;
+  /**
+   * Reports and opens the maps link, using the same path as every other link
+   * on the page.
+   *
+   * `splitGpsLinks` pulls the GPS link out of the rendered button list, but the
+   * database still registers a `public_page_actions` row for it like any other
+   * link. Without this the row reported a permanent zero: a visitor asking for
+   * directions — one of the strongest intent signals a local business gets —
+   * was the one click the page never counted. Templates pass their own
+   * `onLinkClick` here so reporting, message handling, and popup-blocker
+   * fallback all stay in one place.
+   */
+  onOpen?: (
+    linkId: string,
+    url: string,
+    platform: string,
+    defaultMessage?: string | null,
+  ) => void;
 }) {
   if (!gpsLink) return null;
 
@@ -131,7 +150,7 @@ export const GpsLocationDisplay = memo(function GpsLocationDisplay({
     <div
       className={`mt-6 w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-sm ${className || ""}`}
       style={{ color: primaryColor }}
-      aria-label="GPS location"
+      aria-label="شوێنی GPS"
     >
       <div className="flex items-center gap-2">
         <FaMapMarkerAlt className="h-4 w-4" aria-hidden="true" />
@@ -143,7 +162,7 @@ export const GpsLocationDisplay = memo(function GpsLocationDisplay({
       {embedUrl && (
         <div className="mt-3 overflow-hidden rounded-xl border border-white/20 bg-white/10">
           <iframe
-            title="Google Maps preview"
+            title="پێشبینینی Google Maps"
             src={embedUrl}
             className="h-48 w-full"
             loading="lazy"
@@ -156,10 +175,21 @@ export const GpsLocationDisplay = memo(function GpsLocationDisplay({
           href={mapsLink}
           target="_blank"
           rel="noreferrer"
+          onClick={
+            onOpen
+              ? (event) => {
+                  // The handler both reports and opens, so the anchor's own
+                  // navigation would produce a second tab. `href` stays for
+                  // middle-click, "open in new tab", and the no-handler case.
+                  event.preventDefault();
+                  onOpen(gpsLink.id, mapsLink, GPS_PLATFORM_ID, null);
+                }
+              : undefined
+          }
           className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/30 px-3 py-1 text-xs font-semibold transition hover:bg-white/10"
           style={{ color: primaryColor }}
         >
-          Open in Google Maps
+          لە Google Maps بیکەرەوە
         </a>
       )}
     </div>

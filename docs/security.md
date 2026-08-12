@@ -156,6 +156,74 @@ provided by the client. Optional DTO properties whose value is `undefined`
 must be removed first; otherwise an absent password property can be mistaken
 for a password-bearing approval request and block an unrelated branding edit.
 
+## Platform-administrator impersonation
+
+A platform administrator holding `platform:businesses:impersonate` can open a
+business dashboard as that business without the owner's credentials and
+without resetting anything. The capability is separate from
+`platform:businesses:read` and is registered as `critical`, so it can be
+withheld through `platform_permission_denies` from administrators who only
+need to view businesses.
+
+`POST /api/platform/businesses/:id/impersonation` does not return a
+credential. It stores a single-use payload in Redis under the SHA-256 digest
+of a 32-byte code with a 60-second TTL — the same `auth:handoff:` mechanism
+Google sign-in uses — and returns the tenant URL carrying that code. The
+tenant's existing `POST /api/auth/handoff` endpoint is the only thing that
+turns a handoff into a session, so there is exactly one code path that writes
+a `business_session` cookie. `auth-handoff.ts` owns the key and payload
+contract; `kind` distinguishes the two flows.
+
+The resulting session is deliberately weaker than an owner session:
+
+- **Tenant access, not platform access.** It carries `role: 'business'`, so
+  the business's plan entitlements, quotas, field-level rules, and approval
+  requirements apply exactly as they do for the owner. Impersonation never
+  confers the platform administrator's own authority inside the tenant.
+- **Short and never remembered.** 30 minutes
+  (`IMPERSONATION_SESSION_TTL_SECONDS`), with `remembered` forced to `false`
+  regardless of what the caller asks for.
+- **Unattributed.** `business_sessions.user_id` is `NULL`, so administrator
+  activity is never recorded as a specific owner's work.
+- **Marked in PostgreSQL, not only in Redis.**
+  `impersonated_by_platform_admin_id`, `impersonation_reason`, and
+  `impersonation_started_at` are part of the session lookup projection, so a
+  cache eviction cannot rebuild a borrowed session as an ordinary one.
+- **Restricted.** `impersonation-policy.ts` is the single denylist, applied in
+  `BusinessGuard` because every business route passes through it. It currently
+  blocks plaintext readback of stored tenant secrets
+  (`GET /api/auth/tiktok/:id/secret`) and revoking business sessions from
+  inside the tenant (`DELETE /api/auth/sessions[/:id]`) — both remain
+  available to the administrator through audited platform routes. Route
+  handlers must not add private exceptions; widen or relax the policy in that
+  one file.
+- **Disclosed.** The owner's own device list
+  (`getBusinessLoginSecurity`) includes impersonated sessions with the
+  administrator's name, and the dashboard renders a non-dismissible banner for
+  the whole session.
+- **Bounded.** Impersonated rows are excluded from the five-session
+  per-business cap in both directions, so opening a dashboard can never evict
+  a real owner session.
+
+Both the start request and the session cookie are minted independently of the
+administrator's own root-domain console session. Business cookies are
+host-only, so the two coexist and `POST /api/auth/impersonation/exit` returns
+to an untouched console session.
+
+Audit coverage is three events: `platform.business.impersonation.request` from
+the route interceptor, `platform.business.impersonation.start` (including
+`failure` outcomes for an inactive or subdomain-less target) and
+`platform.business.impersonation.end` from `ImpersonationService`. Every
+mutation performed during the session keeps the business as its effective
+actor and additionally carries `impersonatedByPlatformAdminId` and
+`impersonatedByPlatformAdminName` in its audit metadata.
+
+Starting impersonation is rate limited to 10 attempts per administrator per
+five minutes, requires an available Redis, and is refused for a suspended
+business or one without a subdomain — the shared session lookup resolves
+active businesses only, so such a session would silently stop working when its
+cache entry expired.
+
 ## Secrets and encryption
 
 `SecretCryptoService` derives its key as `sha256(APP_ENCRYPTION_KEY ||

@@ -9,6 +9,10 @@ import { BusinessBadGatewayPage } from "@/components/error-pages/BusinessBadGate
 import { BusinessGatewayTimeoutPage } from "@/components/error-pages/BusinessGatewayTimeoutPage";
 import { classifyUpstreamFailure } from "@/lib/api/upstream-failure";
 import { businessTabTitle } from "@/lib/utils/tab-title";
+import {
+  INTERNAL_PROXY_KEY_HEADER,
+  internalProxyKey,
+} from "@/lib/security/internal-proxy-key";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +49,10 @@ export default async function Home() {
   let serviceUnavailable = false;
   let gatewayTimeout = false;
   try {
-    const headers_ = { "x-subdomain": subdomain };
+    const headers_ = {
+      "x-subdomain": subdomain,
+      [INTERNAL_PROXY_KEY_HEADER]: internalProxyKey() || "",
+    };
     const signal = AbortSignal.timeout(30_000);
     const [businessRes, linktreesRes, miniWebsitesRes] = await Promise.all([
       fetch(`${BACKEND_URL}/api/public/business`, {
@@ -122,7 +129,10 @@ export async function generateMetadata() {
   if (subdomain) {
     try {
       const res = await fetch(`${BACKEND_URL}/api/public/business`, {
-        headers: { "x-subdomain": subdomain },
+        headers: {
+          "x-subdomain": subdomain,
+          [INTERNAL_PROXY_KEY_HEADER]: internalProxyKey() || "",
+        },
         cache: "no-store",
         signal: AbortSignal.timeout(30_000),
       });

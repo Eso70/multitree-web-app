@@ -29,6 +29,24 @@ export function rootDomainPort(rootDomain: string): string {
 }
 
 /**
+ * An absolute URL on a tenant subdomain, derived from the application base URL
+ * so protocol and port are inherited from one configured source.
+ *
+ * `path` is resolved as a relative URL rather than assigned to `pathname`,
+ * because assigning a value containing `?` would percent-encode the query
+ * marker and route the caller to a nonexistent page.
+ */
+export function buildTenantUrl(
+  applicationBaseUrl: string,
+  subdomain: string,
+  path: string,
+): string {
+  const tenantBase = new URL(applicationBaseUrl);
+  tenantBase.hostname = `${subdomain}.${tenantBase.hostname}`;
+  return new URL(path, tenantBase).toString();
+}
+
+/**
  * True when `hostname` is the root domain itself or one of its subdomains.
  * Tolerates a configured root domain that includes a port.
  */
