@@ -21,6 +21,14 @@ jobs:
     name: Build, Lint, Type Check & Test
     runs-on: ubuntu-latest
 
+    # Safe build-only values. CI has no ignored local `.env`, and these are
+    # public placeholders rather than deployment credentials.
+    env:
+      NEXT_PUBLIC_ROOT_DOMAIN: example.test
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_APP_URL: http://example.test
+      PLATFORM_ADMIN_PATH: /ci-only-platform-console
+
     timeout-minutes: 30
 
     steps:

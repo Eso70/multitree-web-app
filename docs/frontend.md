@@ -729,7 +729,7 @@ notification, or upload is newly created with the retired term.
 | Command                             | Action                                                                                                              |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `pnpm dev:fe`                       | Start the frontend development server on port `3011` with Webpack (the stable fallback for local route compilation) |
-| `pnpm build:fe`                     | Copy root `.env` to `frontend/.env` when present, then build                                                        |
+| `pnpm build:fe`                     | Generate `frontend/.env` from allowlisted root/process values, then build                                           |
 | `pnpm --filter frontend dev`        | Sync the MapLibre worker and run Next.js on port `3011`                                                             |
 | `pnpm --filter frontend build`      | Sync the MapLibre worker and create a production build                                                              |
 | `pnpm --filter frontend start`      | Run the production build on port `3011`                                                                             |
