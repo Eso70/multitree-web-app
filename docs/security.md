@@ -451,6 +451,19 @@ failed webhook events and expired linktree schedules. The communications
 bucket purges only already-read, archived, or expired rows — never active
 conversations.
 
+## Secret scanning
+
+The security workflow runs Gitleaks against the complete Git history on every
+push and pull request. `.gitleaksignore` contains only exact fingerprints for
+reviewed false positives: test-only session tokens, template placeholders, a
+test guard value, and fixed public seed identifiers. It does not exclude a
+path, detector rule, or class of values. New findings therefore continue to
+fail CI and must be investigated before any new fingerprint is added.
+
+Environment templates keep secret values empty. Real values belong only in the
+ignored root `.env` or the deployment platform's secret store; the generated
+`frontend/.env` receives only its explicit frontend allowlist.
+
 ## Dependency install scripts
 
 Installing a dependency normally lets it execute arbitrary `preinstall`,

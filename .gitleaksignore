@@ -1,0 +1,21 @@
+# Test-only session tokens introduced in 0765862.
+0765862ce6757cb584a7ce5bcda2ce1a39ac0044:backend/src/onboarding/business-session-cookie.spec.ts:generic-api-key:59
+0765862ce6757cb584a7ce5bcda2ce1a39ac0044:backend/src/onboarding/business-session-cookie.spec.ts:generic-api-key:63
+
+# Historical environment-template placeholders; no deployed values.
+1fefce868e28034123ca007a800d4982f38338f3:.env.example:generic-api-key:39
+6adde3262d31a04fdaf39fc2c2dc1e99f33d8bc5:.env.example:generic-api-key:50
+
+# Historical test-only session tokens and guard secret.
+6adde3262d31a04fdaf39fc2c2dc1e99f33d8bc5:backend/src/auth/auth.examples.spec.ts:generic-api-key:184
+6adde3262d31a04fdaf39fc2c2dc1e99f33d8bc5:backend/src/auth/auth.examples.spec.ts:generic-api-key:234
+6adde3262d31a04fdaf39fc2c2dc1e99f33d8bc5:backend/src/auth/auth.examples.spec.ts:generic-api-key:273
+6adde3262d31a04fdaf39fc2c2dc1e99f33d8bc5:backend/src/auth/auth.examples.spec.ts:generic-api-key:431
+6adde3262d31a04fdaf39fc2c2dc1e99f33d8bc5:backend/src/auth/auth.examples.spec.ts:generic-api-key:568
+6adde3262d31a04fdaf39fc2c2dc1e99f33d8bc5:backend/src/auth/auth.examples.spec.ts:generic-api-key:609
+6adde3262d31a04fdaf39fc2c2dc1e99f33d8bc5:backend/src/observability/internal-operations.guard.spec.ts:generic-api-key:5
+
+# Fixed public plan seed UUIDs; identifiers, not credentials.
+6adde3262d31a04fdaf39fc2c2dc1e99f33d8bc5:backend/src/database/migrations/full_schema.sql:generic-api-key:1268
+6adde3262d31a04fdaf39fc2c2dc1e99f33d8bc5:backend/src/database/migrations/full_schema.sql:generic-api-key:1269
+6adde3262d31a04fdaf39fc2c2dc1e99f33d8bc5:backend/src/database/migrations/full_schema.sql:generic-api-key:1270
