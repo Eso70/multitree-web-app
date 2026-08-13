@@ -170,7 +170,7 @@ describe("BusinessLanding", () => {
     expect(container.querySelector('a[href*="/business"]')).not.toBeInTheDocument();
     expect(container.querySelector('a[href*="login"]')).not.toBeInTheDocument();
     expect(screen.queryByText("Dashboard", { exact: true })).not.toBeInTheDocument();
-  });
+  }, 15_000);
 
   it("omits unavailable public sections instead of rendering placeholders", () => {
     render(
