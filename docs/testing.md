@@ -129,7 +129,7 @@ allow, and never sends malformed addresses to PostgreSQL `inet` casts. CSP
 tests require a per-request nonce plus `'strict-dynamic'`, reject
 `'unsafe-inline'` from `script-src`, and keep `'unsafe-eval'` development-only.
 Retention tests assert that the policy and eligible counts no longer contain
-an audit-log bucket. Password creation paths share the cost-12 helper.
+an audit-log bucket.
 
 ## Critical architecture E2E matrix
 

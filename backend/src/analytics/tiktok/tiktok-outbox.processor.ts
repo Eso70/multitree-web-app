@@ -423,14 +423,20 @@ export class TikTokOutboxProcessor implements OnModuleInit, OnModuleDestroy {
           ],
         );
         await client.query(
+          // `$2` is pinned to text at every use. Without the casts PostgreSQL
+          // deduces `varchar` from the `status` assignment and `text` from the
+          // two comparisons against string literals, then rejects the whole
+          // statement with "inconsistent types deduced for parameter $2" —
+          // which aborts this transaction and leaves the row stuck in
+          // `processing` to be claimed and retried forever.
           `UPDATE marketing_event_outbox
-           SET status = $2,
+           SET status = $2::text,
                next_attempt_at = CASE
-                 WHEN $2 = 'retry_scheduled'
+                 WHEN $2::text = 'retry_scheduled'
                    THEN now() + make_interval(secs => $3::integer)
                  ELSE next_attempt_at
                END,
-               delivered_at = CASE WHEN $2 = 'delivered' THEN now() ELSE NULL END,
+               delivered_at = CASE WHEN $2::text = 'delivered' THEN now() ELSE NULL END,
                locked_at = NULL,
                last_error = $4,
                updated_at = now()

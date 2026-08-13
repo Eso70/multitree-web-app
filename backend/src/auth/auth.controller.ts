@@ -10,7 +10,6 @@ import {
   HttpCode,
   HttpStatus,
   HttpException,
-  UnauthorizedException,
   UseInterceptors,
   Optional,
   BadRequestException,
@@ -25,8 +24,6 @@ import { Capability } from './capabilities';
 import { RequireCapabilities } from './require-capabilities.decorator';
 import { CurrentUser } from './current-user.decorator';
 import { Subdomain } from './subdomain.decorator';
-import { RedisService } from '../redis/redis.service';
-import { LoginDto } from './dto/login.dto';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { AuditInterceptor } from './audit.interceptor';
 import { AuditEvent } from './audit-event.decorator';
@@ -52,7 +49,6 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly sessionService: SessionService,
-    private readonly redisService: RedisService,
     private readonly accessRules: AccessRuleEnforcementService,
     private readonly impersonationService: ImpersonationService,
     @Optional() private readonly authorizationService?: AuthorizationService,
@@ -91,93 +87,6 @@ export class AuthController {
       `businesses/${user.id}/branding/${assetType}/${filename}`,
     );
     return { url };
-  }
-
-  // Legacy password login is intentionally not exposed as an HTTP route.
-  async login(
-    @Body() body: LoginDto,
-    @Req() req: FastifyRequest,
-    @Res({ passthrough: true }) res: FastifyReply,
-    @Subdomain() subdomain: string,
-  ) {
-    // Reject login if no subdomain is present (root domain login not permitted)
-    if (!subdomain) {
-      throw new UnauthorizedException(
-        'چوونەژوورەوە لەم ناونیشانەوە ڕێگەپێنەدراوە',
-      );
-    }
-
-    await this.accessRules.assertForBusinessSubdomain(
-      requestIp(req),
-      subdomain,
-      'business_admin',
-    );
-
-    const { username, password, rememberMe } = body;
-    const clientIp =
-      this.firstHeader(req.headers['x-forwarded-for']) ||
-      this.firstHeader(req.headers['x-real-ip']) ||
-      'unknown';
-    const userAgent = req.headers['user-agent'] || '';
-
-    const normalizedUsername = String(username || '')
-      .trim()
-      .toLowerCase();
-    // Limit both the source and the tenant account. The account key slows
-    // distributed credential attacks without exposing the password or token.
-    const [isIpLimited, isAccountLimited] = await Promise.all([
-      this.redisService.isRateLimited(`rl:login:${clientIp}`, 5, 60),
-      this.redisService.isRateLimited(
-        `rl:login-account:${subdomain}:${normalizedUsername}`,
-        10,
-        300,
-      ),
-    ]);
-    if (isIpLimited || isAccountLimited) {
-      throw new HttpException(
-        {
-          message: 'Too many login attempts. Please try again later.',
-          retryAfter: isAccountLimited ? 300 : 60,
-        },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
-
-    const { sessionToken, user, ttlSeconds } = await this.authService.login(
-      username,
-      password,
-      !!rememberMe,
-      clientIp,
-      userAgent,
-      subdomain,
-    );
-
-    const forwardedProto = String(req.headers['x-forwarded-proto'] || '')
-      .split(',')[0]
-      .trim();
-    const requestIsHttps =
-      forwardedProto === 'https' || req.protocol === 'https';
-
-    const cookieOptions = {
-      httpOnly: true,
-      secure: requestIsHttps,
-      sameSite: 'lax' as const,
-      maxAge: ttlSeconds,
-      path: '/',
-    };
-
-    // Keep business sessions host-only. This is more reliable across browsers and
-    // prevents a tenant cookie from being sent to sibling subdomains.
-    res.setCookie('business_session', sessionToken, cookieOptions);
-
-    return {
-      message: 'Login successful',
-      user: {
-        id: user.id,
-        username: user.username,
-        name: user.name,
-      },
-    };
   }
 
   @Post('logout')
@@ -442,7 +351,7 @@ export class AuthController {
 
   @Delete('sessions')
   @UseGuards(BusinessGuard, AuthorizationGuard)
-  @RequireCapabilities(Capability.BusinessSecurityPasswordChange)
+  @RequireCapabilities(Capability.BusinessSecuritySessionsRevoke)
   @AuditEvent('business.sessions.revoke-others', { resourceType: 'session' })
   async revokeOtherSessions(
     @CurrentUser() user: SessionUser,
@@ -457,7 +366,7 @@ export class AuthController {
 
   @Delete('sessions/:sessionId')
   @UseGuards(BusinessGuard, AuthorizationGuard)
-  @RequireCapabilities(Capability.BusinessSecurityPasswordChange)
+  @RequireCapabilities(Capability.BusinessSecuritySessionsRevoke)
   @AuditEvent('business.session.revoke', {
     resourceType: 'session',
     resourceIdParam: 'sessionId',
@@ -496,16 +405,6 @@ export class AuthController {
       context: { now: new Date() },
     });
     if (decision.outcome === 'approval') {
-      if (
-        (changedFields || []).some((field) =>
-          ['current_password', 'new_password', 'password'].includes(field),
-        )
-      ) {
-        throw new HttpException(
-          'Password changes cannot be stored for approval',
-          HttpStatus.FORBIDDEN,
-        );
-      }
       const changes = Object.fromEntries(
         Object.entries(rawBody).filter(([key]) => key !== 'section'),
       );
@@ -641,11 +540,6 @@ export class AuthController {
     }
     if (section === 'profile') return Capability.BusinessProfileUpdate;
     if (section === 'defaults') return Capability.BusinessDefaultsUpdate;
-    if (section === 'security')
-      throw new HttpException(
-        'Password authentication is disabled',
-        HttpStatus.GONE,
-      );
     if (section === 'integrations') return Capability.BusinessTikTokUpdate;
     throw new HttpException('Invalid settings section', HttpStatus.BAD_REQUEST);
   }

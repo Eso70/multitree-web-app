@@ -6,9 +6,8 @@ describe('compactSettingsPayload', () => {
       compactSettingsPayload({
         section: 'profile',
         logo: '/images/upload/businesses/example/logo.jpg',
-        current_password: undefined,
-        new_password: undefined,
-        password: undefined,
+        favicon: undefined,
+        website_color: undefined,
       }),
     ).toEqual({
       section: 'profile',

@@ -639,7 +639,7 @@ segment directly; there is no physical public implementation route.
 
 The console provides:
 
-- business creation, editing, deletion, password resets, profile-change
+- business editing, deletion, session revocation, profile-change
   request review, session revocation, asset uploads, TikTok configuration,
   and linktree import/export;
 - global linktree template availability and configuration;
@@ -663,7 +663,7 @@ The console provides:
   per-business rate policies, API catalog groups, version notices, webhook
   endpoints, webhook-secret rotation, webhook tests, and generated API
   documentation — see [docs/api-standards.md](api-standards.md);
-- administrator profile, password, branding, sessions, platform statistics,
+- administrator profile, branding, sessions, platform statistics,
   Redis cache clearing, upload policy, unused-media cleanup, data-retention
   policy, and manual retention runs.
 

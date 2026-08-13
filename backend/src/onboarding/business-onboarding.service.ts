@@ -1421,9 +1421,9 @@ export class BusinessOnboardingService {
         default_avatar?: string;
       }>(
         `INSERT INTO businesses
-          (username, password_hash, name, phone, email, subdomain, status,
+          (username, name, phone, email, subdomain, status,
            onboarding_step, onboarding_completed_at)
-         VALUES ($1, NULL, $2, $3, $4, $1, 'active', 1, NULL)
+         VALUES ($1, $2, $3, $4, $1, 'active', 1, NULL)
          RETURNING id, username, name, phone, email, subdomain`,
         [
           application.requested_subdomain,

@@ -1,10 +1,17 @@
 import { spawnSync } from 'child_process';
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { Pool } from 'pg';
 
 const DATABASE_PREFIX = 'multitree_migration_e2e_';
 const fixtureDatabase = `${DATABASE_PREFIX}${process.pid}`;
+const migrationsDirectory = join(__dirname, '../src/database/migrations');
+
+function expectedUpgradeLedger(): string[] {
+  return readdirSync(migrationsDirectory)
+    .filter((filename) => filename.endsWith('.sql'))
+    .sort();
+}
 
 function connection(database: string) {
   return {
@@ -50,7 +57,7 @@ describe('consolidated database schema commands (e2e)', () => {
     // no schema_migrations history. Removing this optional session setting
     // keeps the fixture usable with older disposable developer databases too.
     const baseline = readFileSync(
-      join(__dirname, '../src/database/migrations/full_schema.sql'),
+      join(migrationsDirectory, 'full_schema.sql'),
       'utf8',
     ).replace(/^SET transaction_timeout = 0;\r?\n/m, '');
     await fixture.query(baseline);
@@ -84,7 +91,6 @@ describe('consolidated database schema commands (e2e)', () => {
           DB_NAME: fixtureDatabase,
           DB_MAINTENANCE_NAME: process.env.DB_MAINTENANCE_NAME || 'postgres',
           PLATFORM_ADMIN_USERNAME: '',
-          PLATFORM_ADMIN_PASSWORD: '',
         },
         encoding: 'utf8',
         timeout: 90_000,
@@ -99,7 +105,9 @@ describe('consolidated database schema commands (e2e)', () => {
     const ledger = await fixture.query<{ filename: string }>(
       'SELECT filename FROM schema_migrations ORDER BY filename',
     );
-    expect(ledger.rows.map((row) => row.filename)).toEqual(['full_schema.sql']);
+    expect(ledger.rows.map((row) => row.filename)).toEqual(
+      expectedUpgradeLedger(),
+    );
     const retainedBusinessTable = await fixture.query<{ exists: boolean }>(
       `SELECT to_regclass('public.businesses') IS NOT NULL AS exists`,
     );
@@ -123,7 +131,6 @@ describe('consolidated database schema commands (e2e)', () => {
           DB_MAINTENANCE_NAME: process.env.DB_MAINTENANCE_NAME || 'postgres',
           DB_RESET_REQUIRE_STOPPED_BACKEND: 'false',
           PLATFORM_ADMIN_USERNAME: '',
-          PLATFORM_ADMIN_PASSWORD: '',
         },
         encoding: 'utf8',
         timeout: 90_000,

@@ -19,9 +19,7 @@ import {
   BusinessAdministrationService,
   type LinktreeBackup,
 } from './business-administration.service';
-import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
-import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateTikTokDto } from './dto/update-tiktok.dto';
 import { ProfileChangeReviewDto } from './dto/profile-change-review.dto';
 import { PlatformAdminGuard } from '../auth/platform-admin.guard';
@@ -174,13 +172,6 @@ export class BusinessAdministrationController {
     return res.send({ url });
   }
 
-  // Manual account provisioning is intentionally not exposed as an HTTP route.
-  async createBusiness(@Body() createDto: CreateBusinessDto) {
-    const business =
-      await this.businessAdministrationService.createBusiness(createDto);
-    return { success: true, data: business };
-  }
-
   @Get(':id/sessions')
   @RequireCapabilities(Capability.PlatformBusinessesRead)
   async getBusinessSessions(@Param('id') id: string) {
@@ -191,7 +182,7 @@ export class BusinessAdministrationController {
   }
 
   @Delete(':id/sessions')
-  @RequireCapabilities(Capability.PlatformBusinessesPasswordReset)
+  @RequireCapabilities(Capability.PlatformBusinessesSessionsRevoke)
   @AuditEvent('platform.business.sessions.revoke-all', {
     resourceType: 'business',
     resourceIdParam: 'id',
@@ -202,7 +193,7 @@ export class BusinessAdministrationController {
   }
 
   @Delete(':id/sessions/:sessionId')
-  @RequireCapabilities(Capability.PlatformBusinessesPasswordReset)
+  @RequireCapabilities(Capability.PlatformBusinessesSessionsRevoke)
   @AuditEvent('platform.business.session.revoke', {
     resourceType: 'business',
     resourceIdParam: 'id',
@@ -278,15 +269,6 @@ export class BusinessAdministrationController {
   async deleteBusiness(@Param('id') id: string) {
     await this.businessAdministrationService.deleteBusiness(id);
     return { success: true, message: 'Business deleted successfully' };
-  }
-
-  // Business password reset removed; business owners authenticate with Google.
-  async changePassword(
-    @Param('id') id: string,
-    @Body() body: ChangePasswordDto,
-  ) {
-    await this.businessAdministrationService.changePassword(id, body.password);
-    return { success: true, message: 'Password updated successfully' };
   }
 
   @Get(':id/linktrees')

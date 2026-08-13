@@ -13,11 +13,6 @@ export class UpdateBusinessDto {
   username?: string;
 
   @IsString()
-  @MinLength(8)
-  @IsOptional()
-  password?: string;
-
-  @IsString()
   @MinLength(2)
   @IsOptional()
   name?: string;

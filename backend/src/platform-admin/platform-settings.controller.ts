@@ -156,7 +156,7 @@ export class PlatformSettingsController {
   }
 
   @Delete('sessions')
-  @RequireCapabilities(Capability.PlatformSettingsPasswordChange)
+  @RequireCapabilities(Capability.PlatformSettingsSessionsRevoke)
   @AuditEvent('platform.settings.sessions.revoke-others', {
     resourceType: 'session',
   })
@@ -172,7 +172,7 @@ export class PlatformSettingsController {
   }
 
   @Delete('sessions/:sessionId')
-  @RequireCapabilities(Capability.PlatformSettingsPasswordChange)
+  @RequireCapabilities(Capability.PlatformSettingsSessionsRevoke)
   @AuditEvent('platform.settings.session.revoke', {
     resourceType: 'session',
     resourceIdParam: 'sessionId',

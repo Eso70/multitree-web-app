@@ -931,7 +931,6 @@ export function PlatformAdminDashboard() {
               name: data.name,
               phone: data.phone,
               username: data.username,
-              password: data.password,
               subscriptionPlanId: data.subscriptionPlanId,
               subdomain: data.subdomain,
               logo: data.logo,

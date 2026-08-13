@@ -10,7 +10,6 @@ import {
 export enum SettingsSection {
   Profile = 'profile',
   Defaults = 'defaults',
-  Security = 'security',
   Integrations = 'integrations',
 }
 
@@ -33,10 +32,6 @@ export class UpdateSettingsDto {
   @IsOptional() @IsBoolean() default_footer_hidden?: boolean;
   @IsOptional() @IsBoolean() default_whatsapp_enabled?: boolean;
 
-  @IsOptional() @IsString() @MaxLength(200) current_password?: string;
-  @IsOptional() @IsString() @MaxLength(200) new_password?: string;
-  @IsOptional() @IsString() @MaxLength(200) password?: string;
-  @IsOptional() @IsString() @MaxLength(200) email?: string;
   @IsOptional() @IsArray() tiktok_configs?: unknown[];
   @IsOptional() @IsString() @MaxLength(100) pixel_id?: string;
   @IsOptional() @IsString() @MaxLength(500) events_token?: string;

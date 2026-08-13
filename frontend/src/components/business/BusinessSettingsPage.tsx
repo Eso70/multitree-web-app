@@ -5,12 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
   Building2,
-  Check,
   Clock3,
-  Eye,
-  EyeOff,
   FileText,
-  KeyRound,
   Loader2,
   MessageSquare,
   Palette,
@@ -19,7 +15,6 @@ import {
   SlidersHorizontal,
   Upload,
   UserRound,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ColorGradientModal } from "@/features/link-editor/ColorGradientModal";
@@ -91,12 +86,6 @@ const emptySettings: SettingsData = {
 };
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:ring-2 dark:border-white/10 dark:bg-[#161B22] dark:text-slate-200 dark:placeholder:text-slate-500 dark:[color-scheme:dark]";
-const PASSWORD_STRENGTH = [
-  { label: "Weak", color: "bg-red-500", textColor: "text-red-600" },
-  { label: "Fair", color: "bg-amber-500", textColor: "text-amber-600" },
-  { label: "Good", color: "bg-blue-500", textColor: "text-blue-600" },
-  { label: "Strong", color: "bg-emerald-500", textColor: "text-emerald-600" },
-];
 
 export function BusinessSettingsPage() {
   const router = useRouter();
@@ -123,15 +112,7 @@ export function BusinessSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showDefaultColorPicker, setShowDefaultColorPicker] = useState(false);
-  const [passwords, setPasswords] = useState({
-    current_password: "",
-    new_password: "",
-    confirm_password: "",
-  });
   const [creatingDefault, setCreatingDefault] = useState(false);
-  const [showCurrentPw, setShowCurrentPw] = useState(true);
-  const [showNewPw, setShowNewPw] = useState(true);
-  const [showConfirmPw, setShowConfirmPw] = useState(true);
   const [defaultLinktree, setDefaultLinktree] = useState<
     | {
         id: string;
@@ -146,56 +127,6 @@ export function BusinessSettingsPage() {
   >(undefined);
   const [effectiveAccess, setEffectiveAccess] =
     useState<EffectiveAccessManifest | null>(null);
-  const passwordStrength = useMemo(() => {
-    if (!passwords.new_password) return null;
-    let score = 0;
-    if (passwords.new_password.length >= 8) score += 1;
-    if (
-      /[a-z]/.test(passwords.new_password) &&
-      /[A-Z]/.test(passwords.new_password)
-    )
-      score += 1;
-    if (/\d/.test(passwords.new_password)) score += 1;
-    if (
-      /[^A-Za-z0-9]/.test(passwords.new_password) ||
-      passwords.new_password.length >= 12
-    )
-      score += 1;
-    const level = Math.max(
-      0,
-      Math.min(score - 1, PASSWORD_STRENGTH.length - 1),
-    );
-    return { ...PASSWORD_STRENGTH[level], score };
-  }, [passwords.new_password]);
-  const passwordReqs = useMemo(
-    () => [
-      {
-        key: "length",
-        label: "لانیکەم ٨ پیت",
-        met: passwords.new_password.length >= 8,
-      },
-      {
-        key: "case",
-        label: "پیتی گەورە و بچووک",
-        met:
-          /[a-z]/.test(passwords.new_password) &&
-          /[A-Z]/.test(passwords.new_password),
-      },
-      {
-        key: "digit",
-        label: "بەلانی کەم یەک ژمارە",
-        met: /\d/.test(passwords.new_password),
-      },
-      {
-        key: "special",
-        label: "نووسەی تایبەت",
-        met:
-          /[^A-Za-z0-9]/.test(passwords.new_password) ||
-          passwords.new_password.length >= 12,
-      },
-    ],
-    [passwords.new_password],
-  );
 
   const loadSettings = useCallback(async (rethrow = false) => {
     try {
@@ -255,13 +186,6 @@ export function BusinessSettingsPage() {
   }, []);
 
   const save = async () => {
-    if (
-      activeTab === "security" &&
-      passwords.new_password !== passwords.confirm_password
-    ) {
-      toast.error("وشە نهێنییە نوێیەکان یەکسان نین");
-      return;
-    }
     setSaving(true);
     try {
       // Only send the fields the backend DTO whitelists for the active
@@ -269,14 +193,7 @@ export function BusinessSettingsPage() {
       // whole settings object (email, subdomain, pending_profile_changes, …)
       // would 400 every tab.
       let body: Record<string, unknown>;
-      if (activeTab === "security") {
-        body = {
-          section: activeTab,
-          current_password: passwords.current_password,
-          new_password: passwords.new_password,
-          email: data.email,
-        };
-      } else if (activeTab === "defaults") {
+      if (activeTab === "defaults") {
         body = {
           section: activeTab,
           default_footer_text: data.default_footer_text,
@@ -321,12 +238,6 @@ export function BusinessSettingsPage() {
           }),
         );
       }
-      if (activeTab === "security")
-        setPasswords({
-          current_password: "",
-          new_password: "",
-          confirm_password: "",
-        });
       toast.info(
         activeTab === "profile"
           ? "داواکارییەکەت بۆ بەڕێوەبەری پلاتفۆرم نێردرا"
@@ -403,12 +314,6 @@ export function BusinessSettingsPage() {
   // (pending_profile_changes, profile_request_status) would otherwise keep the
   // form permanently dirty after every approval round-trip.
   const dirty = useMemo(() => {
-    if (
-      passwords.current_password ||
-      passwords.new_password ||
-      passwords.confirm_password
-    )
-      return true;
     return (
       data.name !== savedSnapshot.name ||
       data.username !== savedSnapshot.username ||
@@ -427,7 +332,7 @@ export function BusinessSettingsPage() {
       data.default_footer_hidden !== savedSnapshot.default_footer_hidden ||
       data.default_whatsapp_enabled !== savedSnapshot.default_whatsapp_enabled
     );
-  }, [data, savedSnapshot, passwords]);
+  }, [data, savedSnapshot]);
   const profileEditingOutcome =
     effectiveAccess?.permissions["business:profile:update"]?.outcome;
   const profileEditingAllowed =
@@ -836,166 +741,6 @@ export function BusinessSettingsPage() {
                 <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
                   ئیمەیڵی خاوەن: <strong>{data.email}</strong>. چوونەژوورەوەی
                   نوێ دانیشتنی پێشوو دادەخات.
-                </div>
-                <SessionManagementPanel endpoint="/api/auth/sessions" />
-              </PageHeaderSection>
-            )}
-
-            {Boolean(0) && activeTab === "security" && (
-              <PageHeaderSection
-                icon={KeyRound}
-                title="چوونەژوورەوە و دانیشتنەکان"
-                description="وشەی نهێنی، ئامێرە چالاکەکان و مێژووی چوونەژوورەوە بەڕێوەببە"
-                action={
-                  <TabSaveButton
-                    dirty={dirty}
-                    saving={saving}
-                    disabled={tabLocked}
-                    accent
-                    onSave={() => void save()}
-                  />
-                }
-              >
-                <div className="col-span-full rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-white/10 dark:bg-white/[0.04]">
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <Field label="ئیمەیڵ">
-                      <input
-                        type="email"
-                        className={inputClass}
-                        value={data.email || ""}
-                        onChange={(e) =>
-                          setData({ ...data, email: e.target.value })
-                        }
-                        placeholder="ئیمێڵەکەت بنووسە (داواکراو نییە)"
-                      />
-                    </Field>
-                    <Field label="وشەی نهێنی ئێستا">
-                      <div className="relative">
-                        <input
-                          type={showCurrentPw ? "text" : "password"}
-                          autoComplete="current-password"
-                          className={`${inputClass} pr-11`}
-                          value={passwords.current_password}
-                          onChange={(e) =>
-                            setPasswords({
-                              ...passwords,
-                              current_password: e.target.value,
-                            })
-                          }
-                          placeholder="وشەی نهێنی ئێستا"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowCurrentPw((v) => !v)}
-                          className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200"
-                        >
-                          {showCurrentPw ? (
-                            <EyeOff className="h-3.5 w-3.5" />
-                          ) : (
-                            <Eye className="h-3.5 w-3.5" />
-                          )}
-                        </button>
-                      </div>
-                    </Field>
-                    <Field label="وشەی نهێنی نوێ">
-                      <div className="relative">
-                        <input
-                          type={showNewPw ? "text" : "password"}
-                          autoComplete="new-password"
-                          className={`${inputClass} pr-11`}
-                          value={passwords.new_password}
-                          onChange={(e) =>
-                            setPasswords({
-                              ...passwords,
-                              new_password: e.target.value,
-                            })
-                          }
-                          placeholder="وشەی نهێنی نوێ"
-                        />
-                        <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
-                          {passwordStrength && (
-                            <span
-                              className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${passwordStrength.textColor} bg-slate-100 dark:bg-white/10`}
-                            >
-                              {passwordStrength.label}
-                            </span>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => setShowNewPw((v) => !v)}
-                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200"
-                          >
-                            {showNewPw ? (
-                              <EyeOff className="h-3.5 w-3.5" />
-                            ) : (
-                              <Eye className="h-3.5 w-3.5" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="mt-2 space-y-1">
-                        {passwordReqs.map((r) => (
-                          <div
-                            key={r.key}
-                            className={`flex items-center gap-1.5 text-[11px] ${r.met ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}`}
-                          >
-                            {r.met ? (
-                              <Check className="h-3 w-3" />
-                            ) : (
-                              <X className="h-3 w-3" />
-                            )}
-                            {r.label}
-                          </div>
-                        ))}
-                      </div>
-                    </Field>
-                    <Field label="دووبارەکردنەوەی وشەی نهێنی">
-                      <div className="relative">
-                        <input
-                          type={showConfirmPw ? "text" : "password"}
-                          autoComplete="new-password"
-                          className={`${inputClass} pr-11`}
-                          value={passwords.confirm_password}
-                          onChange={(e) =>
-                            setPasswords({
-                              ...passwords,
-                              confirm_password: e.target.value,
-                            })
-                          }
-                          placeholder="دووبارەکردنەوەی وشەی نهێنی"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPw((v) => !v)}
-                          className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200"
-                        >
-                          {showConfirmPw ? (
-                            <EyeOff className="h-3.5 w-3.5" />
-                          ) : (
-                            <Eye className="h-3.5 w-3.5" />
-                          )}
-                        </button>
-                      </div>
-                      {passwords.confirm_password && (
-                        <div
-                          className={`mt-2 flex items-center gap-1.5 text-[11px] ${passwords.confirm_password === passwords.new_password ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}
-                        >
-                          {passwords.confirm_password ===
-                          passwords.new_password ? (
-                            <>
-                              <Check className="h-3 w-3" />
-                              وشە نهێنییەکان یەکسانن
-                            </>
-                          ) : (
-                            <>
-                              <X className="h-3 w-3" />
-                              وشە نهێنییەکان یەکسان نین
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </Field>
-                  </div>
                 </div>
                 <SessionManagementPanel endpoint="/api/auth/sessions" />
               </PageHeaderSection>

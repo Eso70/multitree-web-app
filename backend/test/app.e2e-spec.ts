@@ -7,8 +7,6 @@ import {
 import fastifyCookie, { type FastifyCookieOptions } from '@fastify/cookie';
 import type { FastifyPluginCallback } from 'fastify';
 import { Pool } from 'pg';
-import * as bcrypt from 'bcrypt';
-import type { OutgoingHttpHeaders } from 'http';
 import { AppModule } from '../src/app.module';
 import { RequestBoundaryPipe } from '../src/common/request-boundary.pipe';
 import {
@@ -18,12 +16,12 @@ import {
 import { DatabaseService } from '../src/database/database.service';
 import { RedisService } from '../src/redis/redis.service';
 import { SecretCryptoService } from '../src/auth/secret-crypto.service';
+import { SessionService } from '../src/auth/session.service';
 import { WebhookDeliveryService } from '../src/api-platform/webhook-delivery.service';
 
 const cookiePlugin = ((fastifyCookie as unknown as { default?: unknown })
   .default ?? fastifyCookie) as FastifyPluginCallback<FastifyCookieOptions>;
 
-const PASSWORD = 'H8-E2E-password!';
 const BUSINESS_A_ID = '81000000-0000-4000-8000-000000000001';
 const BUSINESS_B_ID = '81000000-0000-4000-8000-000000000002';
 const ADMIN_ID = '81000000-0000-4000-8000-000000000003';
@@ -60,18 +58,6 @@ function data(response: { json(): unknown }): JsonRecord {
   return body(response).data as JsonRecord;
 }
 
-function sessionCookie(response: { headers: OutgoingHttpHeaders }): string {
-  const header = response.headers['set-cookie'];
-  const value = Array.isArray(header)
-    ? header[0] || ''
-    : typeof header === 'string'
-      ? header
-      : '';
-  const cookie = value.split(';')[0];
-  if (!cookie.includes('=')) throw new Error('Login did not return a cookie');
-  return cookie;
-}
-
 describe('critical architecture matrix (e2e)', () => {
   let app: NestFastifyApplication;
   let fixturePool: Pool;
@@ -82,7 +68,6 @@ describe('critical architecture matrix (e2e)', () => {
   beforeAll(async () => {
     assertDisposableDatabase();
     fixturePool = new Pool(poolConfig());
-    const passwordHash = await bcrypt.hash(PASSWORD, 4);
     await fixturePool.query(
       'DELETE FROM businesses WHERE id = ANY($1::uuid[])',
       [[BUSINESS_A_ID, BUSINESS_B_ID]],
@@ -91,11 +76,11 @@ describe('critical architecture matrix (e2e)', () => {
       ADMIN_ID,
     ]);
     await fixturePool.query(
-      `INSERT INTO businesses (id,username,password_hash,name,phone,subdomain,status,plan,max_linktrees)
+      `INSERT INTO businesses (id,username,name,phone,subdomain,status,plan,max_linktrees)
        VALUES
-         ($1,'h8-tenant-a',$3,'H8 Tenant A','10001','h8-tenant-a','active','enterprise',20),
-         ($2,'h8-tenant-b',$3,'H8 Tenant B','10002','h8-tenant-b','active','enterprise',20)`,
-      [BUSINESS_A_ID, BUSINESS_B_ID, passwordHash],
+         ($1,'h8-tenant-a','H8 Tenant A','10001','h8-tenant-a','active','enterprise',20),
+         ($2,'h8-tenant-b','H8 Tenant B','10002','h8-tenant-b','active','enterprise',20)`,
+      [BUSINESS_A_ID, BUSINESS_B_ID],
     );
     await fixturePool.query(
       `INSERT INTO business_subscriptions
@@ -116,9 +101,9 @@ describe('critical architecture matrix (e2e)', () => {
       ],
     );
     await fixturePool.query(
-      `INSERT INTO platform_admins (id,username,password_hash,name)
-       VALUES ($1,'h8-admin',$2,'H8 Administrator')`,
-      [ADMIN_ID, passwordHash],
+      `INSERT INTO platform_admins (id,username,name)
+       VALUES ($1,'h8-admin','H8 Administrator')`,
+      [ADMIN_ID],
     );
 
     const moduleRef = await Test.createTestingModule({
@@ -180,30 +165,52 @@ describe('critical architecture matrix (e2e)', () => {
     expect(response.json()).toEqual({ status: 'alive' });
   });
 
-  it('authenticates both tenants and the separate platform domain', async () => {
-    const loginBusiness = (subdomain: string) =>
-      app.inject({
-        method: 'POST',
-        url: '/api/auth/login',
-        headers: { 'x-subdomain': subdomain },
-        payload: { username: subdomain, password: PASSWORD },
-      });
+  // There is no password route to authenticate through: business owners sign
+  // in with Google or a tenant-bound email code, and platform administrators
+  // with Google or a root-domain email code. Both of those need a live Google
+  // or SMTP round trip, so the fixture mints sessions through the same
+  // `SessionService` the real endpoints use. The tokens are therefore produced
+  // and stored exactly as production produces them, and every assertion below
+  // still exercises the real guards, cookie binding, and tenant isolation.
+  it('issues real sessions for both tenants and the separate platform domain', async () => {
+    const sessions = app.get(SessionService);
+    const context = { ipAddress: '127.0.0.1', userAgent: 'e2e' };
+
     const [tenantA, tenantB, platform] = await Promise.all([
-      loginBusiness('h8-tenant-a'),
-      loginBusiness('h8-tenant-b'),
-      app.inject({
-        method: 'POST',
-        url: '/api/platform/auth/login',
-        payload: { username: 'h8-admin', password: PASSWORD },
+      sessions.createBusinessSession({
+        businessId: BUSINESS_A_ID,
+        userId: null,
+        ...context,
+        sessionUser: {
+          username: 'h8-tenant-a',
+          name: 'H8 Tenant A',
+          subdomain: 'h8-tenant-a',
+        },
+      }),
+      sessions.createBusinessSession({
+        businessId: BUSINESS_B_ID,
+        userId: null,
+        ...context,
+        sessionUser: {
+          username: 'h8-tenant-b',
+          name: 'H8 Tenant B',
+          subdomain: 'h8-tenant-b',
+        },
+      }),
+      sessions.createPlatformAdminSession({
+        platformAdminId: ADMIN_ID,
+        username: 'h8-admin',
+        name: 'H8 Administrator',
+        ...context,
       }),
     ]);
 
-    expect(tenantA.statusCode).toBe(200);
-    expect(tenantB.statusCode).toBe(200);
-    expect(platform.statusCode).toBe(200);
-    businessACookie = sessionCookie(tenantA);
-    businessBCookie = sessionCookie(tenantB);
-    platformCookie = sessionCookie(platform);
+    expect(tenantA.sessionToken).toBeTruthy();
+    expect(tenantB.sessionToken).toBeTruthy();
+    expect(platform.sessionToken).toBeTruthy();
+    businessACookie = `business_session=${tenantA.sessionToken}`;
+    businessBCookie = `business_session=${tenantB.sessionToken}`;
+    platformCookie = `platform_admin_session=${platform.sessionToken}`;
   });
 
   it('enforces cookie origin and tenant binding before controller work', async () => {
@@ -257,6 +264,7 @@ describe('critical architecture matrix (e2e)', () => {
       url: `/api/linktrees/${tenantBPageId}`,
       headers: {
         cookie: businessACookie,
+        host: 'h8-tenant-a.localhost',
         'x-subdomain': 'h8-tenant-a',
       },
     });

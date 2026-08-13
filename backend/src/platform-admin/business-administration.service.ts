@@ -9,9 +9,7 @@ import {
 import { AdvertisingService } from '../advertising/advertising.service';
 import {
   DEFAULT_LINKTREE_BACKGROUND_COLOR,
-  DEFAULT_LINKTREE_FOOTER_HIDDEN,
   DEFAULT_LINKTREE_TEMPLATE_KEY,
-  DEFAULT_LINKTREE_WHATSAPP_ENABLED,
 } from '../common/linktree-defaults';
 import { DatabaseService } from '../database/database.service';
 import { describeError } from '../common/describe-error';
@@ -19,9 +17,7 @@ import { toText } from '../common/coerce';
 import type { LinkRow } from '../links/link.types';
 import { RedisService } from '../redis/redis.service';
 import { StorageService } from '../storage/storage.service';
-import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
-import { hashPassword } from '../auth/password-hashing';
 import { createHash, randomUUID } from 'crypto';
 import { SecretCryptoService } from '../auth/secret-crypto.service';
 import { CLICK_EVENTS } from '../analytics/unified-analytics.service';
@@ -629,175 +625,6 @@ export class BusinessAdministrationService {
     return result.rows;
   }
 
-  async createBusiness(data: CreateBusinessDto) {
-    const username = this.normalizeUsername(data.username);
-    const subdomain = this.normalizeSubdomain(data.subdomain);
-    const phone = data.phone.trim();
-
-    const usernameCheck = await this.databaseService.query<ExistsProbeRow>(
-      'SELECT 1 FROM businesses WHERE username = $1',
-      [username],
-    );
-    if (usernameCheck.rows.length > 0) {
-      throw new ConflictException('Username is already in use');
-    }
-
-    const subdomainCheck = await this.databaseService.query<ExistsProbeRow>(
-      'SELECT 1 FROM businesses WHERE subdomain = $1',
-      [subdomain],
-    );
-    if (subdomainCheck.rows.length > 0) {
-      throw new ConflictException('Subdomain is already in use');
-    }
-
-    const passwordHash = await hashPassword(data.password);
-
-    const created = await this.databaseService.transaction(async (client) => {
-      const email = data.email?.trim() || null;
-      const businessRes = await client.query<BusinessRow>(
-        `INSERT INTO businesses
-          (username, password_hash, name, phone, email, subdomain, status,
-           onboarding_step, onboarding_completed_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, 3, NOW())
-         RETURNING id, username, name, phone, email, subdomain, status, plan, max_linktrees, created_at, updated_at`,
-        [
-          username,
-          passwordHash,
-          data.name.trim(),
-          phone,
-          email,
-          subdomain,
-          this.normalizeStatus(data.status),
-        ],
-      );
-      const business = businessRes.rows[0];
-
-      if (data.subscriptionPlanId) {
-        const assignmentRes = await client.query<{
-          subscriptionPlanId: string;
-          permissionProfileId: string;
-          configurationId: string;
-          trialDays: number;
-        }>(
-          `SELECT subscription_plan.id::text AS "subscriptionPlanId",
-                  subscription_plan.permission_profile_id::text
-                    AS "permissionProfileId",
-                  configuration.id::text AS "configurationId",
-                  subscription_plan.trial_days::int AS "trialDays"
-           FROM billing_subscription_plans subscription_plan
-           JOIN billing_plan_configurations configuration
-             ON configuration.plan_id =
-                subscription_plan.permission_profile_id
-           WHERE subscription_plan.id = $1::uuid
-             AND subscription_plan.status = 'active'
-           LIMIT 1`,
-          [data.subscriptionPlanId],
-        );
-        const assignment = assignmentRes.rows[0];
-        if (!assignment) {
-          throw new BadRequestException(
-            'The selected subscription plan is not available',
-          );
-        }
-
-        const hasTrial = assignment.trialDays > 0;
-        await client.query(
-          `INSERT INTO business_subscriptions
-            (business_id, subscription_plan_id, plan_id,
-             plan_configuration_id, status,
-             current_period_start, current_period_end)
-           VALUES
-            ($1::uuid, $2::uuid, $3::uuid, $4::uuid, $5, NOW(),
-             CASE WHEN $6::int > 0
-               THEN NOW() + ($6::int * INTERVAL '1 day')
-               ELSE NOW() + INTERVAL '1 year'
-             END)
-           ON CONFLICT (business_id) DO UPDATE SET
-             subscription_plan_id = EXCLUDED.subscription_plan_id,
-             plan_id = EXCLUDED.plan_id,
-             plan_configuration_id = EXCLUDED.plan_configuration_id,
-             status = EXCLUDED.status,
-             current_period_start = EXCLUDED.current_period_start,
-             current_period_end = EXCLUDED.current_period_end,
-             ended_at = NULL`,
-          [
-            business.id,
-            assignment.subscriptionPlanId,
-            assignment.permissionProfileId,
-            assignment.configurationId,
-            hasTrial ? 'trialing' : 'active',
-            assignment.trialDays,
-          ],
-        );
-      }
-
-      const brandingRes = await client.query<BrandingRow>(
-        `INSERT INTO business_branding (business_id, logo, favicon, default_avatar, website_color)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING logo, favicon, default_avatar, website_color`,
-        [
-          business.id,
-          this.normalizeRequiredText(data.logo, '/images/Logo.jpg'),
-          this.normalizeRequiredText(data.favicon, '/favicon.ico'),
-          this.normalizeRequiredText(
-            data.default_avatar,
-            '/images/DefaultAvatar.png',
-          ),
-          data.website_color || null,
-        ],
-      );
-      const branding = brandingRes.rows[0];
-
-      const defaultsRes = await client.query<BusinessDefaultsRow>(
-        `INSERT INTO business_defaults (business_id, footer_text, footer_phone, template_key, background_color, footer_hidden, whatsapp_enabled)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         RETURNING footer_text AS default_footer_text, footer_phone AS default_footer_phone,
-                   template_key AS default_template, background_color AS default_background_color,
-                   footer_hidden AS default_footer_hidden, whatsapp_enabled AS default_whatsapp_enabled`,
-        [
-          business.id,
-          data.default_footer_text || data.name?.trim() || null,
-          data.default_footer_phone || null,
-          data.default_template?.trim() || DEFAULT_LINKTREE_TEMPLATE_KEY,
-          data.default_background_color?.trim() ||
-            DEFAULT_LINKTREE_BACKGROUND_COLOR,
-          data.default_footer_hidden ?? DEFAULT_LINKTREE_FOOTER_HIDDEN,
-          data.default_whatsapp_enabled ?? DEFAULT_LINKTREE_WHATSAPP_ENABLED,
-        ],
-      );
-      const defaults = defaultsRes.rows[0];
-
-      const tiktokConfigs = this.normalizeTikTokConfigs(data);
-      const primaryTikTok = this.primaryTikTokConfig(tiktokConfigs);
-      await this.replaceNormalizedTikTok(client, business.id, tiktokConfigs);
-
-      await this.seedBusinessCommunications(client, business);
-
-      if (business.subdomain) {
-        try {
-          await this.redisService.del(
-            `cache:linktree:uid:id:sub:${business.subdomain.toLowerCase()}`,
-          );
-        } catch (error) {
-          this.logger.warn(
-            `Failed to clear subdomain cache after creating business ${business.id}: ${describeError(error)}`,
-          );
-        }
-      }
-
-      return {
-        ...business,
-        ...branding,
-        ...defaults,
-        pixel_id: primaryTikTok.pixel_id || null,
-        events_token: primaryTikTok.events_token || null,
-        tiktok_configs: tiktokConfigs,
-      };
-    });
-    await this.storageService.claimBusinessAssets(created.id, created);
-    return created;
-  }
-
   async updateBusiness(id: string, data: UpdateBusinessDto) {
     const businessRes = await this.databaseService.query<BusinessDetailRow>(
       `SELECT a.username, a.name, a.phone, a.email, a.subdomain, a.status,
@@ -1146,22 +973,6 @@ export class BusinessAdministrationService {
 
     await this.storageService.deleteUnreferencedFromValues(filesToDelete);
     return { success: true };
-  }
-
-  async changePassword(id: string, password: string) {
-    const check = await this.databaseService.query<ExistsProbeRow>(
-      'SELECT 1 FROM businesses WHERE id = $1',
-      [id],
-    );
-    if (!check.rows || check.rows.length === 0)
-      throw new NotFoundException('Business not found');
-
-    const passwordHash = await hashPassword(password);
-    await this.databaseService.query(
-      'UPDATE businesses SET password_hash = $1, password_changed_at = NOW(), updated_at = NOW() WHERE id = $2',
-      [passwordHash, id],
-    );
-    return { success: true, message: 'Password changed successfully' };
   }
 
   async getBusinessLinktrees(id: string) {

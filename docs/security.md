@@ -2,8 +2,10 @@
 
 ## Invite-only Google business authentication
 
-Business password authentication and manual account-provisioning HTTP routes
-are disabled. Platform administrator creates a random 256-bit invitation; only
+Business password authentication has been removed outright: there is no
+password route, no password field on any DTO, and no `password_hash` column on
+`businesses` or `platform_admins`. Manual account-provisioning HTTP routes are
+likewise gone. Platform administrator creates a random 256-bit invitation; only
 its SHA-256 hash is stored, and it expires after 24 hours by default. The
 `SIGNUP_INVITATION_TTL_HOURS` setting accepts 1 through 168 hours. Valid invitation
 creates exactly one durable application and owner identity. Repeated OAuth
@@ -55,8 +57,8 @@ assumed.
 
 Business owners use Google OAuth or a tenant-bound email code; platform
 administrators use Google OAuth or a root-domain email code; invite sign-up
-supports Google OAuth or an invitation-checked email code. Public password
-login endpoints are not exposed. Platform Google login begins at
+supports Google OAuth or an invitation-checked email code. No password login
+endpoint exists on any surface. Platform Google login begins at
 `GET /api/platform/auth/google/start` on the root domain and returns through
 the fixed Google callback shared by business authentication. OAuth state is
 PKCE-protected, Redis-backed, single-use, and expires after ten minutes.
@@ -66,8 +68,8 @@ Platform access requires a verified Google email that exactly matches
 email code sent only to an email that matches both a `platform_admins` row and,
 when set, the same allowlist. Any other email is rejected before session
 creation and the attempt is audited.
-The former `POST /api/platform/auth/login` password route is removed, so it
-cannot bypass this allowlist. Google starts are limited to five attempts per
+The former `POST /api/platform/auth/login` password route is removed along
+with the credentials it checked, so it cannot bypass this allowlist. Google starts are limited to five attempts per
 IP per five minutes and continue through `platform_admin` access rules. The
 OAuth session cookie uses `SameSite=Lax` so it survives Google's top-level
 callback; single-use state and PKCE protect that callback from login CSRF.
@@ -153,8 +155,8 @@ active TikTok Pixel-group limits.
 
 Settings authorization and approval payloads include only values actually
 provided by the client. Optional DTO properties whose value is `undefined`
-must be removed first; otherwise an absent password property can be mistaken
-for a password-bearing approval request and block an unrelated branding edit.
+must be removed first; otherwise an absent optional property can be mistaken
+for a submitted one and block an unrelated branding edit.
 
 ## Platform-administrator impersonation
 
@@ -468,8 +470,8 @@ it to this list deliberately, which is the intended review point.
 ## Resolved security findings
 
 The August 2026 security-hardening migration closed the five findings that
-were previously listed here: password hashing now uses one shared cost,
-access rules are enforced, audit rows are excluded from retention cleanup,
+were previously listed here: password authentication has since been removed
+entirely, access rules are enforced, audit rows are excluded from retention cleanup,
 developer API fixed-window keys expire at the minute boundary, and production
 scripts use request nonces instead of `'unsafe-inline'`. Regression coverage
 for these boundaries is listed in [docs/testing.md](testing.md).

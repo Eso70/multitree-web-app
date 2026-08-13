@@ -85,11 +85,8 @@ describe("CreateBusinessModal - single step", () => {
     renderModal();
     expect(screen.getByLabelText(/ناوی بزنس/)).toBeInTheDocument();
     expect(screen.getByLabelText(/ناوی بەکارهێنەر/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/وشەی تێپەڕبوون/)).toBeInTheDocument();
     expect(screen.getByLabelText(/سەب دۆمەین/)).toBeInTheDocument();
   });
-
-
 
   it("pre-populates fields in edit mode", () => {
     renderModal({

@@ -14,9 +14,7 @@ export const Subdomain = createParamDecorator(
     // verified internal proxy call — see internal-proxy-trust.ts. An
     // external caller that reaches this process directly cannot set it and
     // falls through to Host-header parsing below.
-    if (
-      isTrustedInternalProxy(request.headers?.[INTERNAL_PROXY_KEY_HEADER])
-    ) {
+    if (isTrustedInternalProxy(request.headers?.[INTERNAL_PROXY_KEY_HEADER])) {
       const headerValue = request.headers?.['x-subdomain'];
       const xSubdomain = Array.isArray(headerValue)
         ? headerValue[0]

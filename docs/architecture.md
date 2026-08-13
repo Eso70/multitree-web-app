@@ -259,8 +259,8 @@ audit trail's data-flow shape.
 
 The configured browser path for the platform console reduces automated
 discovery but is not a security boundary. Cookies, server-side sessions,
-origin validation, tenant binding, guards, capabilities, password hashing,
-and rate limiting remain the actual controls.
+origin validation, tenant binding, guards, capabilities, and rate limiting
+remain the actual controls.
 
 ### Audit trail
 

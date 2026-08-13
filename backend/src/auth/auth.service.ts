@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   BadRequestException,
   ConflictException,
@@ -11,10 +11,6 @@ import {
 } from '../common/linktree-defaults';
 import { DatabaseService } from '../database/database.service';
 import { RedisService } from '../redis/redis.service';
-import * as bcrypt from 'bcrypt';
-import { hashPassword } from './password-hashing';
-import * as crypto from 'crypto';
-import { SecurityAuditService } from './security-audit.service';
 import { EntitlementService } from '../billing/entitlement.service';
 import { SecretCryptoService } from './secret-crypto.service';
 import { TemplateAccessService } from '../billing/template-access.service';
@@ -25,40 +21,11 @@ export class AuthService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly redisService: RedisService,
-    @Optional() private readonly securityAuditService?: SecurityAuditService,
     @Optional() private readonly entitlementService?: EntitlementService,
     @Optional() private readonly secretCrypto?: SecretCryptoService,
     @Optional() private readonly templateAccessService?: TemplateAccessService,
     @Optional() private readonly storageService?: StorageService,
   ) {}
-
-  private async auditLogin(input: {
-    actorType: 'anonymous' | 'business' | 'platform-admin';
-    actorId?: string;
-    actorLabel?: string;
-    businessId?: string;
-    outcome: 'success' | 'failure' | 'denied';
-    clientIp: string;
-    userAgent: string;
-    requestedSubdomain?: string;
-  }): Promise<void> {
-    await this.securityAuditService?.record({
-      actorType: input.actorType,
-      actorId: input.actorId,
-      actorLabel: input.actorLabel,
-      businessId: input.businessId,
-      eventType:
-        input.actorType === 'platform-admin'
-          ? 'platform_admin.login'
-          : 'business.login',
-      outcome: input.outcome,
-      ipAddress: input.clientIp,
-      userAgent: input.userAgent,
-      metadata: input.requestedSubdomain
-        ? { requestedSubdomain: input.requestedSubdomain }
-        : {},
-    });
-  }
 
   async getBusinessOnboarding(businessId: string) {
     const result = await this.databaseService.query(
@@ -294,181 +261,6 @@ export class AuthService {
     return { completed: true, completedAt: result.rows[0].completedAt };
   }
 
-  async login(
-    username: string,
-    password: string,
-    rememberMe: boolean,
-    clientIp: string,
-    userAgent: string,
-    requestSubdomain: string,
-  ) {
-    // 1. Find business by username
-    const businessRes = await this.databaseService.query<{
-      id: string;
-      username: string;
-      name: string;
-      password_hash: string;
-      status: string;
-      subdomain: string | null;
-    }>(
-      'SELECT id, username, name, password_hash, status, subdomain FROM businesses WHERE username = $1',
-      [username],
-    );
-
-    if (!businessRes.rows || businessRes.rows.length === 0) {
-      await this.auditLogin({
-        actorType: 'anonymous',
-        outcome: 'failure',
-        clientIp,
-        userAgent,
-        requestedSubdomain: requestSubdomain,
-      });
-      throw new UnauthorizedException('Invalid username or password');
-    }
-
-    const business = businessRes.rows[0];
-
-    // 2. Check status
-    if (business.status !== 'active') {
-      await this.auditLogin({
-        actorType: 'business',
-        actorId: business.id,
-        actorLabel: business.name,
-        businessId: business.id,
-        outcome: 'denied',
-        clientIp,
-        userAgent,
-        requestedSubdomain: requestSubdomain,
-      });
-      throw new UnauthorizedException('Invalid username or password');
-    }
-
-    // 3. Verify password with bcrypt
-    const passwordValid = await bcrypt.compare(
-      password,
-      business.password_hash,
-    );
-    if (!passwordValid) {
-      await this.auditLogin({
-        actorType: 'business',
-        actorId: business.id,
-        actorLabel: business.name,
-        businessId: business.id,
-        outcome: 'failure',
-        clientIp,
-        userAgent,
-        requestedSubdomain: requestSubdomain,
-      });
-      throw new UnauthorizedException('Invalid username or password');
-    }
-
-    // 4. Subdomain validation
-    if (!requestSubdomain) {
-      await this.auditLogin({
-        actorType: 'business',
-        actorId: business.id,
-        actorLabel: business.name,
-        businessId: business.id,
-        outcome: 'denied',
-        clientIp,
-        userAgent,
-      });
-      throw new UnauthorizedException('Invalid username or password');
-    }
-    if (!business.subdomain) {
-      await this.auditLogin({
-        actorType: 'business',
-        actorId: business.id,
-        actorLabel: business.name,
-        businessId: business.id,
-        outcome: 'denied',
-        clientIp,
-        userAgent,
-        requestedSubdomain: requestSubdomain,
-      });
-      throw new UnauthorizedException('Invalid username or password');
-    }
-    if (business.subdomain !== requestSubdomain) {
-      await this.auditLogin({
-        actorType: 'business',
-        actorId: business.id,
-        actorLabel: business.name,
-        businessId: business.id,
-        outcome: 'denied',
-        clientIp,
-        userAgent,
-        requestedSubdomain: requestSubdomain,
-      });
-      throw new UnauthorizedException('Invalid username or password');
-    }
-
-    await this.databaseService.query(
-      'DELETE FROM business_sessions WHERE session_expires_at < NOW()',
-    );
-
-    // 5. Create session
-    const sessionToken = crypto.randomBytes(32).toString('base64url');
-    const sessionTokenHash = crypto
-      .createHash('sha256')
-      .update(sessionToken)
-      .digest('hex');
-    const sessionDuration = rememberMe
-      ? 365 * 24 * 60 * 60 * 1000
-      : 30 * 60 * 1000;
-    const sessionExpiresAt = new Date(Date.now() + sessionDuration);
-    const safeIp = normalizeInet(clientIp);
-
-    await this.databaseService.query(
-      'DELETE FROM business_sessions WHERE business_id = $1',
-      [business.id],
-    );
-    await this.redisService.clearBusinessSessions(business.id);
-    await this.databaseService.query(
-      `INSERT INTO business_sessions (business_id, session_token_hash, session_expires_at, ip_address, user_agent, last_used_at)
-       VALUES ($1, $2, $3, $4::inet, $5, NOW())
-       ON CONFLICT (session_token_hash) DO UPDATE SET session_expires_at = EXCLUDED.session_expires_at, last_used_at = NOW()`,
-      [business.id, sessionTokenHash, sessionExpiresAt, safeIp, userAgent],
-    );
-
-    // Update last login
-    await this.databaseService.query(
-      'UPDATE businesses SET last_login_at = NOW(), last_login_ip = $1::inet WHERE id = $2',
-      [safeIp, business.id],
-    );
-
-    const user = {
-      id: business.id,
-      username: business.username,
-      name: business.name,
-      role: 'business' as const,
-      subdomain: business.subdomain,
-    };
-
-    const ttlSeconds = rememberMe ? 365 * 24 * 60 * 60 : 30 * 60;
-    await this.redisService.set(
-      `session:${sessionTokenHash}`,
-      user,
-      ttlSeconds,
-    );
-    await this.redisService.trackBusinessSession(
-      user.id,
-      sessionTokenHash,
-      ttlSeconds,
-    );
-    await this.auditLogin({
-      actorType: 'business',
-      actorId: business.id,
-      actorLabel: business.name,
-      businessId: business.id,
-      outcome: 'success',
-      clientIp,
-      userAgent,
-      requestedSubdomain: requestSubdomain,
-    });
-
-    return { sessionToken, user, ttlSeconds };
-  }
-
   private normalizeTikTokConfig(value: unknown): {
     id?: string;
     pixel_id: string;
@@ -652,7 +444,7 @@ export class AuthService {
     body: Record<string, unknown>,
   ) {
     const section = this.stringValue(body.section);
-    if (!['profile', 'defaults', 'security', 'integrations'].includes(section))
+    if (!['profile', 'defaults', 'integrations'].includes(section))
       throw new BadRequestException('Invalid settings section');
     if (section === 'profile') {
       const hasName = typeof body.name === 'string';
@@ -830,26 +622,6 @@ export class AuthService {
           !!body.default_footer_hidden,
           !!body.default_whatsapp_enabled,
         ],
-      );
-    } else if (section === 'security') {
-      const currentPassword = this.stringValue(body.current_password);
-      const newPassword = this.stringValue(body.new_password);
-      const email = this.stringValue(body.email).trim() || null;
-      if (newPassword.length < 8)
-        throw new BadRequestException(
-          'New password must contain at least 8 characters',
-        );
-      const current = await this.databaseService.query<{
-        password_hash: string;
-      }>('SELECT password_hash FROM businesses WHERE id=$1', [businessId]);
-      if (
-        !current.rows.length ||
-        !(await bcrypt.compare(currentPassword, current.rows[0].password_hash))
-      )
-        throw new BadRequestException('Current password is incorrect');
-      await this.databaseService.query(
-        'UPDATE businesses SET password_hash=$1, email=$2, updated_at=NOW() WHERE id=$3',
-        [await hashPassword(newPassword), email, businessId],
       );
     } else {
       const configs = this.normalizeTikTokConfigs(body.tiktok_configs);
@@ -1039,31 +811,4 @@ export class AuthService {
     );
     return !!(res.rows && res.rows.length > 0);
   }
-}
-
-/**
- * Normalize a client IP string to a value Postgres will accept for an `inet` cast.
- * `clientIp` can come from x-forwarded-for, x-real-ip, or fall back to "unknown".
- * Postgres inet rejects: empty strings, "unknown", bare hostnames, IPv6 with zones
- * like "::ffff:1.2.3.4%eth0", and most non-IP literals. We strip any zone id,
- * take the first IP in a comma-separated chain, and fall back to 127.0.0.1 for
- * anything that doesn't parse. Without this, an upstream proxy header change
- * can turn a successful login into a 500 mid-insert.
- */
-function normalizeInet(raw: string | undefined | null): string {
-  if (!raw) return '127.0.0.1';
-  const first = raw.split(',')[0]?.trim();
-  if (!first || first === 'unknown' || first === 'localhost')
-    return '127.0.0.1';
-  // Strip IPv6 zone id (e.g. fe80::1%eth0 → fe80::1)
-  const noZone = first.replace(/%.*$/, '').replace(/^"|"$/g, '');
-  // Anything that looks like an IPv4 or IPv6 literal: trust it.
-  // Postgres accepts ::1, ::ffff:1.2.3.4, 127.0.0.1, etc.
-  if (
-    (/^[0-9a-fA-F:.]+$/.test(noZone) && noZone.includes(':')) ||
-    /^\d+\.\d+\.\d+\.\d+$/.test(noZone)
-  ) {
-    return noZone;
-  }
-  return '127.0.0.1';
 }

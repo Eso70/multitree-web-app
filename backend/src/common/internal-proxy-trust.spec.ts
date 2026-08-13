@@ -2,8 +2,7 @@ import { isTrustedInternalProxy } from './internal-proxy-trust';
 
 describe('isTrustedInternalProxy', () => {
   const ORIGINAL_SESSION_SECRET = process.env.SESSION_SECRET;
-  const ORIGINAL_REQUEST_TRACKING_SECRET =
-    process.env.REQUEST_TRACKING_SECRET;
+  const ORIGINAL_REQUEST_TRACKING_SECRET = process.env.REQUEST_TRACKING_SECRET;
 
   afterEach(() => {
     process.env.SESSION_SECRET = ORIGINAL_SESSION_SECRET;

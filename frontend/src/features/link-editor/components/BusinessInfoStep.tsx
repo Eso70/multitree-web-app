@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { memo, useState, useMemo } from "react";
-import { Eye, EyeOff } from "lucide-react";
 import { ColorGradientModal } from "../ColorGradientModal";
 import { TikTokConfigModal } from "../TikTokConfigModal";
 import { modalInputClass } from "../modal-input-styles";
@@ -39,7 +38,6 @@ export function validateSubdomain(subdomain: string): string | undefined {
 export interface BusinessInfoStepProps {
   name: string;
   username: string;
-  password: string;
   subdomain: string;
   phone: string;
   ownerName?: string | null;
@@ -56,7 +54,6 @@ export interface BusinessInfoStepProps {
   onNameChange: (value: string) => void;
   onNameBlur: () => void;
   onUsernameChange: (value: string) => void;
-  onPasswordChange: (value: string) => void;
   onSubdomainChange: (value: string) => void;
   onSubdomainBlur: () => void;
   onGenerateSubdomain?: () => void;
@@ -70,7 +67,6 @@ export interface BusinessInfoStepProps {
   errors: {
     name?: string;
     username?: string;
-    password?: string;
     subdomain?: string;
     phone?: string;
     websiteColor?: string;
@@ -78,7 +74,6 @@ export interface BusinessInfoStepProps {
   touched: {
     name?: boolean;
     username?: boolean;
-    password?: boolean;
     subdomain?: boolean;
     phone?: boolean;
     websiteColor?: boolean;
@@ -92,17 +87,9 @@ export interface BusinessInfoStepProps {
   defaultAvatarPreview: string | null;
 }
 
-const PASSWORD_STRENGTH = [
-  { label: "Weak", color: "bg-red-500", textColor: "text-red-600" },
-  { label: "Fair", color: "bg-amber-500", textColor: "text-amber-600" },
-  { label: "Good", color: "bg-blue-500", textColor: "text-blue-600" },
-  { label: "Strong", color: "bg-emerald-500", textColor: "text-emerald-600" },
-];
-
 export const BusinessInfoStep = memo(function BusinessInfoStep({
   name,
   username,
-  password,
   subdomain,
   phone,
   ownerName,
@@ -115,7 +102,6 @@ export const BusinessInfoStep = memo(function BusinessInfoStep({
   onNameChange,
   onNameBlur,
   onUsernameChange,
-  onPasswordChange,
   onSubdomainChange,
   onSubdomainBlur,
   onGenerateSubdomain,
@@ -126,7 +112,6 @@ export const BusinessInfoStep = memo(function BusinessInfoStep({
   onWebsiteColorBlur,
   errors,
   touched,
-  isEditMode = false,
   onLogoChange,
   onDefaultAvatarChange,
   onFaviconChange,
@@ -134,24 +119,9 @@ export const BusinessInfoStep = memo(function BusinessInfoStep({
   faviconPreview,
   defaultAvatarPreview,
 }: BusinessInfoStepProps) {
-  const [showPassword, setShowPassword] = useState(true);
   const [showGradientPicker, setShowGradientPicker] = useState(false);
 
   const [showTikTokModal, setShowTikTokModal] = useState(false);
-
-  const passwordStrength = useMemo(() => {
-    if (!password) return null;
-    let score = 0;
-    if (password.length >= 8) score += 1;
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
-    if (/\d/.test(password)) score += 1;
-    if (/[^A-Za-z0-9]/.test(password) || password.length >= 12) score += 1;
-    const level = Math.max(
-      0,
-      Math.min(score - 1, PASSWORD_STRENGTH.length - 1),
-    );
-    return { ...PASSWORD_STRENGTH[level], score };
-  }, [password]);
 
   const filledTikTokConfigs = useMemo(
     () =>
@@ -230,58 +200,6 @@ export const BusinessInfoStep = memo(function BusinessInfoStep({
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-          <div className="space-y-1.5">
-            <label
-              htmlFor="business-password"
-              className="block text-xs sm:text-sm font-medium text-gray-700"
-            >
-              وشەی تێپەڕبوون{" "}
-              {!isEditMode && <RequiredMark />}
-            </label>
-            <div className="relative">
-              <input
-                id="business-password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => onPasswordChange(e.target.value)}
-                onBlur={() => onPasswordChange(password)}
-                required={!isEditMode}
-                className={modalInputClass(
-                  !!(errors.password && touched.password),
-                  "pr-11",
-                )}
-                placeholder={isEditMode ? "بەتاڵی بهێڵەوە" : "وشەی تێپەڕبوون"}
-              />
-              <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
-                {passwordStrength && (
-                  <span
-                    className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${passwordStrength.textColor} bg-gray-100 dark:bg-white/10`}
-                  >
-                    {passwordStrength.label}
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((value) => !value)}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-700 dark:hover:bg-white/10 dark:hover:text-gray-200"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  title={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-3.5 w-3.5" />
-                  ) : (
-                    <Eye className="h-3.5 w-3.5" />
-                  )}
-                </button>
-              </div>
-            </div>
-            {errors.password && touched.password && (
-              <p className="mt-1 text-xs text-red-500 font-kurdish">
-                {errors.password}
-              </p>
-            )}
-          </div>
-
           <div className="space-y-1.5">
             <label
               htmlFor="business-subdomain"

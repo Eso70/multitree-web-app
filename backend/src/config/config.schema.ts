@@ -28,7 +28,6 @@ export const configValidationSchema = Joi.object({
   // Deprecated aliases kept so an already-deployed .env survives the rename.
   // See src/common/platform-admin-env.ts for the resolution order.
   SA_USERNAME: Joi.string().allow('').optional(),
-  SA_PASSWORD: Joi.string().allow('').optional(),
   SA_NAME: Joi.string().allow('').optional(),
   ROOT_DOMAIN: Joi.string().default('localhost'),
   APP_BASE_URL: Joi.string()

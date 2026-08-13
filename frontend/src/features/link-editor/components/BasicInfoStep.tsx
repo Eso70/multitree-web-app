@@ -65,8 +65,6 @@ interface BasicInfoStepProps {
   onUploadClick?: () => void;
   username?: string;
   onUsernameChange?: (value: string) => void;
-  password?: string;
-  onPasswordChange?: (value: string) => void;
   isEditMode?: boolean;
   hideRemoveImage?: boolean;
 }
@@ -112,9 +110,6 @@ export const BasicInfoStep = memo(function BasicInfoStep({
   onUploadClick,
   username = "",
   onUsernameChange,
-  password = "",
-  onPasswordChange,
-  isEditMode = false,
   hideRemoveImage = false,
 }: BasicInfoStepProps) {
   const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
@@ -161,7 +156,7 @@ export const BasicInfoStep = memo(function BasicInfoStep({
           uploadLabel={onUploadClick ? "بارکردنی وێنەکانی بڕاند" : "وێنەی پڕۆفایل هەڵبژێرە"}
         />
 
-        {/* Name and Subtitle / Username / Password / ExpireDate */}
+        {/* Name and Subtitle / Username / ExpireDate */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <EditorField label={onUploadClick ? "ناوی بزنس" : "ناو"} required>
             <input
@@ -223,34 +218,20 @@ export const BasicInfoStep = memo(function BasicInfoStep({
         )}
 
         {onUploadClick && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <EditorField label="وشەی تێپەڕبوون" required={!isEditMode}>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => onPasswordChange?.(e.target.value)}
-                required={!isEditMode}
-                className={modalInputClass()}
-                placeholder={isEditMode ? "بەتاڵ بێڵەوە ئەگەر ناتەوێت بیگۆڕیت" : "وشەی تێپەڕبوون بنووسە"}
-                dir="auto"
-              />
-            </EditorField>
-            <EditorField label="سەب دۆمەین">
-              <input
-                id="slug"
-                type="text"
-                value={slug}
-                onChange={(e) => onSlugChange(e.target.value)}
-                className={modalInputClass(!!(errors.slug && touched.slug))}
-                placeholder="سەب‌دۆمەین بنووسە"
-                dir="ltr"
-              />
-              {errors.slug && touched.slug && (
-                <p className="text-xs text-red-500 mt-1 font-kurdish">{errors.slug}</p>
-              )}
-            </EditorField>
-          </div>
+          <EditorField label="سەب دۆمەین">
+            <input
+              id="slug"
+              type="text"
+              value={slug}
+              onChange={(e) => onSlugChange(e.target.value)}
+              className={modalInputClass(!!(errors.slug && touched.slug))}
+              placeholder="سەب‌دۆمەین بنووسە"
+              dir="ltr"
+            />
+            {errors.slug && touched.slug && (
+              <p className="text-xs text-red-500 mt-1 font-kurdish">{errors.slug}</p>
+            )}
+          </EditorField>
         )}
 
         {/* Slug and Template Style - Side by Side */}

@@ -357,8 +357,9 @@ migration seed. The email is also the exact verified-Google-email allowlist;
 platform login fails closed when it is absent. `PLATFORM_ADMIN_PHONE`,
 `PLATFORM_ADMIN_WEBSITE_COLOR`, `PLATFORM_ADMIN_LOGO_WITH_BACKGROUND`,
 `PLATFORM_ADMIN_LOGO_WITHOUT_BACKGROUND`, and `PLATFORM_ADMIN_FAVICON` provide
-initial/fallback profile and branding values. Platform password login is not
-exposed, and the seed no longer requires a password.
+initial/fallback profile and branding values. Platform administrators
+authenticate with Google or a root-domain email code; the seed stores no
+credential of its own.
 
 These settings were previously named `SA_*`. Those names are still read as a
 fallback so an already-deployed `.env` keeps working, but they are

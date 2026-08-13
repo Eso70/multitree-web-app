@@ -57,6 +57,27 @@ catalog entry always ship in the same migration. A `NULL` value in the first
 column is an ordinary owner session; the partial index covers only the
 impersonated rows, which are excluded from the per-business session cap.
 
+`businesses` and `platform_admins` have no password columns.
+`2026-08-13_remove_password_authentication.sql` drops
+`businesses.password_hash`, `businesses.password_changed_at`, and
+`platform_admins.password_hash`, because sign-in is Google OAuth or an emailed
+code on every surface and nothing read or wrote them. The same migration
+renames three `auth_permissions` rows that were named for password operations
+but had guarded session revocation for some time —
+`business:security:password-change`, `platform:businesses:password-reset`, and
+`platform:settings:password-change` become the matching `*:sessions-revoke`
+keys. The rename is an `UPDATE` rather than a delete-and-insert so each row
+keeps its `id` and every `billing_plan_permissions`,
+`permission_approval_requests`, and `platform_permission_denies` row that
+references it survives.
+
+Neither dropped column is listed in `OBSOLETE_COLUMNS`
+(`migration-compatibility.ts`). That check runs against a fresh database after
+`full_schema.sql` is applied but before the forward migrations, and the frozen
+baseline still creates the columns, so an entry there would reject every fresh
+install. Fresh and existing databases both converge on the columns being absent
+once the forward migrations run.
+
 `trg_business_default_subscription` creates a default subscription immediately
 after a business row is inserted. Any workflow that creates a business with an
 explicit reviewed plan must upsert `business_subscriptions` on `business_id` so

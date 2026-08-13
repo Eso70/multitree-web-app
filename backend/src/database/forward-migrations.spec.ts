@@ -49,15 +49,9 @@ describe('applyForwardMigrations', () => {
     });
     const { client, rows, executed } = createFakeClient();
 
-    const applied = await applyForwardMigrations(
-      client as never,
-      dir,
-    );
+    const applied = await applyForwardMigrations(client as never, dir);
 
-    expect(applied).toEqual([
-      '2026-08-10_first.sql',
-      '2026-08-11_second.sql',
-    ]);
+    expect(applied).toEqual(['2026-08-10_first.sql', '2026-08-11_second.sql']);
     expect(rows.map((row) => row.filename)).toEqual([
       '2026-08-10_first.sql',
       '2026-08-11_second.sql',
@@ -96,9 +90,9 @@ describe('applyForwardMigrations', () => {
     const { client, rows, executed, failingSql } = createFakeClient();
     failingSql.add('SELECT 1;');
 
-    await expect(
-      applyForwardMigrations(client as never, dir),
-    ).rejects.toThrow('2026-08-10_first.sql failed and was rolled back');
+    await expect(applyForwardMigrations(client as never, dir)).rejects.toThrow(
+      '2026-08-10_first.sql failed and was rolled back',
+    );
 
     expect(rows).toEqual([]);
     expect(executed).not.toContain('SELECT 2;');

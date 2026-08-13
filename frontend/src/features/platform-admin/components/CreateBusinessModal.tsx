@@ -47,7 +47,6 @@ interface CreateBusinessModalProps {
   onSubmit: (data: {
     name: string;
     username?: string;
-    password?: string;
     subscriptionPlanId?: string;
     subdomain?: string;
     phone?: string;
@@ -107,7 +106,6 @@ export const CreateBusinessModal = memo(function CreateBusinessModal({
 }: CreateBusinessModalProps) {
   const [businessName, setBusinessName] = useState("");
   const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [subdomain, setSubdomain] = useState("");
   const [businessPhone, setBusinessPhone] = useState("");
   const [subscriptionPlanId, setSubscriptionPlanId] = useState("");
@@ -130,7 +128,6 @@ export const CreateBusinessModal = memo(function CreateBusinessModal({
   const [businessErrors, setBusinessErrors] = useState<{
     name?: string;
     username?: string;
-    password?: string;
     subdomain?: string;
     phone?: string;
     websiteColor?: string;
@@ -138,7 +135,6 @@ export const CreateBusinessModal = memo(function CreateBusinessModal({
   const [businessTouched, setBusinessTouched] = useState<{
     name?: boolean;
     username?: boolean;
-    password?: boolean;
     subdomain?: boolean;
     phone?: boolean;
     websiteColor?: boolean;
@@ -153,17 +149,13 @@ export const CreateBusinessModal = memo(function CreateBusinessModal({
     return (
       businessName.trim().length >= 2 &&
       HANDLE_PATTERN.test(sanitizeHandle(username)) &&
-      password.length >= 8 &&
-      /[a-z]/.test(password) &&
-      /[A-Z]/.test(password) &&
-      /\d/.test(password) &&
       HANDLE_PATTERN.test(sanitizeHandle(subdomain)) &&
       /^\d{7,15}$/.test(sanitizeLocalPhone(businessPhone)) &&
       !!subscriptionPlanId &&
       isValidColorValue(websiteColor) &&
       tiktokConfigs.some((c) => c.pixel_id.trim())
     );
-  }, [businessName, username, password, subdomain, businessPhone, subscriptionPlanId, websiteColor, tiktokConfigs, isEditMode]);
+  }, [businessName, username, subdomain, businessPhone, subscriptionPlanId, websiteColor, tiktokConfigs, isEditMode]);
 
   const validateBusinessName = useCallback(
     (value: string): string | undefined => {
@@ -190,17 +182,6 @@ export const CreateBusinessModal = memo(function CreateBusinessModal({
       return undefined;
     },
     [existingBusinesses, editData?.id],
-  );
-
-  const validatePassword = useCallback(
-    (value: string): string | undefined => {
-      if (isEditMode && !value.trim()) return undefined;
-      if (value.length < 8) return "Password must be at least 8 characters";
-      if (!/[a-z]/.test(value) || !/[A-Z]/.test(value) || !/\d/.test(value))
-        return "Password must include uppercase, lowercase, and a number";
-      return undefined;
-    },
-    [isEditMode],
   );
 
   const validateBusinessPhone = useCallback(
@@ -270,11 +251,6 @@ export const CreateBusinessModal = memo(function CreateBusinessModal({
     [validateUsername],
   );
 
-  const handlePasswordChange = useCallback((value: string) => {
-    setPassword(value);
-    setBusinessTouched((prev) => ({ ...prev, password: false }));
-    setBusinessErrors((prev) => ({ ...prev, password: undefined }));
-  }, []);
 
   const handleSubdomainChange = useCallback(
     (value: string) => {
@@ -460,7 +436,6 @@ setUploadError(null);
     if (editData) {
       setBusinessName(editData.name || "");
       setUsername(editData.username || "");
-      setPassword("");
       setSubdomain(editData.subdomain || "");
       setBusinessPhone(sanitizeLocalPhone(editData.phone || ""));
       setSubscriptionPlanId(editData.subscriptionPlanId || "");
@@ -484,7 +459,6 @@ setUploadError(null);
     } else {
       setBusinessName("");
       setUsername("");
-      setPassword("");
       setSubdomain("");
       setBusinessPhone("");
       setSubscriptionPlanId("");
@@ -537,7 +511,6 @@ setUploadError(null);
   const validateAllFields = useCallback((): boolean => {
     const nameErr = validateBusinessName(businessName);
     const usernameErr = validateUsername(username);
-    const passwordErr = validatePassword(password);
     const subErr = validateSubdomain(subdomain);
     const phoneErr = validateBusinessPhone(businessPhone);
     const websiteErr = validateWebsiteColor(websiteColor);
@@ -545,7 +518,6 @@ setUploadError(null);
     setBusinessErrors({
       name: nameErr,
       username: usernameErr,
-      password: passwordErr,
       subdomain: subErr,
       phone: phoneErr,
       websiteColor: websiteErr,
@@ -553,16 +525,15 @@ setUploadError(null);
     setBusinessTouched({
       name: true,
       username: true,
-      password: true,
       subdomain: true,
       phone: true,
       websiteColor: true,
     });
 
-    return !nameErr && !usernameErr && !passwordErr && !subErr && !phoneErr && !websiteErr && !!subscriptionPlanId;
+    return !nameErr && !usernameErr && !subErr && !phoneErr && !websiteErr && !!subscriptionPlanId;
   }, [
-    businessName, username, password, subdomain, businessPhone, websiteColor,
-    subscriptionPlanId, validateBusinessName, validateUsername, validatePassword,
+    businessName, username, subdomain, businessPhone, websiteColor,
+    subscriptionPlanId, validateBusinessName, validateUsername,
     validateSubdomain, validateBusinessPhone, validateWebsiteColor,
   ]);
 
@@ -605,7 +576,6 @@ setUploadError(null);
         {
           name: businessName.trim(),
           username: sanitizeHandle(username),
-          password: password || undefined,
           subscriptionPlanId: subscriptionPlanId || undefined,
           subdomain: sanitizeHandle(subdomain),
           phone: sanitizeLocalPhone(businessPhone),
@@ -684,7 +654,6 @@ setUploadError(null);
                 ownerName={editData?.ownerName || editData?.name}
                 ownerEmail={editData?.ownerEmail || editData?.email}
                 username={username}
-                password={password}
                 subdomain={subdomain}
                 phone={businessPhone}
                 subscriptionPlanId={subscriptionPlanId}
@@ -695,7 +664,6 @@ setUploadError(null);
                 onNameChange={handleBusinessNameChange}
                 onNameBlur={handleBusinessNameBlur}
                 onUsernameChange={handleUsernameChange}
-                onPasswordChange={handlePasswordChange}
                 onSubdomainChange={handleSubdomainChange}
                 onSubdomainBlur={handleSubdomainBlur}
                 onGenerateSubdomain={handleGenerateSubdomain}
@@ -722,11 +690,10 @@ setUploadError(null);
             onMouseEnter={() => {
               if (isEditMode || showAllValidation) return;
               setShowAllValidation(true);
-              setBusinessTouched({ name: true, username: true, password: true, subdomain: true, phone: true, websiteColor: true });
+              setBusinessTouched({ name: true, username: true, subdomain: true, phone: true, websiteColor: true });
               setBusinessErrors({
                 name: validateBusinessName(businessName),
                 username: validateUsername(username),
-                password: validatePassword(password),
                 subdomain: validateSubdomain(subdomain),
                 phone: validateBusinessPhone(businessPhone),
                 websiteColor: validateWebsiteColor(websiteColor),

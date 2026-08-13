@@ -24,7 +24,7 @@ const KURDISH_PERMISSION_DESCRIPTIONS: Readonly<Record<string, string>> = {
     "نوێکردنەوەی خانە بنەڕەتییە تۆمارکراوەکانی بزنس",
   "business:security:email-update": "گۆڕینی ناونیشانی ئیمەیڵی خاوەنی بزنس",
   "business:security:username-update": "گۆڕینی ناوی بەکارهێنەری خاوەنی بزنس",
-  "business:security:password-change": "گۆڕینی وشەی نهێنی خاوەنی بزنس",
+  "business:security:sessions-revoke": "کۆتاییهێنان بە دانیشتنەکانی چوونەژوورەوەی بزنس",
   "business:templates:browse": "گەڕان و بینینی کەتەلۆگی قاڵبەکان",
   "business:templates:use": "بەکارهێنانی قاڵبێکی بەردەست",
   "business:templates:set-default": "دانانی قاڵبی بنەڕەتی بۆ بزنس",

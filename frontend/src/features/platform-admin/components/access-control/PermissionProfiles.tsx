@@ -38,7 +38,7 @@ const REQUIRED_PERMISSION_KEYS = new Set([
   "business:defaults:update",
   "business:security:email-update",
   "business:security:username-update",
-  "business:security:password-change",
+  "business:security:sessions-revoke",
   "business:templates:browse",
   "business:templates:use",
   "business:templates:set-default",

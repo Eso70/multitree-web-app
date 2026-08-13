@@ -51,7 +51,7 @@ const DEFAULT_BUSINESS_PERMISSION_KEYS = [
   'business:defaults:update',
   'business:security:email-update',
   'business:security:username-update',
-  'business:security:password-change',
+  'business:security:sessions-revoke',
   'business:templates:browse',
   'business:templates:use',
   'business:templates:set-default',

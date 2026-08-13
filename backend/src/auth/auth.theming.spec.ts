@@ -171,7 +171,6 @@ describe('Auth Theming - Unit Tests', () => {
     let authController: AuthController;
     let mockAuthService: jest.Mocked<AuthService>;
     let mockSessionService: jest.Mocked<SessionService>;
-    let mockRedisService: jest.Mocked<RedisService>;
 
     beforeEach(() => {
       mockAuthService = {
@@ -186,17 +185,9 @@ describe('Auth Theming - Unit Tests', () => {
         destroySession: jest.fn(),
       } as unknown as jest.Mocked<SessionService>;
 
-      mockRedisService = {
-        isRateLimited: jest.fn().mockResolvedValue(false),
-        get: jest.fn(),
-        set: jest.fn(),
-        del: jest.fn(),
-      } as unknown as jest.Mocked<RedisService>;
-
       authController = new AuthController(
         mockAuthService,
         mockSessionService,
-        mockRedisService,
         accessRules,
         {} as never,
       );
@@ -271,7 +262,6 @@ describe('Auth Theming - Unit Tests', () => {
     let authController: AuthController;
     let mockAuthService: jest.Mocked<AuthService>;
     let mockSessionService: jest.Mocked<SessionService>;
-    let mockRedisService: jest.Mocked<RedisService>;
 
     beforeEach(() => {
       mockAuthService = {
@@ -286,17 +276,9 @@ describe('Auth Theming - Unit Tests', () => {
         destroySession: jest.fn(),
       } as unknown as jest.Mocked<SessionService>;
 
-      mockRedisService = {
-        isRateLimited: jest.fn().mockResolvedValue(false),
-        get: jest.fn(),
-        set: jest.fn(),
-        del: jest.fn(),
-      } as unknown as jest.Mocked<RedisService>;
-
       authController = new AuthController(
         mockAuthService,
         mockSessionService,
-        mockRedisService,
         accessRules,
         {} as never,
       );
