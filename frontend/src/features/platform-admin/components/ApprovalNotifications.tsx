@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { communicationRequest } from "@/features/communications/api";
 import type { NotificationInbox } from "@/features/communications/types";
+import { DashboardHeaderActionButton } from "@/components/shared/DashboardHeader";
 
 interface ApprovalNotification {
   id: string;
@@ -231,14 +232,12 @@ export function ApprovalNotifications() {
 
   return (
     <div className="relative" ref={containerRef}>
-      <button
-        type="button"
+      <DashboardHeaderActionButton
         onClick={() => {
           const nextOpen = !open;
           setOpen(nextOpen);
           if (nextOpen) void loadApprovals();
         }}
-        className="group relative flex items-center justify-center p-2 sm:p-2.5 md:p-3 rounded-xl bg-gradient-to-br from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 border border-slate-100 dark:from-white/5 dark:to-white/5 dark:border-white/10 dark:text-gray-300 dark:hover:from-white/10 dark:hover:to-white/10 transition-all duration-300 text-slate-500 hover:text-slate-700 shadow-sm hover:shadow cursor-pointer"
         aria-label="ئاگادارییەکان"
         aria-expanded={open}
         title="ئاگادارییەکان"
@@ -249,7 +248,7 @@ export function ApprovalNotifications() {
             {unreadTotal > 99 ? "99+" : unreadTotal}
           </span>
         )}
-      </button>
+      </DashboardHeaderActionButton>
 
       {open && (
         <div className="absolute right-0 top-full z-50 mt-3 w-[min(25rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl    duration-200 dark:border-white/10 dark:bg-[#1c222b]">
@@ -315,7 +314,9 @@ export function ApprovalNotifications() {
           <div className="max-h-[min(32rem,70vh)] overflow-y-auto p-3 custom-scrollbar lime-custom-scrollbar">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <MotionSpinner><Loader2 className="h-6 w-6  text-slate-400"  /></MotionSpinner>
+                <MotionSpinner>
+                  <Loader2 className="h-6 w-6  text-slate-400" />
+                </MotionSpinner>
               </div>
             ) : approvals.length === 0 && inbox.items.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -432,7 +433,9 @@ export function ApprovalNotifications() {
                           className="flex h-8 items-center justify-center gap-1.5 rounded-lg px-3 text-[10px] font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-500/10"
                         >
                           {reviewing ? (
-                            <MotionSpinner><Loader2 className="h-3.5 w-3.5 "  /></MotionSpinner>
+                            <MotionSpinner>
+                              <Loader2 className="h-3.5 w-3.5 " />
+                            </MotionSpinner>
                           ) : (
                             <X className="h-3.5 w-3.5" />
                           )}
@@ -447,7 +450,9 @@ export function ApprovalNotifications() {
                           className="flex h-8 items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-3 text-[10px] font-bold text-white transition hover:bg-emerald-600 disabled:opacity-50"
                         >
                           {reviewing ? (
-                            <MotionSpinner><Loader2 className="h-3.5 w-3.5 "  /></MotionSpinner>
+                            <MotionSpinner>
+                              <Loader2 className="h-3.5 w-3.5 " />
+                            </MotionSpinner>
                           ) : (
                             <Check className="h-3.5 w-3.5" />
                           )}

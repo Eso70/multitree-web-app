@@ -300,7 +300,7 @@ export const createMiniWebsiteDraft = (input?: {
     "/images/DefaultAvatar.png",
   cover: null,
   variation: "soft",
-  backgroundStyle: "grid",
+  backgroundStyle: "none",
   professionTemplate: "",
   accentColor: input?.accentColor || "#b6f20d",
   status: "draft",

@@ -7,16 +7,38 @@ import { CustomSelect } from "./CustomSelect";
 describe("shared form controls", () => {
   it("renders an empty select safely and disables interaction", () => {
     render(
+      <CustomSelect label="بزنس" value="" options={[]} onChange={vi.fn()} />,
+    );
+
+    const trigger = screen.getByRole("button", {
+      name: /هیچ هەڵبژاردەیەک نییە/,
+    });
+    expect(trigger).toBeDisabled();
+  });
+
+  it("keeps an explicit select accent in its portaled menu", () => {
+    render(
       <CustomSelect
-        label="بزنس"
-        value=""
-        options={[]}
+        label="Plan"
+        value="basic"
+        options={[
+          { value: "basic", label: "Basic" },
+          { value: "ultra", label: "Ultra" },
+        ]}
         onChange={vi.fn()}
+        accent="#b6f20d"
       />,
     );
 
-    const trigger = screen.getByRole("button", { name: /هیچ هەڵبژاردەیەک نییە/ });
-    expect(trigger).toBeDisabled();
+    const trigger = screen.getByRole("button", { name: "Basic" });
+    expect(trigger.parentElement).toHaveStyle({
+      "--theme-primary": "#b6f20d",
+    });
+
+    fireEvent.click(trigger);
+    expect(screen.getByRole("listbox")).toHaveStyle({
+      "--theme-primary": "#b6f20d",
+    });
   });
 
   it("reports checkbox changes through a real checkbox input", () => {
@@ -52,11 +74,7 @@ describe("shared form controls", () => {
   it("returns a date-only value through the reusable date picker", () => {
     const onChange = vi.fn();
     render(
-      <DateInput
-        label="بەرواری بەسەرچوون"
-        value=""
-        onChange={onChange}
-      />,
+      <DateInput label="بەرواری بەسەرچوون" value="" onChange={onChange} />,
     );
 
     const input = screen.getByRole("textbox", {

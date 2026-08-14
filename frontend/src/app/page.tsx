@@ -13,6 +13,12 @@ import {
   INTERNAL_PROXY_KEY_HEADER,
   internalProxyKey,
 } from "@/lib/security/internal-proxy-key";
+import {
+  BUSINESS_FAVICON_PLACEHOLDER,
+  BUSINESS_LOGO_PLACEHOLDER,
+  DEFAULT_AVATAR,
+  MULTITREE_LOGO_MARK,
+} from "@/lib/brand/brand-assets";
 
 export const dynamic = "force-dynamic";
 
@@ -147,21 +153,18 @@ export async function generateMetadata() {
           const iconEntries: { url: string; sizes?: string; type?: string }[] =
             [];
           iconEntries.push({
-            url: business.favicon || "/images/Logo.jpg",
-            type: "image/x-icon",
+            url: business.favicon || BUSINESS_FAVICON_PLACEHOLDER,
           });
           iconEntries.push({
-            url: business.logo || "/images/Logo.jpg",
+            url: business.logo || BUSINESS_LOGO_PLACEHOLDER,
             sizes: "32x32",
-            type: "image/jpeg",
           });
           iconEntries.push({
-            url: business.default_avatar || "/images/DefaultAvatar.png",
+            url: business.default_avatar || DEFAULT_AVATAR,
             sizes: "180x180",
-            type: "image/jpeg",
           });
           icons.icon = iconEntries;
-          icons.apple = business.logo || "/images/Logo.jpg";
+          icons.apple = business.logo || BUSINESS_LOGO_PLACEHOLDER;
           return {
             title: businessTabTitle(business.name, "Home"),
             description: `Explore ${business.name}'s official public pages and contact information.`,
@@ -173,9 +176,20 @@ export async function generateMetadata() {
     } catch {}
   }
 
+  // Root domain only — a business subdomain returned above with its own icons.
+  // Declared explicitly rather than left to the implicit `/favicon.ico` pickup,
+  // so MultiTree's own mark is stated in the same place a tenant's is.
   return {
     title: "MultiTree",
     description:
       "Create branded public link pages, manage multiple businesses, and understand every connection from one secure platform.",
+    icons: {
+      icon: [
+        { url: "/favicon.ico" },
+        { url: MULTITREE_LOGO_MARK, sizes: "512x512" },
+      ],
+      apple: MULTITREE_LOGO_MARK,
+    },
+    themeColor: MULTITREE_ACCENT_COLOR,
   };
 }

@@ -9,6 +9,16 @@ import {
   DEFAULT_LINKTREE_BACKGROUND_COLOR,
   DEFAULT_LINKTREE_TEMPLATE_KEY,
 } from '../common/linktree-defaults';
+import {
+  BUSINESS_FAVICON_PLACEHOLDER,
+  BUSINESS_LOGO_PLACEHOLDER,
+  DEFAULT_AVATAR,
+} from '../common/brand-assets';
+import {
+  changedProfileFields,
+  PROFILE_CHANGE_COOLDOWN_DAYS,
+  type ProfileCooldownField,
+} from '../common/profile-cooldown';
 import { DatabaseService } from '../database/database.service';
 import { RedisService } from '../redis/redis.service';
 import { EntitlementService } from '../billing/entitlement.service';
@@ -37,9 +47,9 @@ export class AuthService {
               business.subdomain,
               COALESCE(owner_account.display_name, business.name) AS "ownerName",
               COALESCE(owner_account.email, business.email) AS "ownerEmail",
-              COALESCE(branding.logo, '/images/Logo.jpg') AS logo,
-              COALESCE(branding.favicon, '/favicon.ico') AS favicon,
-              COALESCE(branding.default_avatar, '/images/DefaultAvatar.png') AS "defaultAvatar",
+              COALESCE(branding.logo, '${BUSINESS_LOGO_PLACEHOLDER}') AS logo,
+              COALESCE(branding.favicon, '${BUSINESS_FAVICON_PLACEHOLDER}') AS favicon,
+              COALESCE(branding.default_avatar, '${DEFAULT_AVATAR}') AS "defaultAvatar",
               COALESCE(branding.website_color, '#b6f20d') AS "websiteColor",
               defaults.footer_text AS "footerText",
               defaults.footer_phone AS "footerPhone",
@@ -125,9 +135,9 @@ export class AuthService {
       await client.query(
         `INSERT INTO business_branding
           (business_id, logo, favicon, default_avatar, website_color)
-         VALUES ($1, COALESCE($2, '/images/Logo.jpg'),
-                 COALESCE($3, '/favicon.ico'),
-                 COALESCE($4, '/images/DefaultAvatar.png'),
+         VALUES ($1, COALESCE($2, '${BUSINESS_LOGO_PLACEHOLDER}'),
+                 COALESCE($3, '${BUSINESS_FAVICON_PLACEHOLDER}'),
+                 COALESCE($4, '${DEFAULT_AVATAR}'),
                  COALESCE($5, '#b6f20d'))
          ON CONFLICT (business_id) DO UPDATE SET
            logo = COALESCE($2, business_branding.logo),
@@ -349,6 +359,8 @@ export class AuthService {
     username: string;
     name: string;
     phone?: string | null;
+    email?: string | null;
+    ownerName?: string | null;
     logo?: string | null;
     favicon?: string | null;
     default_avatar?: string | null;
@@ -367,6 +379,8 @@ export class AuthService {
       username: string;
       name: string;
       phone: string | null;
+      email: string | null;
+      ownerName: string | null;
       logo: string | null;
       favicon: string | null;
       default_avatar: string | null;
@@ -384,6 +398,8 @@ export class AuthService {
       // loads a pixel. Only the two public pages do — see docs/tracking.md.
       `SELECT a.id, a.username, a.name, a.phone, a.onboarding_step,
               a.onboarding_completed_at,
+              COALESCE(owner_account.email, a.email) AS email,
+              COALESCE(owner_account.display_name, a.name) AS "ownerName",
               b.logo, b.favicon, b.website_color, b.default_avatar,
               d.footer_text AS default_footer_text, d.footer_phone AS default_footer_phone,
               d.template_key AS default_template, d.background_color AS default_background_color,
@@ -391,6 +407,18 @@ export class AuthService {
        FROM businesses a
        LEFT JOIN business_branding b ON b.business_id = a.id
        LEFT JOIN business_defaults d ON d.business_id = a.id
+       -- Same owner resolution as onboarding: the verified sign-in address of
+       -- the owning account, falling back to the business record.
+       LEFT JOIN LATERAL (
+         SELECT users.display_name, users.email
+         FROM business_memberships membership
+         JOIN users ON users.id = membership.user_id
+         WHERE membership.business_id = a.id
+           AND membership.role = 'owner'
+           AND membership.status = 'active'
+         ORDER BY membership.created_at ASC
+         LIMIT 1
+       ) owner_account ON true
        WHERE a.id = $1`,
       [businessId],
     );
@@ -403,7 +431,9 @@ export class AuthService {
    */
   async getBusinessSettings(businessId: string) {
     const result = await this.databaseService.query(
-      `SELECT a.name, a.username, a.phone, a.email, a.subdomain, b.logo, b.favicon, b.default_avatar, b.website_color,
+      `SELECT a.name, a.username, a.phone, a.subdomain, b.logo, b.favicon, b.default_avatar, b.website_color,
+              COALESCE(owner_account.email, a.email) AS email,
+              COALESCE(owner_account.display_name, a.name) AS "ownerName",
               d.footer_text AS default_footer_text, d.footer_phone AS default_footer_phone,
               d.template_key AS default_template, d.background_color AS default_background_color,
               d.footer_hidden AS default_footer_hidden, d.whatsapp_enabled AS default_whatsapp_enabled,
@@ -418,11 +448,29 @@ export class AuthService {
               ) ORDER BY pixel.display_order)
               FROM business_tiktok_pixels pixel
               WHERE pixel.business_id=a.id AND pixel.status='active'), '[]'::jsonb) AS tiktok_configs,
-              CASE WHEN r.status='pending' THEN r.changes ELSE NULL END AS pending_profile_changes,
-              r.status AS profile_request_status
+              a.profile_changed_at,
+              CASE
+                WHEN a.profile_changed_at IS NULL THEN NULL
+                WHEN a.profile_changed_at
+                     + INTERVAL '${PROFILE_CHANGE_COOLDOWN_DAYS} days' <= NOW()
+                  THEN NULL
+                ELSE a.profile_changed_at
+                     + INTERVAL '${PROFILE_CHANGE_COOLDOWN_DAYS} days'
+              END AS profile_locked_until
        FROM businesses a LEFT JOIN business_branding b ON b.business_id=a.id
        LEFT JOIN business_defaults d ON d.business_id=a.id
-       LEFT JOIN business_profile_change_requests r ON r.business_id=a.id
+       -- Same owner resolution as onboarding, so both screens name the same
+       -- verified account.
+       LEFT JOIN LATERAL (
+         SELECT users.display_name, users.email
+         FROM business_memberships membership
+         JOIN users ON users.id = membership.user_id
+         WHERE membership.business_id = a.id
+           AND membership.role = 'owner'
+           AND membership.status = 'active'
+         ORDER BY membership.created_at ASC
+         LIMIT 1
+       ) owner_account ON true
        WHERE a.id=$1`,
       [businessId],
     );
@@ -449,6 +497,8 @@ export class AuthService {
     if (section === 'profile') {
       const hasName = typeof body.name === 'string';
       const name = this.stringValue(body.name).trim();
+      const hasPhone = typeof body.phone === 'string';
+      const phone = this.stringValue(body.phone).trim();
       const hasUsername = typeof body.username === 'string';
       const username = this.stringValue(body.username).trim().toLowerCase();
       if (hasUsername && !/^[a-z0-9][a-z0-9._-]{2,49}$/.test(username)) {
@@ -497,16 +547,18 @@ export class AuthService {
         [businessId],
       );
       const currentBranding = previousBranding.rows[0];
+      // The settings page submits the whole profile section, so "the client
+      // sent a logo" says nothing about whether the logo changed. Only a value
+      // that actually differs may start or be blocked by the cooldown.
       const nextLogo = Object.hasOwn(body, 'logo')
-        ? this.stringValue(body.logo).trim() || '/images/Logo.jpg'
-        : currentBranding?.logo || '/images/Logo.jpg';
+        ? this.stringValue(body.logo).trim() || BUSINESS_LOGO_PLACEHOLDER
+        : currentBranding?.logo || BUSINESS_LOGO_PLACEHOLDER;
       const nextFavicon = Object.hasOwn(body, 'favicon')
-        ? this.stringValue(body.favicon).trim() || '/favicon.ico'
-        : currentBranding?.favicon || '/favicon.ico';
+        ? this.stringValue(body.favicon).trim() || BUSINESS_FAVICON_PLACEHOLDER
+        : currentBranding?.favicon || BUSINESS_FAVICON_PLACEHOLDER;
       const nextDefaultAvatar = Object.hasOwn(body, 'default_avatar')
-        ? this.stringValue(body.default_avatar).trim() ||
-          '/images/DefaultAvatar.png'
-        : currentBranding?.default_avatar || '/images/DefaultAvatar.png';
+        ? this.stringValue(body.default_avatar).trim() || DEFAULT_AVATAR
+        : currentBranding?.default_avatar || DEFAULT_AVATAR;
       const websiteColor = Object.hasOwn(body, 'website_color')
         ? this.stringValue(body.website_color, '#b6f20d').trim()
         : currentBranding?.website_color || '#b6f20d';
@@ -515,6 +567,9 @@ export class AuthService {
         !websiteColor.startsWith('gradient:')
       )
         throw new BadRequestException('Invalid website color');
+      // Populated inside the transaction, where the stored profile is read
+      // under the advisory lock.
+      let profileChanges: ProfileCooldownField[] = [];
       const monthlyLimit = this.entitlementService
         ? await this.entitlementService.getInteger(
             businessId,
@@ -543,12 +598,68 @@ export class AuthService {
             'The monthly profile change limit has been reached',
           );
         }
+        // Read the stored profile and the cooldown under the same advisory
+        // lock as the write, so two concurrent saves cannot both observe an
+        // expired window.
+        const stored = await client.query<{
+          name: string | null;
+          username: string | null;
+          phone: string | null;
+          locked_until: Date | null;
+        }>(
+          `SELECT name, username, phone,
+                  CASE
+                    WHEN profile_changed_at IS NULL THEN NULL
+                    WHEN profile_changed_at
+                         + INTERVAL '${PROFILE_CHANGE_COOLDOWN_DAYS} days'
+                         <= NOW() THEN NULL
+                    ELSE profile_changed_at
+                         + INTERVAL '${PROFILE_CHANGE_COOLDOWN_DAYS} days'
+                  END AS locked_until
+           FROM businesses WHERE id=$1::uuid`,
+          [businessId],
+        );
+        const storedProfile = stored.rows[0];
+        profileChanges = changedProfileFields(
+          {
+            name: storedProfile?.name ?? null,
+            username: storedProfile?.username ?? null,
+            phone: storedProfile?.phone ?? null,
+            logo: currentBranding?.logo ?? null,
+            favicon: currentBranding?.favicon ?? null,
+            default_avatar: currentBranding?.default_avatar ?? null,
+            website_color: currentBranding?.website_color ?? null,
+          },
+          {
+            name: hasName ? name : undefined,
+            username: hasUsername ? username : undefined,
+            phone: hasPhone ? phone : undefined,
+            logo: nextLogo,
+            favicon: nextFavicon,
+            default_avatar: nextDefaultAvatar,
+            website_color: websiteColor,
+          },
+        );
+        const lockedUntil = storedProfile?.locked_until;
+        if (profileChanges.length > 0 && lockedUntil) {
+          throw new ForbiddenException({
+            code: 'PROFILE_CHANGE_COOLDOWN',
+            message: `Profile details can be changed again after ${new Date(
+              lockedUntil,
+            ).toISOString()}`,
+            lockedUntil: new Date(lockedUntil).toISOString(),
+            cooldownDays: PROFILE_CHANGE_COOLDOWN_DAYS,
+            fields: profileChanges,
+          });
+        }
         try {
           await client.query(
             `UPDATE businesses
              SET username=CASE WHEN $2::boolean THEN $3 ELSE username END,
                  name=CASE WHEN $4::boolean THEN $5 ELSE name END,
                  phone=CASE WHEN $6::boolean THEN $7 ELSE phone END,
+                 profile_changed_at=CASE
+                   WHEN $8::boolean THEN NOW() ELSE profile_changed_at END,
                  updated_at=NOW()
              WHERE id=$1::uuid`,
             [
@@ -557,8 +668,9 @@ export class AuthService {
               username || null,
               hasName,
               name || null,
-              typeof body.phone === 'string',
-              this.stringValue(body.phone).trim() || null,
+              hasPhone,
+              phone || null,
+              profileChanges.length > 0,
             ],
           );
         } catch (error) {

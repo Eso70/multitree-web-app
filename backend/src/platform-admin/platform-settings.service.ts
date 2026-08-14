@@ -89,9 +89,14 @@ export class PlatformSettingsService {
         ),
       avatar:
         profile.avatar ||
+        // The bare MultiTree mark. This used to point at
+        // `/images/DefaultAvatar.png`, which happened to hold the same artwork
+        // until that file became the neutral person placeholder every business
+        // falls back to. Platform branding now owns its own file so a change to
+        // the business default can never repaint MultiTree's logo.
         this.adminEnv(
           'PLATFORM_ADMIN_LOGO_WITHOUT_BACKGROUND',
-          '/images/DefaultAvatar.png',
+          '/images/multitree-logo-mark.png',
         ),
       favicon:
         profile.favicon ||

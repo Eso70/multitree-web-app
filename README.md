@@ -100,21 +100,22 @@ Default local URLs:
 
 The detailed project documentation lives in the `docs/` directory.
 
-| Document                   | Description                                                                                |
-| -------------------------- | ------------------------------------------------------------------------------------------ |
-| `AGENTS.md`                | AI development rules, engineering principles, project-wide conventions                     |
-| `docs/architecture.md`     | MultiTree architecture, module boundaries, storage, scaling, repository structure          |
-| `docs/security.md`         | Authentication, authorization, encryption, rate limiting, uploads, webhooks, audit logging |
-| `docs/frontend.md`         | Frontend architecture, routing, implemented features, dashboard, public pages              |
-| `docs/backend.md`          | Backend architecture, analytics, CRM, uploads, environment configuration                   |
-| `docs/database.md`         | PostgreSQL schema, Redis usage, migrations, reset workflow, demo data                      |
-| `docs/api-standards.md`    | REST conventions, API design, scopes, webhooks, versioning                                 |
-| `docs/testing.md`          | Testing workflow, verification commands, testing strategy                                  |
-| `docs/deployment.md`       | Local development, production deployment, PM2, Caddy, scaling                              |
-| `docs/observability.md`    | Health checks, operational metrics, logging, and alerting guidance                         |
-| `docs/coding-standards.md` | Repository-specific coding conventions                                                     |
-| `docs/ui-guidelines.md`    | Design system, reusable components, UI consistency rules                                   |
-| `docs/tracking.md`         | TikTok pixel and Events API scope, the shared page tracker, event deduplication            |
+| Document                                  | Description                                                                                |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `AGENTS.md`                               | AI development rules, engineering principles, project-wide conventions                     |
+| `docs/architecture.md`                    | MultiTree architecture, module boundaries, storage, scaling, repository structure          |
+| `docs/security.md`                        | Authentication, authorization, encryption, rate limiting, uploads, webhooks, audit logging |
+| `docs/frontend.md`                        | Frontend architecture, routing, implemented features, dashboard, public pages              |
+| `docs/backend.md`                         | Backend architecture, analytics, CRM, uploads, environment configuration                   |
+| `docs/database.md`                        | PostgreSQL schema, Redis usage, migrations, reset workflow, demo data                      |
+| `docs/api-standards.md`                   | REST conventions, API design, scopes, webhooks, versioning                                 |
+| `docs/testing.md`                         | Testing workflow, verification commands, testing strategy                                  |
+| `docs/deployment.md`                      | Local development, production deployment, PM2, Caddy, scaling                              |
+| `docs/observability.md`                   | Health checks, operational metrics, logging, and alerting guidance                         |
+| `docs/coding-standards.md`                | Repository-specific coding conventions                                                     |
+| `docs/ui-guidelines.md`                   | Design system, reusable components, UI consistency rules                                   |
+| `docs/tracking.md`                        | TikTok pixel and Events API scope, the shared page tracker, event deduplication            |
+| `docs/future-dual-domain-architecture.md` | Planned separation of the platform domain from the business tenant domain                  |
 
 ---
 

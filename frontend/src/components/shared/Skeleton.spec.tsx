@@ -4,6 +4,7 @@ import {
   Skeleton,
   SkeletonCardGrid,
   SkeletonDashboardPage,
+  SkeletonDashboardShell,
   SkeletonForm,
   SkeletonList,
   SkeletonManagementPage,
@@ -91,15 +92,24 @@ describe("loading skeletons", () => {
   it.each(["analytics", "table", "form"] as const)(
     "provides one accessible status for the %s dashboard body",
     (body) => {
-      render(
-        <SkeletonDashboardPage body={body} statCount={4} tabCount={3} />,
-      );
+      render(<SkeletonDashboardPage body={body} statCount={4} tabCount={3} />);
       expect(
         screen.getByRole("status", { name: "Loading dashboard data" }),
       ).toBeInTheDocument();
       expect(screen.getAllByRole("status")).toHaveLength(1);
     },
   );
+
+  it("reserves the shared dashboard sidebar and header during route loading", () => {
+    const { container } = render(<SkeletonDashboardShell />);
+
+    expect(container.querySelector("aside")).toBeInTheDocument();
+    expect(container.querySelector("header")).toBeInTheDocument();
+    expect(
+      screen.getByRole("status", { name: "Loading dashboard data" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+  });
 
   it("reserves the complete template catalog while permissions load", () => {
     render(<SkeletonTemplatePage />);
@@ -121,7 +131,9 @@ describe("loading skeletons", () => {
     "supports the %s metric-card shape",
     (variant) => {
       const { container } = render(<SkeletonStatCard variant={variant} />);
-      expect(container.querySelector("[aria-hidden='true']")).toBeInTheDocument();
+      expect(
+        container.querySelector("[aria-hidden='true']"),
+      ).toBeInTheDocument();
     },
   );
 });

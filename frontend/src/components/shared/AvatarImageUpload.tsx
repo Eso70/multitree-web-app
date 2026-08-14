@@ -3,8 +3,7 @@
 import Image from "next/image";
 import { Upload, X } from "lucide-react";
 import { AccentActionButton } from "@/components/shared/AccentActionButton";
-
-export const DEFAULT_AVATAR_SRC = "/images/DefaultAvatar.png";
+import { DEFAULT_AVATAR } from "@/lib/brand/brand-assets";
 
 interface AvatarImageUploadProps {
   imageUrl?: string | null;
@@ -28,7 +27,7 @@ interface AvatarImageUploadProps {
 export function AvatarImageUpload({
   imageUrl,
   alt = "Profile preview",
-  fallbackSrc = DEFAULT_AVATAR_SRC,
+  fallbackSrc = DEFAULT_AVATAR,
   sizeClass = "h-32 w-32",
   fileInputRef,
   onFileChange,

@@ -6,14 +6,14 @@ import { createMiniWebsiteDraft } from "./types";
 import {
   BACKGROUND_STYLE_OPTIONS,
   MiniWebsiteBackgroundPattern,
-  MiniWebsiteBackgroundStyleField,
-} from "./MiniWebsiteBackgroundStyleField";
+} from "./mini-website-background-styles";
+import { MiniWebsiteBackgroundStyleField } from "./MiniWebsiteBackgroundStyleField";
 
 afterEach(cleanup);
 
 describe("Mini Website background styles", () => {
-  it("keeps the existing grid as the backward-compatible default", () => {
-    expect(createMiniWebsiteDraft().backgroundStyle).toBe("grid");
+  it("starts a new draft with no pattern", () => {
+    expect(createMiniWebsiteDraft().backgroundStyle).toBe("none");
   });
 
   it("offers every supported style exactly once", () => {
@@ -23,22 +23,33 @@ describe("Mini Website background styles", () => {
     expect(new Set(values).size).toBe(values.length);
   });
 
-  it("reports the style selected in the first-step field", () => {
+  it("opens the picker modal and reports the style selected there", async () => {
     const onChange = vi.fn();
     render(
       createElement(MiniWebsiteBackgroundStyleField, {
         value: "grid",
-        accent: "#2563eb",
         onChange,
       }),
+    );
+
+    // The field itself is a single trigger; the options live in the modal.
+    expect(screen.queryAllByRole("radio")).toHaveLength(0);
+    const trigger = screen.getByRole("button");
+    expect(trigger).toHaveTextContent("تۆڕ");
+
+    fireEvent.click(trigger);
+
+    // The portal gates on a mount frame before it renders.
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getAllByRole("radio")).toHaveLength(
+      MINI_WEBSITE_BACKGROUND_STYLES.length,
     );
 
     fireEvent.click(screen.getByRole("radio", { name: "شەپۆل" }));
 
     expect(onChange).toHaveBeenCalledWith("waves");
-    expect(screen.getAllByRole("radio")).toHaveLength(
-      MINI_WEBSITE_BACKGROUND_STYLES.length,
-    );
+    // Selecting closes the modal.
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it.each([

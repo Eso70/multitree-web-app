@@ -1,6 +1,28 @@
 import { isGpsInputValid } from "../modal-utils";
 
 /**
+ * Validates linktree name: must be at least 2 characters after trimming.
+ * Returns a Kurdish error message if invalid, or undefined if valid.
+ */
+export function validateLinktreeName(name: string): string | undefined {
+  if (name.trim().length < 2) {
+    return "ناوی لینکتری دەبێت لانی کەم ٢ پیت بێت";
+  }
+  return undefined;
+}
+
+/**
+ * Validates slug: must match /^[a-z0-9-]+$/.
+ * Returns a Kurdish error message if invalid, or undefined if valid.
+ */
+export function validateSlug(slug: string): string | undefined {
+  if (!slug || !/^[a-z0-9-]+$/.test(slug)) {
+    return "سلاگ دەبێت تەنها پیتی بچووک، ژمارە و هێڵ بێت";
+  }
+  return undefined;
+}
+
+/**
  * Validates a single link value based on the platform and optional country code.
  * Returns a Kurdish error message string if invalid, or undefined if valid.
  */

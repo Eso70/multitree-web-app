@@ -1,7 +1,7 @@
 import React from "react";
 import { SkeletonTable } from "@/components/shared/Skeleton";
 import { createPortal } from "react-dom";
-import { Eye, X } from "lucide-react";
+import { X } from "lucide-react";
 import type { ScopeType } from "./types";
 
 export const inputClass =
@@ -70,36 +70,6 @@ export function Modal({
   );
 }
 
-export function ModalActions({
-  saving,
-  disabled,
-  onClose,
-  onSave,
-}: {
-  saving: boolean;
-  disabled: boolean;
-  onClose: () => void;
-  onSave: () => void;
-}) {
-  return (
-    <>
-      <button
-        onClick={onClose}
-        className="sm:flex-1 h-10 sm:h-11 rounded-xl border border-slate-200 dark:border-white/10 text-xs sm:text-sm font-semibold text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
-      >
-        پاشگەزبوونەوە
-      </button>
-      <button
-        onClick={onSave}
-        disabled={saving || disabled}
-        className="sm:flex-1 h-10 sm:h-11 rounded-xl sa-gradient text-xs sm:text-sm font-bold text-white shadow-md shadow-lime-500/10 hover:shadow-lg disabled:opacity-50 transition-all cursor-pointer"
-      >
-        {saving ? "پاشەکەوتکردن..." : "پاشەکەوتکردن"}
-      </button>
-    </>
-  );
-}
-
 export function Field({
   label,
   children,
@@ -137,18 +107,6 @@ export function Badge({
     >
       {text}
     </span>
-  );
-}
-
-export function ViewButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-700 dark:border-white/10"
-      aria-label="بینین"
-    >
-      <Eye className="h-3.5 w-3.5" />
-    </button>
   );
 }
 

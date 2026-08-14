@@ -63,6 +63,19 @@ flag. See
 
 ## Large feature composition
 
+Business and platform dashboard route transitions use the shared
+`SkeletonDashboardShell`. It reserves the desktop sidebar, responsive header,
+and initial content surface while server data or a route bundle resolves. Keep
+route-level dashboard loading states on this shared shell so they never fall
+back to the unrelated public landing-page skeleton.
+
+The loaded dashboards also share `DashboardSidebar` and `DashboardHeader`.
+Each permission domain supplies its own navigation, notification inbox, refresh
+operation, branding, and account actions, while the shared components own the
+responsive sidebar, collapse behavior, global header controls, active states,
+and profile-menu presentation. Do not recreate dashboard chrome inside a
+feature entry point.
+
 Large pages and templates compose focused modules rather than owning every
 data lifecycle and renderer inline. The liquid-glass mini-website template uses
 dedicated shared-frame, visual-utility, and informational-section modules.

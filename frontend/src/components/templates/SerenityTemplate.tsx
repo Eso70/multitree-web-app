@@ -18,7 +18,6 @@ import {
   STANDARD_TEMPLATE_HEADER_CLASSES,
   TemplateActionButton,
   TemplateActionButtonList,
-  TemplateBackdropDecorations,
   TemplateFooter,
   TemplateHeader,
   TemplateViewportLayout,
@@ -76,13 +75,6 @@ export const SerenityTemplate = memo(function SerenityTemplate({
       isPreview={isPreview}
       className={`px-5 ${isPreview ? "pt-14" : "pt-12"}`}
       style={backgroundStyle}
-      decoration={
-        <TemplateBackdropDecorations
-          variant="serenity"
-          accentColor={subtitleColor}
-          secondaryColor={theme.to}
-        />
-      }
       header={
         <motion.div
           initial={isPreview ? false : { opacity: 0, y: 20 }}

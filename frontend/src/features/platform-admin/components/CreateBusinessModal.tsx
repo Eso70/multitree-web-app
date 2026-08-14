@@ -26,6 +26,11 @@ import {
   validateUploadFile,
 } from "@/lib/api/inline-request-error";
 import { enqueueImageUpload } from "@/lib/api/enqueue-image-upload";
+import {
+  AVATAR_MIME_TYPES,
+  FAVICON_MIME_TYPES,
+  LOGO_MIME_TYPES,
+} from "@/lib/brand/brand-assets";
 
 type Business = Pick<
   PlatformBusiness,
@@ -304,7 +309,7 @@ export const CreateBusinessModal = memo(function CreateBusinessModal({
       const file = e.target.files?.[0];
       if (file) {
         const validationError = validateUploadFile(file, {
-          allowedMimeTypes: ["image/jpeg"],
+          allowedMimeTypes: LOGO_MIME_TYPES,
           maxBytes: 10 * 1024 * 1024,
         });
         if (validationError) {
@@ -343,7 +348,7 @@ export const CreateBusinessModal = memo(function CreateBusinessModal({
       const file = e.target.files?.[0];
       if (file) {
         const validationError = validateUploadFile(file, {
-          allowedMimeTypes: ["image/x-icon", "image/vnd.microsoft.icon"],
+          allowedMimeTypes: FAVICON_MIME_TYPES,
           maxBytes: 10 * 1024 * 1024,
         });
         if (validationError) {
@@ -365,7 +370,7 @@ export const CreateBusinessModal = memo(function CreateBusinessModal({
       const file = e.target.files?.[0];
       if (file) {
         const validationError = validateUploadFile(file, {
-          allowedMimeTypes: ["image/png"],
+          allowedMimeTypes: AVATAR_MIME_TYPES,
           maxBytes: 10 * 1024 * 1024,
         });
         if (validationError) {
@@ -552,11 +557,16 @@ setUploadError(null);
       }
       else if (logoPreview) uploadedLogoUrl = logoPreview;
 
+      // The favicon follows a newly picked logo, reusing the same uploaded
+      // file. Picking a favicon explicitly still wins over it. The default
+      // avatar is deliberately left alone — it stands in for a person, not for
+      // the brand.
       let uploadedFaviconUrl: string | null = null;
       if (faviconFile) {
         uploadedFaviconUrl = await uploadImage(faviconFile, "favicon");
         if (!uploadedFaviconUrl) throw new Error("Favicon upload failed");
       }
+      else if (logoFile && uploadedLogoUrl) uploadedFaviconUrl = uploadedLogoUrl;
       else if (faviconPreview) uploadedFaviconUrl = faviconPreview;
 
       let uploadedDefaultAvatarUrl: string | null = null;

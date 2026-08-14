@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  MotionPulseIcon,
-  MotionSpinner,
-} from "@/components/motion/MotionPrimitives";
+import { MotionPulseIcon } from "@/components/motion/MotionPrimitives";
 
 import {
   memo,
@@ -22,17 +19,11 @@ import {
   FileText,
   Search,
   LogOut,
-  X,
-  Sun,
-  Moon,
-  Menu,
   User,
   Settings,
-  Languages,
   IdCard,
   BarChart3,
   ContactRound,
-  RefreshCw,
   Megaphone,
 } from "lucide-react";
 import { TbBrandTiktok } from "react-icons/tb";
@@ -50,7 +41,11 @@ import { BusinessLinktreesPage } from "@/features/business/components/BusinessLi
 import type { EffectiveAccessManifest } from "@linktree/types";
 import { BusinessCommunicationBell } from "@/features/communications/BusinessCommunicationBell";
 import { BusinessAnnouncementBanners } from "@/features/communications/BusinessAnnouncementBanners";
-import { AvatarMenu } from "@/components/shared/AvatarMenu";
+import { DashboardHeader } from "@/components/shared/DashboardHeader";
+import {
+  DashboardSidebar,
+  type DashboardSidebarItem,
+} from "@/components/shared/DashboardSidebar";
 import {
   isBusinessPageLocked,
   type BusinessDashboardPage,
@@ -63,7 +58,7 @@ import {
   getBusinessDashboardState,
   logoutBusiness,
 } from "@/features/business/api";
-import { isApiRequestError } from "@/lib/api/request";
+import { apiRequest, isApiRequestError } from "@/lib/api/request";
 import { ErrorPage } from "@/components/error-pages/ErrorPage";
 import { businessErrorTheme } from "@/components/error-pages/error-theme";
 import { ERROR_PAGE_COPY } from "@/components/error-pages/copy";
@@ -217,6 +212,19 @@ interface BusinessDashboardProps {
 }
 
 type BusinessTheme = "light" | "dark";
+const BUSINESS_PAGE_TITLES: Record<BusinessDashboardPage, string> = {
+  dashboard: "داشبۆرد",
+  linktrees: "پەیجەکان",
+  "mini-website": "مینی وێبسایت",
+  analytics: "شیکاری",
+  crm: "بەڕێوەبردنی پەیوەندییەکانی کڕیار",
+  "tiktok-config": "ڕێکخستنەکانی تیکتۆک",
+  advertising: "خزمەتگوزاری ڕیکلام",
+  templates: "قاڵبەکان",
+  profile: "پڕۆفایل",
+  settings: "ڕێکخستنەکان",
+};
+
 function getBusinessPage(pathname: string): BusinessDashboardPage {
   const segment = pathname.split("/").filter(Boolean)[1];
   if (!segment) return "dashboard";
@@ -302,6 +310,74 @@ export const BusinessDashboard = memo(function BusinessDashboard({
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const activeTab = getBusinessPage(pathname);
+  const sidebarItems = useMemo<DashboardSidebarItem[]>(
+    () => [
+      {
+        id: "dashboard",
+        label: "داشبۆرد",
+        icon: <LayoutDashboard className="h-4 w-4" />,
+        active: activeTab === "dashboard",
+        onClick: () => router.push("/business"),
+      },
+      {
+        id: "linktrees",
+        label: "پەیجەکان",
+        icon: <FileText className="h-4 w-4" />,
+        active: activeTab === "linktrees",
+        onClick: () => router.push("/business/pages"),
+      },
+      {
+        id: "mini-website",
+        label: "مینی وێبسایت",
+        icon: <IdCard className="h-4 w-4" />,
+        active: activeTab === "mini-website",
+        onClick: () => router.push("/business/mini-website"),
+      },
+      {
+        id: "analytics",
+        label: "شیکاری",
+        icon: <BarChart3 className="h-4 w-4" />,
+        active: activeTab === "analytics",
+        onClick: () => router.push("/business/analytics"),
+      },
+      {
+        id: "crm",
+        label: "بەڕێوەبردنی پەیوەندییەکانی کڕیار",
+        icon: <ContactRound className="h-4 w-4" />,
+        active: activeTab === "crm",
+        onClick: () => router.push("/business/crm"),
+      },
+      {
+        id: "tiktok-config",
+        label: "ڕێکخستنەکانی تیکتۆک",
+        icon: <TbBrandTiktok className="h-4 w-4" />,
+        active: activeTab === "tiktok-config",
+        onClick: () => router.push("/business/tiktok-config"),
+      },
+      {
+        id: "templates",
+        label: "قاڵبەکان",
+        icon: <LayoutTemplate className="h-4 w-4" />,
+        active: activeTab === "templates",
+        onClick: () => router.push("/business/templates"),
+      },
+      {
+        id: "advertising",
+        label: "خزمەتگوزاری ڕیکلام",
+        icon: <Megaphone className="h-4 w-4" />,
+        active: activeTab === "advertising",
+        onClick: () => router.push("/business/advertising"),
+      },
+      {
+        id: "settings",
+        label: "ڕێکخستنەکان",
+        icon: <Settings className="h-4 w-4" />,
+        active: activeTab === "settings",
+        onClick: () => router.push("/business/settings"),
+      },
+    ],
+    [activeTab, router],
+  );
   const [mounted, setMounted] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [accessForbidden, setAccessForbidden] = useState(false);
@@ -717,63 +793,40 @@ export const BusinessDashboard = memo(function BusinessDashboard({
     setEditData(null); // Clear previous data
 
     try {
-      // Fetch edit data (use cache if available, but allow bypass for fresh data)
-      const response = await fetch(`/api/linktrees/${id}/edit`, {
-        credentials: "include", // Include cookies for authentication
-        headers: {
-          "Cache-Control": "max-age=300", // 5 minutes cache for edit data
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage =
-          errorData.error || `Failed to fetch edit data (${response.status})`;
-        console.error("API error:", errorMessage, errorData);
-
-        // If unauthorized, suggest re-login
-        if (response.status === 401) {
-          const shouldReload = window.confirm(
-            "دەستپێکردنەوەت بەسەرهاتووە. دەتەوێت دووبارە لۆگین بکەیت؟",
-          );
-          if (shouldReload) {
-            window.location.href = "/login";
-            return;
-          }
-        }
-
-        throw new Error(errorMessage);
-      }
-
-      const result = await response.json();
-
-      // Validate response structure
-      if (!result || !result.data) {
-        throw new Error("Invalid response format: missing data");
-      }
-
-      const { linktree, links } = result.data;
+      // apiRequest owns envelope parsing, so a failure arrives as an
+      // ApiRequestError carrying the server's message rather than a raw body.
+      const data = await apiRequest<{
+        linktree: Linktree;
+        links: NonNullable<typeof editData>["links"];
+      }>(`/api/linktrees/${id}/edit`);
 
       // Validate required fields
-      if (!linktree || !linktree.id) {
+      if (!data?.linktree?.id) {
         throw new Error("Invalid response format: missing linktree data");
       }
 
-      if (!Array.isArray(links)) {
+      if (!Array.isArray(data.links)) {
         throw new Error("Invalid response format: links must be an array");
       }
 
-      setEditData({ linktree, links });
+      setEditData({ linktree: data.linktree, links: data.links });
     } catch (error) {
-      console.error("Error fetching edit data:", error);
+      // If unauthorized, suggest re-login and keep the modal open otherwise.
+      if (isApiRequestError(error, 401)) {
+        const shouldReload = window.confirm(
+          "دەستپێکردنەوەت بەسەرهاتووە. دەتەوێت دووبارە لۆگین بکەیت؟",
+        );
+        if (shouldReload) {
+          window.location.href = "/login";
+        }
+        return;
+      }
+
       const errorMessage =
         error instanceof Error ? error.message : "Failed to load linktree data";
       console.error(`Failed to load linktree data: ${errorMessage}`);
 
-      // Only close modal if it's not an auth error (auth error already handled above)
-      if (!(error instanceof Error && error.message.includes("Unauthorized"))) {
-        setIsModalOpen(false); // Close modal on error
-      }
+      setIsModalOpen(false); // Close modal on error
     } finally {
       setIsLoadingEditData(false);
     }
@@ -1483,487 +1536,73 @@ export const BusinessDashboard = memo(function BusinessDashboard({
           inert={onboardingRequired ? true : undefined}
           aria-hidden={onboardingRequired ? true : undefined}
         >
-          {/* Mobile Sidebar overlay backdrop */}
-          {isMobileSidebarOpen && (
-            <div
-              className="fixed inset-0 bg-black/45 backdrop-blur-sm z-40 md:hidden transition-all duration-300"
-              onClick={() => setIsMobileSidebarOpen(false)}
-            />
-          )}
-
-          {/* Sidebar Navigation */}
-          <aside
-            className={`fixed top-0 bottom-0 left-0 z-50 overflow-hidden transition-[transform,width] duration-300 ease-out will-change-transform md:sticky md:top-0 md:h-screen md:translate-x-0 md:will-change-auto ${
-              isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
-            } ${
-              isSidebarCollapsed ? "w-64 md:w-20" : "w-64 md:w-72"
-            } flex flex-col border-r border-slate-200 dark:border-white/10 bg-white dark:bg-[#161B22]`}
-          >
-            {/* Sidebar Header */}
-            <div
-              className={`p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between ${isSidebarCollapsed ? "md:justify-center" : ""}`}
-            >
-              <div
-                className={`flex items-center ${isSidebarCollapsed ? "md:justify-center md:gap-0" : "gap-3"}`}
-              >
-                <div className="w-12 h-12 flex-shrink-0 rounded-xl overflow-hidden border border-slate-200/60 dark:border-white/10">
-                  <Image
-                    src="/images/Logo.jpg"
-                    alt="MultiTree"
-                    width={48}
-                    height={48}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div
-                  className={`transition-all duration-300 ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-                >
-                  <h2 className="text-base font-bold leading-tight whitespace-nowrap">
-                    MultiTree
-                  </h2>
-                  <span className="text-xs text-slate-400 dark:text-gray-500 block whitespace-nowrap">
-                    داشبۆڕدی بزنس
-                  </span>
-                </div>
-              </div>
-
-              {/* Close mobile button */}
-              <button
-                onClick={() => setIsMobileSidebarOpen(false)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg p-0 text-slate-400 transition-[background-color,color,transform] duration-200 hover:bg-slate-50 hover:text-slate-600 active:scale-95 dark:hover:bg-white/5 dark:hover:text-gray-300 md:hidden"
-                aria-label="Close sidebar"
-              >
-                <X className="h-4 w-4 shrink-0" />
-              </button>
-            </div>
-
-            {/* Sidebar Links */}
-            <nav className="custom-scrollbar flex flex-1 flex-col gap-1 overflow-y-auto p-4">
-              <button
-                onClick={() => {
-                  router.push("/business");
-                  setIsMobileSidebarOpen(false);
-                }}
-                className={`flex cursor-pointer items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
-                  isSidebarCollapsed
-                    ? "md:justify-center md:gap-0 md:px-0"
-                    : "gap-3"
-                } ${
-                  activeTab === "dashboard"
-                    ? "text-slate-700 dark:text-gray-200"
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200"
-                }`}
-                style={
-                  activeTab === "dashboard"
-                    ? {
-                        background:
-                          "color-mix(in srgb, var(--theme-css, #64748b) 20%, transparent)",
-                        color: "var(--theme-css, #64748b)",
-                      }
-                    : undefined
-                }
-                title="داشبۆرد"
-              >
-                <LayoutDashboard className="h-4 w-4 shrink-0" />
-                <span
-                  className={`whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? "overflow-hidden md:pointer-events-none md:w-0 md:opacity-0" : "opacity-100"}`}
-                >
-                  داشبۆرد
-                </span>
-              </button>
-              <button
-                onClick={() => {
-                  router.push("/business/pages");
-                  setIsMobileSidebarOpen(false);
-                }}
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-                  isSidebarCollapsed
-                    ? "md:justify-center md:px-0 md:gap-0"
-                    : "gap-3"
-                } ${
-                  activeTab === "linktrees"
-                    ? "text-slate-700 dark:text-gray-200"
-                    : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-                }`}
-                style={
-                  activeTab === "linktrees"
-                    ? {
-                        background:
-                          "color-mix(in srgb, var(--theme-css, #64748b) 20%, transparent)",
-                        color: "var(--theme-css, #64748b)",
-                      }
-                    : undefined
-                }
-                title="پەیجەکان"
-              >
-                <FileText className="h-4 w-4 flex-shrink-0" />
-                <span
-                  className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-                >
-                  پەیجەکان
-                </span>
-              </button>
-              <button
-                onClick={() => {
-                  router.push("/business/mini-website");
-                  setIsMobileSidebarOpen(false);
-                }}
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-                  isSidebarCollapsed
-                    ? "md:justify-center md:px-0 md:gap-0"
-                    : "gap-3"
-                } ${
-                  activeTab === "mini-website"
-                    ? "text-slate-700 dark:text-gray-200"
-                    : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-                }`}
-                style={
-                  activeTab === "mini-website"
-                    ? {
-                        background:
-                          "color-mix(in srgb, var(--theme-css, #64748b) 20%, transparent)",
-                        color: "var(--theme-css, #64748b)",
-                      }
-                    : undefined
-                }
-                title="مینی وێبسایت"
-              >
-                <IdCard className="h-4 w-4 flex-shrink-0" />
-                <span
-                  className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-                >
-                  مینی وێبسایت
-                </span>
-              </button>
-              <button
-                onClick={() => {
-                  router.push("/business/analytics");
-                  setIsMobileSidebarOpen(false);
-                }}
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-                  isSidebarCollapsed
-                    ? "md:justify-center md:px-0 md:gap-0"
-                    : "gap-3"
-                } ${
-                  activeTab === "analytics"
-                    ? "text-slate-700 dark:text-gray-200"
-                    : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-                }`}
-                style={
-                  activeTab === "analytics"
-                    ? {
-                        background:
-                          "color-mix(in srgb, var(--theme-css, #64748b) 20%, transparent)",
-                        color: "var(--theme-css, #64748b)",
-                      }
-                    : undefined
-                }
-                title="شیکاری"
-              >
-                <BarChart3 className="h-4 w-4 flex-shrink-0" />
-                <span
-                  className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-                >
-                  شیکاری
-                </span>
-              </button>
-              <button
-                onClick={() => {
-                  router.push("/business/crm");
-                  setIsMobileSidebarOpen(false);
-                }}
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-                  isSidebarCollapsed
-                    ? "md:justify-center md:px-0 md:gap-0"
-                    : "gap-3"
-                } ${
-                  activeTab === "crm"
-                    ? "text-slate-700 dark:text-gray-200"
-                    : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-                }`}
-                style={
-                  activeTab === "crm"
-                    ? {
-                        background:
-                          "color-mix(in srgb, var(--theme-css, #64748b) 20%, transparent)",
-                        color: "var(--theme-css, #64748b)",
-                      }
-                    : undefined
-                }
-                title="بەڕێوەبردنی پەیوەندییەکانی کڕیار"
-              >
-                <ContactRound className="h-4 w-4 flex-shrink-0" />
-                <span
-                  className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-                >
-                  بەڕێوەبردنی پەیوەندییەکانی کڕیار
-                </span>
-              </button>
-              <button
-                onClick={() => {
-                  router.push("/business/tiktok-config");
-                  setIsMobileSidebarOpen(false);
-                }}
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-                  isSidebarCollapsed
-                    ? "md:justify-center md:px-0 md:gap-0"
-                    : "gap-3"
-                } ${
-                  activeTab === "tiktok-config"
-                    ? "text-slate-700 dark:text-gray-200"
-                    : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-                }`}
-                style={
-                  activeTab === "tiktok-config"
-                    ? {
-                        background:
-                          "color-mix(in srgb, var(--theme-css, #64748b) 20%, transparent)",
-                        color: "var(--theme-css, #64748b)",
-                      }
-                    : undefined
-                }
-                title="ڕێکخستنەکانی تیکتۆک"
-              >
-                <TbBrandTiktok className="h-4 w-4 flex-shrink-0" />
-                <span
-                  className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-                >
-                  ڕێکخستنەکانی تیکتۆک
-                </span>
-              </button>
-              <button
-                onClick={() => {
-                  router.push("/business/templates");
-                  setIsMobileSidebarOpen(false);
-                }}
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-                  isSidebarCollapsed
-                    ? "md:justify-center md:px-0 md:gap-0"
-                    : "gap-3"
-                } ${
-                  activeTab === "templates"
-                    ? "text-slate-700 dark:text-gray-200"
-                    : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-                }`}
-                style={
-                  activeTab === "templates"
-                    ? {
-                        background:
-                          "color-mix(in srgb, var(--theme-css, #64748b) 20%, transparent)",
-                        color: "var(--theme-css, #64748b)",
-                      }
-                    : undefined
-                }
-                title="قالبەکان"
-              >
-                <LayoutTemplate className="h-4 w-4 flex-shrink-0" />
-                <span
-                  className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-                >
-                  قالبەکان
-                </span>
-              </button>
-              <button
-                onClick={() => {
-                  router.push("/business/advertising");
-                  setIsMobileSidebarOpen(false);
-                }}
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-                  isSidebarCollapsed
-                    ? "md:justify-center md:px-0 md:gap-0"
-                    : "gap-3"
-                } ${
-                  activeTab === "advertising"
-                    ? "text-slate-700 dark:text-gray-200"
-                    : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-                }`}
-                style={
-                  activeTab === "advertising"
-                    ? {
-                        background:
-                          "color-mix(in srgb, var(--theme-css, #64748b) 20%, transparent)",
-                        color: "var(--theme-css, #64748b)",
-                      }
-                    : undefined
-                }
-                title="خزمەتگوزاری ڕیکلام"
-              >
-                <Megaphone className="h-4 w-4 flex-shrink-0" />
-                <span
-                  className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-                >
-                  خزمەتگوزاری ڕیکلام
-                </span>
-              </button>
-              <button
-                onClick={() => {
-                  router.push("/business/settings");
-                  setIsMobileSidebarOpen(false);
-                }}
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-                  isSidebarCollapsed
-                    ? "md:justify-center md:px-0 md:gap-0"
-                    : "gap-3"
-                } ${
-                  activeTab === "settings"
-                    ? "text-slate-700 dark:text-gray-200"
-                    : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-                }`}
-                style={
-                  activeTab === "settings"
-                    ? {
-                        background:
-                          "color-mix(in srgb, var(--theme-css, #64748b) 20%, transparent)",
-                        color: "var(--theme-css, #64748b)",
-                      }
-                    : undefined
-                }
-                title="ڕێکخستنەکان"
-              >
-                <Settings className="h-4 w-4 flex-shrink-0" />
-                <span
-                  className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-                >
-                  ڕێکخستنەکان
-                </span>
-              </button>
-            </nav>
-
-            <BusinessSidebarFooter
-              collapsed={isSidebarCollapsed}
-              planCode={liveEffectiveAccess?.subscription.planCode}
-              planName={liveEffectiveAccess?.subscription.planName}
-              onSupport={() => router.push("/business/settings?tab=messages")}
-              onUpgrade={() => router.push("/#pricing")}
-            />
-          </aside>
+          <DashboardSidebar
+            brandName="MultiTree"
+            brandSubtitle="داشبۆردی بزنس"
+            brandImage="/images/Logo.jpg"
+            brandImageAlt="MultiTree"
+            items={sidebarItems}
+            collapsed={isSidebarCollapsed}
+            mobileOpen={isMobileSidebarOpen}
+            onCloseMobile={() => setIsMobileSidebarOpen(false)}
+            footer={
+              <BusinessSidebarFooter
+                collapsed={isSidebarCollapsed}
+                planCode={liveEffectiveAccess?.subscription.planCode}
+                planName={liveEffectiveAccess?.subscription.planName}
+                onSupport={() => router.push("/business/settings?tab=messages")}
+                onUpgrade={() => router.push("/#pricing")}
+              />
+            }
+          />
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-            {/* Header */}
-            <header className="sticky top-0 z-30 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#161B22]/80 backdrop-blur-xl flex-shrink-0">
-              <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">
-                {/* Header Right (Title & Hamburger toggle) */}
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => {
-                      if (window.matchMedia("(max-width: 767px)").matches) {
-                        setIsMobileSidebarOpen((open) => !open);
-                      } else {
-                        setIsSidebarCollapsed((collapsed) => !collapsed);
-                      }
-                    }}
-                    className="group relative flex items-center justify-center p-2 sm:p-2.5 md:p-3 rounded-xl bg-gradient-to-br from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 border border-slate-100 dark:from-white/5 dark:to-white/5 dark:border-white/10 dark:text-gray-300 dark:hover:from-white/10 dark:hover:to-white/10 transition-all duration-300 text-slate-500 hover:text-slate-700 shadow-sm hover:shadow cursor-pointer"
-                    aria-label="Toggle sidebar"
-                  >
-                    <Menu className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5 transition-transform group-hover:scale-110" />
-                  </button>
-                  <h1 className="text-base sm:text-lg font-bold">
-                    {activeTab === "dashboard"
-                      ? "داشبۆرد"
-                      : activeTab === "linktrees"
-                        ? "پەیجەکان"
-                        : activeTab === "mini-website"
-                          ? "مینی وێبسایت"
-                          : activeTab === "analytics"
-                            ? "شیکاری"
-                            : activeTab === "crm"
-                              ? "بەڕێوەبردنی پەیوەندییەکانی کڕیار"
-                              : activeTab === "tiktok-config"
-                                ? "ڕێکخستنەکانی تیکتۆک"
-                                : activeTab === "templates"
-                                  ? "قالبەکان"
-                                  : activeTab === "advertising"
-                                    ? "خزمەتگوزاری ڕیکلام"
-                                    : activeTab === "profile"
-                                      ? "پڕۆفایل"
-                                      : "ڕێکخستنەکان"}
-                  </h1>
-                </div>
-
-                {/* Header Actions */}
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => void handleGlobalDashboardRefresh()}
-                    disabled={dashboardRefresh.isRefreshing}
-                    aria-busy={dashboardRefresh.isRefreshing}
-                    aria-label="نوێکردنەوەی داتاکانی داشبۆرد"
-                    title="نوێکردنەوەی داتاکانی داشبۆرد"
-                    className="group relative flex items-center justify-center rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50 to-gray-50 p-2 text-slate-500 shadow-sm transition-all duration-300 hover:from-slate-100 hover:to-gray-100 hover:text-slate-700 hover:shadow disabled:cursor-wait disabled:opacity-60 dark:border-white/10 dark:from-white/5 dark:to-white/5 dark:text-gray-300 dark:hover:from-white/10 dark:hover:to-white/10 sm:p-2.5 md:p-3"
-                  >
-                    <MotionSpinner active={dashboardRefresh.isRefreshing}>
-                      <RefreshCw
-                        aria-hidden="true"
-                        className="h-4 w-4 -transform sm:h-4 sm:w-4 md:h-5 md:w-5"
-                      />
-                    </MotionSpinner>
-                  </button>
-                  <BusinessCommunicationBell />
-
-                  {/* Language Toggle Button */}
-                  <button
-                    className="group relative flex items-center justify-center p-2 sm:p-2.5 md:p-3 rounded-xl bg-gradient-to-br from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 border border-slate-100 dark:from-white/5 dark:to-white/5 dark:border-white/10 dark:text-gray-300 dark:hover:from-white/10 dark:hover:to-white/10 transition-all duration-300 text-slate-500 hover:text-slate-700 shadow-sm hover:shadow cursor-pointer"
-                    aria-label="Toggle language"
-                    title="گۆڕینی زمان"
-                  >
-                    <Languages className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5 transition-transform group-hover:scale-110" />
-                  </button>
-
-                  {/* Theme Selector Toggle */}
-                  <button
-                    onClick={toggleTheme}
-                    className="group relative flex items-center justify-center p-2 sm:p-2.5 md:p-3 rounded-xl bg-gradient-to-br from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 border border-slate-100 dark:from-white/5 dark:to-white/5 dark:border-white/10 dark:text-gray-300 dark:hover:from-white/10 dark:hover:to-white/10 transition-all duration-300 text-slate-500 hover:text-slate-700 shadow-sm hover:shadow cursor-pointer"
-                    aria-label="Toggle theme"
-                    title="گۆڕینی ڕووکار"
-                  >
-                    {!mounted ? (
-                      <div className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5" />
-                    ) : (
-                      <>
-                        {theme === "light" && (
-                          <Moon className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5 transition-transform group-hover:scale-110" />
-                        )}
-                        {theme === "dark" && (
-                          <Sun className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5 transition-transform group-hover:scale-110" />
-                        )}
-                      </>
-                    )}
-                  </button>
-
-                  {/* Business Profile / Account Menu */}
-                  <AvatarMenu
-                    name={name}
-                    email={email}
-                    badge={liveEffectiveAccess?.subscription.planName}
-                    avatarSrc={logo}
-                    ariaLabel="Menu"
-                    onItemClick={() => setIsMobileSidebarOpen(false)}
-                    items={[
-                      {
-                        id: "settings",
-                        label: "ڕێکخستنەکان",
-                        icon: <Settings className="h-4 w-4" />,
-                        onClick: () => router.push("/business/settings"),
-                      },
-                      {
-                        id: "divider",
-                        label: "",
-                        icon: null,
-                        onClick: () => undefined,
-                      },
-                      {
-                        id: "logout",
-                        label: "چوونەدەرەوە",
-                        icon: <LogOut className="h-4 w-4" />,
-                        danger: true,
-                        onClick: () => void handleLogout(),
-                      },
-                    ]}
-                  />
-                </div>
-              </div>
-            </header>
+            <DashboardHeader
+              title={BUSINESS_PAGE_TITLES[activeTab]}
+              theme={theme}
+              mounted={mounted}
+              refreshing={dashboardRefresh.isRefreshing}
+              onToggleSidebar={() => {
+                if (window.matchMedia("(max-width: 767px)").matches) {
+                  setIsMobileSidebarOpen((open) => !open);
+                } else {
+                  setIsSidebarCollapsed((collapsed) => !collapsed);
+                }
+              }}
+              onToggleTheme={toggleTheme}
+              onRefresh={handleGlobalDashboardRefresh}
+              notifications={<BusinessCommunicationBell />}
+              profile={{
+                name,
+                email,
+                badge: liveEffectiveAccess?.subscription.planName,
+                avatarSrc: logo,
+                items: [
+                  {
+                    id: "settings",
+                    label: "ڕێکخستنەکان",
+                    icon: <Settings className="h-4 w-4" />,
+                    onClick: () => router.push("/business/settings"),
+                  },
+                  {
+                    id: "divider",
+                    label: "",
+                    icon: null,
+                    divider: true,
+                    onClick: () => undefined,
+                  },
+                  {
+                    id: "logout",
+                    label: "چوونەدەرەوە",
+                    icon: <LogOut className="h-4 w-4" />,
+                    danger: true,
+                    onClick: () => void handleLogout(),
+                  },
+                ],
+              }}
+              onProfileItemClick={() => setIsMobileSidebarOpen(false)}
+            />
 
             {/* Main Content */}
             <main

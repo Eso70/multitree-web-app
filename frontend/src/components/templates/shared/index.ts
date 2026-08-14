@@ -15,10 +15,6 @@ export {
 } from "./TemplateActionButton";
 export { TemplateFooter, type TemplateFooterProps } from "./TemplateFooter";
 export {
-  TemplateBackdropDecorations,
-  type TemplateDecorationVariant,
-} from "./TemplateBackdropDecorations";
-export {
   TemplateViewportLayout,
   type TemplateViewportLayoutProps,
 } from "./TemplateViewportLayout";

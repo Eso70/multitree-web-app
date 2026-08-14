@@ -17,7 +17,6 @@ import {
   STANDARD_TEMPLATE_HEADER_CLASSES,
   TemplateActionButton,
   TemplateActionButtonList,
-  TemplateBackdropDecorations,
   TemplateFooter,
   TemplateHeader,
   TemplateViewportLayout,
@@ -63,13 +62,6 @@ export const SpectrumTemplate = memo(function SpectrumTemplate({
       dir="ltr"
       className={`px-4 sm:px-6 md:px-8 ${isPreview ? "pt-14" : "pt-10 sm:pt-12 md:pt-16"}`}
       style={backgroundStyle}
-      decoration={
-        <TemplateBackdropDecorations
-          variant="spectrum"
-          accentColor={subtitleColor}
-          secondaryColor={theme.to}
-        />
-      }
       header={
         <TemplateHeader
           name={linktree.name}

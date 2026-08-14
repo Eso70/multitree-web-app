@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiRequest } from "@/lib/api/request";
 import { SignupApplicationsPanel } from "./SignupApplicationsPanel";
@@ -9,7 +15,7 @@ const apiRequestMock = vi.mocked(apiRequest);
 
 describe("SignupApplicationsPanel", () => {
   beforeEach(() => {
-    apiRequestMock.mockImplementation(async (path) => {
+    apiRequestMock.mockImplementation(async (path, options) => {
       if (path === "/api/platform/signup/applications") {
         return [
           {
@@ -35,20 +41,55 @@ describe("SignupApplicationsPanel", () => {
           ],
         } as never;
       }
+      if (
+        path === "/api/platform/signup/applications/application-1" &&
+        options?.method === "PATCH"
+      ) {
+        return {} as never;
+      }
       throw new Error(`Unexpected request: ${String(path)}`);
     });
   });
 
-  it("shows phone verification control and enables labeled approval", async () => {
+  it("uses the edit-business plan selector and needs no phone verification", async () => {
     render(<SignupApplicationsPanel onApproved={vi.fn()} />);
 
-    const checkbox = await screen.findByRole("checkbox", {
-      name: /ژمارەی مۆبایل پشتڕاستکراوەتەوە/,
-    });
-    const approve = screen.getByRole("button", { name: /پەسەندکردن/ });
+    expect(await screen.findByText("owner@example.com")).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ultra" })).toHaveClass(
+      "rounded-lg",
+    );
+    expect(screen.getByRole("button", { name: /پەسەندکردن/ })).toBeEnabled();
+  });
 
-    expect(approve).toBeDisabled();
-    fireEvent.click(checkbox);
-    await waitFor(() => expect(approve).toBeEnabled());
+  it("shows only rejection review and requires its reason", async () => {
+    render(<SignupApplicationsPanel onApproved={vi.fn()} />);
+
+    await screen.findByText("owner@example.com");
+    expect(screen.queryByLabelText("هۆکار")).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("button", { name: "گۆڕانکاری" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "ڕەتکردنەوە" }));
+    const dialog = screen.getByRole("dialog");
+    const reason = screen.getByLabelText("هۆکار");
+    fireEvent.change(reason, { target: { value: "Phone needs correction" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "ڕەتکردنەوە" }));
+
+    await waitFor(() =>
+      expect(apiRequestMock).toHaveBeenCalledWith(
+        "/api/platform/signup/applications/application-1",
+        expect.objectContaining({
+          method: "PATCH",
+          json: expect.objectContaining({
+            action: "reject",
+            reason: "Phone needs correction",
+          }),
+        }),
+      ),
+    );
   });
 });

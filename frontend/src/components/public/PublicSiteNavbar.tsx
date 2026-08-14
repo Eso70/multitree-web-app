@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Menu, Moon, Sun, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { persistAppTheme, readAppTheme } from "@/lib/app-theme";
+import { BUSINESS_LOGO_PLACEHOLDER } from "@/lib/brand/brand-assets";
 
 interface PublicNavbarBranding {
   logo?: string;
@@ -99,7 +100,7 @@ export function PublicSiteNavbar({
   const brandingContent = (
     <>
       <Image
-        src={branding?.logo || "/images/Logo.jpg"}
+        src={branding?.logo || BUSINESS_LOGO_PLACEHOLDER}
         alt={branding ? `${branding.name} logo` : "MultiTree logo"}
         width={30}
         height={30}

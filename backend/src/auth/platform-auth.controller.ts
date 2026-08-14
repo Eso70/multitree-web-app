@@ -25,7 +25,14 @@ export class PlatformAuthController {
   @Get('profile')
   @UseGuards(PlatformAdminGuard)
   getProfile(@CurrentUser() user: SessionUser) {
-    return { user: { id: user.id, username: user.username, name: user.name } };
+    return {
+      user: {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        email: user.email || null,
+      },
+    };
   }
 
   @Get('effective-access')

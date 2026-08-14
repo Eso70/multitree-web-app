@@ -42,6 +42,10 @@ import {
 } from "@/lib/api/inline-request-error";
 import { enqueueImageUpload } from "@/lib/api/enqueue-image-upload";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
+import {
+  MULTITREE_LOGO,
+  MULTITREE_LOGO_MARK,
+} from "@/lib/brand/brand-assets";
 
 type Tab = "general" | "security" | "retention" | "media";
 
@@ -646,7 +650,7 @@ export function PlatformSettingsPage() {
                   <div className="relative h-44 w-72 sm:h-48 sm:w-80">
                     <label className="group absolute left-5 top-7 h-24 w-24 rotate-[-8deg] cursor-pointer overflow-hidden rounded-full border-4 border-white bg-white shadow-xl ring-1 ring-gray-200 transition hover:z-30 hover:rotate-0 hover:scale-105 dark:border-[#161B22] dark:bg-[#161B22] dark:ring-white/10">
                       <Image
-                        src={avatar || "/images/DefaultAvatar.png"}
+                        src={avatar || MULTITREE_LOGO_MARK}
                         alt="Default avatar"
                         width={112}
                         height={112}
@@ -668,7 +672,7 @@ export function PlatformSettingsPage() {
                     </label>
                     <label className="group absolute right-6 top-4 h-20 w-20 rotate-[10deg] cursor-pointer overflow-hidden rounded-2xl border-4 border-white bg-white p-2 shadow-lg ring-1 ring-gray-200 transition hover:z-30 hover:rotate-0 hover:scale-105 dark:border-[#161B22] dark:bg-[#161B22] dark:ring-white/10">
                       <Image
-                        src={favicon || "/images/Logo.jpg"}
+                        src={favicon || MULTITREE_LOGO}
                         alt="Favicon"
                         width={96}
                         height={96}
@@ -690,7 +694,7 @@ export function PlatformSettingsPage() {
                     </label>
                     <label className="group absolute left-1/2 top-12 z-20 h-32 w-32 -translate-x-1/2 cursor-pointer overflow-hidden rounded-3xl border-4 border-white bg-white p-3 shadow-2xl ring-1 ring-gray-200 transition hover:scale-105 dark:border-[#161B22] dark:bg-[#161B22] dark:ring-white/10">
                       <Image
-                        src={logo || "/images/Logo.jpg"}
+                        src={logo || MULTITREE_LOGO}
                         alt="Logo"
                         width={144}
                         height={144}

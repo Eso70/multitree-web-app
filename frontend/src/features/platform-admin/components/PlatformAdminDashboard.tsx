@@ -1,16 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import Image from "next/image";
 import { MotionPulseIcon } from "@/components/motion/MotionPrimitives";
 import {
   Users,
   LogOut,
-  X,
-  Sun,
-  Moon,
-  Menu,
   Search,
   LayoutTemplate,
   Shield,
@@ -18,7 +13,6 @@ import {
   MessagesSquare,
   Key,
   Settings,
-  Languages,
   CreditCard,
   UserCog,
 } from "lucide-react";
@@ -51,6 +45,12 @@ import { persistAppTheme } from "@/lib/app-theme";
 import { ErrorPage } from "@/components/error-pages/ErrorPage";
 import { MULTITREE_ERROR_THEME } from "@/components/error-pages/error-theme";
 import { ERROR_PAGE_COPY } from "@/components/error-pages/copy";
+import {
+  DashboardSidebar,
+  type DashboardSidebarItem,
+} from "@/components/shared/DashboardSidebar";
+import { DashboardHeader } from "@/components/shared/DashboardHeader";
+import { apiRequest } from "@/lib/api/request";
 
 const BusinessAnalyticsModal = dynamic(
   () =>
@@ -90,6 +90,10 @@ export function PlatformAdminDashboard() {
     name: "MultiTree",
     logo: null as string | null,
     avatar: null as string | null,
+  });
+  const [administrator, setAdministrator] = useState({
+    name: "Platform Admin",
+    email: "",
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
@@ -219,6 +223,23 @@ export function PlatformAdminDashboard() {
     };
   }, [applyPlatformBranding]);
 
+  const loadAdministratorProfile = useCallback(async () => {
+    const payload = await apiRequest<{
+      user: { name?: string; email?: string };
+    }>("/api/platform/auth/profile");
+    setAdministrator({
+      name: payload.user.name?.trim() || "Platform Admin",
+      email: payload.user.email?.trim() || "",
+    });
+  }, []);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      void loadAdministratorProfile().catch(() => undefined);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [loadAdministratorProfile]);
+
   const toggleTheme = useCallback(() => {
     const nextTheme = theme === "light" ? "dark" : "light";
     setTheme(nextTheme);
@@ -248,6 +269,102 @@ export function PlatformAdminDashboard() {
       credentials: "include",
     });
     router.push(`${consoleBasePath}/login`);
+  };
+
+  const handleGlobalRefresh = useCallback(async () => {
+    await Promise.all([
+      handleRefresh(),
+      loadAdministratorProfile().catch(() => undefined),
+    ]);
+    router.refresh();
+  }, [handleRefresh, loadAdministratorProfile, router]);
+
+  const sidebarItems = useMemo<DashboardSidebarItem[]>(
+    () => [
+      {
+        id: "businesses",
+        label: "بەڕێوەبردنی بزنسەکان",
+        icon: <Users className="h-4 w-4" />,
+        active: activePage === "businesses",
+        hidden: permissionsLoaded && !canPage("businesses"),
+        onClick: () => router.push(consoleBasePath),
+      },
+      {
+        id: "templates",
+        label: "قاڵبەکان",
+        icon: <LayoutTemplate className="h-4 w-4" />,
+        active: activePage === "templates",
+        hidden: permissionsLoaded && !canPage("templates"),
+        onClick: () => router.push(`${consoleBasePath}/templates`),
+      },
+      {
+        id: "blocklists",
+        label: "ڕێساکانی دەستگەیشتن",
+        icon: <Shield className="h-4 w-4" />,
+        active: activePage === "blocklists",
+        hidden: permissionsLoaded && !canPage("blocklists"),
+        onClick: () => router.push(`${consoleBasePath}/blocklists`),
+      },
+      {
+        id: "access-control",
+        label: "کۆنترۆڵی دەستگەیشتن",
+        icon: <UserCog className="h-4 w-4" />,
+        active: activePage === "access-control",
+        hidden: permissionsLoaded && !canPage("access-control"),
+        onClick: () => router.push(`${consoleBasePath}/access-control`),
+      },
+      {
+        id: "billing",
+        label: "پارەدان و بەشدارییەکان",
+        icon: <CreditCard className="h-4 w-4" />,
+        active: activePage === "billing",
+        hidden: permissionsLoaded && !canPage("billing"),
+        onClick: () => router.push(`${consoleBasePath}/billing`),
+      },
+      {
+        id: "activity",
+        label: "تۆماری چالاکییەکان",
+        icon: <History className="h-4 w-4" />,
+        active: activePage === "activity",
+        hidden: permissionsLoaded && !canPage("activity"),
+        onClick: () => router.push(`${consoleBasePath}/activity`),
+      },
+      {
+        id: "communication-center",
+        label: "ناوەندی پەیوەندی",
+        icon: <MessagesSquare className="h-4 w-4" />,
+        active: activePage === "communication-center",
+        onClick: () => router.push(`${consoleBasePath}/communication-center`),
+      },
+      {
+        id: "api",
+        label: "بەڕێوەبردنی API",
+        icon: <Key className="h-4 w-4" />,
+        active: activePage === "api",
+        onClick: () => router.push(`${consoleBasePath}/api`),
+      },
+      {
+        id: "settings",
+        label: "ڕێکخستنەکان",
+        icon: <Settings className="h-4 w-4" />,
+        active: activePage === "settings",
+        hidden: permissionsLoaded && !canPage("settings"),
+        onClick: () => router.push(`${consoleBasePath}/settings`),
+      },
+    ],
+    [activePage, canPage, consoleBasePath, permissionsLoaded, router],
+  );
+
+  const pageTitle: Record<PlatformPage, string> = {
+    businesses: "بەڕێوەبردنی بزنسەکان",
+    templates: "قاڵبەکان",
+    blocklists: "ڕێساکانی دەستگەیشتن",
+    "access-control": "کۆنترۆڵی دەستگەیشتن",
+    billing: "پارەدان و بەشدارییەکان",
+    activity: "تۆماری چالاکییەکان",
+    "communication-center": "ناوەندی پەیوەندی",
+    api: "بەڕێوەبردنی API",
+    settings: "ڕێکخستنەکان",
   };
 
   const handleDelete = useCallback(
@@ -380,462 +497,91 @@ export function PlatformAdminDashboard() {
       dir="ltr"
       data-multitree-theme
     >
-      {/* Mobile Sidebar overlay backdrop */}
-      {isMobileSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/45 backdrop-blur-sm z-40 md:hidden transition-all duration-300"
-          onClick={() => setIsMobileSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar Navigation */}
-      <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 overflow-hidden transition-[transform,width] duration-300 ease-out will-change-transform md:sticky md:top-0 md:h-screen md:translate-x-0 md:will-change-auto ${
-          isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } ${
-          isSidebarCollapsed ? "w-64 md:w-20" : "w-64 md:w-72"
-        } flex flex-col border-r border-slate-200 dark:border-white/10 bg-white dark:bg-[#161B22]`}
-      >
-        {/* Sidebar Header */}
-        <div
-          className={`p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between ${isSidebarCollapsed ? "md:justify-center" : ""}`}
-        >
-          <div
-            className={`flex items-center ${isSidebarCollapsed ? "md:justify-center md:gap-0" : "gap-3"}`}
-          >
-            <div className="w-12 h-12 flex-shrink-0">
-              <Image
-                src={
-                  platformBranding.logo ||
-                  platformBranding.avatar ||
-                  "/images/DefaultAvatar.png"
-                }
-                alt="Logo"
-                width={48}
-                height={48}
-                className="w-full h-full object-cover"
-                unoptimized
-              />
-            </div>
-            <div
-              className={`transition-all duration-300 ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
+      <DashboardSidebar
+        brandName={platformBranding.name}
+        brandSubtitle="کۆنترۆڵی گشتی"
+        brandImage={
+          platformBranding.logo ||
+          platformBranding.avatar ||
+          "/images/DefaultAvatar.png"
+        }
+        items={sidebarItems}
+        collapsed={isSidebarCollapsed}
+        mobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        accent="var(--multitree-accent)"
+        footer={
+          <div className="shrink-0 border-t border-slate-200 p-4 dark:border-white/10">
+            <button
+              type="button"
+              onClick={() => router.push(`${consoleBasePath}/settings`)}
+              className={`flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-slate-100 ${
+                isSidebarCollapsed ? "md:justify-center md:px-0" : "gap-3"
+              }`}
+              title="ڕێکخستنەکانی بەڕێوەبەر"
             >
-              <h2 className="text-base font-bold leading-tight whitespace-nowrap">
-                {platformBranding.name}
-              </h2>
-              <span className="text-xs text-slate-400 dark:text-gray-500 block whitespace-nowrap">
-                کۆنتڕۆڵی گشتی
+              <UserCog className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span
+                className={`whitespace-nowrap transition-all duration-300 ${
+                  isSidebarCollapsed
+                    ? "overflow-hidden md:pointer-events-none md:w-0 md:opacity-0"
+                    : "opacity-100"
+                }`}
+              >
+                ڕێکخستنەکانی بەڕێوەبەر
               </span>
-            </div>
+            </button>
           </div>
-
-          {/* Close mobile button */}
-          <button
-            onClick={() => setIsMobileSidebarOpen(false)}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg p-0 text-slate-400 transition-[background-color,color,transform] duration-200 hover:bg-slate-50 hover:text-slate-600 active:scale-95 dark:hover:bg-white/5 dark:hover:text-gray-300 md:hidden"
-            aria-label="Close sidebar"
-          >
-            <X className="h-4 w-4 shrink-0" />
-          </button>
-        </div>
-
-        {/* Sidebar Links */}
-        <nav className="custom-scrollbar lime-custom-scrollbar flex-1 overflow-y-auto p-4 flex flex-col gap-1">
-          <button
-            hidden={permissionsLoaded && !canPage("businesses")}
-            onClick={() => {
-              router.push(consoleBasePath);
-              setIsMobileSidebarOpen(false);
-            }}
-            className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-              isSidebarCollapsed
-                ? "md:justify-center md:px-0 md:gap-0"
-                : "gap-3"
-            } ${
-              activePage === "businesses"
-                ? "text-slate-700 dark:text-gray-200"
-                : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-            }`}
-            style={
-              activePage === "businesses"
-                ? {
-                    background:
-                      "color-mix(in srgb, var(--multitree-accent) 20%, transparent)",
-                    color: "var(--multitree-accent)",
-                  }
-                : undefined
-            }
-            title="بەڕێوەبردنی بزنسەکان"
-          >
-            <Users className="h-4 w-4 flex-shrink-0" />
-            <span
-              className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-            >
-              بەڕێوەبردنی بزنسەکان
-            </span>
-          </button>
-          <button
-            hidden={permissionsLoaded && !canPage("templates")}
-            onClick={() => {
-              router.push(`${consoleBasePath}/templates`);
-              setIsMobileSidebarOpen(false);
-            }}
-            className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-              isSidebarCollapsed
-                ? "md:justify-center md:px-0 md:gap-0"
-                : "gap-3"
-            } ${
-              activePage === "templates"
-                ? "text-slate-700 dark:text-gray-200"
-                : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-            }`}
-            style={
-              activePage === "templates"
-                ? {
-                    background:
-                      "color-mix(in srgb, var(--multitree-accent) 20%, transparent)",
-                    color: "var(--multitree-accent)",
-                  }
-                : undefined
-            }
-            title="قالبەکان"
-          >
-            <LayoutTemplate className="h-4 w-4 flex-shrink-0" />
-            <span
-              className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-            >
-              قالبەکان
-            </span>
-          </button>
-          <button
-            hidden={permissionsLoaded && !canPage("blocklists")}
-            onClick={() => {
-              router.push(`${consoleBasePath}/blocklists`);
-              setIsMobileSidebarOpen(false);
-            }}
-            className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-              isSidebarCollapsed
-                ? "md:justify-center md:px-0 md:gap-0"
-                : "gap-3"
-            } ${
-              activePage === "blocklists"
-                ? "text-slate-700 dark:text-gray-200"
-                : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-            }`}
-            style={
-              activePage === "blocklists"
-                ? {
-                    background:
-                      "color-mix(in srgb, var(--multitree-accent) 20%, transparent)",
-                    color: "var(--multitree-accent)",
-                  }
-                : undefined
-            }
-            title="ڕێساکانی دەستگەیشتن"
-          >
-            <Shield className="h-4 w-4 flex-shrink-0" />
-            <span
-              className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-            >
-              ڕێساکانی دەستگەیشتن
-            </span>
-          </button>
-          <button
-            hidden={permissionsLoaded && !canPage("access-control")}
-            onClick={() => {
-              router.push(`${consoleBasePath}/access-control`);
-              setIsMobileSidebarOpen(false);
-            }}
-            className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-              isSidebarCollapsed
-                ? "md:justify-center md:px-0 md:gap-0"
-                : "gap-3"
-            } ${
-              activePage === "access-control"
-                ? "text-slate-700 dark:text-gray-200"
-                : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-            }`}
-            style={
-              activePage === "access-control"
-                ? {
-                    background:
-                      "color-mix(in srgb, var(--multitree-accent) 20%, transparent)",
-                    color: "var(--multitree-accent)",
-                  }
-                : undefined
-            }
-            title="کۆنترۆڵی دەستگەیشتن"
-          >
-            <UserCog className="h-4 w-4 flex-shrink-0" />
-            <span
-              className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-            >
-              کۆنترۆڵی دەستگەیشتن
-            </span>
-          </button>
-          <button
-            hidden={permissionsLoaded && !canPage("billing")}
-            onClick={() => {
-              router.push(`${consoleBasePath}/billing`);
-              setIsMobileSidebarOpen(false);
-            }}
-            className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-              isSidebarCollapsed
-                ? "md:justify-center md:px-0 md:gap-0"
-                : "gap-3"
-            } ${
-              activePage === "billing"
-                ? "text-slate-700 dark:text-gray-200"
-                : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-            }`}
-            style={
-              activePage === "billing"
-                ? {
-                    background:
-                      "color-mix(in srgb, var(--multitree-accent) 20%, transparent)",
-                    color: "var(--multitree-accent)",
-                  }
-                : undefined
-            }
-            title="پارەدان و بەشدارییەکان"
-          >
-            <CreditCard className="h-4 w-4 flex-shrink-0" />
-            <span
-              className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-            >
-              پارەدان و بەشدارییەکان
-            </span>
-          </button>
-          <button
-            hidden={permissionsLoaded && !canPage("activity")}
-            onClick={() => {
-              router.push(`${consoleBasePath}/activity`);
-              setIsMobileSidebarOpen(false);
-            }}
-            className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-              isSidebarCollapsed
-                ? "md:justify-center md:px-0 md:gap-0"
-                : "gap-3"
-            } ${
-              activePage === "activity"
-                ? "text-slate-700 dark:text-gray-200"
-                : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-            }`}
-            style={
-              activePage === "activity"
-                ? {
-                    background:
-                      "color-mix(in srgb, var(--multitree-accent) 20%, transparent)",
-                    color: "var(--multitree-accent)",
-                  }
-                : undefined
-            }
-            title="تۆماری چالاکییەکان"
-          >
-            <History className="h-4 w-4 flex-shrink-0" />
-            <span
-              className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-            >
-              تۆماری چالاکییەکان
-            </span>
-          </button>
-          <button
-            onClick={() => {
-              router.push(`${consoleBasePath}/communication-center`);
-              setIsMobileSidebarOpen(false);
-            }}
-            className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-              isSidebarCollapsed
-                ? "md:justify-center md:px-0 md:gap-0"
-                : "gap-3"
-            } ${
-              activePage === "communication-center"
-                ? "text-slate-700 dark:text-gray-200"
-                : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-            }`}
-            style={
-              activePage === "communication-center"
-                ? {
-                    background:
-                      "color-mix(in srgb, var(--multitree-accent) 20%, transparent)",
-                    color: "var(--multitree-accent)",
-                  }
-                : undefined
-            }
-            title="ناوەندی پەیوەندی"
-          >
-            <MessagesSquare className="h-4 w-4 flex-shrink-0" />
-            <span
-              className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-            >
-              ناوەندی پەیوەندی
-            </span>
-          </button>
-          <button
-            onClick={() => {
-              router.push(`${consoleBasePath}/api`);
-              setIsMobileSidebarOpen(false);
-            }}
-            className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-              isSidebarCollapsed
-                ? "md:justify-center md:px-0 md:gap-0"
-                : "gap-3"
-            } ${
-              activePage === "api"
-                ? "text-slate-700 dark:text-gray-200"
-                : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-            }`}
-            style={
-              activePage === "api"
-                ? {
-                    background:
-                      "color-mix(in srgb, var(--multitree-accent) 20%, transparent)",
-                    color: "var(--multitree-accent)",
-                  }
-                : undefined
-            }
-            title="بەڕێوەبردنی API"
-          >
-            <Key className="h-4 w-4 flex-shrink-0" />
-            <span
-              className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-            >
-              بەڕێوەبردنی API
-            </span>
-          </button>
-          <button
-            hidden={permissionsLoaded && !canPage("settings")}
-            onClick={() => {
-              router.push(`${consoleBasePath}/settings`);
-              setIsMobileSidebarOpen(false);
-            }}
-            className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-              isSidebarCollapsed
-                ? "md:justify-center md:px-0 md:gap-0"
-                : "gap-3"
-            } ${
-              activePage === "settings"
-                ? "text-slate-700 dark:text-gray-200"
-                : "text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-gray-200"
-            }`}
-            style={
-              activePage === "settings"
-                ? {
-                    background:
-                      "color-mix(in srgb, var(--multitree-accent) 20%, transparent)",
-                    color: "var(--multitree-accent)",
-                  }
-                : undefined
-            }
-            title="ڕێکخستنەکان"
-          >
-            <Settings className="h-4 w-4 flex-shrink-0" />
-            <span
-              className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-            >
-              ڕێکخستنەکان
-            </span>
-          </button>
-        </nav>
-
-        {/* Sidebar Footer with Logout */}
-        <div className="p-4 border-t border-slate-200 dark:border-white/10 flex-shrink-0">
-          <button
-            onClick={handleLogout}
-            className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${
-              isSidebarCollapsed
-                ? "md:justify-center md:px-0 md:gap-0"
-                : "gap-3"
-            } text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-transparent hover:border-rose-100 dark:hover:border-rose-500/20`}
-            title="چوونەدەرەوە"
-          >
-            <LogOut className="h-4 w-4 flex-shrink-0" />
-            <span
-              className={`transition-all duration-300 whitespace-nowrap ${isSidebarCollapsed ? "md:opacity-0 md:w-0 md:pointer-events-none overflow-hidden" : "opacity-100"}`}
-            >
-              چوونەدەرەوە
-            </span>
-          </button>
-        </div>
-      </aside>
+        }
+      />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        {/* Header */}
-        <header className="sticky top-0 z-30 border-b border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#161B22]/80 backdrop-blur-xl flex-shrink-0">
-          <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">
-            {/* Header Right (Title & Hamburger toggle) */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => {
-                  if (window.matchMedia("(max-width: 767px)").matches) {
-                    setIsMobileSidebarOpen((open) => !open);
-                  } else {
-                    setIsSidebarCollapsed((collapsed) => !collapsed);
-                  }
-                }}
-                className="group relative flex items-center justify-center p-2 sm:p-2.5 md:p-3 rounded-xl bg-gradient-to-br from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 border border-slate-100 dark:from-white/5 dark:to-white/5 dark:border-white/10 dark:text-gray-300 dark:hover:from-white/10 dark:hover:to-white/10 transition-all duration-300 text-slate-500 hover:text-slate-700 shadow-sm hover:shadow cursor-pointer"
-                aria-label="Toggle sidebar"
-              >
-                <Menu className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5 transition-transform group-hover:scale-110" />
-              </button>
-              <h1 className="text-base sm:text-lg font-bold">
-                {activePage === "businesses"
-                  ? "بەڕێوەبردنی بزنسەکان"
-                  : activePage === "templates"
-                    ? "قالبەکان"
-                    : activePage === "billing"
-                      ? "پارەدان و بەشدارییەکان"
-                      : activePage === "blocklists"
-                        ? "ڕێساکانی دەستگەیشتن"
-                        : activePage === "access-control"
-                          ? "کۆنترۆڵی دەستگەیشتن"
-                          : activePage === "activity"
-                            ? "تۆماری چالاکییەکان"
-                            : activePage === "communication-center"
-                              ? "ناوەندی پەیوەندی"
-                              : activePage === "api"
-                                ? "بەڕێوەبردنی API"
-                                : "ڕێکخستنەکان"}
-              </h1>
-            </div>
-
-            {/* Header Actions */}
-            <div className="flex items-center gap-3">
-              <ApprovalNotifications />
-
-              {/* Language Toggle Button */}
-              <button
-                className="group relative flex items-center justify-center p-2 sm:p-2.5 md:p-3 rounded-xl bg-gradient-to-br from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 border border-slate-100 dark:from-white/5 dark:to-white/5 dark:border-white/10 dark:text-gray-300 dark:hover:from-white/10 dark:hover:to-white/10 transition-all duration-300 text-slate-500 hover:text-slate-700 shadow-sm hover:shadow cursor-pointer"
-                aria-label="Toggle language"
-                title="گۆڕینی زمان"
-              >
-                <Languages className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5 transition-transform group-hover:scale-110" />
-              </button>
-
-              {/* Theme Selector Toggle */}
-              <button
-                onClick={toggleTheme}
-                className="group relative flex items-center justify-center p-2 sm:p-2.5 md:p-3 rounded-xl bg-gradient-to-br from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 border border-slate-100 dark:from-white/5 dark:to-white/5 dark:border-white/10 dark:text-gray-300 dark:hover:from-white/10 dark:hover:to-white/10 transition-all duration-300 text-slate-500 hover:text-slate-700 shadow-sm hover:shadow cursor-pointer"
-                aria-label="Toggle theme"
-                title="گۆڕینی ڕووکار"
-              >
-                {!mounted ? (
-                  <div className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5" />
-                ) : (
-                  <>
-                    {theme === "light" && (
-                      <Moon className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5 transition-transform group-hover:scale-110" />
-                    )}
-                    {theme === "dark" && (
-                      <Sun className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5 transition-transform group-hover:scale-110" />
-                    )}
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </header>
+        <DashboardHeader
+          title={pageTitle[activePage]}
+          theme={theme}
+          mounted={mounted}
+          refreshing={isRefreshing}
+          onToggleSidebar={() => {
+            if (window.matchMedia("(max-width: 767px)").matches) {
+              setIsMobileSidebarOpen((open) => !open);
+            } else {
+              setIsSidebarCollapsed((collapsed) => !collapsed);
+            }
+          }}
+          onToggleTheme={toggleTheme}
+          onRefresh={handleGlobalRefresh}
+          notifications={<ApprovalNotifications />}
+          profile={{
+            name: administrator.name,
+            email: administrator.email,
+            badge: "Platform Admin",
+            avatarSrc: platformBranding.avatar || platformBranding.logo,
+            items: [
+              {
+                id: "settings",
+                label: "ڕێکخستنەکان",
+                icon: <Settings className="h-4 w-4" />,
+                onClick: () => router.push(`${consoleBasePath}/settings`),
+              },
+              {
+                id: "divider",
+                label: "",
+                icon: null,
+                divider: true,
+                onClick: () => undefined,
+              },
+              {
+                id: "logout",
+                label: "چوونەدەرەوە",
+                icon: <LogOut className="h-4 w-4" />,
+                danger: true,
+                onClick: () => void handleLogout(),
+              },
+            ],
+          }}
+          onProfileItemClick={() => setIsMobileSidebarOpen(false)}
+        />
 
         {/* Main Content */}
         <main className="flex-1 w-full overflow-y-auto relative" dir="ltr">

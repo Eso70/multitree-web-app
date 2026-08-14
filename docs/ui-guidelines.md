@@ -215,7 +215,7 @@ Modal field markup lives in one shared system so every dialog looks identical:
   (both used by the advertising package-category modal). It exports
   `RAINBOW_BACKGROUND_COLORS` for reuse.
 
-Both the linktree editor (`BasicInfoStep`, `LinktreePageStep`) and the
+Both the linktree editor (`BasicInfoStep`) and the
 advertising testimonials modal (`AdvertisingServicePage.tsx`) consume this same
 field system so their titles, sizes, placeholder styles, and required markers
 stay in sync.
@@ -354,7 +354,22 @@ Signup uses the card's plain compact variant and does not add another visual
 container around the form. Country, city, and social-profile URL fields are
 excluded. Logo, favicon, default avatar, brand color, and footer defaults move
 to the required first-login setup instead of the signup application. Mark those
-setup fields optional and start with the MultiTree color and assets. Show the
+setup fields optional and start with the MultiTree color, the neutral person
+avatar, and the neutral logo and favicon placeholders. First-login setup asks
+for the logo only: pass `lockedAssets` to `BrandAssetStack` there, which closes
+the favicon and avatar tiles behind a lock badge because both are supplied
+automatically — the favicon from the uploaded logo, the avatar from the platform
+default. Opening a tile's lock restores its own picker for the rest of that
+session, so a business that wants a distinct favicon or avatar is never blocked.
+A favicon the owner uploaded is never overwritten by a later logo upload. Logo
+and favicon pickers both accept JPEG and PNG (favicon also `.ico`); the tile
+markup itself lives in `BrandAssetTile` so a locked tile does not nest a button
+inside a label. MultiTree's own mark
+(`/images/Logo.jpg`) is platform chrome — the home page, the dashboard sidebar,
+the "powered by" footer, the platform manifest, and platform-console branding —
+and must never stand in for a business that has not uploaded its own asset.
+Resolve every fallback from `frontend/src/lib/brand/brand-assets.ts` rather than
+repeating a path. Show the
 verified owner account name and email read-only in both first-login setup and
 platform business editing. Render setup as a single locked `ManagementModal`
 over the real dashboard: no close control,

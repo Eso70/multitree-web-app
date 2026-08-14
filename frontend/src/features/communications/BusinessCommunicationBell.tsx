@@ -1,25 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Bell,
-  CheckCheck,
-  ChevronRight,
-  Inbox,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Bell, CheckCheck, ChevronRight, Inbox, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { SkeletonList } from "@/components/shared/Skeleton";
 import { ManagementModal } from "@/components/shared/ManagementModal";
 import { AccentActionButton } from "@/components/shared/AccentActionButton";
+import { DashboardHeaderActionButton } from "@/components/shared/DashboardHeader";
 import { useTheme } from "@/lib/contexts/ThemeProvider";
 import { communicationRequest } from "./api";
 import { usePolling } from "@/lib/utils/usePolling";
-import type {
-  CommunicationNotification,
-  NotificationInbox,
-} from "./types";
+import type { CommunicationNotification, NotificationInbox } from "./types";
 import { useRegisterBusinessDashboardRefresh } from "@/features/business/dashboard-refresh";
 
 function formatNotificationDate(isoDate: string) {
@@ -35,9 +26,13 @@ function formatNotificationDate(isoDate: string) {
 export function BusinessCommunicationBell() {
   const { color: businessTheme } = useTheme();
   const [open, setOpen] = useState(false);
-  const [inbox, setInbox] = useState<NotificationInbox>({ items: [], unreadCount: 0 });
+  const [inbox, setInbox] = useState<NotificationInbox>({
+    items: [],
+    unreadCount: 0,
+  });
   const [loading, setLoading] = useState(true);
-  const [selectedNotification, setSelectedNotification] = useState<CommunicationNotification | null>(null);
+  const [selectedNotification, setSelectedNotification] =
+    useState<CommunicationNotification | null>(null);
   const container = useRef<HTMLDivElement>(null);
 
   // Skips the state update when the inbox is unchanged, which is the common
@@ -69,26 +64,45 @@ export function BusinessCommunicationBell() {
   useEffect(() => {
     if (!open) return;
     const pointer = (event: PointerEvent) => {
-      if (container.current && !container.current.contains(event.target as Node)) setOpen(false);
+      if (
+        container.current &&
+        !container.current.contains(event.target as Node)
+      )
+        setOpen(false);
     };
-    const key = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    const key = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
     document.addEventListener("pointerdown", pointer);
     document.addEventListener("keydown", key);
-    return () => { document.removeEventListener("pointerdown", pointer); document.removeEventListener("keydown", key); };
+    return () => {
+      document.removeEventListener("pointerdown", pointer);
+      document.removeEventListener("keydown", key);
+    };
   }, [open]);
 
   const readNotification = async (id: string) => {
     try {
-      const notification =
-        inbox.items.find((item) => item.id === id) ?? null;
-      await communicationRequest(`/api/auth/communications/notifications/${id}/read`, { method: "PATCH" });
+      const notification = inbox.items.find((item) => item.id === id) ?? null;
+      await communicationRequest(
+        `/api/auth/communications/notifications/${id}/read`,
+        { method: "PATCH" },
+      );
       setInbox((current) => ({
-        unreadCount: Math.max(0, current.unreadCount - (current.items.find((item) => item.id === id)?.readAt ? 0 : 1)),
-        items: current.items.map((item) => item.id === id ? { ...item, readAt: new Date().toISOString() } : item),
+        unreadCount: Math.max(
+          0,
+          current.unreadCount -
+            (current.items.find((item) => item.id === id)?.readAt ? 0 : 1),
+        ),
+        items: current.items.map((item) =>
+          item.id === id ? { ...item, readAt: new Date().toISOString() } : item,
+        ),
       }));
       if (notification) setSelectedNotification(notification);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "نوێکردنەوە سەرکەوتوو نەبوو");
+      toast.error(
+        error instanceof Error ? error.message : "نوێکردنەوە سەرکەوتوو نەبوو",
+      );
     }
   };
 
@@ -103,23 +117,38 @@ export function BusinessCommunicationBell() {
   const dismissNotification = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     try {
-      await communicationRequest(`/api/auth/communications/notifications/${id}`, { method: "DELETE" });
+      await communicationRequest(
+        `/api/auth/communications/notifications/${id}`,
+        { method: "DELETE" },
+      );
       setInbox((current) => ({
-        unreadCount: Math.max(0, current.unreadCount - (current.items.find((item) => item.id === id)?.readAt ? 0 : 1)),
+        unreadCount: Math.max(
+          0,
+          current.unreadCount -
+            (current.items.find((item) => item.id === id)?.readAt ? 0 : 1),
+        ),
         items: current.items.filter((item) => item.id !== id),
       }));
       setSelectedNotification(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "سڕینەوە سەرکەوتوو نەبوو");
+      toast.error(
+        error instanceof Error ? error.message : "سڕینەوە سەرکەوتوو نەبوو",
+      );
     }
   };
 
   const markAllRead = async () => {
     try {
-      await communicationRequest("/api/auth/communications/notifications/read-all", { method: "PATCH" });
+      await communicationRequest(
+        "/api/auth/communications/notifications/read-all",
+        { method: "PATCH" },
+      );
       setInbox((current) => ({
         unreadCount: 0,
-        items: current.items.map((item) => ({ ...item, readAt: item.readAt || new Date().toISOString() })),
+        items: current.items.map((item) => ({
+          ...item,
+          readAt: item.readAt || new Date().toISOString(),
+        })),
       }));
     } catch {
       toast.error("نوێکردنەوە سەرکەوتوو نەبوو");
@@ -128,19 +157,26 @@ export function BusinessCommunicationBell() {
 
   const deleteAll = async () => {
     try {
-      await communicationRequest("/api/auth/communications/notifications", { method: "DELETE" });
+      await communicationRequest("/api/auth/communications/notifications", {
+        method: "DELETE",
+      });
       setInbox({ items: [], unreadCount: 0 });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "سڕینەوەی هەمووی سەرکەوتوو نەبوو");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "سڕینەوەی هەمووی سەرکەوتوو نەبوو",
+      );
     }
   };
 
   return (
     <div className="relative" ref={container}>
-      <button
-        type="button"
-        onClick={() => { setOpen((value) => !value); if (!open) void load(); }}
-        className="group relative flex items-center justify-center p-2 sm:p-2.5 md:p-3 rounded-xl bg-gradient-to-br from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 border border-slate-100 dark:from-white/5 dark:to-white/5 dark:border-white/10 dark:text-gray-300 dark:hover:from-white/10 dark:hover:to-white/10 transition-all duration-300 text-slate-500 hover:text-slate-700 shadow-sm hover:shadow cursor-pointer"
+      <DashboardHeaderActionButton
+        onClick={() => {
+          setOpen((value) => !value);
+          if (!open) void load();
+        }}
         aria-label="ئاگاداری"
         aria-expanded={open}
         title="ئاگاداری"
@@ -151,7 +187,7 @@ export function BusinessCommunicationBell() {
             {inbox.unreadCount > 99 ? "99+" : inbox.unreadCount}
           </span>
         )}
-      </button>
+      </DashboardHeaderActionButton>
 
       {open && (
         <div className="fixed inset-x-3 top-20 z-50 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1c222b] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-3 sm:w-[26rem]    duration-200">
@@ -161,8 +197,12 @@ export function BusinessCommunicationBell() {
                 <Bell className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-sm font-black text-slate-700 dark:text-slate-200">ئاگاداری</h2>
-                <p className="mt-0.5 text-[11px] text-slate-400">ئاگادارییەکانی پلاتفۆرم</p>
+                <h2 className="text-sm font-black text-slate-700 dark:text-slate-200">
+                  ئاگاداری
+                </h2>
+                <p className="mt-0.5 text-[11px] text-slate-400">
+                  ئاگادارییەکانی پلاتفۆرم
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
@@ -215,31 +255,39 @@ export function BusinessCommunicationBell() {
                         : "bg-[color-mix(in_srgb,var(--theme-primary)_4%,white)] dark:bg-white/[0.03]"
                     } hover:bg-slate-50 dark:hover:bg-white/5`}
                   >
-                    <div className={`absolute right-0 top-0 h-full w-0.5 transition-colors ${
-                      item.readAt
-                        ? "bg-transparent"
-                        : "bg-[var(--theme-primary)]"
-                    }`} />
+                    <div
+                      className={`absolute right-0 top-0 h-full w-0.5 transition-colors ${
+                        item.readAt
+                          ? "bg-transparent"
+                          : "bg-[var(--theme-primary)]"
+                      }`}
+                    />
                     <div className="flex items-start gap-3 p-4 pr-5">
                       {!item.readAt && (
                         <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[var(--theme-primary)]" />
                       )}
-                      <div className={`min-w-0 flex-1 ${item.readAt ? "mr-5" : ""}`}>
+                      <div
+                        className={`min-w-0 flex-1 ${item.readAt ? "mr-5" : ""}`}
+                      >
                         <div className="flex items-center justify-between gap-2">
-                          <p className={`text-sm leading-5 ${
-                            item.readAt
-                              ? "font-medium text-slate-600 dark:text-slate-400"
-                              : "font-bold text-slate-700 dark:text-slate-200"
-                          }`}>
+                          <p
+                            className={`text-sm leading-5 ${
+                              item.readAt
+                                ? "font-medium text-slate-600 dark:text-slate-400"
+                                : "font-bold text-slate-700 dark:text-slate-200"
+                            }`}
+                          >
                             {item.title}
                           </p>
                         </div>
                         {item.body && (
-                          <p className={`mt-0.5 text-xs leading-5 ${
-                            item.readAt
-                              ? "text-slate-400 dark:text-gray-500"
-                              : "text-slate-500 dark:text-gray-400"
-                          }`}>
+                          <p
+                            className={`mt-0.5 text-xs leading-5 ${
+                              item.readAt
+                                ? "text-slate-400 dark:text-gray-500"
+                                : "text-slate-500 dark:text-gray-400"
+                            }`}
+                          >
                             {item.body}
                           </p>
                         )}
@@ -247,9 +295,11 @@ export function BusinessCommunicationBell() {
                           {formatNotificationDate(item.createdAt)}
                         </p>
                       </div>
-                      {item.actionUrl && (item.actionUrl.startsWith("/") || item.actionUrl.startsWith("https://")) && (
-                        <ChevronRight className="mt-1.5 h-3.5 w-3.5 shrink-0 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 dark:text-gray-600" />
-                      )}
+                      {item.actionUrl &&
+                        (item.actionUrl.startsWith("/") ||
+                          item.actionUrl.startsWith("https://")) && (
+                          <ChevronRight className="mt-1.5 h-3.5 w-3.5 shrink-0 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 dark:text-gray-600" />
+                        )}
                       <button
                         onClick={(e) => void dismissNotification(item.id, e)}
                         className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-300 opacity-0 transition-colors group-hover:opacity-100 hover:bg-red-50 hover:text-red-400 dark:text-gray-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
@@ -266,8 +316,12 @@ export function BusinessCommunicationBell() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-white/5">
                   <Inbox className="h-6 w-6 text-slate-300 dark:text-slate-600" />
                 </div>
-                <p className="mt-3 text-sm font-bold text-slate-400">هیچ ئاگادارییەک نییە</p>
-                <p className="mt-1 text-xs text-slate-400">کاتێک ئاگادارییەکی نوێ هات، لێرەدا دەردەکەوێت</p>
+                <p className="mt-3 text-sm font-bold text-slate-400">
+                  هیچ ئاگادارییەک نییە
+                </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  کاتێک ئاگادارییەکی نوێ هات، لێرەدا دەردەکەوێت
+                </p>
               </div>
             )}
           </div>
@@ -294,7 +348,9 @@ export function BusinessCommunicationBell() {
               </button>
               <button
                 type="button"
-                onClick={() => void dismissNotification(selectedNotification.id)}
+                onClick={() =>
+                  void dismissNotification(selectedNotification.id)
+                }
                 className="flex w-full flex-1 items-center justify-center gap-2 rounded-xl bg-linear-to-br from-rose-50 to-red-50 px-4 py-2.5 text-xs font-semibold text-rose-600 shadow-sm transition-all duration-300 hover:from-rose-100 hover:to-red-100 hover:shadow sm:py-3 sm:text-sm dark:from-rose-500/15 dark:to-red-500/15 dark:text-rose-400 dark:hover:from-rose-500/25 dark:hover:to-red-500/25"
               >
                 <Trash2 className="h-4 w-4" />

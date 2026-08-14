@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import { AuthenticationPreviewPanel } from "@/components/shared/AuthenticationPreviewPanel";
 import { ThemeToggleButton } from "@/components/shared/ThemeToggleButton";
 import { parseWebsiteColor, readableInk } from "@/lib/utils/parse-website-color";
+import { MULTITREE_LOGO } from "@/lib/brand/brand-assets";
 
 interface AuthenticationShellProps {
   children: React.ReactNode;
@@ -21,7 +22,12 @@ export function AuthenticationShell({
   wide = false,
   headerAction,
   brandName = "MultiTree",
-  brandLogo,
+  // Defaults to MultiTree's own mark, matching `brandName` above: this shell
+  // renders both MultiTree's sign-in/sign-up and tenant login. Tenant pages
+  // pass the business logo explicitly and fall back to the neutral business
+  // placeholder inside the panel; MultiTree's own pages pass nothing and must
+  // not inherit that placeholder.
+  brandLogo = MULTITREE_LOGO,
   accentColor,
 }: AuthenticationShellProps) {
   const controlClass =

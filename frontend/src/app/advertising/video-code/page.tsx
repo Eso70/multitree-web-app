@@ -6,6 +6,10 @@ import {
   loadAdvertisingPublicData,
 } from "@/features/advertising/public-page-data.server";
 import { businessTabTitle } from "@/lib/utils/tab-title";
+import {
+  BUSINESS_FAVICON_PLACEHOLDER,
+  BUSINESS_LOGO_PLACEHOLDER,
+} from "@/lib/brand/brand-assets";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -20,8 +24,8 @@ export async function generateMetadata(): Promise<Metadata> {
     title: businessTabTitle(business.name, "Ads"),
     description,
     icons: {
-      icon: business.favicon || brandImage || "/images/Logo.jpg",
-      apple: brandImage || "/images/Logo.jpg",
+      icon: business.favicon || brandImage || BUSINESS_FAVICON_PLACEHOLDER,
+      apple: brandImage || BUSINESS_LOGO_PLACEHOLDER,
     },
     openGraph: {
       title: businessTabTitle(business.name, "Ads"),

@@ -36,6 +36,7 @@ logs/
 .agents/
 .continue/
 .crush/
+.kilo/
 .kilocode/
 .kiro/
 skills-lock.json

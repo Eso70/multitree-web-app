@@ -75,10 +75,3 @@ export type PlatformBusiness = PlatformBusinessSummary &
       | "default_links"
     >
   >;
-
-export interface PlatformAdmin {
-  id: string;
-  username: string;
-  name?: string;
-  created_at: string;
-}

@@ -15,7 +15,6 @@ import {
   Clock3,
   X,
 } from "lucide-react";
-import { ProfileChangeRequests } from "@/features/platform-admin/components/ProfileChangeRequests";
 import { StatCard } from "@/components/shared/StatCard";
 import { PageHeader } from "@/components/shared/PageHeader";
 import type { PlatformBusiness as Business } from "@linktree/types";
@@ -132,7 +131,6 @@ export function PlatformBusinessesPage({
         />
       </StatCardGrid>
 
-      <ProfileChangeRequests />
 
       <SegmentedTabs
         fullWidth

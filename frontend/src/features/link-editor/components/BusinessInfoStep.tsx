@@ -152,7 +152,7 @@ export const BusinessInfoStep = memo(function BusinessInfoStep({
           ownerName={ownerName}
           ownerEmail={ownerEmail}
         />
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+        <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4">
           <div className="space-y-1.5">
             <label
               htmlFor="business-name"
@@ -197,9 +197,7 @@ export const BusinessInfoStep = memo(function BusinessInfoStep({
               placeholder="ناوی بەکارهێنەر"
             />
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
           <div className="space-y-1.5">
             <label
               htmlFor="business-subdomain"
@@ -253,9 +251,7 @@ export const BusinessInfoStep = memo(function BusinessInfoStep({
               </p>
             )}
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
           <div className="space-y-1.5">
             <label
               htmlFor="business-phone"
@@ -298,30 +294,30 @@ export const BusinessInfoStep = memo(function BusinessInfoStep({
               </span>
             </button>
           </div>
-        </div>
 
-        <div className="space-y-1.5">
-          <label className="block text-xs sm:text-sm font-medium text-gray-700">
-            پلانی بەشداربوون
-          </label>
-          <CustomSelect
-            label="پلانی بەشداربوون"
-            value={subscriptionPlanId}
-            options={
-              subscriptionPlansLoading
-                ? [{ value: "", label: "بارکردنی پلانەکان..." }]
-                : subscriptionPlans.length
-                  ? subscriptionPlans.map((plan) => ({
-                      value: plan.id,
-                      label: plan.name,
-                    }))
-                  : [{ value: "", label: "هیچ پلانێکی چالاک نییە" }]
-            }
-            onChange={onSubscriptionPlanChange}
-            disabled={subscriptionPlansLoading || !subscriptionPlans.length}
-            hideLabel
-            triggerClassName="h-auto rounded-lg sm:rounded-xl border-gray-300 bg-white px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 dark:bg-[#161B22] dark:text-gray-100 dark:border-white/10 dark:hover:border-white/20"
-          />
+          <div className="space-y-1.5">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700">
+              پلانی بەشداربوون
+            </label>
+            <CustomSelect
+              label="پلانی بەشداربوون"
+              value={subscriptionPlanId}
+              options={
+                subscriptionPlansLoading
+                  ? [{ value: "", label: "بارکردنی پلانەکان..." }]
+                  : subscriptionPlans.length
+                    ? subscriptionPlans.map((plan) => ({
+                        value: plan.id,
+                        label: plan.name,
+                      }))
+                    : [{ value: "", label: "هیچ پلانێکی چالاک نییە" }]
+              }
+              onChange={onSubscriptionPlanChange}
+              disabled={subscriptionPlansLoading || !subscriptionPlans.length}
+              hideLabel
+              triggerClassName="h-auto rounded-lg sm:rounded-xl border-gray-300 bg-white px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 dark:bg-[#161B22] dark:text-gray-100 dark:border-white/10 dark:hover:border-white/20"
+            />
+          </div>
         </div>
 
         {errors.websiteColor && touched.websiteColor && (

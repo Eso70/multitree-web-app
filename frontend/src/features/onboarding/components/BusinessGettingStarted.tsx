@@ -45,6 +45,7 @@ export function BusinessGettingStarted(_props: { initialStep?: number }) {
   const [fieldErrors, setFieldErrors] = useState<{
     name?: string;
     phone?: string;
+    logo?: string;
   }>({});
 
   useEffect(() => {
@@ -78,11 +79,17 @@ export function BusinessGettingStarted(_props: { initialStep?: number }) {
     [],
   );
 
+  // The logo is the only upload setup asks for: the favicon is derived from it
+  // and the avatar comes from the platform default, so without it a business
+  // would finish setup showing placeholders for both.
+  const hasLogo = Boolean(data?.logo.startsWith("/images/upload/"));
+
   const valid = useMemo(() => {
     if (!data) return false;
     return (
       data.name.trim().length >= 2 &&
-      /^\+?[0-9][0-9\s-]{6,29}$/.test(data.phone.trim())
+      /^\+?[0-9][0-9\s-]{6,29}$/.test(data.phone.trim()) &&
+      data.logo.startsWith("/images/upload/")
     );
   }, [data]);
 
@@ -96,9 +103,12 @@ export function BusinessGettingStarted(_props: { initialStep?: number }) {
       phone: /^\+?[0-9][0-9\s-]{6,29}$/.test(data.phone.trim())
         ? undefined
         : "Enter a valid phone number.",
+      logo: data.logo.startsWith("/images/upload/")
+        ? undefined
+        : "لۆگۆی بزنس پێویستە",
     };
     setFieldErrors(next);
-    return !next.name && !next.phone;
+    return !next.name && !next.phone && !next.logo;
   }
 
   async function upload(
@@ -154,7 +164,16 @@ export function BusinessGettingStarted(_props: { initialStep?: number }) {
       URL.revokeObjectURL(preview);
       logoPreviewRef.current = null;
       setLogoPreview(null);
+      return;
     }
+    if (!uploadedUrl) return;
+    // The favicon follows the logo on every logo upload, so setup only asks for
+    // one upload. Unlocking the favicon tile and uploading a different one
+    // still overrides this, until the next logo upload. The default avatar is
+    // deliberately left alone — it stands in for a person, not for the brand.
+    setData((current) =>
+      current ? { ...current, favicon: uploadedUrl } : current,
+    );
   }
 
   async function saveAndComplete() {
@@ -266,6 +285,7 @@ export function BusinessGettingStarted(_props: { initialStep?: number }) {
           ) : null}
 
           <BrandAssetStack
+            lockedAssets
             logo={logoPreview || data.logo}
             favicon={data.favicon}
             defaultAvatar={data.defaultAvatar}
@@ -284,6 +304,20 @@ export function BusinessGettingStarted(_props: { initialStep?: number }) {
             }}
             onChooseColor={() => setShowColorPicker(true)}
           />
+
+          <p
+            className={`-mt-3 text-center text-xs font-medium ${
+              fieldErrors.logo
+                ? "text-red-500"
+                : "text-slate-500 dark:text-slate-400"
+            }`}
+            dir="rtl"
+          >
+            {fieldErrors.logo ||
+              (hasLogo
+                ? "فایڤ لە لۆگۆوە دانراوە. بۆ گۆڕینی فایڤ یان ئەڤاتار، کلیکی قوفڵەکە بکە"
+                : "لۆگۆ هەڵبژێرە — فایڤ خۆکارانە لە لۆگۆوە دادەنرێت")}
+          </p>
 
           <div className="space-y-3">
             <BusinessOwnerIdentityFields

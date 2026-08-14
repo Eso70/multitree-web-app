@@ -15,6 +15,7 @@ import {
   type MiniWebsiteDraft,
 } from "./types";
 import { MiniWebsiteFieldLabel } from "./MiniWebsiteFieldLabel";
+import { MiniWebsiteBackgroundStyleField } from "./MiniWebsiteBackgroundStyleField";
 import { ColorGradientField } from "@/features/link-editor/ColorGradientField";
 import { modalInputClass } from "@/features/link-editor/modal-input-styles";
 import { InlineRequestError } from "@/components/shared/InlineRequestError";
@@ -130,8 +131,8 @@ export function MiniWebsiteHeroMediaFields({
         <div
           className={
             draft.content.heroBackgroundType === "color"
-              ? "grid grid-cols-2 gap-3"
-              : ""
+              ? "grid grid-cols-1 gap-3 sm:grid-cols-3"
+              : "grid grid-cols-1 gap-3 sm:grid-cols-2"
           }
         >
           {draft.content.heroBackgroundType === "color" && (
@@ -162,6 +163,14 @@ export function MiniWebsiteHeroMediaFields({
               title="ڕەنگی سەرەکی مینی وێبسایت"
               subtitle="ڕەنگی تاک یان گرادیێنت بۆ مینی وێبسایت هەڵبژێرە"
               error={accentError}
+            />
+          </Field>
+          <Field label="شێوازی پاشبنەما">
+            <MiniWebsiteBackgroundStyleField
+              onChange={(backgroundStyle) =>
+                onChange({ ...draft, backgroundStyle })
+              }
+              value={draft.backgroundStyle}
             />
           </Field>
         </div>

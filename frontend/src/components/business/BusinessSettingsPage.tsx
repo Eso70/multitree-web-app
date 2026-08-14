@@ -41,6 +41,18 @@ import {
 } from "@/lib/api/inline-request-error";
 import { enqueueImageUpload } from "@/lib/api/enqueue-image-upload";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
+import { BusinessOwnerIdentityFields } from "@/features/link-editor/components/BusinessOwnerIdentityFields";
+import {
+  AVATAR_ACCEPT,
+  AVATAR_MIME_TYPES,
+  BUSINESS_FAVICON_PLACEHOLDER,
+  BUSINESS_LOGO_PLACEHOLDER,
+  DEFAULT_AVATAR,
+  FAVICON_ACCEPT,
+  FAVICON_MIME_TYPES,
+  LOGO_ACCEPT,
+  LOGO_MIME_TYPES,
+} from "@/lib/brand/brand-assets";
 
 type Tab = "profile" | "defaults" | "security" | "messages";
 type SettingsData = {
@@ -59,8 +71,14 @@ type SettingsData = {
   default_background_color: string;
   default_footer_hidden: boolean;
   default_whatsapp_enabled: boolean;
-  pending_profile_changes?: Partial<SettingsData> | null;
-  profile_request_status?: string | null;
+  /**
+   * When the profile unlocks again, or null when it is editable. Profile
+   * changes apply immediately and then lock for a cooldown period instead of
+   * waiting on platform-administrator approval.
+   */
+  profile_locked_until?: string | null;
+  /** Verified owner account, shown read-only. */
+  ownerName?: string | null;
 };
 
 const emptySettings: SettingsData = {
@@ -190,7 +208,7 @@ export function BusinessSettingsPage() {
     try {
       // Only send the fields the backend DTO whitelists for the active
       // section. The global pipe rejects unknown properties, so spreading the
-      // whole settings object (email, subdomain, pending_profile_changes, …)
+      // whole settings object (email, subdomain, …)
       // would 400 every tab.
       let body: Record<string, unknown>;
       if (activeTab === "defaults") {
@@ -209,16 +227,24 @@ export function BusinessSettingsPage() {
       ) {
         body = { section: activeTab, username: data.username };
       } else {
-        body = {
-          section: activeTab,
-          name: data.name,
-          username: data.username,
-          phone: data.phone,
-          logo: data.logo,
-          favicon: data.favicon,
-          default_avatar: data.default_avatar,
-          website_color: data.website_color,
-        };
+        // Send only what actually changed. The backend authorizes the fields
+        // present in the payload, and the non-image profile fields are still
+        // approval-gated — submitting an untouched `name` alongside a new logo
+        // would push the whole save back into the approval queue.
+        const profileFields = [
+          "name",
+          "username",
+          "phone",
+          "logo",
+          "favicon",
+          "default_avatar",
+          "website_color",
+        ] as const;
+        const changed = profileFields.filter(
+          (field) => data[field] !== savedSnapshot[field],
+        );
+        body = { section: activeTab };
+        for (const field of changed) body[field] = data[field];
       }
       const response = await fetch("/api/auth/settings", {
         method: "PATCH",
@@ -310,9 +336,8 @@ export function BusinessSettingsPage() {
   const tabLocked = isBusinessSettingsTabLocked(activeTab, effectiveAccess);
   // Header save button matches the advertising page tabs: it stays idle
   // ("پاشەکەوت کرا") until something changed, then flips to a live save.
-  // Only user-editable fields count — server-managed response fields
-  // (pending_profile_changes, profile_request_status) would otherwise keep the
-  // form permanently dirty after every approval round-trip.
+  // Only user-editable fields count — server-managed response fields would
+  // otherwise keep the form permanently dirty after every save.
   const dirty = useMemo(() => {
     return (
       data.name !== savedSnapshot.name ||
@@ -345,16 +370,17 @@ export function BusinessSettingsPage() {
     effectiveAccess?.permissions["business:profile-assets:upload"]?.outcome;
   const brandingEditingAllowed =
     brandingEditingOutcome === "allow" || brandingEditingOutcome === "approval";
+  const cooldown = profileCooldown(data.profile_locked_until);
   const uploadBrandAsset = async (
     file: File,
     assetType: "logo" | "favicon" | "default-avatar",
   ) => {
     const allowedMimeTypes =
       assetType === "favicon"
-        ? ["image/x-icon", "image/vnd.microsoft.icon"]
+        ? FAVICON_MIME_TYPES
         : assetType === "default-avatar"
-          ? ["image/png"]
-          : ["image/jpeg"];
+          ? AVATAR_MIME_TYPES
+          : LOGO_MIME_TYPES;
     const validationError = validateUploadFile(file, {
       allowedMimeTypes,
       maxBytes: 10 * 1024 * 1024,
@@ -385,7 +411,15 @@ export function BusinessSettingsPage() {
         }
         const key =
           assetType === "default-avatar" ? "default_avatar" : assetType;
-        setData((current) => ({ ...current, [key]: result.url }));
+        setData((current) =>
+          assetType === "logo"
+            ? // The favicon follows the logo on every logo upload. A separate
+              // favicon upload afterwards still overrides it, until the next
+              // logo upload. The default avatar is deliberately left alone — it
+              // stands in for a person, not for the brand.
+              { ...current, logo: result.url, favicon: result.url }
+            : { ...current, [key]: result.url },
+        );
         return result.url;
       } catch {
         setBrandAssetError(createUploadFailureError());
@@ -426,10 +460,8 @@ export function BusinessSettingsPage() {
         <StatCard
           icon={ShieldCheck}
           label="دۆخی هەژمار"
-          value={
-            data.profile_request_status === "pending" ? "چاوەڕوان" : "چالاک"
-          }
-          color={data.profile_request_status === "pending" ? "orange" : "green"}
+          value={cooldown ? "قوفڵکراو" : "چالاک"}
+          color={cooldown ? "orange" : "green"}
         />
       </StatCardGrid>
       <div>
@@ -458,17 +490,21 @@ export function BusinessSettingsPage() {
                   />
                 }
               >
-                {data.profile_request_status === "pending" && (
-                  <div className="col-span-full flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs font-semibold text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+                {cooldown && (
+                  <div className="col-span-full flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-xs font-semibold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
                     <Clock3 className="h-4 w-4" />
-                    داواکارییەکەت چاوەڕێی پەسەندکردنی بەڕێوەبەری پلاتفۆرمە
+                    <span>
+                      وێنەکانی براند گۆڕدران. دەتوانیت دووبارە بیانگۆڕیت لە{" "}
+                      {cooldown.until.toLocaleDateString()} (
+                      {cooldown.daysLeft} ڕۆژی ماوە)
+                    </span>
                   </div>
                 )}
                 <div className="col-span-full">
                   <BrandImageStack
                     data={data}
                     onUpload={uploadBrandAsset}
-                    enabled={brandingEditingAllowed}
+                    enabled={brandingEditingAllowed && !cooldown}
                   />
                   {brandAssetError && (
                     <InlineRequestError
@@ -480,7 +516,7 @@ export function BusinessSettingsPage() {
                     <button
                       type="button"
                       onClick={() => setShowColorPicker(true)}
-                      disabled={!profileEditingAllowed}
+                      disabled={!profileEditingAllowed || Boolean(cooldown)}
                       className="group inline-flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white/90 px-3 py-1.5 text-xs font-semibold text-gray-600 shadow-sm backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:bg-white hover:text-gray-800 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-gray-100"
                     >
                       <span
@@ -495,13 +531,19 @@ export function BusinessSettingsPage() {
                     </button>
                   </div>
                 </div>
+                <div className="col-span-full">
+                  <BusinessOwnerIdentityFields
+                    ownerName={data.ownerName}
+                    ownerEmail={data.email}
+                  />
+                </div>
                 <Field label="ناوی بزنس">
                   <input
                     className={inputClass}
                     value={data.name}
                     onChange={(e) => setData({ ...data, name: e.target.value })}
                     placeholder="ناوی بزنس"
-                    disabled={!profileEditingAllowed}
+                    disabled={!profileEditingAllowed || Boolean(cooldown)}
                   />
                 </Field>
                 <Field label="ژمارەی مۆبایل">
@@ -512,7 +554,7 @@ export function BusinessSettingsPage() {
                       setData({ ...data, phone: e.target.value })
                     }
                     placeholder="+964 7XX XXX XXXX"
-                    disabled={!profileEditingAllowed}
+                    disabled={!profileEditingAllowed || Boolean(cooldown)}
                   />
                 </Field>
                 <Field label="ناوی بەکارهێنەر">
@@ -792,13 +834,29 @@ function normalizeSettings(
   value: Partial<SettingsData> | null | undefined,
 ): SettingsData {
   const raw = value || {};
-  const pending = raw.pending_profile_changes || {};
   return {
     ...emptySettings,
     ...raw,
-    ...pending,
-    pending_profile_changes: raw.pending_profile_changes,
-    profile_request_status: raw.profile_request_status,
+    profile_locked_until: raw.profile_locked_until ?? null,
+    ownerName: raw.ownerName ?? null,
+  };
+}
+
+/**
+ * Remaining profile cooldown, or null when the profile can be changed.
+ * A past or unparseable timestamp reads as unlocked — the backend enforces the
+ * window regardless, so the UI failing open only costs a rejected save.
+ */
+function profileCooldown(
+  lockedUntil: string | null | undefined,
+): { until: Date; daysLeft: number } | null {
+  if (!lockedUntil) return null;
+  const until = new Date(lockedUntil);
+  if (Number.isNaN(until.getTime()) || until.getTime() <= Date.now())
+    return null;
+  return {
+    until,
+    daysLeft: Math.ceil((until.getTime() - Date.now()) / 86_400_000),
   };
 }
 
@@ -820,7 +878,7 @@ function BrandImageStack({
       <div className="relative h-44 w-72 sm:h-48 sm:w-80">
         <label className="group absolute left-5 top-7 z-30 h-24 w-24 rotate-[-8deg] cursor-pointer overflow-hidden rounded-full border-4 border-white bg-white shadow-xl ring-1 ring-gray-200 transition hover:rotate-0 hover:scale-105 dark:border-[#161B22] dark:bg-[#161B22] dark:ring-white/10">
           <Image
-            src={data.default_avatar || "/images/DefaultAvatar.png"}
+            src={data.default_avatar || DEFAULT_AVATAR}
             alt="Default avatar"
             width={112}
             height={112}
@@ -829,7 +887,7 @@ function BrandImageStack({
           <UploadOverlay label="ئەڤاتار" />
           <input
             type="file"
-            accept=".png,image/png"
+            accept={AVATAR_ACCEPT}
             className="hidden"
             onChange={(e) =>
               e.target.files?.[0] &&
@@ -839,7 +897,7 @@ function BrandImageStack({
         </label>
         <label className="group absolute right-6 top-4 z-30 h-20 w-20 rotate-[10deg] cursor-pointer overflow-hidden rounded-2xl border-4 border-white bg-white p-2 shadow-lg ring-1 ring-gray-200 transition hover:rotate-0 hover:scale-105 dark:border-[#161B22] dark:bg-[#161B22] dark:ring-white/10">
           <Image
-            src={data.favicon || "/images/Logo.jpg"}
+            src={data.favicon || BUSINESS_FAVICON_PLACEHOLDER}
             alt="Favicon"
             width={96}
             height={96}
@@ -848,7 +906,7 @@ function BrandImageStack({
           <UploadOverlay label="فایڤ" />
           <input
             type="file"
-            accept=".ico,image/x-icon"
+            accept={FAVICON_ACCEPT}
             className="hidden"
             onChange={(e) =>
               e.target.files?.[0] && onUpload(e.target.files[0], "favicon")
@@ -857,7 +915,7 @@ function BrandImageStack({
         </label>
         <label className="group absolute left-1/2 top-12 z-20 h-32 w-32 -translate-x-1/2 cursor-pointer overflow-hidden rounded-3xl border-4 border-white bg-white p-3 shadow-2xl ring-1 ring-gray-200 transition hover:scale-105 dark:border-[#161B22] dark:bg-[#161B22] dark:ring-white/10">
           <Image
-            src={data.logo || "/images/Logo.jpg"}
+            src={data.logo || BUSINESS_LOGO_PLACEHOLDER}
             alt="Logo"
             width={144}
             height={144}
@@ -866,7 +924,7 @@ function BrandImageStack({
           <UploadOverlay label="لۆگۆ" />
           <input
             type="file"
-            accept=".jpg,.jpeg,image/jpeg"
+            accept={LOGO_ACCEPT}
             className="hidden"
             onChange={(e) =>
               e.target.files?.[0] && onUpload(e.target.files[0], "logo")

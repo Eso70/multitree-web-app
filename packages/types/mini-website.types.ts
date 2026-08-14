@@ -1176,13 +1176,15 @@ export function miniWebsitePlanFeatureRows(
   return rows;
 }
 
-export const MINI_WEBSITE_LOCATION_PRECISIONS: readonly MiniWebsiteLocationPrecision[] =
-  ["exact", "approximate"] as const;
-
 /**
- * Sections that are actually offered and persisted right now. The backend
- * filters incoming sections against this, so a key the product does not support
- * yet can never be stored.
+ * Sections that are actually offered and persisted right now — the canonical
+ * list for the contract.
+ *
+ * The backend filters incoming sections against its own `OFFERED_SECTION_KEYS`
+ * mirror rather than importing this value, because this package is source-only
+ * and Node cannot resolve its extensionless re-exports at runtime. The two are
+ * kept in step by `backend/src/mini-websites/mini-website-shared-constants.spec.ts`;
+ * add a key here and to that mirror together.
  */
 export const MINI_WEBSITE_SECTION_KEYS: readonly MiniWebsiteSectionKey[] = [
   "socials",

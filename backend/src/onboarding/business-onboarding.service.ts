@@ -31,6 +31,11 @@ import {
   DEFAULT_LINKTREE_BACKGROUND_COLOR,
   DEFAULT_LINKTREE_TEMPLATE_KEY,
 } from '../common/linktree-defaults';
+import {
+  BUSINESS_FAVICON_PLACEHOLDER,
+  BUSINESS_LOGO_PLACEHOLDER,
+  DEFAULT_AVATAR,
+} from '../common/brand-assets';
 import type {
   ReviewSignupApplicationDto,
   UpdateSignupApplicationDto,
@@ -469,8 +474,9 @@ export class BusinessOnboardingService {
       id: string;
       username: string;
       name: string;
+      email: string;
     }>(
-      `SELECT id, username, name
+      `SELECT id, username, name, email
        FROM platform_admins WHERE lower(email) = $1
        ORDER BY created_at ASC LIMIT 1`,
       [challenge.email],
@@ -481,6 +487,7 @@ export class BusinessOnboardingService {
       platformAdminId: admin.id,
       username: admin.username,
       name: admin.name,
+      email: admin.email,
       ipAddress: input.ipAddress,
       userAgent: input.userAgent,
       rememberDevice: Boolean(input.rememberDevice),
@@ -815,6 +822,7 @@ export class BusinessOnboardingService {
       platformAdminId: admin.id,
       username: admin.username,
       name: admin.name,
+      email: admin.email || allowedEmail,
       ipAddress: requestContext.ipAddress,
       userAgent: requestContext.userAgent,
       rememberDevice,
@@ -1351,10 +1359,6 @@ export class BusinessOnboardingService {
       return { id: applicationId, status };
     }
     if (!dto.subscriptionPlanId) throw new BadRequestException('Select a plan');
-    if (!dto.phoneVerified)
-      throw new BadRequestException(
-        'Administrator phone verification is required',
-      );
     const business = await this.provisionApplication(
       applicationId,
       adminId,
@@ -1468,9 +1472,9 @@ export class BusinessOnboardingService {
          VALUES ($1, $2, $3, $4, $5)`,
         [
           business.id,
-          application.logo || '/images/Logo.jpg',
-          application.favicon || '/favicon.ico',
-          application.default_avatar || '/images/DefaultAvatar.png',
+          application.logo || BUSINESS_LOGO_PLACEHOLDER,
+          application.favicon || BUSINESS_FAVICON_PLACEHOLDER,
+          application.default_avatar || DEFAULT_AVATAR,
           application.website_color || DEFAULT_MULTITREE_WEBSITE_COLOR,
         ],
       );
@@ -1495,8 +1499,7 @@ export class BusinessOnboardingService {
       await client.query(
         `UPDATE business_signup_applications SET status = 'approved',
            business_id = $1, reviewed_at = NOW(), reviewed_by = $2,
-           selected_subscription_plan_id = $3, phone_verified_at = NOW(),
-           phone_verification_method = 'admin_review', review_reason = NULL
+           selected_subscription_plan_id = $3, review_reason = NULL
          WHERE id = $4`,
         [business.id, adminId, planId, application.id],
       );

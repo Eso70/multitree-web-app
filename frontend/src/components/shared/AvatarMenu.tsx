@@ -41,10 +41,10 @@ export function AvatarMenu({
   const [open, setOpen] = useState(false);
   const container = useRef<HTMLDivElement>(null);
 
-  const displayEmail =
-    email && email.trim()
-      ? email
-      : `${(name || "business").trim().replace(/\s+/g, "-").toLowerCase() || "business"}@example.com`;
+  // Show the real sign-in address or nothing. This used to synthesize
+  // `<name>@example.com`, which renders as a plausible address the account does
+  // not own — worse than an empty line, because it looks like real data.
+  const displayEmail = email?.trim() || "";
 
   useEffect(() => {
     if (!open) return;
@@ -116,9 +116,11 @@ export function AvatarMenu({
                   {name}
                 </p>
               )}
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">
-                {displayEmail}
-              </p>
+              {displayEmail && (
+                <p className="mt-0.5 truncate text-[11px] text-slate-400">
+                  {displayEmail}
+                </p>
+              )}
             </div>
             {badge && (
               <span className="flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-bold"

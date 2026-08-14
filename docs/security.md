@@ -127,7 +127,10 @@ fixed chain, in this order, and stops at the first failure:
 8. any quota (`quotaKey`) has remaining usage;
 9. if the rule says the action requires approval rather than a flat allow, a
    `permission_approval_requests` row is created instead of applying the
-   change immediately.
+   change immediately. Business settings are the exception: `updateSettings`
+   deliberately ignores an `approval` outcome and applies the change, because
+   profile edits are governed by the 30-day cooldown below rather than by
+   review.
 
 This is the literal implementation of "capability rules + subscription
 entitlements + field rules + approval requirements + quotas" — all five exist
@@ -145,13 +148,39 @@ public pages and one active TikTok Pixel group for Basic, twenty public pages
 and two Pixel groups for Pro, and unlimited public pages plus three Pixel
 groups for Ultra.
 
-Only the Ultra plan grants `business:profile:update`. Every profile mutation
-uses approval mode, remains pending until a platform administrator approves or
-rejects it, and consumes one of the Ultra plan's three monthly profile changes
-only when the approval is accepted. Basic and Pro cannot submit profile
-changes. Profile-change quota is intentionally omitted from the business
-dashboard plan-usage card; that card shows the actionable public-page and
-active TikTok Pixel-group limits.
+Only the Ultra plan grants `business:profile:update`. Basic and Pro cannot
+submit profile changes.
+
+Every field the profile section owns — `name`, `username`, `phone`, `logo`,
+`favicon`, `default_avatar`, `website_color` — applies immediately and then
+locks the whole section for 30 days (`PROFILE_CHANGE_COOLDOWN_DAYS`). Changing
+any one field locks all of them: there is a single `businesses.profile_changed_at`
+timestamp, so editing only the website color locks the logo and the name too.
+
+Profile approval is removed outright, not merely switched off by plan
+configuration. `AuthController.updateSettings` no longer creates approval
+requests for any settings section — an `approval` outcome from a plan
+configuration that predates the cooldown is treated as allowed rather than
+trusted to be absent — and the platform-console review panel, its two routes,
+its service methods, and its DTO are deleted. The cooldown is therefore the only
+limit on how often a business can rebrand, so it is enforced server-side in
+`updateBusinessSettings`, inside the same `profile-change:<businessId>` advisory
+lock that guards the monthly quota, and it triggers on a real value difference
+rather than on which keys the client submitted. A client that omits the fields,
+or resubmits them unchanged, neither starts nor trips the window. The frontend
+disables the inputs and shows the unlock date, but that is a convenience:
+failing open there only costs a rejected save.
+
+`2026-08-13_profile_change_cooldown.sql` cancels the requests still queued when
+it runs — `rejected` in `business_profile_change_requests`, `canceled` in
+`permission_approval_requests` — because nothing can review them any more.
+The `platform:businesses:profile-requests:*` capabilities keep their catalog and
+plan rows so existing grants stay valid, but no route uses them.
+
+The verified owner account name and email are shown read-only in the profile
+tab through the shared `BusinessOwnerIdentityFields`. They come from the active
+owner membership rather than the business record, so the settings page,
+first-login setup, and platform business editing all name the same account.
 
 Settings authorization and approval payloads include only values actually
 provided by the client. Optional DTO properties whose value is `undefined`

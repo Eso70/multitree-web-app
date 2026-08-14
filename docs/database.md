@@ -71,6 +71,54 @@ keeps its `id` and every `billing_plan_permissions`,
 `permission_approval_requests`, and `platform_permission_denies` row that
 references it survives.
 
+`business_branding.logo` and `business_branding.favicon` default to
+`/images/business-logo-placeholder.png` and
+`/images/business-favicon-placeholder.png`. Both previously defaulted to
+MultiTree's own mark (`/images/Logo.jpg` and `/favicon.ico`), so a business that
+skipped the optional logo or favicon upload rendered the platform's branding on
+its public pages and browser tab.
+`2026-08-13_neutral_business_brand_placeholders.sql` changes the two defaults and
+rewrites only the rows that still hold the old platform literals, so an uploaded
+asset is never touched. Scope is deliberately limited to `business_branding`:
+`platform_admins.logo` and `.favicon` keep the MultiTree mark because that row is
+the console's own branding, `mini_websites` has no logo or favicon column, and
+`business_signup_applications` is nullable with the placeholder supplied in code
+by the onboarding approval path. `backend/src/common/brand-assets.ts` and
+`frontend/src/lib/brand/brand-assets.ts` hold these paths; the literals are not
+repeated per call site.
+
+`businesses.profile_changed_at` records when any business profile field last
+actually changed value, and drives a 30-day cooldown that replaced
+platform-administrator approval of profile changes. `NULL` means the profile has
+never been changed, so a business is not locked out on the day
+`2026-08-13_profile_change_cooldown.sql` ships. It lives on `businesses` rather
+than `business_branding` because the window covers `name`, `username` and
+`phone` as well as the branding columns. That migration also moves the Ultra
+plan's `business:profile:update` grant from `access_mode = 'approval'` to
+`'direct'` and clears `field_modes`, because nothing in the profile section is
+reviewed any more. The order matters: `AuthorizationService.evaluate` treats
+`access_mode = 'approval'` as approval-required for the whole permission
+regardless of `field_modes`, so leaving the row at `'approval'` would have
+changed nothing. Ultra is the only plan configuration that carries this
+permission. Profile approval is removed in code as well as configuration, so the
+same migration cancels whatever was still queued when it runs: `rejected` in
+`business_profile_change_requests`, `canceled` in `permission_approval_requests`.
+Nothing can review those rows any more, so leaving them pending would strand
+them as permanently "waiting".
+
+The cooldown is enforced in `updateBusinessSettings` under the same
+`profile-change:<businessId>` advisory lock as the monthly profile-change quota,
+and it compares resolved next values against stored ones rather than trusting
+which keys the client sent — the settings page submits the whole profile section
+on every save, so presence of `logo` does not mean the logo changed.
+`changedProfileFields` in `backend/src/common/profile-cooldown.ts` owns that
+comparison and treats `null`, `''` and whitespace as the same absent value.
+
+`business_branding.default_avatar` keeps `/images/DefaultAvatar.png` and is not
+touched by that migration. The value is a sentinel that mini-website and
+linktree SQL compares against to mean "still the default", so the avatar was
+changed by replacing the artwork at that path rather than by moving the path.
+
 Neither dropped column is listed in `OBSOLETE_COLUMNS`
 (`migration-compatibility.ts`). That check runs against a fresh database after
 `full_schema.sql` is applied but before the forward migrations, and the frozen

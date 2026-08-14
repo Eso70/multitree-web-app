@@ -4,7 +4,6 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { BatchSyncLinksDto, SyncLinksDto } from './links/dto/sync-links.dto';
 import { AccessRuleStatusDto } from './platform-admin/dto/access-rule-status.dto';
-import { ProfileChangeReviewDto } from './platform-admin/dto/profile-change-review.dto';
 
 describe('request boundary DTOs', () => {
   const strictPipe = new ValidationPipe({
@@ -44,13 +43,10 @@ describe('request boundary DTOs', () => {
     await expect(validate(valid)).resolves.toHaveLength(0);
   });
 
-  it('restricts status and review actions to their enums', async () => {
+  it('restricts status to its enum', async () => {
     await expect(
       validate(plainToInstance(AccessRuleStatusDto, { status: 'paused' })),
     ).resolves.not.toHaveLength(0);
-    await expect(
-      validate(plainToInstance(ProfileChangeReviewDto, { action: 'approve' })),
-    ).resolves.toHaveLength(0);
   });
 
   it('rejects unknown DTO fields', async () => {

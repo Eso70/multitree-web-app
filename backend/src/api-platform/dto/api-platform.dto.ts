@@ -11,7 +11,6 @@ import {
   IsString,
   IsUrl,
   IsUUID,
-  Length,
   Max,
   MaxLength,
   Min,
@@ -107,10 +106,6 @@ export class ScheduleLinktreeDto {
   @IsISO8601() executeAt: string;
 }
 
-export class ExternalIdDto {
-  @IsString() @Length(1, 180) externalId: string;
-}
-
 export class BulkLinktreeDto {
   @IsArray() @ArrayMaxSize(100) @IsObject({ each: true }) operations: Array<{
     action: 'create' | 'update';
@@ -118,8 +113,4 @@ export class BulkLinktreeDto {
     data: Record<string, unknown>;
     externalId?: string;
   }>;
-}
-
-export class IdempotencyReplayDto {
-  @IsString() @Length(8, 160) key: string;
 }

@@ -58,7 +58,6 @@ import {
 } from "@/features/link-editor/modal-input-styles";
 import { createRuntimeId } from "@/lib/utils/random-id";
 import { MiniWebsiteHeroMediaFields } from "./MiniWebsiteContentStep";
-import { MiniWebsiteBackgroundStyleField } from "./MiniWebsiteBackgroundStyleField";
 import {
   MINI_WEBSITE_SECTIONS,
   type MiniWebsiteDraft,
@@ -505,15 +504,6 @@ export function MiniWebsiteEditorModal({
                     avatarError={displayErrors.avatar}
                     bannerError={displayErrors.heroBanner}
                     accentError={displayErrors.accentColor}
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <MiniWebsiteBackgroundStyleField
-                    accent={draft.accentColor}
-                    onChange={(backgroundStyle) =>
-                      setField("backgroundStyle", backgroundStyle)
-                    }
-                    value={draft.backgroundStyle}
                   />
                 </div>
                 <Field

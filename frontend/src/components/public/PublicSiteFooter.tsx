@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { getAppBaseUrl } from "@/lib/utils/app-url";
+import { BUSINESS_LOGO_PLACEHOLDER } from "@/lib/brand/brand-assets";
 
 export type PublicFooterLink = {
   label: string;
@@ -90,7 +91,7 @@ function BrandBlock({
         }}
       >
         <Image
-          src={logo || "/images/DefaultAvatar.png"}
+          src={logo || BUSINESS_LOGO_PLACEHOLDER}
           alt={`${brandName} logo`}
           width={42}
           height={42}

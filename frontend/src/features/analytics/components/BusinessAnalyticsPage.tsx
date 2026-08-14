@@ -51,11 +51,15 @@ import {
 import { StatCard } from "@/components/shared/StatCard";
 import { SkeletonDashboardPage } from "@/components/shared/Skeleton";
 import { AccentActionButton } from "@/components/shared/AccentActionButton";
-import { FunnelChart, RetentionGrid } from "@/features/analytics/components/AnalyticsWidgets";
+import {
+  FunnelChart,
+  RetentionGrid,
+} from "@/features/analytics/components/AnalyticsWidgets";
 import { AnalyticsOverviewStory } from "@/features/analytics/components/AnalyticsOverviewStory";
 import { useRegisterBusinessDashboardRefresh } from "@/features/business/dashboard-refresh";
 import { getCountryInfo } from "@/features/analytics/countryInfo";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
+import { useTheme } from "@/lib/contexts/ThemeProvider";
 
 type AnalyticsSurface = "analytics" | "crm" | "tracking";
 type Period = "today" | "7d" | "30d" | "90d" | "lifetime";
@@ -285,8 +289,7 @@ const surfaceMeta = {
   },
   tracking: {
     title: "ڕێکخستنەکانی تیکتۆک",
-    description:
-      "دۆخی پیکسڵی تیکتۆک و ڕووداوەکانی پەڕەکان.",
+    description: "دۆخی پیکسڵی تیکتۆک و ڕووداوەکانی پەڕەکان.",
     icon: Target,
   },
 } satisfies Record<
@@ -393,12 +396,7 @@ function actionTypeLabel(value: string): string {
 }
 
 type AnalyticsTab =
-  | "overview"
-  | "visitors"
-  | "clicks"
-  | "funnel"
-  | "retention"
-  | "realtime";
+  "overview" | "visitors" | "clicks" | "funnel" | "retention" | "realtime";
 
 const analyticsTabs: SegmentedTab<AnalyticsTab>[] = [
   { id: "overview", label: "وێنەی گشتی", icon: BarChart3 },
@@ -412,7 +410,8 @@ const analyticsTabs: SegmentedTab<AnalyticsTab>[] = [
 const analyticsTabMeta = {
   overview: {
     title: "وێنەی گشتی کارایی پەڕەکانت",
-    description: "بە زمانی سادە بزانە چەند کەس هاتووە، چیان کردووە و چی باش کار دەکات.",
+    description:
+      "بە زمانی سادە بزانە چەند کەس هاتووە، چیان کردووە و چی باش کار دەکات.",
     icon: BarChart3,
   },
   visitors: {
@@ -427,7 +426,8 @@ const analyticsTabMeta = {
   },
   funnel: {
     title: "ڕێڕەوی سەردانکەر بۆ ئەنجام",
-    description: "بزانە چەند کەس لە بینینی پەڕەکەوە بۆ کلیک و ئەنجامی گرنگ بەردەوام دەبێت.",
+    description:
+      "بزانە چەند کەس لە بینینی پەڕەکەوە بۆ کلیک و ئەنجامی گرنگ بەردەوام دەبێت.",
     icon: GitBranch,
   },
   retention: {
@@ -438,7 +438,8 @@ const analyticsTabMeta = {
   },
   realtime: {
     title: "ئێستا چی ڕوودەدات؟",
-    description: "سەردانکەرە چالاکەکان و ئەو پەڕانەی ئێستا دەبینرێن بە ڕاستەوخۆ ببینە.",
+    description:
+      "سەردانکەرە چالاکەکان و ئەو پەڕانەی ئێستا دەبینرێن بە ڕاستەوخۆ ببینە.",
     icon: Radio,
   },
 } satisfies Record<
@@ -592,6 +593,7 @@ export function BusinessAnalyticsPage({
 }: {
   surface?: AnalyticsSurface;
 }) {
+  const { color: businessTheme } = useTheme();
   const searchParams = useSearchParams();
   const requestedPageId = searchParams.get("pageId");
   const requestedPageApplied = useRef(false);
@@ -799,17 +801,16 @@ export function BusinessAnalyticsPage({
         nextRealtime,
         nextVisitors,
         nextActions,
-      ] =
-        await Promise.all([
-          requestData<Breakdowns>(`/api/analytics/v2/breakdowns${common}`),
-          requestData<FunnelData>(`/api/analytics/v2/funnel${common}`),
-          requestData<RetentionRow[]>("/api/analytics/v2/retention?weeks=8"),
-          requestData<RealtimeData>(
-            `/api/analytics/v2/realtime${selectedAsset ? `?pageId=${selectedAsset.id}` : ""}`,
-          ),
-          requestData<VisitorRow[]>(`/api/analytics/v2/visitors${common}`),
-          requestData<ActionRow[]>(`/api/analytics/v2/actions${common}`),
-        ]);
+      ] = await Promise.all([
+        requestData<Breakdowns>(`/api/analytics/v2/breakdowns${common}`),
+        requestData<FunnelData>(`/api/analytics/v2/funnel${common}`),
+        requestData<RetentionRow[]>("/api/analytics/v2/retention?weeks=8"),
+        requestData<RealtimeData>(
+          `/api/analytics/v2/realtime${selectedAsset ? `?pageId=${selectedAsset.id}` : ""}`,
+        ),
+        requestData<VisitorRow[]>(`/api/analytics/v2/visitors${common}`),
+        requestData<ActionRow[]>(`/api/analytics/v2/actions${common}`),
+      ]);
       if (requestId !== dataRequestId.current) return;
       setDetailsLocked(false);
       setBreakdowns(nextBreakdowns);
@@ -1072,7 +1073,8 @@ export function BusinessAnalyticsPage({
         header: "چالاکی",
         cell: (item) => (
           <span className="inline-flex rounded-lg bg-violet-50 px-2.5 py-1.5 font-semibold text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">
-            {eventLabel(item.lastEvent)} · {formatNumber(item.eventCount)} ڕووداو
+            {eventLabel(item.lastEvent)} · {formatNumber(item.eventCount)}{" "}
+            ڕووداو
           </span>
         ),
       },
@@ -1227,8 +1229,9 @@ export function BusinessAnalyticsPage({
             ? getCountryInfo(item.countryCode)
             : null;
           const location =
-            [item.city, item.region, country?.name].filter(Boolean).join("، ") ||
-            "شوێن نەزانراوە";
+            [item.city, item.region, country?.name]
+              .filter(Boolean)
+              .join("، ") || "شوێن نەزانراوە";
           return (
             <div>
               <span className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-2.5 py-1.5 font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
@@ -1254,8 +1257,9 @@ export function BusinessAnalyticsPage({
                 "نەزانراو"}
             </span>
             <p className="mt-1 text-[10px] text-slate-400">
-              {[item.browser, item.operatingSystem].filter(Boolean).join(" · ") ||
-                "وردەکاری نییە"}
+              {[item.browser, item.operatingSystem]
+                .filter(Boolean)
+                .join(" · ") || "وردەکاری نییە"}
             </p>
           </div>
         ),
@@ -1493,9 +1497,9 @@ export function BusinessAnalyticsPage({
                 className="group flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:bg-white/5"
                 title="نوێکردنەوە"
               >
-                <MotionSpinner active={refreshing}><RefreshCw
-                  className="h-4 w-4"
-                 /></MotionSpinner>
+                <MotionSpinner active={refreshing}>
+                  <RefreshCw className="h-4 w-4" />
+                </MotionSpinner>
               </button>
               <button
                 type="button"
@@ -1529,7 +1533,9 @@ export function BusinessAnalyticsPage({
                   title="هەناردەکردنی داتای کڕیاران"
                 >
                   {exportingCrm ? (
-                    <MotionSpinner><Loader2 className="h-4 w-4 "  /></MotionSpinner>
+                    <MotionSpinner>
+                      <Loader2 className="h-4 w-4 " />
+                    </MotionSpinner>
                   ) : (
                     <Download className="h-4 w-4" />
                   )}
@@ -1540,8 +1546,9 @@ export function BusinessAnalyticsPage({
           }
         />
 
-        {surface === "analytics" && tab === "overview" && (
-          !hasOverviewData ? (
+        {surface === "analytics" &&
+          tab === "overview" &&
+          (!hasOverviewData ? (
             <div className="border-t border-slate-100 pt-6 dark:border-white/5">
               <AnalyticsTabEmptyState tab="overview" />
             </div>
@@ -1553,8 +1560,7 @@ export function BusinessAnalyticsPage({
               countries={breakdowns.countries}
               detailsLocked={detailsLocked}
             />
-          )
-        )}
+          ))}
 
         {surface === "analytics" && tab === "visitors" && (
           <div className="border-t border-slate-100 pt-6 dark:border-white/5">
@@ -1748,7 +1754,9 @@ export function BusinessAnalyticsPage({
                   <StatCard
                     color="green"
                     label="پشتڕاستکراوەی ناوخۆ"
-                    value={formatNumber(tiktok.reconciliation.internalConversions)}
+                    value={formatNumber(
+                      tiktok.reconciliation.internalConversions,
+                    )}
                     variant="comparison"
                   />
                   <StatCard
@@ -1767,14 +1775,14 @@ export function BusinessAnalyticsPage({
       </DashboardSurface>
 
       <SearchModal
-          isOpen={searchOpen}
-          onClose={() => setSearchOpen(false)}
-          placeholder="ناوی پەڕەی لینک یان وێبسایتی بچووک بنووسە..."
-          searchQuery={searchQuery}
-          onSearchQueryChange={setSearchQuery}
-          wide
-          businessTheme
-        >
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        placeholder="ناوی پەڕەی لینک یان وێبسایتی بچووک بنووسە..."
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        wide
+        businessTheme
+      >
         <div className="space-y-4 p-2">
           <div className="grid gap-3 border-b border-slate-100 pb-4 dark:border-white/5 sm:grid-cols-2">
             <CustomSelect
@@ -1833,7 +1841,9 @@ export function BusinessAnalyticsPage({
                       {asset.name}
                     </span>
                     <span className="mt-0.5 block truncate text-[10px] text-slate-400">
-                      {asset.type === "linktree" ? "پەڕەی لینک" : "وێبسایتی بچووک"}{" "}
+                      {asset.type === "linktree"
+                        ? "پەڕەی لینک"
+                        : "وێبسایتی بچووک"}{" "}
                       / {asset.slug}
                     </span>
                   </span>
@@ -1912,6 +1922,7 @@ export function BusinessAnalyticsPage({
         title="زیادکردنی تێبینی"
         description={noteLead?.name}
         busy={saving}
+        accentColor={businessTheme.raw}
         footer={
           <>
             <button

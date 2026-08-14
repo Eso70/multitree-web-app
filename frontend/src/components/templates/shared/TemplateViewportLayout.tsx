@@ -7,7 +7,6 @@ export interface TemplateViewportLayoutProps {
   className?: string;
   style?: CSSProperties;
   dir?: "ltr" | "rtl";
-  decoration?: ReactNode;
   header: ReactNode;
   main: ReactNode;
   footer: ReactNode;
@@ -24,7 +23,6 @@ export const TemplateViewportLayout = memo(function TemplateViewportLayout({
   className = "",
   style,
   dir,
-  decoration,
   header,
   main,
   footer,
@@ -36,7 +34,6 @@ export const TemplateViewportLayout = memo(function TemplateViewportLayout({
       dir={dir}
       data-template-viewport-layout
     >
-      {decoration}
       <div className="relative z-10 w-full">
         <div className="mx-auto w-full max-w-md">{header}</div>
         <main className="w-full py-6">

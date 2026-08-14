@@ -58,5 +58,4 @@ export class ReviewSignupApplicationDto {
   action: 'request_changes' | 'reject' | 'approve';
   @IsOptional() @IsString() @MaxLength(1000) reason?: string;
   @IsOptional() @IsUUID() subscriptionPlanId?: string;
-  @IsOptional() @IsBoolean() phoneVerified?: boolean;
 }

@@ -3,8 +3,6 @@ export * from "./linktree.types";
 export * from "./mini-website.types";
 export * from "./advertising.types";
 export * from "./analytics.types";
-export * from "./api.types";
-export * from "./tiktok.types";
 export * from "./billing.types";
 export * from "./audit.types";
 export * from "./authorization.types";

@@ -17,7 +17,6 @@ import {
   STANDARD_TEMPLATE_HEADER_CLASSES,
   TemplateActionButton,
   TemplateActionButtonList,
-  TemplateBackdropDecorations,
   TemplateFooter,
   TemplateHeader,
   TemplateViewportLayout,
@@ -62,13 +61,6 @@ export const AuroraTemplate = memo(function AuroraTemplate({
       isPreview={isPreview}
       className={`px-6 ${isPreview ? "pt-14" : "pt-10"}`}
       style={backgroundStyle}
-      decoration={
-        <TemplateBackdropDecorations
-          variant="aurora"
-          accentColor={subtitleColor}
-          secondaryColor={theme.to}
-        />
-      }
       header={
         <TemplateHeader
           name={linktree.name}

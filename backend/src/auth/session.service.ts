@@ -21,6 +21,7 @@ export interface SessionUser {
   id: string;
   username: string;
   name: string;
+  email?: string;
   role: 'business' | 'platform-admin';
   subdomain?: string;
   userId?: string;
@@ -173,6 +174,7 @@ export class SessionService {
     platformAdminId: string;
     username: string;
     name: string;
+    email?: string;
     ipAddress: string;
     userAgent: string;
     rememberDevice?: boolean;
@@ -189,6 +191,7 @@ export class SessionService {
       id: input.platformAdminId,
       username: input.username,
       name: input.name,
+      email: input.email,
       role: 'platform-admin',
     };
 
@@ -310,9 +313,11 @@ export class SessionService {
       platform_admin_id: string;
       username: string;
       name: string;
+      email: string | null;
       session_expires_at: string;
     }>(
-      `SELECT sa.id as platform_admin_id, sa.username, sa.name, s.session_expires_at
+      `SELECT sa.id as platform_admin_id, sa.username, sa.name, sa.email,
+              s.session_expires_at
        FROM platform_admin_sessions s
        INNER JOIN platform_admins sa ON s.platform_admin_id = sa.id
        WHERE s.session_token = $1 AND s.session_expires_at > NOW()`,
@@ -325,6 +330,7 @@ export class SessionService {
         id: platformAdmin.platform_admin_id,
         username: platformAdmin.username,
         name: platformAdmin.name,
+        email: platformAdmin.email || undefined,
         role: 'platform-admin',
       };
 

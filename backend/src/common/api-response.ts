@@ -4,12 +4,6 @@ export type ApiErrorBody = {
   details?: unknown;
 };
 
-export type InternalApiSuccess<T> = {
-  success: true;
-  data?: T;
-  message?: string;
-};
-
 export type InternalApiError = {
   success: false;
   error: ApiErrorBody;

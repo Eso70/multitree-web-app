@@ -13,7 +13,6 @@ import {
   STANDARD_TEMPLATE_HEADER_CLASSES,
   TemplateActionButton,
   TemplateActionButtonList,
-  TemplateBackdropDecorations,
   TemplateFooter,
   TemplateHeader,
   TemplateViewportLayout,
@@ -77,13 +76,6 @@ export const SpotlightTemplate = memo(function SpotlightTemplate({
       isPreview={isPreview}
       className={`px-4 ${isPreview ? "pt-14" : "pt-10"}`}
       style={backgroundStyle}
-      decoration={
-        <TemplateBackdropDecorations
-          variant="spotlight"
-          accentColor={subtitleColor}
-          secondaryColor={theme.to}
-        />
-      }
       header={
         <TemplateHeader
           name={linktree.name}

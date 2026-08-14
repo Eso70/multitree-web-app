@@ -1,4 +1,4 @@
-import { IsIn, IsString, Length, MaxLength } from 'class-validator';
+import { IsIn, IsString, Length } from 'class-validator';
 
 export const CRM_LEAD_STATUSES = [
   'new',
@@ -19,14 +19,4 @@ export class CreateCrmNoteDto {
   @IsString()
   @Length(1, 4000)
   body: string;
-}
-
-export class CreateCrmTagDto {
-  @IsString()
-  @Length(1, 80)
-  name: string;
-
-  @IsString()
-  @MaxLength(7)
-  color: string;
 }

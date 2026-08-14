@@ -13,6 +13,11 @@ import {
 } from '../common/linktree-defaults';
 import { DatabaseService } from '../database/database.service';
 import { describeError } from '../common/describe-error';
+import {
+  BUSINESS_FAVICON_PLACEHOLDER,
+  BUSINESS_LOGO_PLACEHOLDER,
+  DEFAULT_AVATAR,
+} from '../common/brand-assets';
 import { toText } from '../common/coerce';
 import type { LinkRow } from '../links/link.types';
 import { RedisService } from '../redis/redis.service';
@@ -683,18 +688,18 @@ export class BusinessAdministrationService {
           : current.status,
       logo:
         data.logo !== undefined
-          ? this.normalizeRequiredText(data.logo, '/images/Logo.jpg')
+          ? this.normalizeRequiredText(data.logo, BUSINESS_LOGO_PLACEHOLDER)
           : current.logo,
       favicon:
         data.favicon !== undefined
-          ? this.normalizeRequiredText(data.favicon, '/favicon.ico')
+          ? this.normalizeRequiredText(
+              data.favicon,
+              BUSINESS_FAVICON_PLACEHOLDER,
+            )
           : current.favicon,
       default_avatar:
         data.default_avatar !== undefined
-          ? this.normalizeRequiredText(
-              data.default_avatar,
-              '/images/DefaultAvatar.png',
-            )
+          ? this.normalizeRequiredText(data.default_avatar, DEFAULT_AVATAR)
           : current.default_avatar,
       website_color:
         data.website_color !== undefined
@@ -1088,81 +1093,6 @@ export class BusinessAdministrationService {
         this.collectUploadUrls(item, urls),
       );
     return urls;
-  }
-
-  async getPendingProfileChangeRequests() {
-    const result = await this.databaseService.query(
-      `SELECT r.business_id, r.changes, r.requested_at, a.name AS current_name, a.username,
-              b.logo AS current_logo, b.website_color AS current_website_color
-       FROM business_profile_change_requests r
-       JOIN businesses a ON a.id=r.business_id
-       LEFT JOIN business_branding b ON b.business_id=a.id
-       WHERE r.status='pending' ORDER BY r.requested_at ASC`,
-    );
-    return result.rows;
-  }
-
-  async reviewProfileChangeRequest(businessId: string, action?: string) {
-    if (action !== 'approve' && action !== 'reject')
-      throw new BadRequestException('Invalid review action');
-    const previousBranding = await this.databaseService.query(
-      `SELECT logo,favicon,default_avatar FROM business_branding
-       WHERE business_id=$1`,
-      [businessId],
-    );
-    const result = await this.databaseService.transaction(async (client) => {
-      const request = await client.query<{ changes: Record<string, unknown> }>(
-        `SELECT changes FROM business_profile_change_requests WHERE business_id=$1 AND status='pending' FOR UPDATE`,
-        [businessId],
-      );
-      if (!request.rows.length)
-        throw new NotFoundException('Pending request not found');
-      if (action === 'approve') {
-        const changes = request.rows[0].changes || {};
-        await client.query(
-          'UPDATE businesses SET name=$1,phone=$2,updated_at=NOW() WHERE id=$3',
-          [changes.name, changes.phone || null, businessId],
-        );
-        await client.query(
-          `INSERT INTO business_branding (business_id,logo,favicon,default_avatar,website_color) VALUES ($1,$2,$3,$4,$5)
-          ON CONFLICT (business_id) DO UPDATE SET logo=EXCLUDED.logo,favicon=EXCLUDED.favicon,default_avatar=EXCLUDED.default_avatar,website_color=EXCLUDED.website_color,updated_at=NOW()`,
-          [
-            businessId,
-            changes.logo,
-            changes.favicon,
-            changes.default_avatar,
-            changes.website_color,
-          ],
-        );
-      }
-      await client.query(
-        `UPDATE business_profile_change_requests SET status=$1,reviewed_at=NOW() WHERE business_id=$2`,
-        [action === 'approve' ? 'approved' : 'rejected', businessId],
-      );
-      return {
-        business_id: businessId,
-        status: action === 'approve' ? 'approved' : 'rejected',
-        changes: request.rows[0].changes || {},
-      };
-    });
-    if (action === 'approve') {
-      await this.storageService.claimBusinessAssets(businessId, result.changes);
-      await this.storageService.deleteUnreferencedFromValues(
-        previousBranding.rows[0],
-      );
-      const business = await this.databaseService.query<{
-        subdomain: string | null;
-      }>('SELECT subdomain FROM businesses WHERE id=$1', [businessId]);
-      await this.clearBusinessPublicLinktreeCache(
-        businessId,
-        business.rows[0]?.subdomain,
-      );
-      await this.refreshBusinessRuntimeState(businessId);
-    } else {
-      await this.storageService.deleteUnreferencedFromValues(result.changes);
-    }
-    const { changes: _changes, ...publicResult } = result;
-    return publicResult;
   }
 
   async exportBusinessLinktrees(id: string) {

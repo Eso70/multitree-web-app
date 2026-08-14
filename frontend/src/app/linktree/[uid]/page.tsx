@@ -19,6 +19,11 @@ import { BusinessGatewayTimeoutPage } from "@/components/error-pages/BusinessGat
 import { classifyUpstreamFailure } from "@/lib/api/upstream-failure";
 import { shortTabTitle } from "@/lib/utils/tab-title";
 import { TikTokPixelBaseCode } from "@/components/analytics/TikTokPixelBaseCode";
+import {
+  BUSINESS_FAVICON_PLACEHOLDER,
+  BUSINESS_LOGO_PLACEHOLDER,
+  DEFAULT_AVATAR,
+} from "@/lib/brand/brand-assets";
 
 // Dynamically import LinktreePage to reduce initial bundle size
 const LinktreePage = dynamicImport(
@@ -202,18 +207,15 @@ export async function generateMetadata({ params }: PageProps) {
 
   const iconEntries: { url: string; sizes?: string; type?: string }[] = [];
   iconEntries.push({
-    url: linktree.business_favicon || "/images/Logo.jpg",
-    type: "image/x-icon",
+    url: linktree.business_favicon || BUSINESS_FAVICON_PLACEHOLDER,
   });
   iconEntries.push({
-    url: linktree.business_logo || "/images/Logo.jpg",
+    url: linktree.business_logo || BUSINESS_LOGO_PLACEHOLDER,
     sizes: "32x32",
-    type: "image/jpeg",
   });
   iconEntries.push({
-    url: linktree.business_default_avatar || "/images/DefaultAvatar.png",
+    url: linktree.business_default_avatar || DEFAULT_AVATAR,
     sizes: "180x180",
-    type: "image/jpeg",
   });
 
   return {
@@ -222,7 +224,7 @@ export async function generateMetadata({ params }: PageProps) {
       linktree.description || linktree.subtitle || "بۆ پەیوەندی کردن, کلیک لەم لینکانەی خوارەوە بکە",
     icons: {
       icon: iconEntries,
-      apple: linktree.business_logo || "/images/Logo.jpg",
+      apple: linktree.business_logo || BUSINESS_LOGO_PLACEHOLDER,
     },
     themeColor: linktree.business_website_color || MULTITREE_ACCENT_COLOR,
     openGraph: {

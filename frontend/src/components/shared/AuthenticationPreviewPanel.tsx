@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { BUSINESS_LOGO_PLACEHOLDER } from "@/lib/brand/brand-assets";
 
 interface AuthenticationPreviewPanelProps {
   description: string;
@@ -19,7 +20,7 @@ export function AuthenticationPreviewPanel({
       <div className="relative max-w-md text-center text-white" dir="rtl">
         <div className="mx-auto h-20 w-20 overflow-hidden rounded-3xl border border-white/50 bg-white/85 p-1.5 shadow-[0_20px_45px_rgba(15,23,42,.18)]">
           <Image
-            src={brandLogo || "/images/Logo.jpg"}
+            src={brandLogo || BUSINESS_LOGO_PLACEHOLDER}
             alt={brandName}
             width={80}
             height={80}

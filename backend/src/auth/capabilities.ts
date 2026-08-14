@@ -1,5 +1,4 @@
 export type PermissionRisk = 'standard' | 'sensitive' | 'critical';
-export type PermissionStatus = 'active' | 'inactive';
 
 export interface PermissionDefinition {
   key: string;

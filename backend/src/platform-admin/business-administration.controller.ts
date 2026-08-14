@@ -21,7 +21,6 @@ import {
 } from './business-administration.service';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { UpdateTikTokDto } from './dto/update-tiktok.dto';
-import { ProfileChangeReviewDto } from './dto/profile-change-review.dto';
 import { PlatformAdminGuard } from '../auth/platform-admin.guard';
 import { StorageService } from '../storage/storage.service';
 import type { FastifyRequest, FastifyReply } from 'fastify';
@@ -74,20 +73,14 @@ export class BusinessAdministrationController {
   }
 
   @Get()
-  @RequireCapabilities(Capability.PlatformBusinessesProfileRequestsRead)
+  // Was guarded by the profile-requests read capability, which no longer has
+  // any route of its own now that profile approval is gone. Listing businesses
+  // belongs to the same capability as `options` and `:id` below.
+  @RequireCapabilities(Capability.PlatformBusinessesRead)
   async getAllBusinesses(@Query() query: BusinessListQueryDto) {
     return {
       success: true,
       data: await this.businessAdministrationService.getBusinesses(query),
-    };
-  }
-
-  @Get('profile-change-requests/pending')
-  @RequireCapabilities(Capability.PlatformBusinessesProfileRequestsRead)
-  async getPendingProfileChangeRequests() {
-    return {
-      success: true,
-      data: await this.businessAdministrationService.getPendingProfileChangeRequests(),
     };
   }
 
@@ -106,25 +99,6 @@ export class BusinessAdministrationController {
     return {
       success: true,
       data: await this.businessAdministrationService.getBusiness(id),
-    };
-  }
-
-  @Patch('profile-change-requests/:businessId')
-  @RequireCapabilities(Capability.PlatformBusinessesProfileRequestsReview)
-  @AuditEvent('platform.business.profile_request.review', {
-    resourceType: 'business',
-    resourceIdParam: 'businessId',
-  })
-  async reviewProfileChangeRequest(
-    @Param('businessId') businessId: string,
-    @Body() body: ProfileChangeReviewDto,
-  ) {
-    return {
-      success: true,
-      data: await this.businessAdministrationService.reviewProfileChangeRequest(
-        businessId,
-        body.action,
-      ),
     };
   }
 

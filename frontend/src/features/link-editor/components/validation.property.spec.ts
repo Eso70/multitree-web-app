@@ -1,6 +1,6 @@
 ﻿import * as fc from 'fast-check';
 import { validateBusinessName, validateSubdomain } from './BusinessInfoStep';
-import { validateLinktreeName, validateSlug } from './LinktreePageStep';
+import { validateLinktreeName, validateSlug } from './validation';
 
 /**
  * Property 3: Name Field Minimum Length Validation

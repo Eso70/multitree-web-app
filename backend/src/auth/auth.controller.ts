@@ -29,7 +29,6 @@ import { AuditInterceptor } from './audit.interceptor';
 import { AuditEvent } from './audit-event.decorator';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { AuthorizationService } from './authorization.service';
-import { ApprovalService } from './approval.service';
 import type { PermissionKey } from './capabilities';
 import { StorageService } from '../storage/storage.service';
 import { validateImageUpload } from '../storage/image-upload';
@@ -52,7 +51,6 @@ export class AuthController {
     private readonly accessRules: AccessRuleEnforcementService,
     private readonly impersonationService: ImpersonationService,
     @Optional() private readonly authorizationService?: AuthorizationService,
-    @Optional() private readonly approvalService?: ApprovalService,
     @Optional() private readonly storageService?: StorageService,
   ) {}
 
@@ -135,6 +133,8 @@ export class AuthController {
         username: business.username,
         name: business.name,
         phone: business.phone || null,
+        email: business.email || null,
+        ownerName: business.ownerName || null,
         logo: business.logo || null,
         favicon: business.favicon || null,
         default_avatar: business.default_avatar || null,
@@ -258,6 +258,8 @@ export class AuthController {
         username: business.username,
         name: business.name,
         phone: business.phone || null,
+        email: business.email || null,
+        ownerName: business.ownerName || null,
         logo: business.logo || null,
         favicon: business.favicon || null,
         default_avatar: business.default_avatar || null,
@@ -404,28 +406,13 @@ export class AuthController {
       changedFields,
       context: { now: new Date() },
     });
-    if (decision.outcome === 'approval') {
-      const changes = Object.fromEntries(
-        Object.entries(rawBody).filter(([key]) => key !== 'section'),
-      );
-      const approval = await this.requireApprovals().create({
-        businessId: user.id,
-        permission,
-        action: `settings:${section}`,
-        changes,
-        decision,
-      });
-      throw new HttpException(
-        {
-          code: 'APPROVAL_REQUIRED',
-          message: 'This settings change was submitted for approval',
-          approval,
-          decision,
-        },
-        HttpStatus.ACCEPTED,
-      );
-    }
-    if (decision.outcome !== 'allow') {
+    // Settings changes are never queued for platform-administrator approval.
+    // A profile edit applies immediately and then locks the whole profile
+    // section for 30 days (`PROFILE_CHANGE_COOLDOWN_DAYS`), enforced in
+    // `AuthService.updateBusinessSettings`. An `approval` outcome here would
+    // otherwise still be reachable from a plan configuration that predates the
+    // cooldown, so it is treated as allowed rather than trusted to be absent.
+    if (decision.outcome !== 'allow' && decision.outcome !== 'approval') {
       throw new HttpException(
         { code: decision.reasonCode, decision },
         HttpStatus.FORBIDDEN,
@@ -549,13 +536,6 @@ export class AuthController {
       throw new Error('Authorization service is unavailable');
     }
     return this.authorizationService;
-  }
-
-  private requireApprovals(): ApprovalService {
-    if (!this.approvalService) {
-      throw new Error('Approval service is unavailable');
-    }
-    return this.approvalService;
   }
 
   private async authorizeOptional(

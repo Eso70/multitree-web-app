@@ -323,7 +323,6 @@ describe('BusinessOnboardingService invitations', () => {
       service.reviewApplication('application-1', 'admin-1', {
         action: 'approve',
         subscriptionPlanId: 'ultra-plan',
-        phoneVerified: true,
       }),
     ).resolves.toEqual({
       id: 'application-1',

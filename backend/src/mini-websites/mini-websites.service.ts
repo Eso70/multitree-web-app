@@ -308,8 +308,13 @@ interface StoredContent {
  * erases. Importing a *value* would drag the barrel into the runtime graph and
  * crash the server on boot, so the types stay shared and these few constants
  * are mirrored.
+ *
+ * The mirrors are exported so `mini-website-shared-constants.spec.ts` can
+ * assert they still match the shared package. A test runs under ts-jest in
+ * CommonJS, where the value import resolves, so the duplication stays checked
+ * rather than silently drifting.
  */
-const OFFERED_SECTION_KEYS: readonly MiniWebsiteSectionKey[] = [
+export const OFFERED_SECTION_KEYS: readonly MiniWebsiteSectionKey[] = [
   'socials',
   'stories',
   'whyChooseUs',
@@ -372,7 +377,7 @@ const ACTION_TYPES: readonly MiniWebsiteActionType[] = [
   'whatsapp',
   'phone',
 ];
-const ITEM_PIXEL_EVENTS: readonly MiniWebsiteItemPixelEvent[] = [
+export const ITEM_PIXEL_EVENTS: readonly MiniWebsiteItemPixelEvent[] = [
   'None',
   'Contact',
   'Lead',

@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown } from "lucide-react";
 
@@ -21,6 +27,7 @@ interface CustomSelectProps<T extends string> {
   fullWidth?: boolean;
   required?: boolean;
   showRequirement?: boolean;
+  accent?: string;
 }
 
 export function CustomSelect<T extends string>({
@@ -35,6 +42,7 @@ export function CustomSelect<T extends string>({
   fullWidth = true,
   required = false,
   showRequirement = false,
+  accent,
 }: CustomSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{
@@ -48,6 +56,9 @@ export function CustomSelect<T extends string>({
   const selected =
     options.find((option) => option.value === value) || options[0];
   const hasOptions = options.length > 0;
+  const accentStyle = accent
+    ? ({ "--theme-primary": accent } as CSSProperties)
+    : undefined;
 
   const updateMenuPosition = useCallback(() => {
     const rect = triggerRef.current?.getBoundingClientRect();
@@ -92,7 +103,7 @@ export function CustomSelect<T extends string>({
   }, [isOpen, updateMenuPosition]);
 
   return (
-    <div className="min-w-0 select-none">
+    <div className="min-w-0 select-none" style={accentStyle}>
       {!hideLabel && (
         <span
           className={`mb-1.5 block text-left text-[10px] font-bold uppercase tracking-wide text-slate-400 ${labelClassName ?? ""}`}
@@ -121,18 +132,21 @@ export function CustomSelect<T extends string>({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
-        <span className="truncate">{selected?.label ?? "هیچ هەڵبژاردەیەک نییە"}</span>
+        <span className="truncate">
+          {selected?.label ?? "هیچ هەڵبژاردەیەک نییە"}
+        </span>
         <ChevronDown
           className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
-      {hasOptions && isOpen &&
+      {hasOptions &&
+        isOpen &&
         menuPosition &&
         createPortal(
           <div
             ref={menuRef}
             className="custom-scrollbar theme-custom-scrollbar fixed z-[150] max-h-44 select-none overflow-y-auto overscroll-contain rounded-xl border border-slate-200 bg-white p-1 shadow-xl dark:border-white/10 dark:bg-[#1c222b]"
-            style={menuPosition}
+            style={{ ...menuPosition, ...accentStyle }}
             role="listbox"
             dir="ltr"
           >

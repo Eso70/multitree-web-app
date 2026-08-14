@@ -12,6 +12,7 @@ interface ModalWizardActionsProps {
   canContinue: boolean;
   disableWhenInvalid?: boolean;
   submitLabel: string;
+  nextLabel?: string;
   saveCurrentLabel?: string;
   onSaveCurrent?: () => void;
   onBack: () => void;
@@ -29,6 +30,7 @@ export function ModalWizardActions({
   canContinue,
   disableWhenInvalid = true,
   submitLabel,
+  nextLabel = "بەردەوام بە",
   saveCurrentLabel = "پاشەکەوتکردن",
   onSaveCurrent,
   onBack,
@@ -36,17 +38,23 @@ export function ModalWizardActions({
   onNext,
   onSubmit,
 }: ModalWizardActionsProps) {
-  const nextClassName = variant === "multitree"
-    ? "w-full sm:flex-1 rounded-xl px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold sa-gradient sa-gradient-hover shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-    : "w-full sm:flex-1 rounded-xl px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center";
-  const submitClassName = variant === "multitree"
-    ? "w-full sm:flex-1 rounded-xl px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold sa-ink shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 sa-gradient sa-gradient-hover"
-    : "w-full sm:flex-1 rounded-xl px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2";
+  const nextClassName =
+    variant === "multitree"
+      ? "w-full sm:flex-1 rounded-xl px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold sa-gradient sa-gradient-hover shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+      : "w-full sm:flex-1 rounded-xl px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center";
+  const submitClassName =
+    variant === "multitree"
+      ? "w-full sm:flex-1 rounded-xl px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold sa-ink shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 sa-gradient sa-gradient-hover"
+      : "w-full sm:flex-1 rounded-xl px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2";
 
   return (
     <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 border-t border-gray-100/50 p-4 sm:p-5 md:p-6 bg-linear-to-r from-white to-slate-50/30">
       {!isFirstStep && (
-        <button type="button" onClick={onBack} className="w-full sm:w-auto px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 rounded-xl bg-linear-to-br from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 border border-slate-100 text-slate-600 hover:text-slate-700 text-xs sm:text-sm font-medium transition-all duration-300 shadow-sm hover:shadow">
+        <button
+          type="button"
+          onClick={onBack}
+          className="w-full sm:w-auto px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 rounded-xl bg-linear-to-br from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 border border-slate-100 text-slate-600 hover:text-slate-700 text-xs sm:text-sm font-medium transition-all duration-300 shadow-sm hover:shadow"
+        >
           گەڕانەوە
         </button>
       )}
@@ -83,7 +91,7 @@ export function ModalWizardActions({
             disabled={isSubmitting || (disableWhenInvalid && !canContinue)}
             className={nextClassName}
           >
-            <span>بەردەوام بە</span>
+            <span>{nextLabel}</span>
           </button>
         ) : (
           <AccentActionButton
@@ -91,7 +99,7 @@ export function ModalWizardActions({
             disabled={isSubmitting || (disableWhenInvalid && !canContinue)}
             className="w-full sm:flex-1 sm:text-sm"
           >
-            <span>بەردەوام بە</span>
+            <span>{nextLabel}</span>
           </AccentActionButton>
         )
       ) : variant === "multitree" ? (
@@ -104,7 +112,9 @@ export function ModalWizardActions({
         >
           {isSubmitting ? (
             <>
-              <MotionSpinner><Loader2 className="h-4 w-4 "  /></MotionSpinner>
+              <MotionSpinner>
+                <Loader2 className="h-4 w-4 " />
+              </MotionSpinner>
               <span>پاشەکەوتکردن...</span>
             </>
           ) : (
@@ -120,7 +130,9 @@ export function ModalWizardActions({
         >
           {isSubmitting ? (
             <>
-              <MotionSpinner><Loader2 className="h-4 w-4 "  /></MotionSpinner>
+              <MotionSpinner>
+                <Loader2 className="h-4 w-4 " />
+              </MotionSpinner>
               <span>پاشەکەوتکردن...</span>
             </>
           ) : (
