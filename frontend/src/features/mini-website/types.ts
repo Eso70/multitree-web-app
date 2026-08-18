@@ -49,6 +49,8 @@ import {
   type MiniWebsiteVideoPlatform,
   type MiniWebsiteYoutubeVideo,
   type MiniWebsiteWeekHours,
+  type MiniWebsiteVisualTemplateKey,
+  MINI_WEBSITE_VISUAL_TEMPLATE_DEFAULT,
 } from "@linktree/types";
 
 export type {
@@ -98,6 +100,7 @@ export type {
   MiniWebsiteSection,
   MiniWebsiteSectionKey,
   MiniWebsiteWeekHours,
+  MiniWebsiteVisualTemplateKey,
 };
 
 export type MiniWebsiteStatus = "draft" | "published" | "paused";
@@ -156,6 +159,7 @@ export interface MiniWebsite {
   bio: string;
   avatar: string | null;
   cover: string | null;
+  templateKey: MiniWebsiteVisualTemplateKey;
   variation: MiniWebsiteVariation;
   backgroundStyle: MiniWebsiteBackgroundStyle;
   professionTemplate: MiniWebsiteProfessionTemplateKey | "";
@@ -299,6 +303,7 @@ export const createMiniWebsiteDraft = (input?: {
     input?.businessLogo ||
     "/images/DefaultAvatar.png",
   cover: null,
+  templateKey: MINI_WEBSITE_VISUAL_TEMPLATE_DEFAULT,
   variation: "soft",
   backgroundStyle: "none",
   professionTemplate: "",

@@ -41,7 +41,6 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { IconActionButton } from "@/components/shared/IconActionButton";
 import { StatCard } from "@/components/shared/StatCard";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
-import { AccentActionButton } from "@/components/shared/AccentActionButton";
 import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
 import { ManagementModal } from "@/components/shared/ManagementModal";
 import { ModalFooterActions } from "@/components/shared/ModalFooterActions";
@@ -1478,9 +1477,12 @@ function AdvertisingServiceEditor({
                   <ExternalLink className="h-4 w-4" />
                   کردنەوە
                 </a>
-                <AccentActionButton
+                <button
+                  type="button"
                   onClick={() => void handleTogglePublish()}
-                  busy={publishing}
+                  aria-busy={publishing}
+                  disabled={publishing}
+                  className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
                   title={
                     isPublished
                       ? "کرتە بکە بۆ وەستاندنی پەیج"
@@ -1499,7 +1501,7 @@ function AdvertisingServiceEditor({
                     : isPublished
                       ? "بڵاوکراوە"
                       : "بڵاوکردنەوە"}
-                </AccentActionButton>
+                </button>
                 <TabSaveButton
                   dirty={dirty}
                   saving={saving}
@@ -1597,10 +1599,14 @@ function AdvertisingServiceEditor({
             action={
               <>
                 <TabSaveButton dirty={dirty} saving={saving} onSave={() => void handleSave()} />
-                <AccentActionButton onClick={() => setPaymentProviderModal({ mode: "create" })}>
+                <button
+                  type="button"
+                  onClick={() => setPaymentProviderModal({ mode: "create" })}
+                  className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
+                >
                   <Plus aria-hidden="true" className="h-4 w-4" />
                   شێوازێکی نوێ
-                </AccentActionButton>
+                </button>
               </>
             }
           >
@@ -1796,10 +1802,14 @@ function AdvertisingServiceEditor({
                   onChange={(checked) => updateConfig("sections", { ...config.sections, results: checked })}
                 />
                 <TabSaveButton dirty={dirty} saving={saving} onSave={() => void handleSave()} />
-                <AccentActionButton onClick={() => setResultModal({ mode: "create" })}>
+                <button
+                  type="button"
+                  onClick={() => setResultModal({ mode: "create" })}
+                  className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
+                >
                   <Plus aria-hidden="true" className="h-4 w-4" />
                   نموونەی نوێ
-                </AccentActionButton>
+                </button>
               </>
             }
           >
@@ -1884,10 +1894,14 @@ function AdvertisingServiceEditor({
             action={
               <>
                 <TabSaveButton dirty={dirty} saving={saving} onSave={() => void handleSave()} />
-                <AccentActionButton onClick={() => setCategoryModal({ mode: "create" })}>
+                <button
+                  type="button"
+                  onClick={() => setCategoryModal({ mode: "create" })}
+                  className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
+                >
                   <Plus aria-hidden="true" className="h-4 w-4" />
                   جۆری نوێ
-                </AccentActionButton>
+                </button>
               </>
             }
           >
@@ -2035,10 +2049,14 @@ function AdvertisingServiceEditor({
                   onChange={(checked) => updateConfig("sections", { ...config.sections, testimonials: checked })}
                 />
                 <TabSaveButton dirty={dirty} saving={saving} onSave={() => void handleSave()} />
-                <AccentActionButton onClick={() => setTestimonialModal({ mode: "create" })}>
+                <button
+                  type="button"
+                  onClick={() => setTestimonialModal({ mode: "create" })}
+                  className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
+                >
                   <Plus aria-hidden="true" className="h-4 w-4" />
                   ڕایەکی نوێ
-                </AccentActionButton>
+                </button>
               </>
             }
           >
@@ -2118,10 +2136,14 @@ function AdvertisingServiceEditor({
                   onChange={(checked) => updateConfig("sections", { ...config.sections, faq: checked })}
                 />
                 <TabSaveButton dirty={dirty} saving={saving} onSave={() => void handleSave()} />
-                <AccentActionButton onClick={() => setFaqModal({ mode: "create" })}>
+                <button
+                  type="button"
+                  onClick={() => setFaqModal({ mode: "create" })}
+                  className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
+                >
                   <Plus aria-hidden="true" className="h-4 w-4" />
                   پرسیاری نوێ
-                </AccentActionButton>
+                </button>
               </>
             }
           >

@@ -60,7 +60,7 @@ export default async function Home() {
       [INTERNAL_PROXY_KEY_HEADER]: internalProxyKey() || "",
     };
     const signal = AbortSignal.timeout(30_000);
-    const [businessRes, linktreesRes, miniWebsitesRes] = await Promise.all([
+    const [businessRes, linktreesRes] = await Promise.all([
       fetch(`${BACKEND_URL}/api/public/business`, {
         headers: headers_,
         cache: "no-store",
@@ -71,20 +71,15 @@ export default async function Home() {
         cache: "no-store",
         signal,
       }),
-      fetch(`${BACKEND_URL}/api/public/mini-websites`, {
-        headers: headers_,
-        cache: "no-store",
-        signal,
-      }),
     ]);
 
-    badGateway = [businessRes, linktreesRes, miniWebsitesRes].some(
+    badGateway = [businessRes, linktreesRes].some(
       (response) => response.status === 502,
     );
-    serviceUnavailable = [businessRes, linktreesRes, miniWebsitesRes].some(
+    serviceUnavailable = [businessRes, linktreesRes].some(
       (response) => response.status === 503,
     );
-    gatewayTimeout = [businessRes, linktreesRes, miniWebsitesRes].some(
+    gatewayTimeout = [businessRes, linktreesRes].some(
       (response) => response.status === 504,
     );
 
@@ -103,15 +98,7 @@ export default async function Home() {
           linktrees = Array.isArray(ltJson?.data) ? ltJson.data : [];
         }
 
-        let miniWebsites: ComponentProps<
-          typeof BusinessLanding
-        >["miniWebsites"] = [];
-        if (miniWebsitesRes.ok) {
-          const mwJson = await miniWebsitesRes.json();
-          miniWebsites = Array.isArray(mwJson?.data) ? mwJson.data : [];
-        }
-
-        landingProps = { business, linktrees, miniWebsites };
+        landingProps = { business, linktrees };
       }
     }
   } catch (error) {

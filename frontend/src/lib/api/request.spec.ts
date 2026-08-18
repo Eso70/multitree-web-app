@@ -92,6 +92,41 @@ describe("apiRequest", () => {
     await expect(apiRequest("/api/pages")).rejects.toBe(abort);
   });
 
+  it("retries safe reads when the backend is briefly unavailable", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        response(
+          { message: "Backend unavailable" },
+          { ok: false, status: 503 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        response({ success: true, data: { id: "page-id" } }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(apiRequest<{ id: string }>("/api/pages")).resolves.toEqual({
+      id: "page-id",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("never retries mutations automatically", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      response(
+        { message: "Backend unavailable" },
+        { ok: false, status: 503 },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      apiRequest("/api/pages", { method: "POST", json: { name: "Page" } }),
+    ).rejects.toMatchObject({ status: 503, message: "Backend unavailable" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("exposes Retry-After for contextual 429 handling", async () => {
     vi.stubGlobal(
       "fetch",

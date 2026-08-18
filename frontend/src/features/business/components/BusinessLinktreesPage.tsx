@@ -21,7 +21,6 @@ import {
 import { StatCard } from "@/components/shared/StatCard";
 import { DashboardSurface } from "@/components/shared/DashboardSurface";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { AccentActionButton } from "@/components/shared/AccentActionButton";
 import { SkeletonCardGrid, SkeletonTable } from "@/components/shared/Skeleton";
 import type { BusinessLinktreeSummary as Linktree } from "@linktree/types";
 import { useRegisterBusinessDashboardRefresh } from "@/features/business/dashboard-refresh";
@@ -239,13 +238,15 @@ export function BusinessLinktreesPage({
                   <Table2 className="h-4 w-4 shrink-0" />
                 </button>
               </div>
-              <AccentActionButton
+              <button
+                type="button"
                 onClick={onCreate}
                 title="دروستکردنی پەیجی نوێ"
+                className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
               >
                 <Plus className="h-4 w-4 transition-transform group-hover:scale-110" />
                 <span>پەیجی نوێ</span>
-              </AccentActionButton>
+              </button>
             </div>
           }
         />
@@ -257,6 +258,7 @@ export function BusinessLinktreesPage({
               onEdit={onEdit}
               onDelete={onDelete}
               onViewAnalytics={onViewAnalytics}
+              showLinktreeMeta
             />
           ) : (
             <LinktreesTable
@@ -265,6 +267,7 @@ export function BusinessLinktreesPage({
               onEdit={onEdit}
               onDelete={onDelete}
               onViewAnalytics={onViewAnalytics}
+              showLinktreeMeta
             />
           )}
         </div>

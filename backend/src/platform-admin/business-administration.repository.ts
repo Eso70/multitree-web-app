@@ -8,6 +8,8 @@ type BusinessListRow = {
   name: string;
   subdomain: string | null;
   status: string;
+  phone: string | null;
+  email: string | null;
   plan: string | null;
   planName: string | null;
   subscriptionPlanId: string | null;
@@ -33,7 +35,7 @@ export class BusinessAdministrationRepository {
        AND ($2::text IS NULL OR a.status = $2)`;
     const [businesses, count, summary] = await Promise.all([
       this.database.query<BusinessListRow>(
-        `SELECT a.id, a.username, a.name, a.subdomain, a.status,
+        `SELECT a.id, a.username, a.name, a.subdomain, a.status, a.phone, a.email,
            COALESCE(subscription_plan.code, a.plan) AS plan,
            COALESCE(subscription_plan.name, INITCAP(a.plan)) AS "planName",
            subscription_plan.id::text AS "subscriptionPlanId",

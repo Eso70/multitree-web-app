@@ -4,6 +4,10 @@ import { GoneException } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { PublicPageAnalyticsService } from '../analytics/public-page-analytics.service';
 import {
+  BACKGROUND_IMAGE_CONFIG_KEY,
+  isLinktreeBackgroundImage,
+} from '../common/linktree-background-image';
+import {
   ENTITLEMENT,
   allowedTemplateKeySql,
   entitledSql,
@@ -163,6 +167,13 @@ export class PublicService {
     config.buttonStyle = config.buttonStyle || 'pill';
     config.buttonGradient = config.buttonGradient !== false;
     config.whatsapp_modal = config.whatsapp_modal || {};
+
+    // A background image is painted into public page CSS, so anything that is
+    // not one of our own uploads never reaches an anonymous visitor.
+    if (!isLinktreeBackgroundImage(config[BACKGROUND_IMAGE_CONFIG_KEY])) {
+      delete config[BACKGROUND_IMAGE_CONFIG_KEY];
+    }
+
     return config;
   }
 

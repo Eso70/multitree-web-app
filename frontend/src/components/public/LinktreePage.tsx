@@ -18,6 +18,8 @@ import {
   deriveHighlightColor,
 } from "@/lib/utils/theme-colors";
 import { getBackgroundGradient, DEFAULT_BACKGROUND_COLOR } from "@/lib/config/background-gradients";
+import { backgroundImageCss, readBackgroundImage } from "@/lib/templates/background-image";
+import { readBackgroundPattern } from "@/lib/templates/background-pattern";
 import { parseWebsiteColor } from "@/lib/utils/parse-website-color";
 import { applyCursorColor, resetCursorColor } from "@/lib/utils/cursor-theme";
 import { WhatsAppQuestionModal, type WhatsAppQuestion } from "@/components/public/WhatsAppQuestionModal";
@@ -229,23 +231,42 @@ export const LinktreePage = memo(function LinktreePage({ linktree: rawLinktree, 
     return getBackgroundGradient(bgColor);
   }, [linktree.background_color]);
 
+  // An uploaded background image replaces the colour surface. The colours stay
+  // so text, accents, and borders keep deriving from the chosen palette.
+  const backgroundImage = useMemo(
+    () => readBackgroundImage(linktree.template_config),
+    [linktree.template_config],
+  );
+
+  // Drawn over whatever the surface turned out to be — gradient, solid colour
+  // or uploaded image — so it composes with all three.
+  const backgroundPattern = useMemo(
+    () => readBackgroundPattern(linktree.template_config),
+    [linktree.template_config],
+  );
+
   // Extend theme with derived accent colors
   const theme: TemplateTheme = useMemo(() => {
     return {
       ...baseTheme,
+      backgroundImage,
+      backgroundPattern,
       accent: deriveAccentColor(baseTheme.from, baseTheme.via, baseTheme.to),
       border: deriveBorderColor(baseTheme.from, baseTheme.via, baseTheme.to, 0.3),
       text: deriveTextColor(baseTheme.from, baseTheme.via, baseTheme.to),
       textSecondary: deriveTextSecondaryColor(baseTheme.from, baseTheme.via, baseTheme.to),
       highlight: deriveHighlightColor(baseTheme.from, baseTheme.via, baseTheme.to),
     };
-  }, [baseTheme]);
+  }, [baseTheme, backgroundImage, backgroundPattern]);
 
   const businessWebsiteColor = useMemo(() => {
     return parseWebsiteColor(linktree.business_website_color || null);
   }, [linktree.business_website_color]);
 
   const backgroundStyle = useMemo(() => {
+    if (backgroundImage) {
+      return backgroundImageCss(backgroundImage);
+    }
     const rawBackgroundColor = linktree.background_color || "";
     const gradientMatch = rawBackgroundColor.match(/^gradient:([\w-]+):(#[0-9a-fA-F]{3,6}):(#[0-9a-fA-F]{3,6})$/);
     if (gradientMatch) {
@@ -268,7 +289,7 @@ export const LinktreePage = memo(function LinktreePage({ linktree: rawLinktree, 
       return theme.from;
     }
     return `linear-gradient(to bottom right, ${theme.from}, ${theme.via}, ${theme.to})`;
-  }, [linktree.background_color, theme.from, theme.via, theme.to, theme.isSolid]);
+  }, [backgroundImage, linktree.background_color, theme.from, theme.via, theme.to, theme.isSolid]);
 
   // Apply background color to body/page (client-side only to prevent hydration mismatch)
   // Optimized: Combined DOM updates and reduced re-renders

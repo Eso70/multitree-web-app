@@ -61,14 +61,6 @@ describe("BusinessLanding", () => {
             subtitle: "Official contact channels",
           },
         ]}
-        miniWebsites={[
-          {
-            id: "site-1",
-            name: "Our services",
-            slug: "services",
-            headline: "What we provide",
-          },
-        ]}
       />,
     );
 
@@ -116,11 +108,11 @@ describe("BusinessLanding", () => {
       container.querySelector('a[href="/linktree/customer-links"]'),
     ).toMatchObject({ target: "_blank", rel: "noopener noreferrer" });
     const linktreesTab = screen.getByRole("tab", { name: "لینکترییەکان" });
-    const websitesTab = screen.getByRole("tab", {
-      name: "ماڵپەڕە بچووکەکان",
-    });
     expect(linktreesTab).toHaveAttribute("aria-selected", "true");
-    expect(screen.getAllByRole("tab")).toHaveLength(2);
+    expect(screen.getAllByRole("tab")).toHaveLength(1);
+    expect(
+      screen.queryByRole("tab", { name: "ماڵپەڕە بچووکەکان" }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("tab", { name: "Overview" }),
     ).not.toBeInTheDocument();
@@ -134,16 +126,14 @@ describe("BusinessLanding", () => {
       screen.getByRole("heading", { name: "لینکترییە بڵاوکراوەکان" }),
     ).toBeInTheDocument();
 
+    // Nothing to move to: the landing page no longer lists mini websites.
     fireEvent.keyDown(linktreesTab, { key: "ArrowRight" });
-    expect(websitesTab).toHaveAttribute("aria-selected", "true");
+    expect(linktreesTab).toHaveAttribute("aria-selected", "true");
     expect(
-      container.querySelector('a[href="/bio/services"][target="_blank"]'),
-    ).toHaveAttribute("rel", "noopener noreferrer");
-    expect(
-      screen.getByRole("heading", {
+      screen.queryByRole("heading", {
         name: "ماڵپەڕە بچووکە بڵاوکراوەکان",
       }),
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
     const themeToggle = screen.getByRole("button", {
       name: "Toggle theme mode",
     });
@@ -165,7 +155,9 @@ describe("BusinessLanding", () => {
       }),
     ).not.toBeInTheDocument();
     expect(container.querySelector('a[href="/linktree/customer-links"]')).toBeInTheDocument();
-    expect(container.querySelector('a[href="/bio/services"]')).toBeInTheDocument();
+    expect(
+      container.querySelector('a[href="/bio/services"]'),
+    ).not.toBeInTheDocument();
     expect(container.querySelector('a[href="tel:+9647500000000"]')).toBeInTheDocument();
     expect(container.querySelector('a[href*="/business"]')).not.toBeInTheDocument();
     expect(container.querySelector('a[href*="login"]')).not.toBeInTheDocument();
@@ -182,7 +174,6 @@ describe("BusinessLanding", () => {
           whatsapp_enabled: false,
         }}
         linktrees={[]}
-        miniWebsites={[]}
       />,
     );
 

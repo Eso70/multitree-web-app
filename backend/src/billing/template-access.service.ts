@@ -10,7 +10,7 @@ export class TemplateAccessService {
   ) {}
 
   async getEffectiveKeys(businessId: string): Promise<string[]> {
-    const cacheKey = `templates:business:${businessId}`;
+    const cacheKey = `templates:v2:business:${businessId}`;
     const cached = await this.redis.get<{ keys: string[] }>(cacheKey);
     if (cached?.keys) return cached.keys;
     const result = await this.database.query<{ template_key: string }>(
@@ -37,6 +37,6 @@ export class TemplateAccessService {
   }
 
   async invalidate(businessId: string): Promise<void> {
-    await this.redis.del(`templates:business:${businessId}`);
+    await this.redis.del(`templates:v2:business:${businessId}`);
   }
 }

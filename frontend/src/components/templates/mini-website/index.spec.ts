@@ -14,10 +14,18 @@ describe("mini website template catalog", () => {
     expect(new Set(ids).size).toBe(ids.length);
     expect(Object.keys(MINI_WEBSITE_TEMPLATE_COMPONENTS)).toEqual(ids);
     expect(ids).toContain(MINI_WEBSITE_TEMPLATE_DEFAULT_ID);
+    expect(ids).toEqual(["liquid-glass"]);
   });
 
   it("falls back to the current liquid-glass template", () => {
     expect(getMiniWebsiteTemplateComponent("not-a-template")).toBe(
+      MINI_WEBSITE_TEMPLATE_COMPONENTS[MINI_WEBSITE_TEMPLATE_DEFAULT_ID],
+    );
+  });
+
+  // A row saved before the catalog was reduced still names a retired template.
+  it("renders a retired template key as liquid-glass", () => {
+    expect(getMiniWebsiteTemplateComponent("soft-horizon")).toBe(
       MINI_WEBSITE_TEMPLATE_COMPONENTS[MINI_WEBSITE_TEMPLATE_DEFAULT_ID],
     );
   });

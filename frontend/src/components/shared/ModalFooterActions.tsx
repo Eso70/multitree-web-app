@@ -1,5 +1,4 @@
 /** Cancel/confirm pair for create-and-edit modals, rendered in the modal footer. */
-import { AccentActionButton } from "@/components/shared/AccentActionButton";
 
 export function ModalFooterActions({
   submitLabel,
@@ -21,13 +20,14 @@ export function ModalFooterActions({
       >
         پاشگەزبوونەوە
       </button>
-      <AccentActionButton
+      <button
+        type="button"
         onClick={onSubmit}
         disabled={submitDisabled}
-        className="h-11 flex-1"
+        className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-transparent text-sm font-bold text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
       >
         {submitLabel}
-      </AccentActionButton>
+      </button>
     </>
   );
 }

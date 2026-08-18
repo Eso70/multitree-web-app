@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Check, Globe2, Mail, Phone, UserRound, X } from "lucide-react";
-import { AccentActionButton } from "@/components/shared/AccentActionButton";
 import { CustomSelect } from "@/components/shared/CustomSelect";
 import { ManagementModal } from "@/components/shared/ManagementModal";
 import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
@@ -183,15 +182,16 @@ export function SignupApplicationCard({
           <X className="h-4 w-4" />
           ڕەتکردنەوە
         </button>
-        <AccentActionButton
-          busy={busy}
-          disabled={!selectedPlanId}
+        <button
+          type="button"
+          aria-busy={busy}
+          disabled={!selectedPlanId || busy}
           onClick={() => void onReview("approve")}
-          className="flex-1 justify-center"
+          className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-transparent px-3 text-xs font-bold text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-40"
         >
           <Check className="h-4 w-4" />
           پەسەندکردن
-        </AccentActionButton>
+        </button>
       </div>
 
       <ManagementModal

@@ -5,23 +5,13 @@ import { Bell, CheckCheck, ChevronRight, Inbox, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { SkeletonList } from "@/components/shared/Skeleton";
 import { ManagementModal } from "@/components/shared/ManagementModal";
-import { AccentActionButton } from "@/components/shared/AccentActionButton";
 import { DashboardHeaderActionButton } from "@/components/shared/DashboardHeader";
 import { useTheme } from "@/lib/contexts/ThemeProvider";
 import { communicationRequest } from "./api";
 import { usePolling } from "@/lib/utils/usePolling";
 import type { CommunicationNotification, NotificationInbox } from "./types";
 import { useRegisterBusinessDashboardRefresh } from "@/features/business/dashboard-refresh";
-
-function formatNotificationDate(isoDate: string) {
-  return new Date(isoDate).toLocaleDateString("ckb-IQ", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { formatNotificationDate } from "./format";
 
 export function BusinessCommunicationBell() {
   const { color: businessTheme } = useTheme();
@@ -358,14 +348,15 @@ export function BusinessCommunicationBell() {
               </button>
               {selectedNotification.sourceType === "conversation" &&
                 selectedNotification.sourceId && (
-                  <AccentActionButton
+                  <button
+                    type="button"
                     onClick={() =>
                       navigateToRespond(selectedNotification.sourceId!)
                     }
-                    className="w-full flex-1"
+                    className="flex w-full flex-1 items-center justify-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-xs font-semibold text-[var(--theme-ink)] shadow-sm transition-all duration-300 [background:var(--theme-css)] hover:brightness-95 hover:shadow disabled:cursor-wait disabled:opacity-60 sm:py-3 sm:text-sm"
                   >
                     وەڵامدانەوە
-                  </AccentActionButton>
+                  </button>
                 )}
             </>
           ) : null

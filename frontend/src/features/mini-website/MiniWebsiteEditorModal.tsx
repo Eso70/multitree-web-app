@@ -65,6 +65,7 @@ import {
 } from "./types";
 import { ensureEnabledSectionDefaults } from "./section-defaults";
 import { getSectionCountLabel } from "./section-count";
+import { useTemplateAccess } from "@/hooks/useTemplateAccess";
 import {
   validateCompleteMiniWebsite,
   validateMiniWebsiteStep,
@@ -169,6 +170,8 @@ export function MiniWebsiteEditorModal({
   onSave: (draft: MiniWebsiteDraft) => void | Promise<void>;
 }) {
   const { color: businessTheme } = useTheme();
+  const { isLoading: isTemplateAccessLoading, isTemplateAllowed } =
+    useTemplateAccess();
   const [draft, setDraft] = useState(initial);
   const [step, setStep] = useState<EditorStep>("identity");
   const [slugError, setSlugError] = useState<string | null>(null);
@@ -364,9 +367,19 @@ export function MiniWebsiteEditorModal({
     if (step === "identity" || isFinalStep) {
       if (!draft.slug.trim()) errors.slug = "لینکی تایبەت پێویستە.";
       else if (slugError) errors.slug = slugError;
+      if (!isTemplateAccessLoading && !isTemplateAllowed(draft.templateKey)) {
+        errors.templateKey = "ئەم قالبە لە پلانی ئێستاتدا بەردەست نییە.";
+      }
     }
     return errors;
-  }, [draft, isFinalStep, slugError, step]);
+  }, [
+    draft,
+    isFinalStep,
+    isTemplateAccessLoading,
+    isTemplateAllowed,
+    slugError,
+    step,
+  ]);
   const stepValid = Object.keys(stepErrors).length === 0;
   const displayErrors = useMemo(
     () =>

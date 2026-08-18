@@ -20,6 +20,9 @@ export interface PlatformBusinessSummary {
   name: string;
   subdomain: string;
   status: BusinessStatus;
+  /** Registered contact details, shown in the platform-admin directory. */
+  phone: string | null;
+  email: string | null;
   /** Dynamic subscription-plan code; plans are data, not a fixed TypeScript union. */
   plan: string;
   planName: string | null;
@@ -35,8 +38,6 @@ export interface PlatformBusinessSummary {
 
 /** The additional fields returned by the platform-admin detail endpoint. */
 export interface PlatformBusinessDetail extends PlatformBusinessSummary {
-  phone: string | null;
-  email: string | null;
   ownerName: string | null;
   ownerEmail: string | null;
   pixel_id: string | null;
@@ -59,8 +60,6 @@ export type PlatformBusiness = PlatformBusinessSummary &
   Partial<
     Pick<
       PlatformBusinessDetail,
-      | "phone"
-      | "email"
       | "ownerName"
       | "ownerEmail"
       | "pixel_id"

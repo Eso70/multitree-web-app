@@ -1,4 +1,8 @@
-export const BASIC_TEMPLATE_KEYS = ['spectrum', 'spotlight'] as const;
+export const BASIC_TEMPLATE_KEYS = [
+  'spectrum',
+  'spotlight',
+  'liquid-glass',
+] as const;
 
 export const PRO_TEMPLATE_KEYS = [
   ...BASIC_TEMPLATE_KEYS,
@@ -7,7 +11,7 @@ export const PRO_TEMPLATE_KEYS = [
   'serenity',
 ] as const;
 
-export const ULTRA_TEMPLATE_KEYS = PRO_TEMPLATE_KEYS;
+export const ULTRA_TEMPLATE_KEYS = [...PRO_TEMPLATE_KEYS] as const;
 
 export function getDefaultTemplateKeys(planCode: string): readonly string[] {
   switch (planCode.trim().toLowerCase()) {

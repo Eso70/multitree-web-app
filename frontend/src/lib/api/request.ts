@@ -41,6 +41,9 @@ export type ApiRequestOptions = Omit<RequestInit, "body"> & {
   json?: unknown;
 };
 
+const READ_RETRY_DELAYS_MS = [200, 600] as const;
+const RETRYABLE_READ_STATUSES = new Set([502, 503, 504]);
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -84,6 +87,35 @@ async function readPayload(response: Response): Promise<unknown> {
   return response.json().catch(() => undefined);
 }
 
+function requestMethod(
+  input: RequestInfo | URL,
+  method: string | undefined,
+): string {
+  if (method) return method.toUpperCase();
+  if (typeof Request !== "undefined" && input instanceof Request) {
+    return input.method.toUpperCase();
+  }
+  return "GET";
+}
+
+function waitForRetry(delayMs: number, signal?: AbortSignal | null) {
+  if (signal?.aborted) {
+    return Promise.reject(new DOMException("Aborted", "AbortError"));
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    const onAbort = () => {
+      globalThis.clearTimeout(timeout);
+      reject(new DOMException("Aborted", "AbortError"));
+    };
+    const timeout = globalThis.setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, delayMs);
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
 export async function apiRequest<T>(
   input: RequestInfo | URL,
   options: ApiRequestOptions = {},
@@ -91,25 +123,50 @@ export async function apiRequest<T>(
   const { json, body, headers: initialHeaders, ...init } = options;
   const headers = new Headers(initialHeaders);
   const requestBody = json === undefined ? body : JSON.stringify(json);
+  const canRetry = ["GET", "HEAD"].includes(requestMethod(input, init.method));
   if (json !== undefined && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
-  let response: Response;
-  try {
-    response = await fetch(input, {
-      credentials: "include",
-      cache: "no-store",
-      ...init,
-      headers,
-      body: requestBody,
-    });
-  } catch (cause) {
-    if (isAbortError(cause)) throw cause;
+  let response: Response | undefined;
+  for (let attempt = 0; attempt <= READ_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      response = await fetch(input, {
+        credentials: "include",
+        cache: "no-store",
+        ...init,
+        headers,
+        body: requestBody,
+      });
+    } catch (cause) {
+      if (isAbortError(cause)) throw cause;
+      if (!canRetry || attempt === READ_RETRY_DELAYS_MS.length) {
+        throw new ApiRequestError("The request could not be completed", {
+          status: 0,
+          code: "NETWORK_ERROR",
+          cause,
+        });
+      }
+      await waitForRetry(READ_RETRY_DELAYS_MS[attempt], init.signal);
+      continue;
+    }
+
+    if (
+      !canRetry ||
+      !RETRYABLE_READ_STATUSES.has(response.status) ||
+      attempt === READ_RETRY_DELAYS_MS.length
+    ) {
+      break;
+    }
+
+    await response.body?.cancel().catch(() => undefined);
+    await waitForRetry(READ_RETRY_DELAYS_MS[attempt], init.signal);
+  }
+
+  if (!response) {
     throw new ApiRequestError("The request could not be completed", {
       status: 0,
       code: "NETWORK_ERROR",
-      cause,
     });
   }
 

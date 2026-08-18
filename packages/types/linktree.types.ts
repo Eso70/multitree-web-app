@@ -1,6 +1,71 @@
 import type { PublicPageAnalytics } from "./analytics.types";
+import {
+  MINI_WEBSITE_BACKGROUND_STYLES,
+  type MiniWebsiteBackgroundStyle,
+} from "./mini-website.types";
+
+/**
+ * The background pattern catalogue, shared by the linktree page and the mini
+ * website.
+ *
+ * One set, aliased rather than copied: the pattern renderer and the picker
+ * modal are the same components on both surfaces, so a value either page can
+ * store has to be a value the other can draw.
+ */
+export const BACKGROUND_PATTERN_STYLES = MINI_WEBSITE_BACKGROUND_STYLES;
+
+export type BackgroundPatternStyle = MiniWebsiteBackgroundStyle;
+
+/**
+ * Where a linktree keeps its pattern choice.
+ *
+ * `template_config`, not a column: the pattern is presentation that only the
+ * template renderer reads, exactly like `background_image`.
+ */
+export const BACKGROUND_PATTERN_CONFIG_KEY = "background_pattern";
+
+export const BACKGROUND_PATTERN_DEFAULT: BackgroundPatternStyle = "none";
 
 export type LinktreeStatus = "active" | "inactive";
+
+/**
+ * What a brand-new Linktree page starts out holding.
+ *
+ * Two call sites create a page: the link editor modal in the dashboard, and
+ * `POST /linktrees/default`, which seeds the business's default page on the
+ * server without opening the editor. They used to disagree — the server path
+ * left the tagline, the helper text and the WhatsApp prompts empty — so a
+ * default page looked half-filled next to a hand-made one. Both read these
+ * values now.
+ *
+ * The backend mirrors them in `common/linktree-defaults.ts` because
+ * `@linktree/types` is source-only and Node cannot resolve it at runtime; a
+ * spec asserts the copy matches.
+ */
+export const LINKTREE_DEFAULT_SUBTITLE = "";
+
+/** Helper line under the tagline, telling visitors what the buttons are. */
+export const LINKTREE_DEFAULT_DESCRIPTION =
+  "بۆ پەیوەندی کردن, کلیک لەم لینکانەی خوارەوە بکە";
+
+export const LINKTREE_DEFAULT_FOOTER_TEXT = "MultiTree";
+
+export const LINKTREE_DEFAULT_FOOTER_PHONE = "7502485829";
+
+export const LINKTREE_DEFAULT_WHATSAPP_MODAL_TITLE = "پەیوەندی کردن";
+
+export const LINKTREE_DEFAULT_WHATSAPP_MODAL_SUBTITLE = "پرسیارێک هەڵبژێرە";
+
+/** Starter prompts for the WhatsApp modal, in display order. */
+export const LINKTREE_DEFAULT_WHATSAPP_QUESTIONS = [
+  { id: "order", text: "داواکردن", message: "سڵاو بەڕێز دەمەوێت داوا بکەم." },
+  { id: "price", text: "زانینی نرخ", message: "سڵاو بەڕێز، نرخی چەندە ؟" },
+  { id: "other", text: "پرسیارێکی تر", message: "سڵاو" },
+] as const satisfies readonly {
+  id: string;
+  text: string;
+  message: string;
+}[];
 
 export type LinktreeTemplateConfig = Record<string, unknown>;
 
@@ -37,7 +102,10 @@ export interface LinktreeListItem {
   seo_name?: string | null;
   public_identifier?: string;
   image?: string | null;
+  template_key?: string | null;
   template_config?: LinktreeTemplateConfig | null;
+  whatsapp_modal_enabled?: boolean | null;
+  status?: LinktreeStatus;
   is_default?: boolean;
   business_logo?: string | null;
   business_default_avatar?: string | null;

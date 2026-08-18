@@ -27,3 +27,35 @@ export const DEFAULT_LINKTREE_FOOTER_HIDDEN = true;
 
 /** The WhatsApp modal is opt-in: a new page links out rather than prompting. */
 export const DEFAULT_LINKTREE_WHATSAPP_ENABLED = false;
+
+/**
+ * Page content a brand-new linktree starts with.
+ *
+ * Mirrored from `LINKTREE_DEFAULT_*` in `@linktree/types`, which the link
+ * editor modal reads, so `POST /linktrees/default` seeds a page that matches
+ * one built by hand. The shared package is source-only and Node cannot resolve
+ * it at runtime, hence the copy; `linktree-page-defaults.spec.ts` asserts the
+ * two stay identical.
+ */
+export const DEFAULT_LINKTREE_SUBTITLE = '';
+
+export const DEFAULT_LINKTREE_DESCRIPTION =
+  'بۆ پەیوەندی کردن, کلیک لەم لینکانەی خوارەوە بکە';
+
+export const DEFAULT_LINKTREE_FOOTER_TEXT = 'MultiTree';
+
+export const DEFAULT_LINKTREE_FOOTER_PHONE = '7502485829';
+
+export const DEFAULT_LINKTREE_WHATSAPP_MODAL_TITLE = 'پەیوەندی کردن';
+
+export const DEFAULT_LINKTREE_WHATSAPP_MODAL_SUBTITLE = 'پرسیارێک هەڵبژێرە';
+
+export const DEFAULT_LINKTREE_WHATSAPP_QUESTIONS: ReadonlyArray<{
+  id: string;
+  text: string;
+  message: string;
+}> = [
+  { id: 'order', text: 'داواکردن', message: 'سڵاو بەڕێز دەمەوێت داوا بکەم.' },
+  { id: 'price', text: 'زانینی نرخ', message: 'سڵاو بەڕێز، نرخی چەندە ؟' },
+  { id: 'other', text: 'پرسیارێکی تر', message: 'سڵاو' },
+];

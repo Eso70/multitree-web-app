@@ -66,6 +66,52 @@ authentication, authorization, and every other security control. This file
 covers the analytics/CRM/activity pipeline, upload storage, environment
 configuration, and backend commands.
 
+## Default linktree page seeding
+
+`POST /linktrees/default` creates the business default page on the server,
+without opening the link editor. It must produce the same page the editor
+would: name, tagline, helper text, footer credit, WhatsApp modal wording and
+its starter questions.
+
+The shared values live in `@linktree/types` as `LINKTREE_DEFAULT_*`. The link
+editor reads them directly. `LinktreesService` cannot — the package is
+source-only and Node will not resolve its extensionless re-exports at runtime —
+so `common/linktree-defaults.ts` mirrors them, and
+`common/linktree-page-defaults.spec.ts` asserts the copy matches. Change a
+default in `@linktree/types` and that spec tells you to update the mirror.
+
+Pages created before the seeder filled this in are backfilled by
+`2026-08-18_fill_default_linktree_page_copy.sql`, which only writes columns
+that are still empty.
+
+## Linktree template_config guards
+
+`template_config` is free-form jsonb, so `normalizeTemplateConfig` in
+`LinktreesService` is the gate. Two keys are validated on every write and read:
+
+- `background_image` — only same-origin `/images/upload/` paths survive
+  (`common/linktree-background-image.ts`). The value reaches a CSS `url()` on a
+  public page.
+- `background_pattern` — only catalogue values survive
+  (`common/linktree-background-pattern.ts`). An unknown key would draw nothing
+  and leave the owner with a setting that looks saved and never applies.
+
+Both mirror `@linktree/types` and both carry a spec asserting the copy matches,
+because the shared package is source-only and Node cannot resolve it at
+runtime.
+
+## Linktree availability checks
+
+`GET /linktrees/check-slug` answers whether a `seo_name` is free. `seo_name` is
+unique per business, so a taken slug is a hard error in the editor.
+
+`GET /linktrees/check-name` answers the same question for the display name, and
+exists only to feed a warning. `linktrees.name` carries no unique constraint and
+none is wanted — two pages may legitimately share a display name at different
+slugs — so the editor shows the answer and still allows the save. Both compare
+case-insensitively against the trimmed value and accept an `excludeId` so
+editing a page does not collide with itself.
+
 ## Request validation boundaries
 
 The backend applies a global `RequestBoundaryPipe` before the global
@@ -116,7 +162,12 @@ computed independently of the current page.
 The business list is a summary projection and never includes TikTok access
 tokens, pixel configuration, defaults, or default-link payloads. The platform
 console loads that configuration only from the authorized single-business
-detail endpoint when an administrator opens the edit flow. API rate-policy
+detail endpoint when an administrator opens the edit flow.
+
+The registered `phone` and `email` are part of that summary: they sit on
+`businesses` and need no join, and the directory shows them on every row.
+`ownerName` and `ownerEmail` deliberately stay detail-only — they need a
+lateral join onto `users`, which is per-row work the list does not need. API rate-policy
 limits and monthly usage are joined in batch; dashboard loading performs a
 fixed number of queries rather than entitlement and usage queries per tenant.
 
@@ -174,6 +225,21 @@ custom
 The unified analytics pipeline stores visitors, sessions, events, public
 pages, public actions, daily page/action/dimension rollups, attribution
 fields, conversion values, consent state, and bot classification.
+
+Of those, `CONVERSION_EVENTS` decides which count as a conversion in a
+business's own reporting: `lead_created`, `order_completed`, and the three
+contact taps `whatsapp_click`, `call_click` and `email_click`. The contact
+taps are included because a linktree is overwhelmingly an ad landing page —
+the visitor arrives from a TikTok CTA and the tap is the campaign goal. With
+only the first two, a linktree could never record a conversion at all, since
+no linktree event emits either.
+
+This is the internal vocabulary only and does not change what TikTok is told:
+`tiktokEvent` maps by event name, and a contact tap already resolves to its
+action row's `Contact`, so the deduplication contract is untouched. The set is
+applied at ingest, so rollup rows written before a change to it keep their
+original numbers and a date range spanning the change is not comparable to one
+before it.
 
 Form submissions and lead events populate the CRM model. Analytics and CRM
 reads remain business scoped.

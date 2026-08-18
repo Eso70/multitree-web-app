@@ -18,3 +18,4 @@ export {
   TemplateViewportLayout,
   type TemplateViewportLayoutProps,
 } from "./TemplateViewportLayout";
+export { templateBackgroundStyle } from "./template-background";

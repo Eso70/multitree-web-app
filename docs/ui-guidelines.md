@@ -182,6 +182,46 @@ semantics, focus entry, focus trapping, Escape behavior, and focus restoration
 remain consistent. Custom overlay shells are reserved for interactions that
 are not management dialogs or cannot satisfy the shared primitive's contract.
 
+## Inline field validation
+
+A field reports its own problem under itself, in the field's own colour
+language, and never only through a toast on submit.
+
+- **Red** is a blocking error: the save will fail. Reserve it for rules the
+  server actually enforces. The linktree editor's name and slug floors come
+  from `chk_lt_name` / `chk_lt_seo_name` and the DTO's `@MinLength(2)`, not
+  from taste — a form that accepts less produces a 400 with nothing pointing at
+  the field.
+- **Amber** is an advisory warning: the save will succeed, but the reader may
+  not want it to. A duplicate page name is the example; it is legal and stays
+  out of the submit gate.
+- **Grey** is work in progress — "پشکنینی ناو..." while an availability request
+  is in flight, so an empty space does not read as "no problem found".
+
+Validators live in `features/link-editor/components/validation.ts`, not inside
+the modal, so the rule that has to match a DTO or a CHECK constraint sits in one
+testable place. Debounced availability checks need a `cancelled` flag as well as
+a cleared timer: clearing the timer only stops a request that has not been sent,
+and a slower earlier response would otherwise paint an error for a value the
+field no longer holds.
+
+## Modal header controls
+
+A modal's header controls are one visual set: every icon-only button is a 40px
+square (`h-10 w-10`) and a labelled one is the same 40px tall, all with `h-4
+w-4` icons. Mixing `p-2.5` with `px-3 py-2.5`, or 16px icons with 20px ones,
+puts the buttons at different heights on the same row.
+
+Every modal panel carries `role="dialog"`, `aria-modal="true"`,
+`aria-labelledby` pointing at its title, `tabIndex={-1}`, and the `dialogRef`
+that `useModalKeyboard` needs for focus entry, trapping and restoration.
+Dismiss on backdrop fires on `mousedown`, not `click`: a click event fires on
+the common ancestor, so a drag that starts inside the panel and ends on the
+backdrop would close the dialog. `components/shared/ManagementModal` is the
+reference implementation.
+
+---
+
 ## Modal forms and shared fields
 
 Modal field markup lives in one shared system so every dialog looks identical:
@@ -200,13 +240,20 @@ Modal field markup lives in one shared system so every dialog looks identical:
   avatar/logo picker (hover overlay, red remove badge, full-width choose-image
   button) used by the linktree editor and the advertising testimonials modal.
   It exports `DEFAULT_AVATAR_SRC`.
-- `components/shared/AccentActionButton` is the standard tenant-accent action
-  button (e.g. publish toggles, create/save/export actions, wizard next/submit).
-  It uses the business accent (`var(--theme-css)` background with
-  `var(--theme-ink)` foreground), a fixed `h-10` pill, and a `busy` prop that
-  sets `aria-busy` plus the wait cursor. Prefer it over hand-rolled inline
-  `var(--theme-*)` button styles; segmented controls, toggle switches, and
-  circular icon buttons keep their own patterns.
+- The tenant-accent action button (publish toggles, create/save/export actions,
+  wizard next/submit) is written inline at each call site as a plain `button`.
+  Only the accent paint is invariant: `[background:var(--theme-css)]`,
+  `text-[var(--theme-ink)]`, `hover:brightness-95`, and `disabled:cursor-wait`.
+  Geometry and typography follow the button row the action sits in — copy the
+  height/padding/text-size/weight of the neighbouring cancel, back, or secondary
+  button rather than a fixed pill, and lift the font one weight step for the
+  primary action. A row sized by padding (`px-4 py-2.5 sm:px-5 sm:py-3`) keeps
+  padding; a row on a fixed `h-10`/`h-11` keeps that height. Standalone accent
+  buttons with no neighbours use `flex h-10 shrink-0 items-center gap-2
+  rounded-xl border border-transparent px-3.5 text-xs font-black`. In-flight
+  actions set `aria-busy` and include the busy flag in `disabled` so the wait
+  cursor applies. Segmented controls, toggle switches, and circular icon buttons
+  keep their own patterns.
 - `features/link-editor/BackgroundColorPicker` is the background-color field
   used by the linktree editor. It renders the preset swatch grid plus an
   optional "custom" toggle that opens `ColorGradientModal`. Pass
@@ -424,6 +471,60 @@ Support features when appropriate:
 
 ---
 
+# Status Pills
+
+List rows and cards mark record state with pills, never with coloured row
+backgrounds or bare text.
+
+Pills for Linktree pages live in `components/business/LinktreeMeta.tsx`
+(`LinktreeMetaBadges`) and cover:
+
+- **بنەڕەت** — the business default page. Uses the theme primary colour so it
+  matches the default-page card in Business Settings.
+- **Age tier** — derived from the creation date by `lib/utils/record-age.ts`:
+  `نوێ` under 7 days, `لە گەشەدا` under 30 days, `کۆن` beyond that. The
+  thresholds live in `RECORD_AGE_TIER_DAYS`; change them there, not in a
+  component. The helper is domain-neutral — the platform admin ages businesses
+  with the same tiers.
+- **ناچالاک** — shown only when `status` is inactive. An active page is the
+  norm and carries no pill.
+- **واتساپ** — shown only while `whatsapp_modal_enabled` is true.
+- **Template name** — resolved through `getTemplateName` in
+  `lib/templates/config.ts`.
+
+Every pill is field-gated. `LinktreesGrid` and `LinktreesTable` are shared with
+the mini-website screen, which passes a partial projection, so a pill whose
+field is absent renders nothing. Fields that cannot be gated (the age tier
+reads `created_at`, which every consumer fills) sit behind the
+`showLinktreeMeta` prop, which only the Linktree dashboard sets. That prop also
+hides the Slug column, which the mini-website screen reuses to render its own
+status label.
+
+The business default page is always sorted first
+(`sortLinktreesForDashboard`), and optimistic list updates demote the previous
+default so exactly one بنەڕەت pill is visible at any time.
+
+## Platform-admin business pills
+
+The business directory uses the same pill pattern with its own set, in
+`features/platform-admin/components/BusinessMetaBadges.tsx`:
+
+- **چالاک / ڕاگیراو** — the business `status`. Both states are shown here,
+  unlike the Linktree list: a suspended tenant is what an admin scans for, and
+  the contrast only reads if the active state is labelled too.
+- **Plan** — `getBusinessPlanLabel` / `getBusinessPlanBadgeClasses`.
+- **Page allowance** — `max_linktrees`, with `∞` for the `-1` unlimited
+  sentinel.
+- **Age tier** — the shared `record-age` tiers, so a business registered this
+  week is visible without reading a date.
+- **بێ سەب دۆمەین** — a business with no subdomain cannot be reached at its own
+  address, so it is flagged rather than left to an empty cell.
+
+The grid card, table row and mobile card all render this one component; the
+status and plan markup used to be written out three times.
+
+---
+
 # Feedback
 
 Every user action should provide feedback.
@@ -552,14 +653,24 @@ Current supported visual options:
 
 ### Mini Websites
 
-Visual variations:
+Persisted visual templates:
+
+- Liquid Glass
+- Editorial
+- Business Pro
+- Sidebar Canvas
+
+Liquid Glass surface variations:
 
 - Soft
 - Glass
 - Minimal
 - Warm
 
-Background styles are independent from visual variations and may be combined with them.
+Background styles are independent from the visual template and the Liquid
+Glass surface variation. Profession templates select recommended content sections;
+they are not visual templates. Every visual template must consume the shared
+section registry and render in the scrollable mobile catalog preview.
 
 Subscription plans determine which templates are available.
 

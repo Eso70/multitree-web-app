@@ -52,6 +52,7 @@ import type {
   MiniWebsiteVideoPlatform,
   MiniWebsiteYoutubeVideo,
   MiniWebsiteWeekHours,
+  MiniWebsiteVisualTemplateKey,
 } from '@linktree/types';
 import type { PoolClient } from 'pg';
 import { DatabaseService } from '../database/database.service';
@@ -66,6 +67,7 @@ import {
   MINI_WEBSITE_LEAD_FIELD_TYPES,
   MINI_WEBSITE_LEAD_MAPPING_TYPES,
   MINI_WEBSITE_MAX_LEAD_FIELDS,
+  MINI_WEBSITE_VISUAL_TEMPLATE_DEFAULT,
   MINI_WEBSITE_MAX_LEAD_FIELD_OPTIONS,
   MINI_WEBSITE_MAX_PLANS,
   MINI_WEBSITE_MAX_PLAN_FEATURES,
@@ -74,6 +76,7 @@ import {
 } from './mini-website.constants';
 import type { WebsiteRow } from './mini-website.projection';
 import { MiniWebsitesRepository } from './mini-websites.repository';
+import { TemplateAccessService } from '../billing/template-access.service';
 
 const URL_KEYS = ['heroYoutubeUrl'];
 const SOCIAL_PLATFORMS = new Set([
@@ -144,6 +147,7 @@ type NormalizedMiniWebsite = {
   bio: string;
   avatar: string;
   cover: string | null;
+  templateKey: MiniWebsiteVisualTemplateKey;
   variation: string;
   backgroundStyle: MiniWebsiteBackgroundStyle;
   professionTemplate: string;
@@ -202,6 +206,7 @@ type MiniWebsiteInput = {
   bio?: string | null;
   avatar?: string | null;
   cover?: string | null;
+  templateKey?: string | null;
   variation?: string | null;
   backgroundStyle?: unknown;
   professionTemplate?: unknown;
@@ -490,6 +495,7 @@ export class MiniWebsitesService {
     private readonly database: DatabaseService,
     private readonly storage: StorageService,
     private readonly pageAnalytics: PublicPageAnalyticsService,
+    private readonly templateAccess: TemplateAccessService,
     private readonly repository: MiniWebsitesRepository = new MiniWebsitesRepository(
       database,
     ),
@@ -524,12 +530,13 @@ export class MiniWebsitesService {
         : this.slugify(data.name);
     const payload = this.defaults({ ...data, slug: safeSlug });
     this.validate(payload);
+    await this.templateAccess.assertAllowed(businessId, payload.templateKey);
     await this.assertSlugAvailable(businessId, payload.slug);
     const created = await this.database.transaction(async (client) => {
       const result = await client.query<WebsiteRow>(
         `INSERT INTO mini_websites
-          (business_id,name,slug,headline,bio,avatar,cover,hero_background_type,hero_background_color,hero_video_url,variation,background_style,accent_color,status,primary_action,whatsapp_number,pixel_event,event_value,profession_template,published_at)
-         VALUES ($1,$2,$3,$4,$5,COALESCE(NULLIF($6,'/images/DefaultAvatar.png'),(SELECT default_avatar FROM business_branding WHERE business_id=$1),'/images/DefaultAvatar.png'),$7,$8,$9,$10,$11,$12,$13,$14::varchar,$15,$16,$17,$18,$19,CASE WHEN $14::varchar='published' THEN now() ELSE NULL END)
+          (business_id,name,slug,headline,bio,avatar,cover,hero_background_type,hero_background_color,hero_video_url,variation,background_style,accent_color,status,primary_action,whatsapp_number,pixel_event,event_value,profession_template,template_key,published_at)
+         VALUES ($1,$2,$3,$4,$5,COALESCE(NULLIF($6,'/images/DefaultAvatar.png'),(SELECT default_avatar FROM business_branding WHERE business_id=$1),'/images/DefaultAvatar.png'),$7,$8,$9,$10,$11,$12,$13,$14::varchar,$15,$16,$17,$18,$19,$20,CASE WHEN $14::varchar='published' THEN now() ELSE NULL END)
          RETURNING *`,
         [
           businessId,
@@ -551,6 +558,7 @@ export class MiniWebsitesService {
           payload.pixelEvent,
           payload.eventValue,
           payload.professionTemplate,
+          payload.templateKey,
         ],
       );
       const row = result.rows[0];
@@ -611,6 +619,7 @@ export class MiniWebsitesService {
       plans: data.plans ?? current.plans,
     });
     this.validate(merged, existingImages);
+    await this.templateAccess.assertAllowed(businessId, merged.templateKey);
     if (merged.slug !== current.slug)
       await this.assertSlugAvailable(businessId, merged.slug, id);
     const nextVersion = Number(current.currentVersion || 1) + 1;
@@ -620,7 +629,7 @@ export class MiniWebsitesService {
            avatar=COALESCE(NULLIF($5,'/images/DefaultAvatar.png'),(SELECT default_avatar FROM business_branding WHERE business_id=$20),'/images/DefaultAvatar.png'),cover=$6,
            hero_background_type=$7,hero_background_color=$8,hero_video_url=$9,variation=$10,background_style=$11,accent_color=$12,
            status=$13,primary_action=$14,whatsapp_number=$15,pixel_event=$16,event_value=$17,current_version=$18,
-           profession_template=$21,
+           profession_template=$21,template_key=$22,
            published_at=CASE WHEN $13::varchar='published' THEN COALESCE(published_at,now()) ELSE published_at END
          WHERE id=$19 AND business_id=$20`,
         [
@@ -645,6 +654,7 @@ export class MiniWebsitesService {
           id,
           businessId,
           merged.professionTemplate,
+          merged.templateKey,
         ],
       );
       await this.writeContent(client, id, merged);
@@ -788,6 +798,12 @@ export class MiniWebsitesService {
       throw new NotFoundException('Mini website not found');
     }
     const website = this.hydrate([row])[0];
+    const allowedTemplates = await this.templateAccess.getEffectiveKeys(
+      website.businessId,
+    );
+    website.templateKey = allowedTemplates.includes(website.templateKey)
+      ? website.templateKey
+      : MINI_WEBSITE_VISUAL_TEMPLATE_DEFAULT;
     return {
       ...website,
       // Same resolver the public linktree read uses, so the two surfaces that
@@ -1521,6 +1537,7 @@ export class MiniWebsitesService {
             ? row.business_default_avatar || '/images/DefaultAvatar.png'
             : row.avatar,
         cover: row.cover,
+        templateKey: row.template_key || MINI_WEBSITE_VISUAL_TEMPLATE_DEFAULT,
         variation: row.variation,
         backgroundStyle: normalizeBackgroundStyle(row.background_style),
         professionTemplate: row.profession_template || 'custom',
@@ -2849,6 +2866,10 @@ export class MiniWebsitesService {
       bio: data.bio || '',
       avatar: data.avatar || '/images/DefaultAvatar.png',
       cover: data.cover || null,
+      templateKey:
+        data.templateKey === 'liquid-glass'
+          ? data.templateKey
+          : MINI_WEBSITE_VISUAL_TEMPLATE_DEFAULT,
       variation: data.variation || 'soft',
       backgroundStyle: normalizeBackgroundStyle(data.backgroundStyle),
       professionTemplate:

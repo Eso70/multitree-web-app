@@ -5,7 +5,6 @@ import {
   CheckCircle,
   LayoutTemplate,
   Link2,
-  PanelsTopLeft,
   Plus,
   Search,
   X,
@@ -17,16 +16,9 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchModal } from "@/components/shared/SearchModal";
 import { DashboardSurface } from "@/components/shared/DashboardSurface";
 import { SkeletonTemplatePage } from "@/components/shared/Skeleton";
-import {
-  SegmentedTabs,
-  type SegmentedTab,
-} from "@/components/shared/SegmentedTabs";
 import { DynamicTemplate } from "@/components/templates/DynamicTemplate";
-import { MonitorMockup } from "@/components/shared/MonitorMockup";
 import { useRegisterBusinessDashboardRefresh } from "@/features/business/dashboard-refresh";
-import type {
-  LinktreePresentation as Linktree,
-} from "@linktree/types";
+import type { LinktreePresentation as Linktree } from "@linktree/types";
 import {
   createBusinessContactPreviewLinks,
   createLinktreeTemplatePreview,
@@ -37,21 +29,6 @@ import {
   TemplatePreviewSkeleton,
 } from "./TemplatePhonePreview";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
-
-type TemplateCategory = "linktree" | "mini-website";
-
-const TEMPLATE_CATEGORY_TABS: SegmentedTab<TemplateCategory>[] = [
-  {
-    id: "linktree",
-    label: "قالبەکانی لینک تری",
-    icon: Link2,
-  },
-  {
-    id: "mini-website",
-    label: "قالبەکانی مینی وێبسایت",
-    icon: PanelsTopLeft,
-  },
-];
 
 const SAMPLE_LINKS = createBusinessContactPreviewLinks();
 
@@ -107,31 +84,16 @@ const LinktreeTemplatePreview = memo(function LinktreeTemplatePreview({
   );
 });
 
-const EmptyMiniWebsiteTemplatePreview = memo(function EmptyMiniWebsiteTemplatePreview() {
-  return (
-    <MonitorMockup
-      name=""
-      ariaLabel="Empty mini website template monitor"
-      deferContent={false}
-    >
-      <div aria-hidden="true" className="h-[1000px] bg-white dark:bg-[#161B22]" />
-    </MonitorMockup>
-  );
-});
-
 export function TemplatesPage({ canCreate = true }: { canCreate?: boolean }) {
-  const { isLoading, isTemplateAllowed, refresh } = useTemplateAccess(!canCreate);
-  const [category, setCategory] = useState<TemplateCategory>("linktree");
+  const { isLoading, isTemplateAllowed, refresh } =
+    useTemplateAccess(!canCreate);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   useRegisterBusinessDashboardRefresh("templates", () =>
     refresh({ rethrow: true }),
   );
 
-  const activeTemplates = useMemo(
-    () => (category === "linktree" ? TEMPLATE_OPTIONS : []),
-    [category],
-  );
+  const activeTemplates = TEMPLATE_OPTIONS;
 
   const filteredTemplates = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
@@ -146,12 +108,9 @@ export function TemplatesPage({ canCreate = true }: { canCreate?: boolean }) {
 
   const availableTemplateCount = useMemo(
     () =>
-      category === "mini-website"
-        ? 0
-        : TEMPLATE_OPTIONS.filter((template) =>
-            isTemplateAllowed(template.id),
-          ).length,
-    [category, isTemplateAllowed],
+      activeTemplates.filter((template) => isTemplateAllowed(template.id))
+        .length,
+    [activeTemplates, isTemplateAllowed],
   );
 
   useEffect(() => {
@@ -165,16 +124,8 @@ export function TemplatesPage({ canCreate = true }: { canCreate?: boolean }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const changeCategory = (nextCategory: TemplateCategory) => {
-    setCategory(nextCategory);
-    setSearchQuery("");
-    setIsSearchModalOpen(false);
-  };
-
   const selectSearchResult = (templateId: string) => {
-    const element = document.getElementById(
-      `template-${category}-${templateId}`,
-    );
+    const element = document.getElementById(`template-linktree-${templateId}`);
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "center" });
       element.classList.add("ring-4", "ring-indigo-500/50");
@@ -212,20 +163,7 @@ export function TemplatesPage({ canCreate = true }: { canCreate?: boolean }) {
           value={TEMPLATE_OPTIONS.length}
           color="purple"
         />
-        <StatCard
-          icon={PanelsTopLeft}
-          label="قالبی مینی وێبسایت"
-          value={0}
-          color="orange"
-        />
       </StatCardGrid>
-
-      <SegmentedTabs
-        tabs={TEMPLATE_CATEGORY_TABS}
-        value={category}
-        onChange={changeCategory}
-        fullWidth
-      />
 
       <DashboardSurface
         as="div"
@@ -254,9 +192,7 @@ export function TemplatesPage({ canCreate = true }: { canCreate?: boolean }) {
                     : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50/50 hover:text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
                 }`}
                 title={
-                  searchQuery.trim()
-                    ? "پاککردنەوەی گەڕان"
-                    : "گەڕان (Ctrl+K)"
+                  searchQuery.trim() ? "پاککردنەوەی گەڕان" : "گەڕان (Ctrl+K)"
                 }
               >
                 {searchQuery.trim() ? (
@@ -282,11 +218,7 @@ export function TemplatesPage({ canCreate = true }: { canCreate?: boolean }) {
                   type="button"
                   data-create-template
                   onClick={() =>
-                    alert(
-                      category === "linktree"
-                        ? "زیادکردنی قالبی لینک تری بەم نزیکانە زیاد دەکرێت"
-                        : "زیادکردنی قالبی مینی وێبسایت بەم نزیکانە زیاد دەکرێت",
-                    )
+                    alert("زیادکردنی قالبی لینک تری بەم نزیکانە زیاد دەکرێت")
                   }
                   className="sa-gradient sa-gradient-hover group relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-0 text-xs font-bold text-white shadow-md transition-all duration-300 sm:w-auto sm:px-4 sm:text-sm"
                 >
@@ -300,13 +232,9 @@ export function TemplatesPage({ canCreate = true }: { canCreate?: boolean }) {
 
         <div
           className="border-t border-slate-100 pt-4 dark:border-white/5 sm:pt-6"
-          data-template-category={category}
+          data-template-category="linktree"
         >
-          {category === "mini-website" ? (
-            <div className="mx-auto w-full max-w-5xl py-2 sm:py-4">
-              <EmptyMiniWebsiteTemplatePreview />
-            </div>
-          ) : filteredTemplates.length === 0 ? (
+          {filteredTemplates.length === 0 ? (
             <div className="rounded-2xl border border-slate-100 bg-slate-50/20 py-12 text-center text-slate-400 shadow-sm dark:border-white/5 dark:bg-white/5 dark:text-gray-500">
               <Search className="mx-auto mb-3 h-12 w-12 opacity-30" />
               <p>هیچ قالبێک نەدۆزرایەوە</p>
@@ -315,11 +243,7 @@ export function TemplatesPage({ canCreate = true }: { canCreate?: boolean }) {
               </p>
             </div>
           ) : (
-            <div
-              className={`grid w-full min-w-0 grid-cols-1 gap-4 ${
-                category === "linktree" ? "lg:grid-cols-2 2xl:grid-cols-3" : ""
-              }`}
-            >
+            <div className="grid w-full min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
               {filteredTemplates.map((template) => (
                 <article
                   id={`template-linktree-${template.id}`}
@@ -341,11 +265,7 @@ export function TemplatesPage({ canCreate = true }: { canCreate?: boolean }) {
       <SearchModal
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}
-        placeholder={
-          category === "linktree"
-            ? "ناوی قالبی لینک تری بنووسە..."
-            : "ناوی قالبی مینی وێبسایت بنووسە..."
-        }
+        placeholder="ناوی قالبی لینک تری بنووسە..."
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
       >
@@ -361,8 +281,7 @@ export function TemplatesPage({ canCreate = true }: { canCreate?: boolean }) {
         ) : (
           <div className="flex flex-col gap-0.5">
             {filteredTemplates.map((template) => {
-              const ResultIcon =
-                category === "linktree" ? Link2 : PanelsTopLeft;
+              const ResultIcon = Link2;
 
               return (
                 <button

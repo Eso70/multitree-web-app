@@ -119,6 +119,63 @@ touched by that migration. The value is a sentinel that mini-website and
 linktree SQL compares against to mean "still the default", so the avatar was
 changed by replacing the artwork at that path rather than by moving the path.
 
+`2026-08-16_reduce_mini_website_visual_templates.sql` retires Editorial,
+Business Pro, and Sidebar Canvas. It adds `mini_websites.template_key` safely
+for databases that do not have it yet, defaults existing rows to Liquid, and
+moves any retired key to `side-profile`. Obsolete plan/global rows are removed,
+the live check constraint is reduced to `liquid-glass` and `side-profile`, and
+both live templates are granted to every active plan configuration. Liquid
+remains the database and application default.
+
+`2026-08-17_replace_side_profile_with_studio_grid.sql` replaces the former
+alternative with Studio Grid. Existing `side-profile` selections are preserved
+as `studio-grid`, retired catalog rows are removed, and the final live template
+constraint contains exactly `liquid-glass` and `studio-grid`.
+
+`2026-08-17_rename_studio_grid_to_soft_horizon.sql` adopts the final Soft
+Horizon identity. Existing `studio-grid` and older alternative selections move
+to `soft-horizon`; the resulting live constraint contains exactly
+`liquid-glass` and `soft-horizon`.
+
+`2026-08-18_retire_soft_horizon_mini_website_template.sql` retires Soft
+Horizon, leaving `liquid-glass` as the only mini-website visual template and
+therefore also the default. Every selection is moved rather than cleared, so
+a mini website that was on Soft Horizon keeps rendering; the live constraint
+narrows to `liquid-glass`; the retired catalog and global-settings rows are
+removed; and `liquid-glass` is granted to every active plan so a plan whose
+only mini-website grant was Soft Horizon is not left with none. Idempotent.
+
+`2026-08-18_retire_website_link_platform.sql` folds the `website` link
+platform into `custom`, which already accepted a bare domain and stored the
+same `https://…` url while additionally passing through explicit schemes. The
+destination is deliberately left untouched: `LinksService.syncLinks` matches a
+saved link on platform + url, so rewriting the url would make every one of
+these links look new on the next save and retire the action row holding its
+clicks. `links.platform` carries no enum, only a non-empty length check, so no
+schema change is needed. Idempotent.
+
+`2026-08-18_recover_orphaned_link_click_history.sql` repairs per-button click
+history that the old link-sync behaviour orphaned. Replacing a linktree's
+links used to delete and re-insert every row, so each surviving button got a
+new uuid, a new `public_page_actions` row, and an archived predecessor still
+holding all of its `analytics_action_daily` rollups — which the breakdown
+query excludes. The migration folds those rollups onto the live action and
+re-points the matching `analytics_events`, but only where exactly one active
+action on the same public page shares the archived one's destination;
+anything ambiguous is left alone. Folded rows are deleted, so re-running
+changes nothing. `LinksService.syncLinks` no longer destroys link rows, so
+this is a one-time repair rather than an ongoing reconciliation.
+
+`2026-08-18_fill_default_linktree_page_copy.sql` backfills the copy the
+server-side default-page seeder used to leave empty. `POST /linktrees/default`
+wrote only the name, image, colours and footer, so a business default page had
+no helper text and no WhatsApp prompts while an editor-built page had both.
+The seeder fills them now; this repairs the pages created before it did. Only
+empty columns are written, so a business that wrote its own helper text keeps
+it and a second run matches nothing. `subtitle` is left alone because the
+editor's own default for it is the empty string, and `footer_text` is left
+alone because the old value is live page content the owner may have reviewed.
+
 Neither dropped column is listed in `OBSOLETE_COLUMNS`
 (`migration-compatibility.ts`). That check runs against a fresh database after
 `full_schema.sql` is applied but before the forward migrations, and the frozen

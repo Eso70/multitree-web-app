@@ -18,13 +18,7 @@ import {
   useScroll,
   useTransform,
 } from "motion/react";
-import {
-  ChevronUp,
-  Eye,
-  Moon,
-  Share2,
-  Sun,
-} from "lucide-react";
+import { ChevronUp, Eye, Moon, Share2, Sun } from "lucide-react";
 import { Skeleton } from "@/components/shared/Skeleton";
 import { SOCIAL_PLATFORMS } from "@/features/link-editor/modal-constants";
 import {
@@ -90,10 +84,9 @@ function LazySectionSkeleton({
   fullPage: boolean;
   children: React.ReactNode;
 }) {
-  const {
-    ref,
-    isNear: nearViewport,
-  } = useNearViewport<HTMLDivElement>({ rootMargin: "900px 0px" });
+  const { ref, isNear: nearViewport } = useNearViewport<HTMLDivElement>({
+    rootMargin: "900px 0px",
+  });
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -136,8 +129,6 @@ function LazySectionSkeleton({
   );
 }
 
-
-/** One real list; arrow navigation wraps without cloning heavy media cards. */
 export function LiquidGlassMiniWebsiteTemplate({
   profile: sourceProfile,
   compact = false,
@@ -282,6 +273,7 @@ export function LiquidGlassMiniWebsiteTemplate({
     content.heroBackgroundColor || profile.accentColor,
   ).css;
   const renderPageSurface = fullPage || embeddedPreview;
+  const expandedLayout = fullPage || embeddedPreview;
   const shell = fullPage
     ? "min-h-[100svh] max-w-none border-0 shadow-none"
     : `border border-slate-200 shadow-xl dark:border-white/10 ${compact ? "max-w-[260px] rounded-[28px]" : viewportClasses[viewport]}`;
@@ -326,417 +318,412 @@ export function LiquidGlassMiniWebsiteTemplate({
 
   return (
     <motion.div
-        ref={previewRef}
-        onClickCapture={openImageViewer}
-        className={`mini-website-ltr relative isolate mx-auto w-full overflow-x-hidden transition-colors duration-500 ${shell} ${themeClass} ${renderPageSurface ? "mini-website-motion bg-[#faf8ff] dark:bg-[#09100e]" : ""}`}
-        dir="ltr"
-        initial={fullPage ? { opacity: 0 } : false}
-        animate={{ opacity: 1 }}
-        style={
-          {
-            "--business-website-color": accentColor.primary,
-            "--theme-primary": accentColor.primary,
-            "--theme-css": accentColor.css,
-            "--portfolio-surface-plain": dark ? "#111827" : "#ffffff",
-            "--portfolio-surface-soft": dark
-              ? `color-mix(in srgb, ${accentColor.primary} 7%, #111827)`
-              : `color-mix(in srgb, ${accentColor.primary} 6%, #f2f3ff)`,
-            "--portfolio-surface-mid": dark
-              ? `color-mix(in srgb, ${accentColor.primary} 11%, #172033)`
-              : `color-mix(in srgb, ${accentColor.primary} 10%, #eaedff)`,
-            "--portfolio-surface-high": dark
-              ? `color-mix(in srgb, ${accentColor.primary} 15%, #1f2937)`
-              : `color-mix(in srgb, ${accentColor.primary} 14%, #e2e7ff)`,
-          } as CSSProperties
-        }
+      ref={previewRef}
+      onClickCapture={openImageViewer}
+      className={`mini-website-ltr mini-template-liquid-glass relative isolate mx-auto w-full overflow-x-hidden transition-colors duration-500 ${shell} ${themeClass} ${renderPageSurface ? "mini-website-motion" : ""}`}
+      data-mini-template="liquid-glass"
+      dir="ltr"
+      initial={fullPage ? { opacity: 0 } : false}
+      animate={{ opacity: 1 }}
+      style={
+        {
+          "--business-website-color": accentColor.primary,
+          "--theme-primary": accentColor.primary,
+          "--theme-css": accentColor.css,
+          "--portfolio-surface-plain": dark ? "#111827" : "#ffffff",
+          "--portfolio-surface-soft": dark
+            ? `color-mix(in srgb, ${accentColor.primary} 7%, #111827)`
+            : `color-mix(in srgb, ${accentColor.primary} 6%, #f2f3ff)`,
+          "--portfolio-surface-mid": dark
+            ? `color-mix(in srgb, ${accentColor.primary} 11%, #172033)`
+            : `color-mix(in srgb, ${accentColor.primary} 10%, #eaedff)`,
+          "--portfolio-surface-high": dark
+            ? `color-mix(in srgb, ${accentColor.primary} 15%, #1f2937)`
+            : `color-mix(in srgb, ${accentColor.primary} 14%, #e2e7ff)`,
+        } as CSSProperties
+      }
+    >
+      {renderPageSurface && (
+        <PortfolioDecorations
+          accent={accentColor.primary}
+          backgroundStyle={profile.backgroundStyle || "grid"}
+        />
+      )}
+      {fullPage && !prefersReducedMotion && (
+        <motion.div
+          className="fixed inset-x-0 top-0 z-50 h-0.5 origin-left"
+          style={{
+            background: accentColor.css,
+            scaleX: scrollYProgress,
+          }}
+          aria-hidden="true"
+        />
+      )}
+      <header
+        id="portfolio-home"
+        className={`relative z-10 mx-auto ${expandedLayout ? "max-w-[1380px] px-4 pt-4 sm:px-6 sm:pt-6 xl:px-8 xl:pt-8" : "p-3"}`}
       >
-        {renderPageSurface && (
-          <PortfolioDecorations
-            accent={accentColor.primary}
-            backgroundStyle={profile.backgroundStyle || "grid"}
-          />
-        )}
-        {fullPage && !prefersReducedMotion && (
-          <motion.div
-            className="fixed inset-x-0 top-0 z-50 h-0.5 origin-left"
-            style={{
-              background: accentColor.css,
-              scaleX: scrollYProgress,
-            }}
-            aria-hidden="true"
-          />
-        )}
-        <header
-          id="portfolio-home"
-          className={`relative z-10 mx-auto ${fullPage ? "max-w-[1380px] px-4 pt-4 sm:px-6 sm:pt-6 xl:px-8 xl:pt-8" : "p-3"}`}
-        >
-          <motion.div
-            className={`relative overflow-hidden border border-slate-900/[0.08] bg-slate-200 shadow-[0_24px_64px_-44px_rgba(15,23,42,0.45)] dark:border-white/[0.08] dark:bg-slate-900 ${
-              fullPage
-                ? `${heroVideo ? "aspect-video sm:aspect-[16/7]" : "h-52 sm:h-72 lg:h-[25rem] xl:h-[28rem]"} rounded-[1.75rem] sm:rounded-[2.25rem]`
-                : `${heroVideo ? "aspect-video" : "h-36"} rounded-2xl`
-            } ${heroImageOpenable ? "cursor-zoom-in" : ""}`}
-            data-mini-hero
-            data-mini-image-src={
-              heroImageOpenable ? profile.cover : undefined
+        <motion.div
+          className={`relative overflow-hidden border border-slate-900/[0.08] bg-slate-200 shadow-[0_24px_64px_-44px_rgba(15,23,42,0.45)] dark:border-white/[0.08] dark:bg-slate-900 ${
+            expandedLayout
+              ? `${heroVideo ? "aspect-video sm:aspect-[16/7]" : "h-52 sm:h-72 lg:h-[25rem] xl:h-[28rem]"} rounded-[1.75rem] sm:rounded-[2.25rem]`
+              : `${heroVideo ? "aspect-video" : "h-36"} rounded-2xl`
+          } ${heroImageOpenable ? "cursor-zoom-in" : ""}`}
+          data-mini-hero
+          data-mini-image-src={heroImageOpenable ? profile.cover : undefined}
+          data-mini-image-alt="وێنەی بەرگ"
+          data-mini-image-group="hero"
+          role={heroImageOpenable ? "button" : undefined}
+          tabIndex={heroImageOpenable ? 0 : undefined}
+          aria-label={heroImageOpenable ? "کردنەوەی وێنەی بەرگ" : undefined}
+          onKeyDown={(event) => {
+            if (
+              heroImageOpenable &&
+              (event.key === "Enter" || event.key === " ")
+            ) {
+              event.preventDefault();
+              event.currentTarget.click();
             }
-            data-mini-image-alt="وێنەی بەرگ"
+          }}
+          style={{
+            background:
+              heroBackgroundType === "color" ? heroColor : accentColor.css,
+            y: heroY,
+          }}
+          initial={
+            expandedLayout
+              ? { opacity: 0, scale: prefersReducedMotion ? 1 : 0.992 }
+              : false
+          }
+          animate={{ opacity: 1, scale: 1 }}
+        >
+          {heroBackgroundType === "image" && profile.cover && (
+            <Image
+              src={profile.cover}
+              alt="وێنەی بەرگ"
+              fill
+              className="object-cover"
+              unoptimized
+              priority={fullPage}
+            />
+          )}
+          {heroVideo && (
+            <BannerVideo
+              source={heroVideo}
+              interactive={interactive && !compact}
+            />
+          )}
+        </motion.div>
+
+        <motion.div
+          className={
+            expandedLayout
+              ? "relative z-20 mx-1 mt-3 flex items-center justify-end gap-2 sm:mx-2"
+              : "absolute right-7 top-7 z-20 flex items-center gap-2"
+          }
+          data-mini-controls
+          initial={fullPage ? { opacity: 0, y: -8 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+        >
+          <motion.button
+            type="button"
+            onClick={() => setDark((value) => !value)}
+            className={heroControlClass}
+            aria-label="ڕووکار"
+            whileHover={{ y: -1, scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            <AnimatePresence initial={false} mode="wait">
+              <motion.span
+                key={dark ? "sun" : "moon"}
+                initial={{ opacity: 0, rotate: -35, scale: 0.7 }}
+                animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                exit={{ opacity: 0, rotate: 35, scale: 0.7 }}
+                transition={{ duration: 0.24 }}
+              >
+                {dark ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </motion.span>
+            </AnimatePresence>
+          </motion.button>
+          {content.showShareTools !== false && (
+            <motion.button
+              type="button"
+              onClick={() => setShareOpen(true)}
+              className={heroControlClass}
+              data-mini-open="mini:share"
+              data-mini-open-label="هاوبەشکردن"
+              aria-label="هاوبەشکردن"
+              whileHover={{ y: -1, scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <Share2 className="h-4 w-4" />
+            </motion.button>
+          )}
+        </motion.div>
+
+        <motion.div
+          className={`relative z-10 mx-auto text-center ${
+            expandedLayout ? "-mt-16 max-w-3xl px-3 sm:-mt-20" : "-mt-10 px-2"
+          }`}
+          data-mini-profile
+          initial={
+            fullPage ? { opacity: 0, y: prefersReducedMotion ? 0 : 16 } : false
+          }
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <motion.span
+            className={`relative mx-auto block overflow-hidden rounded-full border-[3px] border-white/90 bg-white shadow-[0_20px_48px_-30px_rgba(15,23,42,0.42)] dark:border-[#09100e]/90 dark:bg-[#09100e] ${
+              expandedLayout ? "h-32 w-32 sm:h-40 sm:w-40" : "h-20 w-20"
+            } ${interactive ? "cursor-zoom-in" : ""}`}
+            data-mini-image-src={interactive ? profile.avatar : undefined}
+            data-mini-image-alt={interactive ? profile.name : undefined}
             data-mini-image-group="hero"
-            role={heroImageOpenable ? "button" : undefined}
-            tabIndex={heroImageOpenable ? 0 : undefined}
+            role={interactive ? "button" : undefined}
+            tabIndex={interactive ? 0 : undefined}
             aria-label={
-              heroImageOpenable ? "کردنەوەی وێنەی بەرگ" : undefined
+              interactive ? `کردنەوەی وێنەی ${profile.name}` : undefined
             }
             onKeyDown={(event) => {
-              if (
-                heroImageOpenable &&
-                (event.key === "Enter" || event.key === " ")
-              ) {
+              if (interactive && (event.key === "Enter" || event.key === " ")) {
                 event.preventDefault();
                 event.currentTarget.click();
               }
             }}
-            style={{
-              background:
-                heroBackgroundType === "color" ? heroColor : accentColor.css,
-              y: heroY,
-            }}
-            initial={
-              fullPage
-                ? { opacity: 0, scale: prefersReducedMotion ? 1 : 0.992 }
-                : false
+            whileHover={
+              interactive && expandedLayout ? { scale: 1.015 } : undefined
             }
-            animate={{ opacity: 1, scale: 1 }}
           >
-            {heroBackgroundType === "image" && profile.cover && (
-              <Image
-                src={profile.cover}
-                alt="وێنەی بەرگ"
-                fill
-                className="object-cover"
-                unoptimized
-                priority={fullPage}
-              />
-            )}
-            {heroVideo && (
-              <BannerVideo
-                source={heroVideo}
-                interactive={interactive && !compact}
-              />
-            )}
-          </motion.div>
-
-          <motion.div
-            className={
-              fullPage
-                ? "relative z-20 mx-1 mt-3 flex items-center justify-end gap-2 sm:mx-2"
-                : "absolute right-7 top-7 z-20 flex items-center gap-2"
-            }
-            data-mini-controls
-            initial={fullPage ? { opacity: 0, y: -8 } : false}
+            <Image
+              src={profile.avatar || "/images/DefaultAvatar.png"}
+              alt={profile.name}
+              fill
+              className="object-cover"
+              unoptimized
+            />
+          </motion.span>
+          <motion.h1
+            className={`flex items-center justify-center gap-2 font-black tracking-[-0.045em] [overflow-wrap:anywhere] ${
+              expandedLayout
+                ? "mt-5 text-3xl leading-tight sm:text-5xl"
+                : "mt-3 text-xl"
+            }`}
+            dir="auto"
+            initial={fullPage ? { opacity: 0, y: 6 } : false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.12 }}
+            transition={{ delay: 0.22 }}
           >
-            <motion.button
-              type="button"
-              onClick={() => setDark((value) => !value)}
-              className={heroControlClass}
-              aria-label="ڕووکار"
-              whileHover={{ y: -1, scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
+            <span>{profile.name}</span>
+            <VerifiedBadge compact={!expandedLayout} />
+          </motion.h1>
+          <motion.p
+            className={`font-black ${
+              expandedLayout ? "mt-3 text-base sm:text-xl" : "mt-2 text-xs"
+            }`}
+            style={{ color: accentColor.primary }}
+            dir="auto"
+            initial={fullPage ? { opacity: 0, y: 8 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.28 }}
+          >
+            {profile.headline}
+          </motion.p>
+          <motion.p
+            className={`mx-auto opacity-60 ${
+              expandedLayout
+                ? "mt-4 max-w-2xl text-sm leading-7 sm:text-base sm:leading-8"
+                : "mt-2 text-[11px] leading-5"
+            }`}
+            dir="auto"
+            initial={fullPage ? { opacity: 0, y: 8 } : false}
+            animate={{ opacity: 0.6, y: 0 }}
+            transition={{ delay: 0.34 }}
+          >
+            {profile.bio}
+          </motion.p>
+          {content.showViewCount !== false && "views" in profile && (
+            <p
+              className={`mx-auto flex items-center justify-center gap-1.5 font-semibold text-slate-400 dark:text-slate-500 ${
+                expandedLayout ? "mt-3 text-xs sm:text-sm" : "mt-2 text-[10px]"
+              }`}
+              dir="auto"
             >
-              <AnimatePresence initial={false} mode="wait">
-                <motion.span
-                  key={dark ? "sun" : "moon"}
-                  initial={{ opacity: 0, rotate: -35, scale: 0.7 }}
-                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                  exit={{ opacity: 0, rotate: 35, scale: 0.7 }}
-                  transition={{ duration: 0.24 }}
-                >
-                  {dark ? (
-                    <Sun className="h-4 w-4" />
-                  ) : (
-                    <Moon className="h-4 w-4" />
-                  )}
-                </motion.span>
-              </AnimatePresence>
-            </motion.button>
-            {content.showShareTools !== false && (
-              <motion.button
-                type="button"
-                onClick={() => setShareOpen(true)}
-                className={heroControlClass}
-                data-mini-open="mini:share"
-                data-mini-open-label="هاوبەشکردن"
-                aria-label="هاوبەشکردن"
-                whileHover={{ y: -1, scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                <Share2 className="h-4 w-4" />
-              </motion.button>
-            )}
-          </motion.div>
+              <Eye className="h-3.5 w-3.5" />
+              {profile.views.toLocaleString("en-US")}
+            </p>
+          )}
+        </motion.div>
 
-          <motion.div
-            className={`relative z-10 mx-auto text-center ${
-              fullPage ? "-mt-16 max-w-3xl px-3 sm:-mt-20" : "-mt-10 px-2"
+        {storiesEnabled && profile.stories.length > 0 && (
+          <motion.section
+            className={`mx-auto ${
+              expandedLayout ? "mt-9 max-w-4xl px-1 sm:mt-12" : "mt-5 px-1"
             }`}
             initial={
               fullPage
-                ? { opacity: 0, y: prefersReducedMotion ? 0 : 16 }
+                ? { opacity: 0, y: prefersReducedMotion ? 0 : 18 }
                 : false
             }
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.35 }}
           >
-            <motion.span
-              className={`relative mx-auto block overflow-hidden rounded-full border-[3px] border-white/90 bg-white shadow-[0_20px_48px_-30px_rgba(15,23,42,0.42)] dark:border-[#09100e]/90 dark:bg-[#09100e] ${
-                fullPage ? "h-32 w-32 sm:h-40 sm:w-40" : "h-20 w-20"
-              } ${interactive ? "cursor-zoom-in" : ""}`}
-              data-mini-image-src={interactive ? profile.avatar : undefined}
-              data-mini-image-alt={interactive ? profile.name : undefined}
-              data-mini-image-group="hero"
-              role={interactive ? "button" : undefined}
-              tabIndex={interactive ? 0 : undefined}
-              aria-label={interactive ? `کردنەوەی وێنەی ${profile.name}` : undefined}
-              onKeyDown={(event) => {
-                if (interactive && (event.key === "Enter" || event.key === " ")) {
-                  event.preventDefault();
-                  event.currentTarget.click();
-                }
-              }}
-              whileHover={
-                interactive && fullPage ? { scale: 1.015 } : undefined
-              }
-            >
-              <Image
-                src={profile.avatar || "/images/DefaultAvatar.png"}
-                alt={profile.name}
-                fill
-                className="object-cover"
-                unoptimized
-              />
-            </motion.span>
-            <motion.h1
-              className={`flex items-center justify-center gap-2 font-black tracking-[-0.045em] [overflow-wrap:anywhere] ${
-                fullPage
-                  ? "mt-5 text-3xl leading-tight sm:text-5xl"
-                  : "mt-3 text-xl"
-              }`}
-              dir="auto"
-              initial={fullPage ? { opacity: 0, y: 6 } : false}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.22 }}
-            >
-              <span>{profile.name}</span>
-              <VerifiedBadge compact={!fullPage} />
-            </motion.h1>
-            <motion.p
-              className={`font-black ${
-                fullPage ? "mt-3 text-base sm:text-xl" : "mt-2 text-xs"
-              }`}
-              style={{ color: accentColor.primary }}
-              dir="auto"
-              initial={fullPage ? { opacity: 0, y: 8 } : false}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.28 }}
-            >
-              {profile.headline}
-            </motion.p>
-            <motion.p
-              className={`mx-auto opacity-60 ${
-                fullPage
-                  ? "mt-4 max-w-2xl text-sm leading-7 sm:text-base sm:leading-8"
-                  : "mt-2 text-[11px] leading-5"
-              }`}
-              dir="auto"
-              initial={fullPage ? { opacity: 0, y: 8 } : false}
-              animate={{ opacity: 0.6, y: 0 }}
-              transition={{ delay: 0.34 }}
-            >
-              {profile.bio}
-            </motion.p>
-            {content.showViewCount !== false && "views" in profile && (
-              <p
-                className={`mx-auto flex items-center justify-center gap-1.5 font-semibold text-slate-400 dark:text-slate-500 ${
-                  fullPage ? "mt-3 text-xs sm:text-sm" : "mt-2 text-[10px]"
+            <div className="mb-4 flex items-center justify-center gap-3">
+              <span className="h-px w-10 bg-current/10 sm:w-16" />
+              <h2
+                className={`text-center font-black ${
+                  expandedLayout ? "text-base sm:text-lg" : "text-xs"
                 }`}
                 dir="auto"
               >
-                <Eye className="h-3.5 w-3.5" />
-                {profile.views.toLocaleString("en-US")}
-              </p>
-            )}
-          </motion.div>
-
-          {storiesEnabled && profile.stories.length > 0 && (
-            <motion.section
-              className={`mx-auto ${
-                fullPage ? "mt-9 max-w-4xl px-1 sm:mt-12" : "mt-5 px-1"
-              }`}
-              initial={
-                fullPage
-                  ? { opacity: 0, y: prefersReducedMotion ? 0 : 18 }
-                  : false
-              }
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.35 }}
-            >
-              <div className="mb-4 flex items-center justify-center gap-3">
-                <span className="h-px w-10 bg-current/10 sm:w-16" />
-                <h2
-                  className={`text-center font-black ${
-                    fullPage ? "text-base sm:text-lg" : "text-xs"
-                  }`}
-                  dir="auto"
-                >
-                  نوێترین ستۆرییەکان
-                </h2>
-                <span className="h-px w-10 bg-current/10 sm:w-16" />
-              </div>
-              <StoriesStrip
-                stories={profile.stories}
-                interactive={interactive}
-              />
-            </motion.section>
-          )}
-        </header>
-
-        <main
-          className={`relative z-10 mx-auto grid grid-cols-1 ${
-            fullPage
-              ? "max-w-[1380px] gap-5 px-4 pb-20 pt-9 sm:gap-6 sm:px-6 sm:pt-12 xl:grid-cols-2 xl:gap-7 xl:px-8 xl:pb-28"
-              : "gap-3 pb-4"
-          }`}
-        >
-          {orderedSections.map((section, index) => (
-            <div
-              id={`portfolio-${section.key}`}
-              key={section.key}
-              className={`min-w-0 transition-colors duration-300 [&:empty]:hidden ${
-                fullPage
-                  ? `${sectionPlacementClass(section.key)} mini-dynamic-section-glass rounded-[1.75rem] p-5 sm:p-7 lg:rounded-[2rem] lg:p-9`
-                  : embeddedPreview
-                    ? "mini-dynamic-section-glass rounded-2xl p-3"
-                    : ""
-              }`}
-            >
-              <LazySectionSkeleton fullPage={fullPage}>
-                <DynamicSection
-                  section={section.key}
-                  profile={profile}
-                  fullPage={fullPage}
-                  interactive={interactive}
-                  whatsappHref={whatsappHref}
-                  leadFormEndpoint={leadFormEndpoint}
-                  onLeadSubmitted={onLeadSubmitted}
-                  dark={section.key === "location" ? dark : undefined}
-                  index={index}
-                />
-              </LazySectionSkeleton>
+                نوێترین ستۆرییەکان
+              </h2>
+              <span className="h-px w-10 bg-current/10 sm:w-16" />
             </div>
-          ))}
-        </main>
-
-        {fullPage ? (
-          <div className="mini-public-footer-glass relative z-10 mx-auto w-full max-w-[1380px] px-4 pb-4 sm:px-6 sm:pb-6 xl:px-8 xl:pb-8">
-            <PublicSiteFooter
-              brandName={profile.name}
-              logo={profile.avatar}
-              description={profile.headline || profile.bio}
-              accentColor={accentColor.primary}
-              columns={[
-                {
-                  title: "بەشەکان",
-                  links:
-                    footerSectionLinks.length > 0
-                      ? footerSectionLinks
-                      : [{ label: "سەرەتا", href: "#portfolio-home" }],
-                },
-                {
-                  title: footerSocialLinks.length > 0 ? "پەیوەندی" : "زیاتر",
-                  links:
-                    footerSocialLinks.length > 0
-                      ? footerSocialLinks
-                      : footerMoreLinks.length > 0
-                        ? footerMoreLinks
-                        : [{ label: "سەرەتا", href: "#portfolio-home" }],
-                },
-              ]}
-              // UTC, so the server's clock and the reader's cannot disagree
-              // about the year for the few hours their calendars overlap.
-              copyrightText={`© ${new Date().getUTCFullYear()} ${profile.name}. هەموو مافەکان پارێزراون.`}
-              bottomLinks={[
-                { label: "گەڕانەوە بۆ سەرەوە", href: "#portfolio-home" },
-              ]}
-              showVerifiedBadge
-              verifiedLabel="پشتڕاستکراوە"
-              poweredByLabel="دروستکراوە لەلایەن"
-            />
-          </div>
-        ) : (
-          <footer className="relative z-10 border-t border-slate-900/[0.07] px-4 py-8 dark:border-white/[0.07]">
-            <div className="mx-auto flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <strong className="text-sm font-black" dir="auto">
-                  {profile.name}
-                </strong>
-                <p className="mt-1 text-[10px] font-bold opacity-45" dir="auto">
-                  {profile.headline}
-                </p>
-              </div>
-              <a
-                href="#portfolio-home"
-                className="inline-flex items-center gap-2 text-xs font-black"
-                style={{ color: accentColor.primary }}
-              >
-                گەڕانەوە بۆ سەرەوە
-                <ChevronUp className="h-4 w-4" />
-              </a>
-            </div>
-          </footer>
+            <StoriesStrip stories={profile.stories} interactive={interactive} />
+          </motion.section>
         )}
+      </header>
 
-        {portalReady &&
-          shareOpen &&
-          createPortal(
-            <div
-              className={`mini-website-ltr ${dark ? "dark" : ""}`}
-              dir="ltr"
-              style={
-                {
-                  "--business-website-color": accentColor.primary,
-                  "--theme-primary": accentColor.primary,
-                  "--theme-css": accentColor.css,
-                } as CSSProperties
-              }
-            >
-              <ShareDialog
+      <main
+        className={`relative z-10 mx-auto grid grid-cols-1 ${
+          expandedLayout
+            ? "max-w-[1380px] gap-5 px-4 pb-20 pt-9 sm:gap-6 sm:px-6 sm:pt-12 xl:grid-cols-2 xl:gap-7 xl:px-8 xl:pb-28"
+            : "gap-3 pb-4"
+        }`}
+      >
+        {orderedSections.map((section, index) => (
+          <div
+            id={`portfolio-${section.key}`}
+            key={section.key}
+            className={`min-w-0 transition-colors duration-300 [&:empty]:hidden ${
+              expandedLayout
+                ? `${sectionPlacementClass(section.key)} mini-dynamic-section-glass rounded-[1.75rem] p-5 sm:p-7 lg:rounded-[2rem] lg:p-9`
+                : embeddedPreview
+                  ? "mini-dynamic-section-glass rounded-2xl p-3"
+                  : ""
+            }`}
+          >
+            <LazySectionSkeleton fullPage={fullPage}>
+              <DynamicSection
+                section={section.key}
                 profile={profile}
-                onClose={() => setShareOpen(false)}
+                fullPage={expandedLayout}
+                interactive={interactive}
+                whatsappHref={whatsappHref}
+                leadFormEndpoint={leadFormEndpoint}
+                onLeadSubmitted={onLeadSubmitted}
+                dark={section.key === "location" ? dark : undefined}
+                index={index}
               />
-            </div>,
-            document.body,
-          )}
-        {portalReady &&
-          createPortal(
-            <AnimatePresence>
-              {lightbox && (
-                <ImageLightbox
-                  images={lightbox.images}
-                  index={lightbox.index}
-                  accent={accentColor.primary}
-                  onIndexChange={(index) =>
-                    setLightbox((current) =>
-                      current ? { ...current, index } : current,
-                    )
-                  }
-                  onClose={() => setLightbox(null)}
-                />
-              )}
-            </AnimatePresence>,
-            document.body,
-          )}
+            </LazySectionSkeleton>
+          </div>
+        ))}
+      </main>
+
+      {expandedLayout ? (
+        <div className="mini-public-footer-glass relative z-10 mx-auto w-full max-w-[1380px] px-4 pb-4 sm:px-6 sm:pb-6 xl:px-8 xl:pb-8">
+          <PublicSiteFooter
+            brandName={profile.name}
+            logo={profile.avatar}
+            description={profile.headline || profile.bio}
+            accentColor={accentColor.primary}
+            columns={[
+              {
+                title: "بەشەکان",
+                links:
+                  footerSectionLinks.length > 0
+                    ? footerSectionLinks
+                    : [{ label: "سەرەتا", href: "#portfolio-home" }],
+              },
+              {
+                title: footerSocialLinks.length > 0 ? "پەیوەندی" : "زیاتر",
+                links:
+                  footerSocialLinks.length > 0
+                    ? footerSocialLinks
+                    : footerMoreLinks.length > 0
+                      ? footerMoreLinks
+                      : [{ label: "سەرەتا", href: "#portfolio-home" }],
+              },
+            ]}
+            // UTC, so the server's clock and the reader's cannot disagree
+            // about the year for the few hours their calendars overlap.
+            copyrightText={`© ${new Date().getUTCFullYear()} ${profile.name}. هەموو مافەکان پارێزراون.`}
+            bottomLinks={[
+              { label: "گەڕانەوە بۆ سەرەوە", href: "#portfolio-home" },
+            ]}
+            showVerifiedBadge
+            verifiedLabel="پشتڕاستکراوە"
+            poweredByLabel="دروستکراوە لەلایەن"
+          />
+        </div>
+      ) : (
+        <footer className="relative z-10 border-t border-slate-900/[0.07] px-4 py-8 dark:border-white/[0.07]">
+          <div className="mx-auto flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <strong className="text-sm font-black" dir="auto">
+                {profile.name}
+              </strong>
+              <p className="mt-1 text-[10px] font-bold opacity-45" dir="auto">
+                {profile.headline}
+              </p>
+            </div>
+            <a
+              href="#portfolio-home"
+              className="inline-flex items-center gap-2 text-xs font-black"
+              style={{ color: accentColor.primary }}
+            >
+              گەڕانەوە بۆ سەرەوە
+              <ChevronUp className="h-4 w-4" />
+            </a>
+          </div>
+        </footer>
+      )}
+
+      {portalReady &&
+        shareOpen &&
+        createPortal(
+          <div
+            className={`mini-website-ltr ${dark ? "dark" : ""}`}
+            dir="ltr"
+            style={
+              {
+                "--business-website-color": accentColor.primary,
+                "--theme-primary": accentColor.primary,
+                "--theme-css": accentColor.css,
+              } as CSSProperties
+            }
+          >
+            <ShareDialog
+              profile={profile}
+              onClose={() => setShareOpen(false)}
+            />
+          </div>,
+          document.body,
+        )}
+      {portalReady &&
+        createPortal(
+          <AnimatePresence>
+            {lightbox && (
+              <ImageLightbox
+                images={lightbox.images}
+                index={lightbox.index}
+                accent={accentColor.primary}
+                onIndexChange={(index) =>
+                  setLightbox((current) =>
+                    current ? { ...current, index } : current,
+                  )
+                }
+                onClose={() => setLightbox(null)}
+              />
+            )}
+          </AnimatePresence>,
+          document.body,
+        )}
     </motion.div>
   );
 }

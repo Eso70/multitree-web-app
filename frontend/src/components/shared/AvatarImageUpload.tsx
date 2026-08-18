@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { Upload, X } from "lucide-react";
-import { AccentActionButton } from "@/components/shared/AccentActionButton";
 import { DEFAULT_AVATAR } from "@/lib/brand/brand-assets";
 
 interface AvatarImageUploadProps {
@@ -94,10 +93,14 @@ export function AvatarImageUpload({
       </div>
       {error && <p className="text-center font-kurdish text-xs text-red-500">{error}</p>}
       {onUploadClick ? (
-        <AccentActionButton onClick={onUploadClick}>
+        <button
+          type="button"
+          onClick={onUploadClick}
+          className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
+        >
           <Upload className="h-4 w-4" />
           <span>{uploadLabel}</span>
-        </AccentActionButton>
+        </button>
       ) : (
         <label
           className="group relative flex h-10 cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95"

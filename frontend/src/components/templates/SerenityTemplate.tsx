@@ -21,6 +21,7 @@ import {
   TemplateFooter,
   TemplateHeader,
   TemplateViewportLayout,
+  templateBackgroundStyle,
 } from "./shared";
 
 export const SerenityTemplate = memo(function SerenityTemplate({
@@ -33,12 +34,12 @@ export const SerenityTemplate = memo(function SerenityTemplate({
 
   // Flowing gradient background
   const backgroundStyle = useMemo(
-    () => ({
-      background: theme.isSolid
-        ? theme.from
-        : `linear-gradient(180deg, ${theme.from} 0%, ${theme.via} 50%, ${theme.to} 100%)`,
-    }),
-    [theme.from, theme.via, theme.to, theme.isSolid],
+    () =>
+      templateBackgroundStyle(
+        theme,
+        `linear-gradient(180deg, ${theme.from} 0%, ${theme.via} 50%, ${theme.to} 100%)`,
+      ),
+    [theme],
   );
 
   // Detect if background is white/light - if so, use dark text for compatibility
@@ -73,6 +74,8 @@ export const SerenityTemplate = memo(function SerenityTemplate({
   return (
     <TemplateViewportLayout
       isPreview={isPreview}
+      backgroundPattern={theme.backgroundPattern}
+      backgroundPatternAccent={textColor}
       className={`px-5 ${isPreview ? "pt-14" : "pt-12"}`}
       style={backgroundStyle}
       header={

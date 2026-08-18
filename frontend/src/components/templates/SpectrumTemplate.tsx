@@ -20,6 +20,7 @@ import {
   TemplateFooter,
   TemplateHeader,
   TemplateViewportLayout,
+  templateBackgroundStyle,
 } from "./shared";
 
 export const SpectrumTemplate = memo(function SpectrumTemplate({
@@ -31,12 +32,12 @@ export const SpectrumTemplate = memo(function SpectrumTemplate({
   const { gpsLink, regularLinks } = useMemo(() => splitGpsLinks(links), [links]);
 
   const backgroundStyle = useMemo(
-    () => ({
-      background: theme.isSolid
-        ? theme.from
-        : `linear-gradient(to bottom right, ${theme.from}, ${theme.via}, ${theme.to})`,
-    }),
-    [theme.from, theme.via, theme.to, theme.isSolid],
+    () =>
+      templateBackgroundStyle(
+        theme,
+        `linear-gradient(to bottom right, ${theme.from}, ${theme.via}, ${theme.to})`,
+      ),
+    [theme],
   );
 
   const textColor = useMemo(() => deriveTextColor(theme.from, theme.via, theme.to), [theme.from, theme.via, theme.to]);
@@ -59,6 +60,8 @@ export const SpectrumTemplate = memo(function SpectrumTemplate({
   return (
     <TemplateViewportLayout
       isPreview={isPreview}
+      backgroundPattern={theme.backgroundPattern}
+      backgroundPatternAccent={textColor}
       dir="ltr"
       className={`px-4 sm:px-6 md:px-8 ${isPreview ? "pt-14" : "pt-10 sm:pt-12 md:pt-16"}`}
       style={backgroundStyle}

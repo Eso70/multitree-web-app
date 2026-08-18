@@ -52,7 +52,7 @@ export function areTemplatePropsEqual(
       footer_phone?: string | null;
     };
     links: Array<{ id: string; url: string; display_name?: string | null }>;
-    theme: { from: string; via: string; to: string };
+    theme: { from: string; via: string; to: string; backgroundImage?: string | null };
   },
   nextProps: {
     linktree: {
@@ -64,7 +64,7 @@ export function areTemplatePropsEqual(
       footer_phone?: string | null;
     };
     links: Array<{ id: string; url: string; display_name?: string | null }>;
-    theme: { from: string; via: string; to: string };
+    theme: { from: string; via: string; to: string; backgroundImage?: string | null };
   },
 ): boolean {
   // Quick reference checks first
@@ -81,6 +81,8 @@ export function areTemplatePropsEqual(
   if (prevProps.theme.from !== nextProps.theme.from) return false;
   if (prevProps.theme.via !== nextProps.theme.via) return false;
   if (prevProps.theme.to !== nextProps.theme.to) return false;
+  if (prevProps.theme.backgroundImage !== nextProps.theme.backgroundImage)
+    return false;
 
   // Links array check - only check length and IDs for performance
   if (prevProps.links.length !== nextProps.links.length) return false;

@@ -53,7 +53,7 @@ export class MiniWebsitesRepository {
               CASE WHEN website.avatar IS NULL OR website.avatar='/images/DefaultAvatar.png'
                    THEN COALESCE(branding.default_avatar, website.avatar)
                    ELSE website.avatar END AS avatar,
-              website.cover, website.variation, website.background_style, website.accent_color,
+              website.cover, website.template_key, website.variation, website.background_style, website.accent_color,
               website.status, website.published_at, website.updated_at
        FROM mini_websites website
        JOIN businesses business ON business.id=website.business_id

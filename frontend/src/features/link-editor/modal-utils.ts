@@ -292,7 +292,7 @@ export const extractValueFromUrl = (platform: string, url: string, metadata?: Re
         value = url;
       } else if (platform === "email") {
         value = url.replace(/^mailto:/, "");
-      } else if (platform === "website" || platform === "custom") {
+      } else if (platform === "custom") {
         value = url;
       } else {
         value = pathParts[pathParts.length - 1] || "";
@@ -323,42 +323,49 @@ export const generateUrl = (platform: string, input: string, countryCode?: strin
   const isPhonePlatform = platform === "whatsapp" || platform === "phone" || platform === "viber";
   const code = isPhonePlatform ? (countryCode || "964") : undefined;
   
-  // Helper function to format phone number with country code
+  /**
+   * Joins a typed number to the selected country code, in E.164 digits.
+   *
+   * The rule is deliberately explicit rather than clever. Only an input the
+   * visitor marked as international — a leading + or 00 — is treated as
+   * already carrying a country code. Anything else is a national number and
+   * the selected code is simply prepended.
+   *
+   * This used to scan the number against every known dialling code and strip
+   * whatever matched. That is unsound: a national number is free to begin
+   * with digits that spell some other country. Every Iraqi mobile starts 75,
+   * 77 or 78, and 7 is Russia/Kazakhstan. The bug stayed hidden only because
+   * the list it scanned held seven countries and 7 was not one of them;
+   * against the real list it silently turns 07501234567 into +964 501234567.
+   * A number that changes on save is a changed destination, and a changed
+   * destination retires the button and takes its click history with it.
+   */
   const formatPhoneNumber = (phoneNumber: string, countryCode: string): string => {
-    // Remove all non-digits and + signs
-    const digitsOnly = phoneNumber.replace(/[^\d]/g, "");
+    const raw = phoneNumber.trim();
+    const digitsOnly = raw.replace(/[^\d]/g, "");
     if (!digitsOnly) return "";
-    
-    // Remove leading zeros
-    let cleanedNumber = digitsOnly.replace(/^0+/, "");
-    if (!cleanedNumber) return "";
-    
-    // Check if the number already starts with the country code
-    // We need to check this properly - the number must be longer than the code
-    // and must start with the exact code
-    const codeLength = countryCode.length;
-    if (cleanedNumber.length > codeLength && cleanedNumber.substring(0, codeLength) === countryCode) {
-      // Number already has this country code, return as is
-      return cleanedNumber;
+
+    // Explicitly international: the number already names its own country.
+    if (raw.startsWith("+") || /^00\d/.test(raw)) {
+      const international = raw.startsWith("+")
+        ? digitsOnly
+        : digitsOnly.replace(/^00/, "");
+      return international.replace(/^0+/, "");
     }
-    
-    // Check if number starts with any other country code (sorted by length descending for proper matching)
-    // This ensures longer codes (like 212) are checked before shorter ones (like 2)
-    for (const country of COUNTRIES_SORTED) {
-      const otherCodeLength = country.code.length;
-      if (country.code !== countryCode && 
-          cleanedNumber.length > otherCodeLength &&
-          cleanedNumber.substring(0, otherCodeLength) === country.code) {
-        // Number has a different country code, remove it
-        cleanedNumber = cleanedNumber.substring(otherCodeLength);
-        // Remove any leading zeros that might remain
-        cleanedNumber = cleanedNumber.replace(/^0+/, "");
-        break;
-      }
-    }
-    
-    // Add the country code
-    return countryCode + cleanedNumber;
+
+    const national = digitsOnly.replace(/^0+/, "");
+    if (!national) return "";
+
+    // No attempt is made to detect a country code the caller did not mark.
+    // Whether "5551234567" is a Brazilian national number or +55 51234567 is
+    // genuinely undecidable from the digits: Brazil dials 55 and its national
+    // numbers also begin 55, and no length rule separates the two — a ten
+    // digit national leaves eight digits after the prefix, which is a valid
+    // subscriber number too. Guessing here is what corrupted stored numbers
+    // before, so the untagged input is always treated as national and the
+    // selected code is prepended. Someone entering a full international
+    // number writes it with + or 00, which is handled above.
+    return countryCode + national;
   };
   
   switch (platform) {
@@ -547,11 +554,6 @@ export const generateUrl = (platform: string, input: string, countryCode?: strin
       return trimmed.includes("@") ? `mailto:${trimmed}` : "";
     }
     
-    case "website": {
-      if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
-      return trimmed ? `https://${trimmed.replace(/^www\./, "")}` : "";
-    }
-
     case "custom": {
       // Accept any URL the user types — pass through as-is.
       // Auto-add https:// if there is no scheme so the link is always absolute.

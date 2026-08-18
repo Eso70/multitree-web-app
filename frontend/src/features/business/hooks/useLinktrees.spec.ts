@@ -44,6 +44,32 @@ describe("useLinktrees", () => {
     ]);
   });
 
+  it("pins the is_default page first even when its uid is not the legacy one", () => {
+    const newest = createLinktree({ id: "newest", created_at: "2026-05-01T00:00:00.000Z" });
+    const flagged = createLinktree({
+      id: "flagged",
+      uid: "custom-slug",
+      is_default: true,
+      created_at: "2024-01-01T00:00:00.000Z",
+    });
+
+    expect(sortLinktreesForDashboard([newest, flagged]).map((item) => item.id)).toEqual([
+      "flagged",
+      "newest",
+    ]);
+  });
+
+  it("promotes a page to default on merge and demotes the previous default", () => {
+    const current = createLinktree({ id: "current", is_default: true, created_at: "2026-01-01T00:00:00.000Z" });
+    const other = createLinktree({ id: "other", created_at: "2026-02-01T00:00:00.000Z" });
+    const { result } = renderHook(() => useLinktrees([current, other]));
+
+    act(() => result.current.mergeLinktree("other", { is_default: true }));
+
+    expect(result.current.linktrees.map((item) => item.id)).toEqual(["other", "current"]);
+    expect(result.current.linktrees.map((item) => item.is_default)).toEqual([true, false]);
+  });
+
   it("provides domain mutations for optimistic dashboard updates", () => {
     const first = createLinktree({ id: "first", name: "First" });
     const { result } = renderHook(() => useLinktrees([first]));

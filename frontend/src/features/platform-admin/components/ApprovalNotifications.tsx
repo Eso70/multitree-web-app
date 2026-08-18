@@ -1,23 +1,24 @@
 "use client";
 
-import { MotionSpinner } from "@/components/motion/MotionPrimitives";
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Bell,
   Check,
   CheckCheck,
   ChevronRight,
-  Clock3,
+  Inbox,
   Loader2,
-  MessageSquare,
   Trash2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { communicationRequest } from "@/features/communications/api";
-import type { NotificationInbox } from "@/features/communications/types";
+import { MotionSpinner } from "@/components/motion/MotionPrimitives";
+import { SkeletonList } from "@/components/shared/Skeleton";
 import { DashboardHeaderActionButton } from "@/components/shared/DashboardHeader";
+import { communicationRequest } from "@/features/communications/api";
+import { formatNotificationDate } from "@/features/communications/format";
+import type { NotificationInbox } from "@/features/communications/types";
+import { usePolling } from "@/lib/utils/usePolling";
 
 interface ApprovalNotification {
   id: string;
@@ -38,6 +39,10 @@ export function ApprovalNotifications() {
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Skips the state update when nothing changed, which is the common case —
+  // otherwise every poll re-renders the console header for nothing.
+  const lastPayloadRef = useRef<string>("");
+
   const loadApprovals = useCallback(async (showError = false) => {
     try {
       const [response, notifications] = await Promise.all([
@@ -54,8 +59,13 @@ export function ApprovalNotifications() {
         return;
       }
       const result = await response.json();
-      setApprovals(result.data || []);
-      setInbox(notifications);
+      const pending: ApprovalNotification[] = result.data || [];
+      const serialized = JSON.stringify([pending, notifications]);
+      if (serialized !== lastPayloadRef.current) {
+        lastPayloadRef.current = serialized;
+        setApprovals(pending);
+        setInbox(notifications);
+      }
     } catch {
       if (showError) toast.error("بارکردنی ئاگادارییەکان سەرکەوتوو نەبوو");
     } finally {
@@ -63,17 +73,7 @@ export function ApprovalNotifications() {
     }
   }, []);
 
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => void loadApprovals());
-    const interval = window.setInterval(() => void loadApprovals(), 60_000);
-    const handleFocus = () => void loadApprovals();
-    window.addEventListener("focus", handleFocus);
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.clearInterval(interval);
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, [loadApprovals]);
+  usePolling(loadApprovals, 20_000);
 
   useEffect(() => {
     if (!open) return;
@@ -173,8 +173,8 @@ export function ApprovalNotifications() {
     }
   };
 
-  const dismissNotification = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const dismissNotification = async (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     try {
       await communicationRequest(
         `/api/platform/communications/notifications/${id}`,
@@ -229,6 +229,7 @@ export function ApprovalNotifications() {
   };
 
   const unreadTotal = approvals.length + inbox.unreadCount;
+  const hasContent = inbox.items.length > 0 || approvals.length > 0;
 
   return (
     <div className="relative" ref={containerRef}>
@@ -242,53 +243,36 @@ export function ApprovalNotifications() {
         aria-expanded={open}
         title="ئاگادارییەکان"
       >
-        <Bell className="h-4 w-4 transition-transform group-hover:scale-110 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+        <Bell className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5 transition-transform group-hover:scale-110" />
         {unreadTotal > 0 && (
-          <span className="absolute -right-1.5 -top-1.5 flex min-h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[9px] font-black leading-none text-white shadow-sm dark:border-[#161B22]">
+          <span className="absolute -right-1.5 -top-1.5 flex min-h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[9px] font-black text-white dark:border-[#161B22]">
             {unreadTotal > 99 ? "99+" : unreadTotal}
           </span>
         )}
       </DashboardHeaderActionButton>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-3 w-[min(25rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl    duration-200 dark:border-white/10 dark:bg-[#1c222b]">
-          <div className="flex items-center justify-between border-b border-slate-100 bg-linear-to-r from-white to-slate-50/40 p-4 dark:border-white/5 dark:from-[#1c222b] dark:to-slate-900/10">
-            <div>
-              <h2 className="text-sm font-black text-slate-700 dark:text-slate-200">
-                ئاگادارییەکان
-              </h2>
-              <p className="mt-1 text-[10px] text-slate-400">
-                {unreadTotal} بابەتی نەخوێندراو
-              </p>
+        <div className="fixed inset-x-3 top-20 z-50 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1c222b] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-3 sm:w-[26rem]    duration-200">
+          <div className="flex items-center justify-between border-b border-slate-100 p-4 dark:border-white/5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-gray-400">
+                <Bell className="h-4 w-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-black text-slate-700 dark:text-slate-200">
+                  ئاگادارییەکان
+                </h2>
+                <p className="mt-0.5 text-[11px] text-slate-400">
+                  {unreadTotal} بابەتی نەخوێندراو
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={markAllRead}
-                disabled={inbox.unreadCount === 0}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition-colors
-                  bg-slate-50 dark:bg-white/5
-                  border-slate-100 dark:border-white/10
-                  text-slate-500 dark:text-gray-400
-                  hover:bg-slate-100 dark:hover:bg-white/10
-                  hover:border-slate-200 dark:hover:border-white/20
-                  hover:text-slate-700 dark:hover:text-gray-200
-                  disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-50 dark:disabled:hover:bg-white/5"
-                title="هەمووی خوێندراوەتەوە"
-              >
-                <CheckCheck className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
                 onClick={deleteAllNotifications}
                 disabled={inbox.items.length === 0}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition-colors
-                  bg-rose-50 dark:bg-rose-500/10
-                  border-rose-100 dark:border-rose-500/20
-                  text-rose-500 dark:text-rose-400
-                  hover:bg-rose-100 dark:hover:bg-rose-500/15
-                  hover:border-rose-200 dark:hover:border-rose-500/30
-                  disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-rose-50 dark:disabled:hover:bg-rose-500/10"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-rose-500 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:text-rose-400 dark:hover:bg-rose-500/10 dark:hover:text-rose-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent dark:disabled:hover:bg-transparent"
                 title="سڕینەوەی هەموو ئاگادارییەکان"
               >
                 <Trash2 className="h-4 w-4" />
@@ -296,172 +280,194 @@ export function ApprovalNotifications() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition-colors
-                  bg-slate-50 dark:bg-white/5
-                  border-slate-100 dark:border-white/10
-                  text-slate-500 dark:text-gray-400
-                  hover:bg-slate-100 dark:hover:bg-white/10
-                  hover:border-slate-200 dark:hover:border-white/20
-                  hover:text-slate-700 dark:hover:text-gray-200"
-                aria-label="داخستن"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200"
                 title="داخستن"
               >
                 <X className="h-4 w-4" />
               </button>
+              <button
+                type="button"
+                onClick={markAllRead}
+                disabled={inbox.unreadCount === 0}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent dark:disabled:hover:bg-transparent"
+                title="هەمووی خوێندراوەتەوە"
+              >
+                <CheckCheck className="h-4 w-4" />
+              </button>
             </div>
           </div>
 
-          <div className="max-h-[min(32rem,70vh)] overflow-y-auto p-3 custom-scrollbar lime-custom-scrollbar">
+          <div className="max-h-[min(36rem,72vh)] overflow-y-auto custom-scrollbar">
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <MotionSpinner>
-                  <Loader2 className="h-6 w-6  text-slate-400" />
-                </MotionSpinner>
-              </div>
-            ) : approvals.length === 0 && inbox.items.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-400 dark:bg-white/5">
-                  <Clock3 className="h-5 w-5" />
-                </div>
-                <p className="mt-3 text-xs font-bold text-slate-600 dark:text-slate-300">
-                  هیچ ئاگادارییەک نییە
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {inbox.items.length > 0 && (
-                  <section>
-                    <div className="mb-2 flex items-center justify-between px-1">
-                      <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">
-                        ڕووداو و پەیامەکان
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      {inbox.items.map((item) => {
-                        const canNavigate = !!item.actionUrl?.startsWith("/");
-                        return (
-                          <div
-                            key={item.id}
-                            role="button"
-                            tabIndex={0}
-                            onClick={() =>
-                              void readNotification(item.id, item.actionUrl)
-                            }
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                void readNotification(item.id, item.actionUrl);
-                              }
-                            }}
-                            className={`group flex w-full cursor-pointer items-start gap-3 rounded-xl border p-3 text-left transition hover:bg-slate-50 dark:hover:bg-white/[0.03] ${
-                              item.readAt
-                                ? "border-slate-200 dark:border-white/10"
-                                : "border-[color-mix(in_srgb,var(--multitree-accent)_30%,transparent)] bg-[color-mix(in_srgb,var(--multitree-accent)_5%,transparent)]"
-                            }`}
-                          >
-                            <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-[var(--multitree-accent)]" />
-                            <span className="min-w-0 flex-1">
-                              <span className="block text-xs font-black text-slate-700 dark:text-slate-200">
-                                {item.title}
-                              </span>
-                              <span className="mt-1 line-clamp-2 block text-[10px] leading-4 text-slate-500">
-                                {item.body}
-                              </span>
-                              <span className="mt-1 block text-[9px] text-slate-400">
-                                {new Date(item.createdAt).toLocaleString()}
-                              </span>
-                            </span>
-                            {canNavigate && (
-                              <ChevronRight className="mt-1 h-3.5 w-3.5 shrink-0 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 dark:text-gray-600" />
-                            )}
-                            <button
-                              type="button"
-                              onClick={(e) =>
-                                void dismissNotification(item.id, e)
-                              }
-                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-300 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-50 hover:text-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-400"
-                              title="سڕینەوە"
+              <SkeletonList className="m-3" rows={4} />
+            ) : hasContent ? (
+              <div className="divide-y divide-slate-100 dark:divide-white/5">
+                {inbox.items.map((item) => {
+                  const canNavigate = !!item.actionUrl?.startsWith("/");
+                  return (
+                    <div
+                      key={item.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() =>
+                        void readNotification(item.id, item.actionUrl)
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          void readNotification(item.id, item.actionUrl);
+                        }
+                      }}
+                      className={`group relative block w-full cursor-pointer text-right transition-colors ${
+                        item.readAt
+                          ? "bg-white dark:bg-[#1c222b]"
+                          : "bg-[color-mix(in_srgb,var(--multitree-accent)_4%,white)] dark:bg-white/[0.03]"
+                      } hover:bg-slate-50 dark:hover:bg-white/5`}
+                    >
+                      <div
+                        className={`absolute right-0 top-0 h-full w-0.5 transition-colors ${
+                          item.readAt
+                            ? "bg-transparent"
+                            : "bg-[var(--multitree-accent)]"
+                        }`}
+                      />
+                      <div className="flex items-start gap-3 p-4 pr-5">
+                        {!item.readAt && (
+                          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[var(--multitree-accent)]" />
+                        )}
+                        <div
+                          className={`min-w-0 flex-1 ${item.readAt ? "mr-5" : ""}`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <p
+                              className={`text-sm leading-5 ${
+                                item.readAt
+                                  ? "font-medium text-slate-600 dark:text-slate-400"
+                                  : "font-bold text-slate-700 dark:text-slate-200"
+                              }`}
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+                              {item.title}
+                            </p>
                           </div>
-                        );
-                      })}
+                          {item.body && (
+                            <p
+                              className={`mt-0.5 text-xs leading-5 ${
+                                item.readAt
+                                  ? "text-slate-400 dark:text-gray-500"
+                                  : "text-slate-500 dark:text-gray-400"
+                              }`}
+                            >
+                              {item.body}
+                            </p>
+                          )}
+                          <p className="mt-1.5 text-[10px] text-slate-400 dark:text-gray-500">
+                            {formatNotificationDate(item.createdAt)}
+                          </p>
+                        </div>
+                        {canNavigate && (
+                          <ChevronRight className="mt-1.5 h-3.5 w-3.5 shrink-0 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 dark:text-gray-600" />
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => void dismissNotification(item.id, e)}
+                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-300 opacity-0 transition-colors group-hover:opacity-100 hover:bg-red-50 hover:text-red-400 dark:text-gray-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                          title="سڕینەوە"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
-                  </section>
-                )}
+                  );
+                })}
+
                 {approvals.length > 0 && (
-                  <p className="px-1 text-[10px] font-black uppercase tracking-wide text-slate-400">
+                  <p className="bg-slate-50/60 px-4 py-2 text-[10px] font-black uppercase tracking-wide text-slate-400 dark:bg-white/[0.02]">
                     پەسەندکردنە چاوەڕوانەکان
                   </p>
                 )}
                 {approvals.map((approval) => {
                   const reviewing = reviewingId === approval.id;
                   return (
-                    <article
+                    <div
                       key={approval.id}
-                      className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 dark:border-white/10 dark:bg-white/[0.02]"
+                      className="relative block w-full text-right transition-colors bg-[color-mix(in_srgb,var(--multitree-accent)_4%,white)] dark:bg-white/[0.03]"
                     >
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-black text-slate-700 dark:text-slate-200">
-                          {approval.businessName}
-                        </p>
-                        <code
-                          className="mt-1 block break-all text-[10px] font-bold sa-accent-text"
-                          dir="ltr"
-                        >
-                          {approval.permission}
-                        </code>
-                        <p className="mt-2 text-[10px] leading-4 text-slate-400">
-                          خانەکان:{" "}
-                          {Object.keys(approval.requestedChanges || {}).join(
-                            "، ",
-                          ) || "هیچ"}
-                        </p>
-                        <p className="mt-1 text-[9px] text-slate-400">
-                          {new Date(approval.requestedAt).toLocaleString()}
-                        </p>
-                      </div>
+                      <div className="absolute right-0 top-0 h-full w-0.5 bg-[var(--multitree-accent)]" />
+                      <div className="flex items-start gap-3 p-4 pr-5">
+                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[var(--multitree-accent)]" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold leading-5 text-slate-700 dark:text-slate-200">
+                            {approval.businessName}
+                          </p>
+                          <code
+                            className="mt-0.5 block break-all text-xs leading-5 font-bold sa-accent-text"
+                            dir="ltr"
+                          >
+                            {approval.permission}
+                          </code>
+                          <p className="mt-0.5 text-xs leading-5 text-slate-500 dark:text-gray-400">
+                            خانەکان:{" "}
+                            {Object.keys(approval.requestedChanges || {}).join(
+                              "، ",
+                            ) || "هیچ"}
+                          </p>
+                          <p className="mt-1.5 text-[10px] text-slate-400 dark:text-gray-500">
+                            {formatNotificationDate(approval.requestedAt)}
+                          </p>
 
-                      <div className="mt-3 flex items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            void reviewApproval(approval, "reject")
-                          }
-                          disabled={reviewingId !== null}
-                          className="flex h-8 items-center justify-center gap-1.5 rounded-lg px-3 text-[10px] font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-500/10"
-                        >
-                          {reviewing ? (
-                            <MotionSpinner>
-                              <Loader2 className="h-3.5 w-3.5 " />
-                            </MotionSpinner>
-                          ) : (
-                            <X className="h-3.5 w-3.5" />
-                          )}
-                          ڕەتکردنەوە
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            void reviewApproval(approval, "approve")
-                          }
-                          disabled={reviewingId !== null}
-                          className="flex h-8 items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-3 text-[10px] font-bold text-white transition hover:bg-emerald-600 disabled:opacity-50"
-                        >
-                          {reviewing ? (
-                            <MotionSpinner>
-                              <Loader2 className="h-3.5 w-3.5 " />
-                            </MotionSpinner>
-                          ) : (
-                            <Check className="h-3.5 w-3.5" />
-                          )}
-                          پەسەندکردن
-                        </button>
+                          <div className="mt-3 flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void reviewApproval(approval, "reject")
+                              }
+                              disabled={reviewingId !== null}
+                              className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-[10px] font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-500/10"
+                            >
+                              {reviewing ? (
+                                <MotionSpinner>
+                                  <Loader2 className="h-3.5 w-3.5 " />
+                                </MotionSpinner>
+                              ) : (
+                                <X className="h-3.5 w-3.5" />
+                              )}
+                              ڕەتکردنەوە
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void reviewApproval(approval, "approve")
+                              }
+                              disabled={reviewingId !== null}
+                              className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-3 text-[10px] font-bold text-white transition hover:bg-emerald-600 disabled:opacity-50"
+                            >
+                              {reviewing ? (
+                                <MotionSpinner>
+                                  <Loader2 className="h-3.5 w-3.5 " />
+                                </MotionSpinner>
+                              ) : (
+                                <Check className="h-3.5 w-3.5" />
+                              )}
+                              پەسەندکردن
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </article>
+                    </div>
                   );
                 })}
+              </div>
+            ) : (
+              <div className="flex h-56 flex-col items-center justify-center text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-white/5">
+                  <Inbox className="h-6 w-6 text-slate-300 dark:text-slate-600" />
+                </div>
+                <p className="mt-3 text-sm font-bold text-slate-400">
+                  هیچ ئاگادارییەک نییە
+                </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  کاتێک ئاگادارییەکی نوێ هات، لێرەدا دەردەکەوێت
+                </p>
               </div>
             )}
           </div>

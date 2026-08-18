@@ -3,6 +3,7 @@ import { DatabaseService } from '../database/database.service';
 import { StorageService } from '../storage/storage.service';
 import type { UnifiedAnalyticsService } from '../analytics/unified-analytics.service';
 import { PublicPageAnalyticsService } from '../analytics/public-page-analytics.service';
+import { TemplateAccessService } from '../billing/template-access.service';
 import { MiniWebsiteLeadsService } from './mini-website-leads.service';
 import { MiniWebsitesService } from './mini-websites.service';
 
@@ -13,6 +14,9 @@ function websites() {
     { query: jest.fn(), transaction: jest.fn() } as unknown as DatabaseService,
     {} as unknown as StorageService,
     {} as unknown as PublicPageAnalyticsService,
+    {
+      assertAllowed: jest.fn().mockResolvedValue(undefined),
+    } as unknown as TemplateAccessService,
   );
 }
 

@@ -6,7 +6,7 @@ import { TikTokPixel } from "@/components/analytics/TikTokPixel";
 import { CustomScrollbar } from "@/components/home/CustomScrollbar";
 import { ThemeProvider } from "@/lib/contexts/ThemeProvider";
 import { createPageTracker } from "@/features/analytics/page-tracking";
-import { LiquidGlassMiniWebsiteTemplate } from "@/components/templates/mini-website";
+import { MiniWebsiteTemplateRenderer } from "@/components/templates/mini-website";
 import type { MiniWebsite } from "./types";
 
 /** How long a section must stay on screen before it counts as read. */
@@ -164,7 +164,8 @@ export function PublicMiniWebsite({
           }
         }}
       >
-        <LiquidGlassMiniWebsiteTemplate
+        <MiniWebsiteTemplateRenderer
+          templateId={profile.templateKey}
           profile={profile}
           viewport="desktop"
           interactive

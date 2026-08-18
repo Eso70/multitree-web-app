@@ -3,6 +3,7 @@ import type {
   MiniWebsiteLeadFieldMapping,
   MiniWebsiteLeadFieldType,
   MiniWebsitePaymentProvider,
+  MiniWebsiteVisualTemplateKey,
 } from '@linktree/types';
 
 /**
@@ -13,6 +14,12 @@ import type {
  * validation here prevents production startup from trying to execute `.ts`
  * package exports.
  */
+export const MINI_WEBSITE_VISUAL_TEMPLATE_KEYS: readonly MiniWebsiteVisualTemplateKey[] =
+  ['liquid-glass'];
+
+export const MINI_WEBSITE_VISUAL_TEMPLATE_DEFAULT: MiniWebsiteVisualTemplateKey =
+  'liquid-glass';
+
 export const MINI_WEBSITE_BACKGROUND_STYLES: readonly MiniWebsiteBackgroundStyle[] =
   [
     'none',

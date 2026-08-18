@@ -15,6 +15,7 @@ import {
   TemplateFooter,
   TemplateHeader,
   TemplateViewportLayout,
+  templateBackgroundStyle,
 } from "./shared";
 
 export const FrostTemplate = memo(function FrostTemplate({
@@ -25,12 +26,12 @@ export const FrostTemplate = memo(function FrostTemplate({
 }: TemplateComponentProps) {
   const { gpsLink, regularLinks } = useMemo(() => splitGpsLinks(links), [links]);
   const backgroundStyle = useMemo(
-    () => ({
-      background: theme.isSolid
-        ? theme.from
-        : `linear-gradient(145deg, ${theme.from}, ${theme.via}, ${theme.to})`,
-    }),
-    [theme.from, theme.via, theme.to, theme.isSolid],
+    () =>
+      templateBackgroundStyle(
+        theme,
+        `linear-gradient(145deg, ${theme.from}, ${theme.via}, ${theme.to})`,
+      ),
+    [theme],
   );
 
   const textColor = useMemo(() => deriveTextColor(theme.from, theme.via, theme.to), [theme.from, theme.via, theme.to]);
@@ -49,6 +50,8 @@ export const FrostTemplate = memo(function FrostTemplate({
   return (
     <TemplateViewportLayout
       isPreview={isPreview}
+      backgroundPattern={theme.backgroundPattern}
+      backgroundPatternAccent={textColor}
       className={`px-4 ${isPreview ? "pt-14" : "pt-10"}`}
       style={backgroundStyle}
       header={

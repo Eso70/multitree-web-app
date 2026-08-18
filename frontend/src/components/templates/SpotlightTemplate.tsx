@@ -16,6 +16,7 @@ import {
   TemplateFooter,
   TemplateHeader,
   TemplateViewportLayout,
+  templateBackgroundStyle,
 } from "./shared";
 
 export const SpotlightTemplate = memo(function SpotlightTemplate({
@@ -26,12 +27,12 @@ export const SpotlightTemplate = memo(function SpotlightTemplate({
 }: TemplateComponentProps) {
   const { gpsLink, regularLinks } = useMemo(() => splitGpsLinks(links), [links]);
   const backgroundStyle = useMemo(
-    () => ({
-      background: theme.isSolid 
-        ? theme.from 
-        : `linear-gradient(to bottom right, ${theme.from}, ${theme.via}, ${theme.to})`,
-    }),
-    [theme.from, theme.via, theme.to, theme.isSolid],
+    () =>
+      templateBackgroundStyle(
+        theme,
+        `linear-gradient(to bottom right, ${theme.from}, ${theme.via}, ${theme.to})`,
+      ),
+    [theme],
   );
 
   const textColor = useMemo(() => deriveTextColor(theme.from, theme.via, theme.to), [theme.from, theme.via, theme.to]);
@@ -74,6 +75,8 @@ export const SpotlightTemplate = memo(function SpotlightTemplate({
   return (
     <TemplateViewportLayout
       isPreview={isPreview}
+      backgroundPattern={theme.backgroundPattern}
+      backgroundPatternAccent={textColor}
       className={`px-4 ${isPreview ? "pt-14" : "pt-10"}`}
       style={backgroundStyle}
       header={

@@ -78,6 +78,23 @@ export class LinktreesController {
     };
   }
 
+  @Get('check-name')
+  @RequireCapabilities(Capability.BusinessLinktreesRead)
+  async checkName(
+    @Query('name') name: string,
+    @Query('excludeId') excludeId: string | undefined,
+    @CurrentUser() business: SessionUser,
+  ) {
+    return {
+      success: true,
+      data: await this.linktreesService.isNameAvailable(
+        business.id,
+        name,
+        excludeId,
+      ),
+    };
+  }
+
   @Get()
   @RequireCapabilities(Capability.BusinessLinktreesRead)
   async getAll(@CurrentUser() business: SessionUser) {

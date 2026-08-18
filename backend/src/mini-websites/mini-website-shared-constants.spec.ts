@@ -1,7 +1,13 @@
 import {
   MINI_WEBSITE_ITEM_PIXEL_EVENTS,
   MINI_WEBSITE_SECTION_KEYS,
+  MINI_WEBSITE_VISUAL_TEMPLATE_DEFAULT as SHARED_VISUAL_TEMPLATE_DEFAULT,
+  MINI_WEBSITE_VISUAL_TEMPLATE_KEYS as SHARED_VISUAL_TEMPLATE_KEYS,
 } from '@linktree/types';
+import {
+  MINI_WEBSITE_VISUAL_TEMPLATE_DEFAULT,
+  MINI_WEBSITE_VISUAL_TEMPLATE_KEYS,
+} from './mini-website.constants';
 import {
   ITEM_PIXEL_EVENTS,
   OFFERED_SECTION_KEYS,
@@ -34,6 +40,15 @@ describe('mini-website constants mirrored from @linktree/types', () => {
   it('has no duplicate section keys', () => {
     expect(new Set(OFFERED_SECTION_KEYS).size).toBe(
       OFFERED_SECTION_KEYS.length,
+    );
+  });
+
+  it('validates exactly the visual templates declared by the shared contract', () => {
+    expect([...MINI_WEBSITE_VISUAL_TEMPLATE_KEYS].sort()).toEqual(
+      [...SHARED_VISUAL_TEMPLATE_KEYS].sort(),
+    );
+    expect(MINI_WEBSITE_VISUAL_TEMPLATE_DEFAULT).toBe(
+      SHARED_VISUAL_TEMPLATE_DEFAULT,
     );
   });
 });

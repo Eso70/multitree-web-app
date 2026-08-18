@@ -12,7 +12,6 @@ import {
 import {
   FaEnvelope,
   FaFacebookF,
-  FaGlobe,
   FaLink,
   FaLinkedinIn,
   FaPhoneAlt,
@@ -226,14 +225,6 @@ export const PLATFORM_BRANDS: Record<string, PlatformBrand> = {
     background: "#6B7280",
     foreground: "#FFFFFF",
     stops: solid("#6B7280"),
-  },
-  website: {
-    id: "website",
-    name: "Website",
-    icon: FaGlobe,
-    background: "#0EA5E9",
-    foreground: "#FFFFFF",
-    stops: solid("#0EA5E9"),
   },
   gps: {
     id: "gps",

@@ -10,7 +10,6 @@ import {
 import { toast } from "sonner";
 import { SkeletonList } from "@/components/shared/Skeleton";
 import { CustomSelect } from "@/components/shared/CustomSelect";
-import { AccentActionButton } from "@/components/shared/AccentActionButton";
 import { communicationRequest } from "./api";
 import { usePolling } from "@/lib/utils/usePolling";
 import { ChatComposer } from "./ChatComposer";
@@ -356,10 +355,14 @@ export function BusinessMessagesPanel({
         <p className="text-xs text-slate-500 dark:text-slate-400">
           پەیامەکانت لەگەڵ ئەدمین
         </p>
-        <AccentActionButton onClick={() => setView("new")}>
+        <button
+          type="button"
+          onClick={() => setView("new")}
+          className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
+        >
           <Plus className="h-3.5 w-3.5" />
           پەیامی نوێ
-        </AccentActionButton>
+        </button>
       </div>
 
       {conversations.length === 0 ? (

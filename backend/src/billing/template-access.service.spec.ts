@@ -19,7 +19,7 @@ describe('TemplateAccessService', () => {
       'aurora',
     ]);
     expect(redis.set).toHaveBeenCalledWith(
-      'templates:business:business-id',
+      'templates:v2:business:business-id',
       { keys: ['spectrum', 'aurora'] },
       60,
     );

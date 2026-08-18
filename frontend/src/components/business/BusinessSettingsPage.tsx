@@ -21,7 +21,6 @@ import { ColorGradientModal } from "@/features/link-editor/ColorGradientModal";
 import { PageHeaderSection } from "@/components/shared/PageHeaderSection";
 import { SegmentedTabs } from "@/components/shared/SegmentedTabs";
 import { TabSaveButton } from "@/components/shared/TabSaveButton";
-import { AccentActionButton } from "@/components/shared/AccentActionButton";
 import { StatCard } from "@/components/shared/StatCard";
 import { Skeleton, SkeletonDashboardPage } from "@/components/shared/Skeleton";
 import { TemplateCombobox } from "@/components/ui/TemplateCombobox";
@@ -299,6 +298,10 @@ export function BusinessSettingsPage() {
         throw new Error(result?.message || "Create failed");
       }
       setDefaultLinktree(result?.data || null);
+      // The pages list is served from a long-lived localStorage cache, so
+      // without this the new default page is missing there until it expires.
+      const { clearCachedData } = await import("@/lib/utils/cache");
+      clearCachedData("/api/linktrees");
       toast.success("پەیجی بنەڕەت دروستکرا", {
         description: "دوگمەی واتساپ و تەلەفۆن بە ژمارەی بزنسەکەت زیادکران",
       });
@@ -755,9 +758,11 @@ export function BusinessSettingsPage() {
                         یەکەم پەڕەت دروست بکە تا وەک پەیجی بنەڕەتی بزنسەکەت
                         کاربکات
                       </p>
-                      <AccentActionButton
+                      <button
+                        type="button"
                         onClick={() => void handleCreateDefaultPage()}
                         disabled={creatingDefault}
+                        className="mx-auto flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
                       >
                         {creatingDefault ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -767,7 +772,7 @@ export function BusinessSettingsPage() {
                         {creatingDefault
                           ? "دروستکردن..."
                           : "دروستکردنی پەیجی بنەڕەت"}
-                      </AccentActionButton>
+                      </button>
                     </div>
                   )}
                 </div>

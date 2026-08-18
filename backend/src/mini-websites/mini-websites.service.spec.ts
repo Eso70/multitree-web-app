@@ -4,6 +4,7 @@ import { DatabaseService } from '../database/database.service';
 import { StorageService } from '../storage/storage.service';
 import { MiniWebsitesService } from './mini-websites.service';
 import { PublicPageAnalyticsService } from '../analytics/public-page-analytics.service';
+import { TemplateAccessService } from '../billing/template-access.service';
 
 describe('MiniWebsitesService', () => {
   let database: { query: jest.Mock; transaction: jest.Mock };
@@ -28,6 +29,10 @@ describe('MiniWebsitesService', () => {
       {
         forSource: jest.fn().mockResolvedValue({ pixelIds: [], actions: {} }),
       } as unknown as PublicPageAnalyticsService,
+      {
+        assertAllowed: jest.fn().mockResolvedValue(undefined),
+        getEffectiveKeys: jest.fn().mockResolvedValue(['liquid-glass']),
+      } as unknown as TemplateAccessService,
     );
   });
 
@@ -198,6 +203,7 @@ describe('MiniWebsitesService', () => {
 
     expect(mockArg(database.query, 0, 1)).toEqual(['acme', 'my-website']);
     expect(result.views).toBe(42);
+    expect(result.templateKey).toBe('liquid-glass');
 
     const publicQuery = mockArg<string>(database.query, 0, 0);
     // Not the daily rollup's unique_visitors sum: that column only marks a

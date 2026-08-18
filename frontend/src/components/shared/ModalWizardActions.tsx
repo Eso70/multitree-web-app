@@ -1,7 +1,6 @@
 import { MotionSpinner } from "@/components/motion/MotionPrimitives";
 import { Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/shared/Skeleton";
-import { AccentActionButton } from "@/components/shared/AccentActionButton";
 
 interface ModalWizardActionsProps {
   variant?: "themed" | "multitree";
@@ -94,13 +93,14 @@ export function ModalWizardActions({
             <span>{nextLabel}</span>
           </button>
         ) : (
-          <AccentActionButton
+          <button
+            type="button"
             onClick={onNext}
             disabled={isSubmitting || (disableWhenInvalid && !canContinue)}
-            className="w-full sm:flex-1 sm:text-sm"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-xs font-semibold text-[var(--theme-ink)] shadow-sm transition-all duration-300 [background:var(--theme-css)] hover:brightness-95 hover:shadow disabled:cursor-wait disabled:opacity-60 sm:flex-1 sm:px-5 sm:py-3 sm:text-sm md:px-6"
           >
             <span>{nextLabel}</span>
-          </AccentActionButton>
+          </button>
         )
       ) : variant === "multitree" ? (
         <button
@@ -122,11 +122,12 @@ export function ModalWizardActions({
           )}
         </button>
       ) : (
-        <AccentActionButton
+        <button
+          type="button"
           onClick={onSubmit}
-          busy={isSubmitting}
-          disabled={disableWhenInvalid && !canContinue}
-          className="w-full sm:flex-1 sm:text-sm"
+          aria-busy={isSubmitting}
+          disabled={isSubmitting || (disableWhenInvalid && !canContinue)}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-xs font-semibold text-[var(--theme-ink)] shadow-sm transition-all duration-300 [background:var(--theme-css)] hover:brightness-95 hover:shadow disabled:cursor-wait disabled:opacity-60 sm:flex-1 sm:px-5 sm:py-3 sm:text-sm md:px-6"
         >
           {isSubmitting ? (
             <>
@@ -138,7 +139,7 @@ export function ModalWizardActions({
           ) : (
             <span>{submitLabel}</span>
           )}
-        </AccentActionButton>
+        </button>
       )}
     </div>
   );

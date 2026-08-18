@@ -25,8 +25,8 @@ const access = (allowed: string[], planCode = "ultra") => ({
 });
 
 describe("business page access presentation", () => {
-  it("keeps the operational dashboard available on every business plan", () => {
-    expect(isBusinessPageLocked("dashboard", access([], "basic"))).toBe(false);
+  it("keeps settings available on every business plan", () => {
+    expect(isBusinessPageLocked("settings", access([], "basic"))).toBe(false);
   });
 
   it("keeps restricted routes reachable while marking their content locked", () => {

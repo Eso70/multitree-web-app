@@ -36,7 +36,9 @@ import {
 } from "./types";
 import { useBusinessAnalyticsTotals } from "@/features/business/hooks/useBusinessAnalyticsTotals";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
-import { AccentActionButton } from "@/components/shared/AccentActionButton";
+import { MINI_WEBSITE_TEMPLATE_DEFAULT_ID } from "@/components/templates/mini-website";
+import { apiRequest } from "@/lib/api/request";
+import { createMiniWebsiteSavePayload } from "./save-payload";
 
 type ViewMode = "grid" | "table";
 
@@ -102,6 +104,8 @@ export function MiniWebsitesPage({
           Array.isArray(payload?.data)
             ? payload.data.map((profile: MiniWebsite) => ({
                 ...profile,
+                templateKey:
+                  profile.templateKey || MINI_WEBSITE_TEMPLATE_DEFAULT_ID,
                 professionTemplate: profile.professionTemplate || "custom",
                 backgroundStyle:
                   profile.backgroundStyle || base.backgroundStyle,
@@ -222,15 +226,12 @@ export function MiniWebsitesPage({
     [businessDefaultAvatar, businessLogo, defaultAvatar],
   );
 
-  const refreshForDashboard = useCallback(
-    async () => {
-      await Promise.all([
-        loadProfiles(true, true),
-        refreshAnalytics({ rethrow: true }),
-      ]);
-    },
-    [loadProfiles, refreshAnalytics],
-  );
+  const refreshForDashboard = useCallback(async () => {
+    await Promise.all([
+      loadProfiles(true, true),
+      refreshAnalytics({ rethrow: true }),
+    ]);
+  }, [loadProfiles, refreshAnalytics]);
   useRegisterBusinessDashboardRefresh("mini-websites", refreshForDashboard);
 
   const filtered = useMemo(
@@ -317,18 +318,13 @@ export function MiniWebsitesPage({
   };
   const saveProfile = async (next: MiniWebsiteDraft) => {
     try {
-      const response = await fetch(
+      await apiRequest<MiniWebsite>(
         editorId ? `/api/mini-websites/${editorId}` : "/api/mini-websites",
         {
           method: editorId ? "PATCH" : "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(next),
+          json: createMiniWebsiteSavePayload(next),
         },
       );
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok)
-        throw new Error(payload?.message || "پاشەکەوتکردن سەرکەوتوو نەبوو");
       setEditorOpen(false);
       await loadProfiles(true);
       toast.success(
@@ -417,10 +413,7 @@ export function MiniWebsitesPage({
                           throw new Error("پاککردنەوە سەرکەوتوو نەبوو");
                       }),
                     );
-                    await Promise.all([
-                      loadProfiles(true),
-                      refreshAnalytics(),
-                    ]);
+                    await Promise.all([loadProfiles(true), refreshAnalytics()]);
                     toast.success("ئامارەکان پاککرانەوە");
                   } catch {
                     toast.error("پاککردنەوەی ئامارەکان سەرکەوتوو نەبوو");
@@ -444,9 +437,9 @@ export function MiniWebsitesPage({
                 className="group flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:shadow dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
                 title="نوێکردنەوە"
               >
-                <MotionSpinner active={refreshing || isAnalyticsRefreshing}><RefreshCw
-                  className="h-4 w-4 -transform"
-                 /></MotionSpinner>
+                <MotionSpinner active={refreshing || isAnalyticsRefreshing}>
+                  <RefreshCw className="h-4 w-4 -transform" />
+                </MotionSpinner>
               </button>
               <button
                 type="button"
@@ -514,13 +507,15 @@ export function MiniWebsitesPage({
                   <Table2 className="h-4 w-4 shrink-0" />
                 </button>
               </div>
-              <AccentActionButton
+              <button
+                type="button"
                 onClick={openCreate}
                 title="دروستکردنی مینی وێبسایتی نوێ"
+                className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
               >
                 <Plus className="h-4 w-4 transition-transform group-hover:scale-110" />
                 <span>مینی وێبسایتی نوێ</span>
-              </AccentActionButton>
+              </button>
             </div>
           }
         />

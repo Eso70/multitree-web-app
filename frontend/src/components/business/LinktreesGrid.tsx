@@ -12,7 +12,11 @@ import {
   Link as LinkIcon,
 } from "lucide-react";
 import { copyToClipboard } from "@/lib/utils/clipboard";
-import { getAbsoluteUrl } from "@/lib/utils/linktree-utils";
+import { formatDate, getAbsoluteUrl } from "@/lib/utils/linktree-utils";
+import {
+  LinktreeMetaBadges,
+  LinktreeMetaField,
+} from "@/components/business/LinktreeMeta";
 import { SkeletonCardGrid } from "@/components/shared/Skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import type { LinktreeListItem as Linktree } from "@linktree/types";
@@ -27,6 +31,12 @@ interface LinktreesGridProps {
   viewActionLabel?: string;
   emptyTitle?: string;
   emptyDescription?: string;
+  /**
+   * Opt in when `data` holds real Linktree records. It unlocks the fields that
+   * only that projection fills in: slug, creation and update dates, template
+   * and the age badge.
+   */
+  showLinktreeMeta?: boolean;
 }
 
 function getPublicIdentifier(item: Linktree): string {
@@ -45,6 +55,7 @@ const LinktreeCard = memo(function LinktreeCard({
   copiedUid,
   onCopy,
   publicPathPrefix,
+  showLinktreeMeta,
 }: {
   item: Linktree;
   index: number;
@@ -56,6 +67,7 @@ const LinktreeCard = memo(function LinktreeCard({
   copiedUid: string | null;
   onCopy: (uid: string, e: React.MouseEvent) => void;
   publicPathPrefix: string;
+  showLinktreeMeta: boolean;
 }) {
   const publicIdentifier = getPublicIdentifier(item);
   const url = useMemo(
@@ -78,10 +90,10 @@ const LinktreeCard = memo(function LinktreeCard({
 
   return (
     <div
-      className={`group relative bg-transparent p-4 sm:p-5 md:p-6 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-all duration-300 transform-gpu ${borderClasses}`}
+      className={`group relative flex h-full flex-col bg-transparent p-4 sm:p-5 md:p-6 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-all duration-300 transform-gpu ${borderClasses}`}
       style={{
         contentVisibility: "auto",
-        containIntrinsicSize: "210px",
+        containIntrinsicSize: "320px",
       }}
     >
       {/* Header Section */}
@@ -107,13 +119,20 @@ const LinktreeCard = memo(function LinktreeCard({
           <h3 className="text-xs sm:text-base font-bold text-gray-900 mb-0.5 sm:mb-1 truncate">
             {item.name}
           </h3>
-          {item.subtitle && (
-            <p className="text-xs text-gray-600 line-clamp-2 mb-1 sm:mb-1.5">
-              {item.subtitle}
-            </p>
-          )}
+          <p className="text-xs text-gray-600 line-clamp-2 mb-1 sm:mb-1.5">
+            {item.subtitle?.trim() || "—"}
+          </p>
+          <LinktreeMetaBadges
+            item={item}
+            showAgeBadge={showLinktreeMeta}
+            showTemplate={showLinktreeMeta}
+          />
         </div>
       </div>
+
+      <p className="mb-2 line-clamp-2 text-xs text-gray-500 sm:mb-3">
+        {item.description?.trim() || "—"}
+      </p>
 
       {/* URL Section */}
       <div className="mb-2 sm:mb-3 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gray-50 border border-gray-200">
@@ -150,8 +169,22 @@ const LinktreeCard = memo(function LinktreeCard({
         </div>
       </div>
 
+      {/* Details Section */}
+      {showLinktreeMeta && (
+        <div className="mb-2 grid grid-cols-2 gap-2 sm:mb-3">
+          <LinktreeMetaField
+            label="دروستکراوە"
+            value={formatDate(item.created_at)}
+          />
+          <LinktreeMetaField
+            label="نوێکراوە"
+            value={formatDate(item.updated_at)}
+          />
+        </div>
+      )}
+
       {/* Actions Section */}
-      <div className="flex items-center gap-1.5 sm:gap-2 pt-2 sm:pt-3 border-t border-gray-200">
+      <div className="mt-auto flex items-center gap-1.5 sm:gap-2 pt-2 sm:pt-3 border-t border-gray-200">
         {onViewAnalytics && (
           <button
             onClick={() => onViewAnalytics(item.id, item.name)}
@@ -204,6 +237,7 @@ export const LinktreesGrid = memo(function LinktreesGrid({
   viewActionLabel = "ئامار",
   emptyTitle = "هیچ پەیجەک نەدۆزرایەوە",
   emptyDescription = "دەست پێ بکە بە دروستکردنی پەیج یەکەم",
+  showLinktreeMeta = false,
 }: LinktreesGridProps) {
   const [copiedUid, setCopiedUid] = useState<string | null>(null);
 
@@ -266,6 +300,7 @@ export const LinktreesGrid = memo(function LinktreesGrid({
           copiedUid={copiedUid}
           onCopy={handleCopyUrl}
           publicPathPrefix={publicPathPrefix}
+          showLinktreeMeta={showLinktreeMeta}
         />
       ))}
     </div>

@@ -1,11 +1,18 @@
 ﻿"use client";
 
 import { memo, useState, useMemo } from "react";
-import { Layout, Plus, Trash2, GripVertical, MessageCircle } from "lucide-react";
+import { Layout, Plus, Trash2, GripVertical, MessageCircle, Sparkles } from "lucide-react";
 import { DEFAULT_FOOTER_PHONE } from "../modal-constants";
 import { modalChoiceButtonClass, modalInputClass, modalTextareaClass } from "../modal-input-styles";
+import { LINKTREE_NAME_MAX_LENGTH } from "./validation";
 import { TEMPLATE_OPTIONS, type TemplateKey } from "@/lib/templates/config";
 import { TemplateSelector } from "../TemplateSelector";
+import { BackgroundPatternModal } from "@/components/shared/BackgroundPatternModal";
+import { backgroundPatternLabel } from "@/lib/templates/background-pattern";
+import {
+  BACKGROUND_PATTERN_DEFAULT,
+  type BackgroundPatternStyle,
+} from "@linktree/types";
 import type { WhatsAppQuestion } from "@/components/public/WhatsAppQuestionModal";
 import { BackgroundColorPicker } from "../BackgroundColorPicker";
 import { AvatarImageUpload } from "@/components/shared/AvatarImageUpload";
@@ -19,7 +26,17 @@ interface BasicInfoStepProps {
   description: string;
   slug: string;
   backgroundColor: string;
+  /** An uploaded background image, which replaces the background colour. */
+  backgroundImagePreview?: string | null;
+  onBackgroundImageChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onBackgroundImageRemove?: () => void;
   templateKey: TemplateKey;
+  /**
+   * The repeating pattern drawn over the page background. Omitted by surfaces
+   * that do not offer one, which keeps their layout as it was.
+   */
+  backgroundPattern?: BackgroundPatternStyle;
+  onBackgroundPatternChange?: (value: BackgroundPatternStyle) => void;
   footerText: string;
   footerPhone: string;
   footerHidden: boolean;
@@ -36,6 +53,12 @@ interface BasicInfoStepProps {
     footerPhone?: string;
     image?: string;
   };
+  /** Advisory, not blocking: another page already uses this display name. */
+  nameWarning?: string | null;
+  checkingName?: boolean;
+  checkingSlug?: boolean;
+  /** Per-question errors, keyed by question id. */
+  questionErrors?: Record<string, { text?: string; message?: string }>;
   touched: {
     name?: boolean;
     slug?: boolean;
@@ -77,7 +100,12 @@ export const BasicInfoStep = memo(function BasicInfoStep({
   description,
   slug,
   backgroundColor,
+  backgroundImagePreview,
+  onBackgroundImageChange,
+  onBackgroundImageRemove,
   templateKey,
+  backgroundPattern = BACKGROUND_PATTERN_DEFAULT,
+  onBackgroundPatternChange,
   footerText,
   footerPhone,
   footerHidden,
@@ -87,6 +115,10 @@ export const BasicInfoStep = memo(function BasicInfoStep({
   whatsappModalSubtitle,
   whatsappQuestions,
   errors,
+  nameWarning = null,
+  checkingName = false,
+  checkingSlug = false,
+  questionErrors = {},
   touched,
   onImageChange,
   onRemoveImage,
@@ -113,6 +145,7 @@ export const BasicInfoStep = memo(function BasicInfoStep({
   hideRemoveImage = false,
 }: BasicInfoStepProps) {
   const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
+  const [isPatternSelectorOpen, setIsPatternSelectorOpen] = useState(false);
 
   // Helper functions for managing WhatsApp questions
   const handleAddQuestion = () => {
@@ -166,13 +199,19 @@ export const BasicInfoStep = memo(function BasicInfoStep({
               onChange={(e) => onNameChange(e.target.value)}
               onBlur={onNameBlur}
               required
+              maxLength={LINKTREE_NAME_MAX_LENGTH}
+              aria-invalid={!!(errors.name && touched.name)}
               className={modalInputClass(!!(errors.name && touched.name))}
               placeholder={onUploadClick ? "ناوی بزنس بنووسە" : "ناوی لینک"}
               dir="auto"
             />
-            {errors.name && touched.name && (
+            {errors.name && touched.name ? (
               <p className="text-xs text-red-500 mt-1 font-kurdish">{errors.name}</p>
-            )}
+            ) : checkingName ? (
+              <p className="text-xs text-gray-400 mt-1 font-kurdish">پشکنینی ناو...</p>
+            ) : nameWarning ? (
+              <p className="text-xs text-amber-600 mt-1 font-kurdish">{nameWarning}</p>
+            ) : null}
           </EditorField>
 
           {onUploadClick ? (
@@ -196,7 +235,7 @@ export const BasicInfoStep = memo(function BasicInfoStep({
                 value={subtitle}
                 onChange={(e) => onSubtitleChange(e.target.value)}
                 className={modalInputClass()}
-                placeholder="بۆ نموونە: خاوەن براند و بەڕێوەبەری فرۆشتن"
+                placeholder="ناونیشانی کورت بنووسە"
                 dir="auto"
               />
             </EditorField>
@@ -245,13 +284,16 @@ export const BasicInfoStep = memo(function BasicInfoStep({
                 value={slug}
                 onChange={(e) => onSlugChange(e.target.value)}
                 disabled
+                aria-invalid={!!(errors.slug && touched.slug)}
                 className={modalInputClass(!!(errors.slug && touched.slug), "cursor-not-allowed bg-gray-50 text-gray-500")}
                 placeholder="Slug بنووسە"
                 dir="ltr"
               />
-              {errors.slug && touched.slug && (
+              {errors.slug && touched.slug ? (
                 <p className="text-xs text-red-500 mt-1 font-kurdish">{errors.slug}</p>
-              )}
+              ) : checkingSlug ? (
+                <p className="text-xs text-gray-400 mt-1 font-kurdish">پشکنینی slug...</p>
+              ) : null}
             </EditorField>
 
             {/* Template Style */}
@@ -272,6 +314,22 @@ export const BasicInfoStep = memo(function BasicInfoStep({
                 <p className="text-xs text-red-500 mt-1 font-kurdish">{errors.templateKey}</p>
               )}
             </EditorField>
+
+            {/* Background Pattern — the same picker the mini website uses */}
+            {onBackgroundPatternChange && (
+              <EditorField label="شێوازی پاشبنەما">
+                <button
+                  type="button"
+                  onClick={() => setIsPatternSelectorOpen(true)}
+                  className={modalChoiceButtonClass(false)}
+                >
+                  <span className="text-gray-900 truncate">
+                    {backgroundPatternLabel(backgroundPattern)}
+                  </span>
+                  <Sparkles className="h-4 w-4 text-gray-500 shrink-0" />
+                </button>
+              </EditorField>
+            )}
           </div>
         )}
 
@@ -282,6 +340,9 @@ export const BasicInfoStep = memo(function BasicInfoStep({
               value={backgroundColor}
               onChange={onBackgroundColorChange}
               onBlur={onBackgroundColorBlur}
+              imagePreview={backgroundImagePreview}
+              onImageChange={onBackgroundImageChange}
+              onImageRemove={onBackgroundImageRemove}
               error={errors.backgroundColor && touched.backgroundColor ? errors.backgroundColor : undefined}
             />
           </EditorField>
@@ -428,10 +489,12 @@ export const BasicInfoStep = memo(function BasicInfoStep({
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {whatsappQuestions.map((question, index) => (
+                      {whatsappQuestions.map((question, index) => {
+                        const questionError = questionErrors[question.id];
+                        return (
                         <div
                           key={question.id}
-                          className="p-3 sm:p-4 rounded-lg sm:rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161B22] space-y-3"
+                          className={`p-3 sm:p-4 rounded-lg sm:rounded-xl border bg-white dark:bg-[#161B22] space-y-3 ${questionError ? "border-red-300 dark:border-red-500/40" : "border-gray-200 dark:border-white/10"}`}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -459,9 +522,13 @@ export const BasicInfoStep = memo(function BasicInfoStep({
                               value={question.text}
                               onChange={(e) => handleQuestionChange(question.id, 'text', e.target.value)}
                               placeholder="داواکردن"
-                              className={modalInputClass()}
+                              aria-invalid={!!questionError?.text}
+                              className={modalInputClass(!!questionError?.text)}
                               dir="auto"
                             />
+                            {questionError?.text && (
+                              <p className="text-xs text-red-500 mt-1 font-kurdish">{questionError.text}</p>
+                            )}
                           </EditorField>
 
                           {/* Question Message */}
@@ -471,12 +538,17 @@ export const BasicInfoStep = memo(function BasicInfoStep({
                               onChange={(e) => handleQuestionChange(question.id, 'message', e.target.value)}
                               placeholder="سڵاو بەڕێز دەمەوێت داوا بکەم."
                               rows={2}
-                              className={modalTextareaClass(false, "min-h-0")}
+                              aria-invalid={!!questionError?.message}
+                              className={modalTextareaClass(!!questionError?.message, "min-h-0")}
                               dir="auto"
                             />
+                            {questionError?.message && (
+                              <p className="text-xs text-red-500 mt-1 font-kurdish">{questionError.message}</p>
+                            )}
                           </EditorField>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -485,6 +557,15 @@ export const BasicInfoStep = memo(function BasicInfoStep({
           </div>
         )}
       </div>
+
+      {onBackgroundPatternChange && (
+        <BackgroundPatternModal
+          isOpen={isPatternSelectorOpen}
+          value={backgroundPattern}
+          onChange={onBackgroundPatternChange}
+          onClose={() => setIsPatternSelectorOpen(false)}
+        />
+      )}
 
       <TemplateSelector
         isOpen={isTemplateSelectorOpen}

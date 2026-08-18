@@ -7,6 +7,7 @@ import { Trash2, Eye, Copy, Check, Edit } from "lucide-react";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { formatDate, getAbsoluteUrl } from "@/lib/utils/linktree-utils";
 import { TablePagination } from "@/components/shared/TablePagination";
+import { LinktreeMetaBadges } from "@/components/business/LinktreeMeta";
 import type { LinktreeListItem as Linktree } from "@linktree/types";
 
 const PAGE_SIZE = 10;
@@ -20,6 +21,11 @@ interface LinktreesTableProps {
   onViewAnalytics?: (id: string, name: string) => void;
   viewActionLabel?: string;
   emptyTitle?: string;
+  /**
+   * Opt in when `data` holds real Linktree records. It unlocks the fields that
+   * only that projection fills in: template and the age badge.
+   */
+  showLinktreeMeta?: boolean;
 }
 
 function getPublicIdentifier(item: Linktree): string {
@@ -38,6 +44,7 @@ const TableRow = memo(function TableRow({
   formatDate,
   viewActionLabel,
   publicPathPrefix,
+  showLinktreeMeta,
 }: {
   item: Linktree;
   onEdit?: (id: string) => void;
@@ -48,6 +55,7 @@ const TableRow = memo(function TableRow({
   formatDate: (dateString: string) => string;
   viewActionLabel: string;
   publicPathPrefix: string;
+  showLinktreeMeta: boolean;
 }) {
   const publicIdentifier = getPublicIdentifier(item);
   const getLinktreeUrl = useCallback(
@@ -68,7 +76,7 @@ const TableRow = memo(function TableRow({
       className="border-b border-slate-100 dark:border-white/5 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors duration-200 transform-gpu"
       style={{
         contentVisibility: "auto",
-        containIntrinsicSize: "65px",
+        containIntrinsicSize: "80px",
       }}
     >
       <td className="px-2 sm:px-3 py-3">
@@ -94,17 +102,28 @@ const TableRow = memo(function TableRow({
         <div className="text-xs sm:text-sm font-medium text-gray-900 wrap-break-word">
           {item.name}
         </div>
+        <LinktreeMetaBadges
+          item={item}
+          showAgeBadge={showLinktreeMeta}
+          showTemplate={showLinktreeMeta}
+          className="mt-1"
+        />
       </td>
       <td className="px-2 sm:px-3 py-3 hidden md:table-cell">
         <div className="text-xs text-gray-600 wrap-break-word line-clamp-2">
           {item.subtitle || "—"}
         </div>
-      </td>
-      <td className="px-2 sm:px-3 py-3 hidden lg:table-cell">
-        <div className="text-xs text-gray-700 font-mono break-all">
-          {item.seo_name || "—"}
+        <div className="mt-0.5 text-[11px] text-gray-400 wrap-break-word line-clamp-2">
+          {item.description?.trim() || "—"}
         </div>
       </td>
+      {!showLinktreeMeta && (
+        <td className="px-2 sm:px-3 py-3 hidden lg:table-cell">
+          <div className="text-xs text-gray-700 font-mono break-all">
+            {item.seo_name || "—"}
+          </div>
+        </td>
+      )}
       <td className="px-2 sm:px-3 py-3">
         <div className="flex items-center gap-1.5 flex-wrap">
           <a
@@ -190,6 +209,7 @@ const MobileCard = memo(function MobileCard({
   formatDate,
   viewActionLabel,
   publicPathPrefix,
+  showLinktreeMeta,
 }: {
   item: Linktree;
   onEdit?: (id: string) => void;
@@ -201,6 +221,7 @@ const MobileCard = memo(function MobileCard({
   formatDate: (dateString: string) => string;
   viewActionLabel: string;
   publicPathPrefix: string;
+  showLinktreeMeta: boolean;
 }) {
   const publicIdentifier = getPublicIdentifier(item);
   return (
@@ -209,7 +230,7 @@ const MobileCard = memo(function MobileCard({
       onClick={() => onView(publicIdentifier)}
       style={{
         contentVisibility: "auto",
-        containIntrinsicSize: "110px",
+        containIntrinsicSize: "150px",
       }}
     >
       <div className="relative h-16 w-16 rounded-full overflow-hidden border border-gray-200 shrink-0">
@@ -237,6 +258,12 @@ const MobileCard = memo(function MobileCard({
             <div className="text-xs text-gray-600 wrap-break-word line-clamp-2">
               {item.subtitle || "—"}
             </div>
+            <LinktreeMetaBadges
+              item={item}
+              showAgeBadge={showLinktreeMeta}
+              showTemplate={showLinktreeMeta}
+              className="mt-1.5"
+            />
           </div>
           <div className="flex items-center gap-1">
             {onViewAnalytics && (
@@ -294,6 +321,9 @@ const MobileCard = memo(function MobileCard({
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-200 text-gray-600 bg-gray-50">
             دروستکراوە {formatDate(item.created_at)}
           </span>
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-200 text-gray-600 bg-gray-50">
+            نوێکراوە {formatDate(item.updated_at)}
+          </span>
         </div>
       </div>
     </div>
@@ -309,6 +339,7 @@ export const LinktreesTable = memo(function LinktreesTable({
   onViewAnalytics,
   viewActionLabel = "ئامار",
   emptyTitle = "هیچ داتایەک نەدۆزرایەوە",
+  showLinktreeMeta = false,
 }: LinktreesTableProps) {
   const [copiedUid, setCopiedUid] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -318,6 +349,10 @@ export const LinktreesTable = memo(function LinktreesTable({
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE,
   );
+
+  // The slug column is dropped for real Linktree records, so the placeholder
+  // rows have to span one column fewer.
+  const columnCount = showLinktreeMeta ? 7 : 8;
 
   const formatDateString = useCallback((dateString: string) => {
     return formatDate(dateString);
@@ -384,6 +419,7 @@ export const LinktreesTable = memo(function LinktreesTable({
               formatDate={formatDateString}
               viewActionLabel={viewActionLabel}
               publicPathPrefix={publicPathPrefix}
+              showLinktreeMeta={showLinktreeMeta}
             />
           ))
         )}
@@ -398,17 +434,19 @@ export const LinktreesTable = memo(function LinktreesTable({
                 <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide w-16 sm:w-20">
                   وێنە
                 </th>
-                <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide w-24 sm:w-32">
+                <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide w-32 sm:w-40">
                   ناو
                 </th>
                 <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide hidden md:table-cell w-32 lg:w-40">
                   ناونیشانی کورت
                 </th>
-                <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide hidden lg:table-cell w-24">
-                  Slug
-                </th>
+                {!showLinktreeMeta && (
+                  <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide hidden lg:table-cell w-24">
+                    Slug
+                  </th>
+                )}
                 <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide w-32 sm:w-40 lg:w-48">
-                  UID
+                  بەستەر
                 </th>
                 <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide hidden xl:table-cell w-28">
                   دروستکراوە
@@ -425,7 +463,7 @@ export const LinktreesTable = memo(function LinktreesTable({
               {isLoading ? (
                 <tr className="bg-white dark:bg-transparent">
                   <td
-                    colSpan={8}
+                    colSpan={columnCount}
                     className="px-3 py-3"
                   >
                     <SkeletonTable rows={6} />
@@ -434,7 +472,7 @@ export const LinktreesTable = memo(function LinktreesTable({
               ) : data.length === 0 ? (
                 <tr className="bg-white">
                   <td
-                    colSpan={8}
+                    colSpan={columnCount}
                     className="px-4 py-8 text-center text-gray-500 text-xs sm:text-sm bg-white"
                   >
                     {emptyTitle}
@@ -453,6 +491,7 @@ export const LinktreesTable = memo(function LinktreesTable({
                     formatDate={formatDateString}
                     viewActionLabel={viewActionLabel}
                     publicPathPrefix={publicPathPrefix}
+                    showLinktreeMeta={showLinktreeMeta}
                   />
                 ))
               )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
+import { ImagePlus, X } from "lucide-react";
 import { ColorGradientModal } from "./ColorGradientModal";
 
 export interface BackgroundColorOption {
@@ -34,7 +35,18 @@ interface BackgroundColorPickerProps {
   showCustom?: boolean;
   colors?: readonly BackgroundColorOption[];
   error?: string;
+  /**
+   * A background image replaces the colour surface entirely. The image tile is
+   * only rendered for surfaces that accept one, so a picker without
+   * `onImageChange` keeps its colours-only row.
+   */
+  imagePreview?: string | null;
+  onImageChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onImageRemove?: () => void;
 }
+
+const IMAGE_TILE_LABEL = "وێنەی باکگڕاوند";
+const IMAGE_REMOVE_LABEL = "لابردنی وێنەی باکگڕاوند";
 
 function customSwatchStyle(value: string): CSSProperties {
   if (value.startsWith("gradient:")) {
@@ -69,11 +81,18 @@ export function BackgroundColorPicker({
   showCustom = true,
   colors = RAINBOW_BACKGROUND_COLORS,
   error,
+  imagePreview,
+  onImageChange,
+  onImageRemove,
 }: BackgroundColorPickerProps) {
   const [showGradientPicker, setShowGradientPicker] = useState(false);
+  const hasImage = !!imagePreview;
+  // An image overrides every colour, so no swatch reads as selected while one
+  // is set.
   const isCustom =
-    value.startsWith("gradient:") ||
-    (value.startsWith("#") && !colors.some((color) => color.value === value));
+    !hasImage &&
+    (value.startsWith("gradient:") ||
+      (value.startsWith("#") && !colors.some((color) => color.value === value)));
 
   return (
     <>
@@ -96,17 +115,63 @@ export function BackgroundColorPicker({
           </div>
         )}
 
+        {onImageChange && (
+          <div className="flex flex-col items-center gap-0.5">
+            <div className="relative">
+              <label
+                className={`relative flex h-6 w-6 cursor-pointer items-center justify-center overflow-hidden rounded-md border-2 transition-all duration-200 ${
+                  hasImage
+                    ? "border-brand-500 scale-110 ring-1 ring-brand-500/50 shadow-sm z-10"
+                    : "border-gray-300 hover:border-gray-400 hover:scale-105"
+                }`}
+                title={IMAGE_TILE_LABEL}
+              >
+                {imagePreview ? (
+                  // A data URL preview and an uploaded path both render here, so
+                  // the optimizer is bypassed.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={imagePreview} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                ) : (
+                  <ImagePlus className="h-3.5 w-3.5 text-gray-500" />
+                )}
+                <input
+                  aria-label={IMAGE_TILE_LABEL}
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  onChange={onImageChange}
+                  className="hidden"
+                />
+              </label>
+              {hasImage && onImageRemove && (
+                <button
+                  type="button"
+                  onClick={onImageRemove}
+                  aria-label={IMAGE_REMOVE_LABEL}
+                  title={IMAGE_REMOVE_LABEL}
+                  className="absolute -right-1.5 -top-1.5 z-20 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-gray-700 text-white shadow-sm transition hover:bg-gray-900"
+                >
+                  <X className="h-2.5 w-2.5" />
+                </button>
+              )}
+            </div>
+            <span className="text-[8px] text-gray-500 leading-tight text-center w-7 truncate">{IMAGE_TILE_LABEL}</span>
+          </div>
+        )}
+
         {colors.map((color) => (
           <div key={color.id} className="flex flex-col items-center gap-0.5">
             <button
               type="button"
               onClick={() => {
+                // Choosing a colour drops the image, because the image is the
+                // background instead of the colour rather than on top of it.
+                onImageRemove?.();
                 onChange(color.value);
                 setShowGradientPicker(false);
               }}
               onBlur={onBlur}
               className={`relative h-6 w-6 overflow-hidden rounded-md border-2 transition-all duration-200 ${
-                value === color.value
+                !hasImage && value === color.value
                   ? "border-brand-500 scale-110 ring-1 ring-brand-500/50 shadow-sm z-10"
                   : "border-gray-300 hover:border-gray-400 hover:scale-105"
               }`}
@@ -117,7 +182,7 @@ export function BackgroundColorPicker({
               ) : (
                 <span className={`absolute inset-0 bg-gradient-to-br transition-opacity duration-200 ${color.gradient}`} />
               )}
-              {value === color.value && (
+              {!hasImage && value === color.value && (
                 <span className="absolute inset-0 flex items-center justify-center bg-black/10">
                   <span className="h-1 w-1 rounded-full bg-white" />
                 </span>
@@ -132,7 +197,10 @@ export function BackgroundColorPicker({
         <ColorGradientModal
           isOpen={showGradientPicker}
           value={value}
-          onChange={onChange}
+          onChange={(next) => {
+            onImageRemove?.();
+            onChange(next);
+          }}
           onClose={() => setShowGradientPicker(false)}
           solidFallback="#ff0000"
           gradientFallback="#0066ff"

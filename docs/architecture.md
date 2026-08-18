@@ -29,6 +29,12 @@ live behind domain modules rather than expanding those entry points further.
   entry component. Its structural frame, shared visual utilities, and
   informational section renderers are separate modules that can be reviewed
   and tested without loading the entire renderer implementation.
+- Liquid Glass is the only mini-website renderer. The catalog is deliberately
+  a single template, so `MiniWebsiteTemplateRenderer` accepts a `templateId`
+  and ignores it: a row saved before the catalog was reduced still names a
+  retired key and must keep rendering rather than failing its lookup. A
+  second renderer would reintroduce the split section registries that made
+  the two drift apart.
 - `BusinessDashboard` owns page composition. Analytics-summary retrieval,
   normalization, lifecycle, and reset behavior are owned by
   `useBusinessAnalyticsTotals`. Dashboard access/profile refresh calls are
@@ -170,8 +176,9 @@ Component ownership (`frontend/src/components/`):
 
 - `business`: business-console-only presentation.
 - `public`: public linktree presentation.
-- `templates`: the 12 selectable linktree templates and the 4 mini-website
-  visual variations.
+- `templates`: the selectable Linktree catalog and two persisted mini-website
+  visual templates. Both mini-website renderers use the canonical editor order
+  while keeping their page compositions and section designs independent.
 - `analytics`, `home`, `shared`, `ui`: neutral, reusable across both
   permission domains — `shared` is the largest of these and holds the bulk of
   cross-cutting UI primitives.

@@ -63,19 +63,7 @@ interface LinktreeItem {
   subtitle?: string | null;
 }
 
-interface MiniWebsiteItem {
-  id: string;
-  name: string;
-  slug: string;
-  headline?: string | null;
-  bio?: string | null;
-  avatar?: string | null;
-  cover?: string | null;
-  variation?: string | null;
-  accent_color?: string | null;
-}
-
-type WorkspaceTabId = "linktrees" | "websites";
+type WorkspaceTabId = "linktrees";
 
 function PublicContentCard({
   href,
@@ -143,10 +131,8 @@ function PublicContentCard({
 
 export function BusinessWorkspaceSection({
   linktrees,
-  miniWebsites,
 }: {
   linktrees: LinktreeItem[];
-  miniWebsites: MiniWebsiteItem[];
 }) {
   const tabs: Array<{
     id: WorkspaceTabId;
@@ -160,17 +146,8 @@ export function BusinessWorkspaceSection({
           },
         ]
       : []),
-    ...(miniWebsites.length > 0
-      ? [
-          {
-            id: "websites" as const,
-            label: "ماڵپەڕە بچووکەکان",
-          },
-        ]
-      : []),
   ];
-  const initialTab: WorkspaceTabId =
-    linktrees.length > 0 ? "linktrees" : "websites";
+  const initialTab: WorkspaceTabId = "linktrees";
   const [selectedTab, setSelectedTab] = useState<WorkspaceTabId>(initialTab);
   const [assistantInput, setAssistantInput] = useState("");
   const [assistantMessages, setAssistantMessages] = useState<
@@ -268,14 +245,7 @@ export function BusinessWorkspaceSection({
               className="relative flex h-full min-w-0 flex-1 items-center justify-center gap-2 overflow-hidden border-r border-black/10 px-4 text-xs font-medium text-black/65 transition-opacity hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-black/45 aria-selected:font-bold aria-selected:shadow-[inset_0_-2px_0_currentColor] dark:border-white/10 dark:text-white/65 dark:focus-visible:ring-white/60 sm:max-w-56 sm:flex-none sm:justify-start sm:px-5"
             >
               <FileText aria-hidden="true" className="relative z-10 h-3.5 w-3.5 shrink-0" />
-              {tab.id === "websites" ? (
-                <>
-                  <span className="relative z-10 sm:hidden">ماڵپەڕەکان</span>
-                  <span className="relative z-10 hidden sm:inline">{tab.label}</span>
-                </>
-              ) : (
-                <span className="relative z-10 truncate">{tab.label}</span>
-              )}
+              <span className="relative z-10 truncate">{tab.label}</span>
             </motion.button>
           );
         })}
@@ -383,35 +353,6 @@ export function BusinessWorkspaceSection({
           </div>
         )}
 
-        {activeTab === "websites" && (
-          <div
-            className="relative h-full"
-            id="business-workspace-panel-websites"
-            role="tabpanel"
-            aria-labelledby="business-workspace-tab-websites"
-          >
-            <div className="hidden">
-              <h2 className="text-sm font-semibold leading-6 text-gray-500 dark:text-white/40">
-                ماڵپەڕە بچووکە بڵاوکراوەکان
-              </h2>
-              <span className="text-xs tabular-nums text-gray-500 dark:text-white/40">
-                {miniWebsites.length}
-              </span>
-            </div>
-            <div className="grid min-h-full min-w-0 grid-flow-row-dense auto-rows-[6.5rem] grid-cols-2 gap-2.5 sm:auto-rows-[7.5rem] lg:auto-rows-[8.25rem] lg:grid-cols-3 lg:gap-3">
-              {miniWebsites.map((item, index) => (
-                <PublicContentCard
-                  key={item.id}
-                  href={`/bio/${item.slug}`}
-                  name={item.name}
-                  description={item.headline || item.bio}
-                  image={item.cover || item.avatar}
-                  index={index}
-                />
-              ))}
-            </div>
-          </div>
-        )}
           </div>
         </div>
       </div>
@@ -437,11 +378,9 @@ function normalizePhone(value?: string | null) {
 export function BusinessLanding({
   business,
   linktrees,
-  miniWebsites = [],
 }: {
   business: BusinessData;
   linktrees: LinktreeItem[];
-  miniWebsites?: MiniWebsiteItem[];
 }) {
   const accentColor = parseWebsiteColor(
     business.website_color || MULTITREE_ACCENT_COLOR,
@@ -499,10 +438,6 @@ export function BusinessLanding({
           name: item.name,
           href: `/linktree/${item.seo_name || item.uid}`,
         })),
-        miniWebsites: miniWebsites.map((item) => ({
-          name: item.name,
-          href: `/bio/${item.slug}`,
-        })),
       }}
     >
         <div className="relative isolate overflow-hidden">
@@ -510,10 +445,7 @@ export function BusinessLanding({
             accentColor={accentColor}
           />
 
-          <BusinessWorkspaceSection
-            linktrees={linktrees}
-            miniWebsites={miniWebsites}
-          />
+          <BusinessWorkspaceSection linktrees={linktrees} />
 
           <div className="relative px-5 sm:px-8">
             <BusinessTrustedBy partners={business.trusted_partners || []} />
@@ -533,7 +465,6 @@ export function BusinessLanding({
           businessLogo={business.logo || business.default_avatar}
           phoneNumber={business.footer_phone}
           accentColor={accentColor}
-          miniWebsite={miniWebsites[0] || null}
         />
     </BusinessPublicSiteShell>
   );

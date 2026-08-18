@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TemplatesPage } from "./TemplatesPage";
 
@@ -26,13 +26,7 @@ vi.mock("@/components/shared/DashboardSurface", () => ({
 }));
 
 vi.mock("@/components/shared/PageHeader", () => ({
-  PageHeader: ({
-    title,
-    action,
-  }: {
-    title: string;
-    action: ReactNode;
-  }) => (
+  PageHeader: ({ title, action }: { title: string; action: ReactNode }) => (
     <header>
       <h1>{title}</h1>
       {action}
@@ -87,33 +81,21 @@ describe("TemplatesPage", () => {
     expect(screen.queryByRole("tab")).not.toBeInTheDocument();
   });
 
+  /**
+   * The page catalogues Linktree templates only. Mini-website templates were
+   * removed from it, and with one visual template left there is nothing to
+   * browse there anyway.
+   */
   it.each([
     { canCreate: false, surface: "business" },
     { canCreate: true, surface: "platform admin" },
-  ])(
-    "shows the mini website template tab in the $surface page",
-    ({ canCreate }) => {
-      render(<TemplatesPage canCreate={canCreate} />);
+  ])("offers no template category tabs in the $surface page", ({ canCreate }) => {
+    render(<TemplatesPage canCreate={canCreate} />);
 
-      expect(
-        screen.getByRole("tab", { name: "قالبەکانی لینک تری" }),
-      ).toHaveAttribute("aria-selected", "true");
-
-      fireEvent.click(
-        screen.getByRole("tab", { name: "قالبەکانی مینی وێبسایت" }),
-      );
-
-      expect(
-        screen.getByRole("tab", { name: "قالبەکانی مینی وێبسایت" }),
-      ).toHaveAttribute("aria-selected", "true");
-      expect(
-        screen.getByLabelText("Empty mini website template monitor"),
-      ).toBeInTheDocument();
-      expect(screen.queryByText("Liquid Glass")).not.toBeInTheDocument();
-      expect(screen.queryByText("MultiTree")).not.toBeInTheDocument();
-      expect(
-        screen.getByText("کۆی قالبەکان: 0"),
-      ).toBeInTheDocument();
-    },
-  );
+    expect(screen.queryAllByRole("tab")).toHaveLength(0);
+    expect(
+      screen.queryByText("قالبەکانی مینی وێبسایت"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Liquid Glass")).not.toBeInTheDocument();
+  });
 });

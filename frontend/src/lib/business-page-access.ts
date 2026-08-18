@@ -1,7 +1,6 @@
 type PermissionOutcome = "allow" | "approval" | "deny";
 
 export type BusinessDashboardPage =
-  | "dashboard"
   | "linktrees"
   | "mini-website"
   | "analytics"

@@ -1,24 +1,74 @@
 import { isGpsInputValid } from "../modal-utils";
 
 /**
- * Validates linktree name: must be at least 2 characters after trimming.
- * Returns a Kurdish error message if invalid, or undefined if valid.
+ * Product ceiling for a page name. The column holds 255, but a name longer
+ * than this stops fitting the card and the public header.
+ */
+export const LINKTREE_NAME_MAX_LENGTH = 100;
+
+/** `chk_lt_seo_name` and `chk_lt_name` both require two characters. */
+const LINKTREE_MIN_LENGTH = 2;
+
+/**
+ * Validates linktree name.
+ *
+ * The two-character floor is not a preference: `chk_lt_name` and the DTO's
+ * `@MinLength(2)` both reject a single character, so a shorter name would pass
+ * the form and come back as a 400 with nothing pointing at the field.
  */
 export function validateLinktreeName(name: string): string | undefined {
-  if (name.trim().length < 2) {
-    return "ناوی لینکتری دەبێت لانی کەم ٢ پیت بێت";
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return "تکایە ناو بنووسە";
+  }
+  if (trimmed.length < LINKTREE_MIN_LENGTH) {
+    return "ناو دەبێت لانی کەم ٢ پیت بێت";
+  }
+  if (trimmed.length > LINKTREE_NAME_MAX_LENGTH) {
+    return `ناو دەبێت کەمتر لە ${LINKTREE_NAME_MAX_LENGTH} پیت بێت`;
   }
   return undefined;
 }
 
 /**
- * Validates slug: must match /^[a-z0-9-]+$/.
- * Returns a Kurdish error message if invalid, or undefined if valid.
+ * Validates slug against `chk_lt_seo_name`: two characters or more, lowercase
+ * letters, digits and hyphens only.
  */
 export function validateSlug(slug: string): string | undefined {
-  if (!slug || !/^[a-z0-9-]+$/.test(slug)) {
-    return "سلاگ دەبێت تەنها پیتی بچووک، ژمارە و هێڵ بێت";
+  const trimmed = slug.trim();
+  if (!trimmed) {
+    return "تکایە slug بنووسە";
   }
+  if (trimmed.length < LINKTREE_MIN_LENGTH) {
+    return "Slug دەبێت لانی کەم ٢ پیت بێت";
+  }
+  if (trimmed.length > LINKTREE_NAME_MAX_LENGTH) {
+    return `Slug دەبێت کەمتر لە ${LINKTREE_NAME_MAX_LENGTH} پیت بێت`;
+  }
+  if (!/^[a-z0-9-]+$/.test(trimmed)) {
+    return "Slug دەبێت تەنها پیتی بچووک، ژمارە و هێڵ بێت";
+  }
+  return undefined;
+}
+
+/**
+ * Validates one WhatsApp modal question.
+ *
+ * A row needs both halves. The server drops a half-filled row on save
+ * (`if (!q.text || !q.message) continue`), so without this the question the
+ * owner typed disappears with no explanation.
+ */
+export function validateWhatsappQuestion(question: {
+  text: string;
+  message: string;
+}): { text?: string; message?: string } | undefined {
+  const text = question.text.trim();
+  const message = question.message.trim();
+
+  // An untouched row is not an error; it is simply not a question yet.
+  if (!text && !message) return undefined;
+  if (!text) return { text: "تکایە دەقی پرسیار بنووسە" };
+  if (!message) return { message: "تکایە پەیامەکە بنووسە" };
   return undefined;
 }
 
@@ -221,19 +271,6 @@ export function validateSingleLink(
       const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!pattern.test(emailOnly)) {
         return "تکایە ناونیشانی ئیمەیڵێکی دروست بنووسە (نموونە: user@example.com)";
-      }
-      return undefined;
-    }
-
-    case "website": {
-      const checkUrl = trimmed.startsWith("http://") || trimmed.startsWith("https://") ? trimmed : `https://${trimmed}`;
-      try {
-        const urlObj = new URL(checkUrl);
-        if (!urlObj.hostname || !urlObj.hostname.includes(".")) {
-          return "تکایە ناونیشانی ماڵپەڕێکی دروست بنووسە (نموونە: website.com)";
-        }
-      } catch {
-        return "تکایە ناونیشانی ماڵپەڕێکی دروست بنووسە (نموونە: website.com)";
       }
       return undefined;
     }

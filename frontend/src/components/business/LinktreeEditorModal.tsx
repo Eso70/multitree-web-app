@@ -13,7 +13,12 @@ import {
   getPlatformNameKurdish
 } from "@/features/link-editor/modal-constants";
 import { buildSlugFromName, generateUrl, extractValueFromUrl } from "@/features/link-editor/modal-utils";
-import { validateSingleLink } from "@/features/link-editor/components/validation";
+import {
+  validateLinktreeName,
+  validateSingleLink,
+  validateSlug as validateSlugValue,
+  validateWhatsappQuestion,
+} from "@/features/link-editor/components/validation";
 import { TEMPLATE_DEFAULT_ID, isTemplateKey, normalizeTemplateConfig, type TemplateKey } from "@/lib/templates/config";
 import { debounce } from "@/lib/utils/debounce";
 import type { WhatsAppQuestion } from "@/components/public/WhatsAppQuestionModal";
@@ -34,6 +39,17 @@ import {
   validateUploadFile,
 } from "@/lib/api/inline-request-error";
 import { enqueueImageUpload } from "@/lib/api/enqueue-image-upload";
+import {
+  BACKGROUND_IMAGE_CONFIG_KEY,
+  isBackgroundImageUrl,
+  readBackgroundImage,
+} from "@/lib/templates/background-image";
+import { readBackgroundPattern } from "@/lib/templates/background-pattern";
+import {
+  BACKGROUND_PATTERN_CONFIG_KEY,
+  BACKGROUND_PATTERN_DEFAULT,
+  type BackgroundPatternStyle,
+} from "@linktree/types";
 
 interface EditLinkData {
   linktree: {
@@ -157,6 +173,10 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
   const [description, setDescription] = useState(DEFAULT_DESCRIPTION);
   const [slug, setSlug] = useState("");
   const [backgroundColor, setBackgroundColor] = useState(() => resolveDefaultBackgroundColor(businessDefaults?.default_background_color));
+  // A background image replaces the background colour on the public page. Like
+  // the profile image, the file is held until submit and uploaded once.
+  const [backgroundImage, setBackgroundImage] = useState<File | null>(null);
+  const [backgroundImagePreview, setBackgroundImagePreview] = useState<string | null>(null);
   const [templateKey, setTemplateKey] = useState<TemplateKey>(() => resolveDefaultTemplateKey(businessDefaults?.default_template));
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const selectedPlatforms = useMemo(
@@ -192,6 +212,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     links?: string;
     footerPhone?: string;
     image?: string;
+    questions?: string;
   }>({});
   
   // Per-link validation errors: { platformId_linkIndex: errorMessage }
@@ -206,10 +227,23 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     footerPhone?: boolean;
   }>({});
   
+  const [backgroundPattern, setBackgroundPattern] =
+    useState<BackgroundPatternStyle>(BACKGROUND_PATTERN_DEFAULT);
   const [slugApiError, setSlugApiError] = useState<string | null>(null);
+  /**
+   * A duplicate display name is a warning, never an error: `linktrees.name`
+   * has no unique constraint and two pages may legitimately share one. It is
+   * surfaced so the owner does not end up with two cards they cannot tell
+   * apart in the pages list.
+   */
+  const [nameWarning, setNameWarning] = useState<string | null>(null);
   const [uploadError, setUploadError] =
     useState<InlineRequestErrorData | null>(null);
   const [checkingSlug, setCheckingSlug] = useState(false);
+  const [checkingName, setCheckingName] = useState(false);
+  const [questionErrors, setQuestionErrors] = useState<
+    Record<string, { text?: string; message?: string }>
+  >({});
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEditMode = !!editData;
@@ -220,31 +254,38 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     return `${platformId}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   }, []);
 
-  // Real-time validation functions
-  const validateName = useCallback((value: string): string | undefined => {
-    const trimmed = value.trim();
-    if (!trimmed || trimmed.length < 1) {
-      return "تکایە ناو بنووسە";
-    }
-    if (trimmed.length > 100) {
-      return "ناو دەبێت کەمتر لە ١٠٠ پیت بێت";
-    }
-    return undefined;
-  }, []);
+  // Real-time validation, delegated to the shared rules so the modal, the DTO
+  // and the table CHECK constraints cannot disagree.
+  const validateName = useCallback(validateLinktreeName, []);
 
-  const validateSlug = useCallback((value: string): string | undefined => {
-    const trimmed = value.trim();
-    if (!trimmed || trimmed.length < 1) {
-      return "تکایە slug بنووسە";
-    }
-    if (trimmed.length > 100) {
-      return "Slug دەبێت کەمتر لە ١٠٠ پیت بێت";
-    }
-    if (!/^[a-z0-9-]+$/.test(trimmed)) {
-      return "Slug دەبێت تەنها پیتی بچووک، ژمارە و هێڵ بێت";
-    }
-    return undefined;
-  }, []);
+  const validateSlug = useCallback(validateSlugValue, []);
+
+  /**
+   * Half-filled question rows.
+   *
+   * The server drops a question that has a label but no message, so without
+   * this the row the owner typed disappears on save with nothing said.
+   */
+  const validateQuestions = useCallback(
+    (questions: WhatsAppQuestion[], enabled: boolean): string | undefined => {
+      // The rows are only rendered while the modal is switched on. Blocking on
+      // a row nobody can see would be an error with nowhere to point.
+      if (!enabled) {
+        setQuestionErrors({});
+        return undefined;
+      }
+      const next: Record<string, { text?: string; message?: string }> = {};
+      for (const question of questions) {
+        const error = validateWhatsappQuestion(question);
+        if (error) next[question.id] = error;
+      }
+      setQuestionErrors(next);
+      return Object.keys(next).length > 0
+        ? "تکایە پرسیارە ناتەواوەکان تەواو بکە"
+        : undefined;
+    },
+    [],
+  );
 
   const validateBackgroundColor = useCallback((value: string): string | undefined => {
     const selectedBgColor = BACKGROUND_COLORS.find(c => c.id === value)?.value || value;
@@ -326,6 +367,10 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     newErrors.templateKey = validateTemplateKey(templateKey);
     newErrors.platforms = validatePlatforms(selectedPlatforms);
     newErrors.links = validateLinks(socialLinks, selectedPlatforms);
+    newErrors.questions = validateQuestions(
+      whatsappQuestions,
+      whatsappModalEnabled,
+    );
     if (footerPhone.trim()) {
       newErrors.footerPhone = validateFooterPhone(footerPhone);
     }
@@ -342,7 +387,21 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     });
     
     return !Object.values(newErrors).some(error => error !== undefined);
-  }, [name, slug, slugApiError, backgroundColor, templateKey, selectedPlatforms, socialLinks, footerPhone, validateName, validateSlug, validateBackgroundColor, validateTemplateKey, validatePlatforms, validateLinks, validateFooterPhone]);
+  }, [name, slug, slugApiError, backgroundColor, templateKey, selectedPlatforms, socialLinks, whatsappQuestions, whatsappModalEnabled, footerPhone, validateName, validateSlug, validateBackgroundColor, validateTemplateKey, validatePlatforms, validateLinks, validateQuestions, validateFooterPhone]);
+
+  // Question rows clear their own error as soon as the missing half is typed.
+  useEffect(() => {
+    setQuestionErrors((previous) => {
+      if (Object.keys(previous).length === 0) return previous;
+      const next: Record<string, { text?: string; message?: string }> = {};
+      for (const question of whatsappQuestions) {
+        if (!previous[question.id]) continue;
+        const error = validateWhatsappQuestion(question);
+        if (error) next[question.id] = error;
+      }
+      return next;
+    });
+  }, [whatsappQuestions]);
 
   // Debounced name validation
   const debouncedNameValidation = useMemo(
@@ -414,6 +473,37 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     }
   }, []);
 
+  const handleBackgroundImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset the input so re-picking the same file still fires a change.
+    e.target.value = "";
+    if (!file) {
+      return;
+    }
+
+    const validationError = validateUploadFile(file, {
+      allowedMimeTypes: ["image/png", "image/jpeg"],
+      maxBytes: 10 * 1024 * 1024,
+    });
+    if (validationError) {
+      setUploadError(validationError);
+      return;
+    }
+
+    setUploadError(null);
+    setBackgroundImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setBackgroundImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleRemoveBackgroundImage = useCallback(() => {
+    setBackgroundImage(null);
+    setBackgroundImagePreview(null);
+  }, []);
+
   const handleRemoveImage = useCallback(() => {
     setProfileImage(null);
     // Reset to business's default avatar instead of null
@@ -425,7 +515,10 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
   }, [businessDefaults]);
 
   // Upload image to local file system storage
-  const uploadImage = async (file: File, assetType: "profile-image"): Promise<string | null> => {
+  const uploadImage = async (
+    file: File,
+    assetType: "profile-image" | "background-image",
+  ): Promise<string | null> => {
     return enqueueImageUpload(async () => {
       setUploadError(null);
       try {
@@ -465,6 +558,8 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       setUploadError(null);
       resetSubmission();
       setLinkErrors({});
+      setBackgroundImage(null);
+      setBackgroundImagePreview(null);
       const defaultTemplate = resolveDefaultTemplateKey(businessDefaults?.default_template);
       setBackgroundColor(resolveDefaultBackgroundColor(businessDefaults?.default_background_color));
       setTemplateKey(defaultTemplate);
@@ -531,7 +626,14 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
         : TEMPLATE_DEFAULT_ID;
       setTemplateKey(sanitizedTemplate);
       setTemplateConfig(normalizedConfig);
-      
+
+      // Only a stored upload path survives hydration; anything else is treated
+      // as no image, matching what the public page will agree to paint.
+      setBackgroundImage(null);
+      setBackgroundImagePreview(readBackgroundImage(normalizedConfig));
+      setBackgroundPattern(readBackgroundPattern(normalizedConfig));
+
+
       // Load WhatsApp modal config from template_config
       const whatsappModal = (linktree.template_config as Record<string, unknown> | null)?.whatsapp_modal;
       if (whatsappModal && typeof whatsappModal === 'object' && !Array.isArray(whatsappModal)) {
@@ -655,6 +757,9 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       setTemplateConfig(normalizeTemplateConfig(defaultTemplate, null));
       setProfileImage(null);
       setProfileImagePreview(businessDefaults?.default_avatar || null);
+      setBackgroundImage(null);
+      setBackgroundImagePreview(null);
+      setBackgroundPattern(BACKGROUND_PATTERN_DEFAULT);
       if (isDefault) {
         const normalizedPhone = normalizeBusinessPhone(defaultBusinessPhone);
         setSocialLinks(
@@ -716,7 +821,14 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     debouncedSlugUpdate(name);
   }, [name, debouncedSlugUpdate]);
 
-  // Debounced slug availability API check
+  /**
+   * Debounced slug availability check.
+   *
+   * `cancelled` is not the same guard as the cleared timer: clearing the timer
+   * only stops a request that has not been sent. Typing `abc` then `abcd` puts
+   * two requests in flight, and without this the slower `abc` answer can land
+   * last and paint an error for a slug the field no longer holds.
+   */
   useEffect(() => {
     const s = slug.trim();
     if (!s) {
@@ -724,6 +836,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       setCheckingSlug(false);
       return;
     }
+    let cancelled = false;
     setCheckingSlug(true);
     const timer = setTimeout(async () => {
       try {
@@ -731,6 +844,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
         if (isEditMode && editData?.linktree?.id) params.set('excludeId', editData.linktree.id);
         const res = await fetch(`/api/linktrees/check-slug?${params}`, { credentials: 'include' });
         const json = await res.json();
+        if (cancelled) return;
         if (json.success) {
           setSlugApiError(json.data ? null : 'ئەم سلاگە پێشتر بەکارهاتووە');
           if (!json.data) setTouched(prev => ({ ...prev, slug: true }));
@@ -738,11 +852,51 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       } catch {
         // network error — don't block
       } finally {
-        setCheckingSlug(false);
+        if (!cancelled) setCheckingSlug(false);
       }
     }, 600);
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [slug, isEditMode, editData?.linktree?.id]);
+
+  /**
+   * Debounced duplicate-name check.
+   *
+   * Advisory only. It never reaches `errors`, so it cannot block a save the
+   * server would have accepted.
+   */
+  useEffect(() => {
+    const trimmed = name.trim();
+    if (trimmed.length < 2) {
+      setNameWarning(null);
+      setCheckingName(false);
+      return;
+    }
+    let cancelled = false;
+    setCheckingName(true);
+    const timer = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ name: trimmed });
+        if (isEditMode && editData?.linktree?.id) params.set('excludeId', editData.linktree.id);
+        const res = await fetch(`/api/linktrees/check-name?${params}`, { credentials: 'include' });
+        const json = await res.json();
+        if (cancelled) return;
+        if (json.success) {
+          setNameWarning(json.data ? null : 'پەڕەیەکی تر بە هەمان ناو هەیە');
+        }
+      } catch {
+        // network error — the name is not required to be unique anyway
+      } finally {
+        if (!cancelled) setCheckingName(false);
+      }
+    }, 600);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [name, isEditMode, editData?.linktree?.id]);
 
   // Merge API slug error into displayed errors
   const displayErrors = useMemo(() => {
@@ -1142,6 +1296,18 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       }
       // If no image provided, imageUrl stays null - UI will show default avatar
 
+      // A newly picked background is uploaded now; an untouched one keeps the
+      // path it was hydrated with, and a removed one resolves to null.
+      let backgroundImageUrl: string | null = null;
+      if (backgroundImage) {
+        backgroundImageUrl = await uploadImage(backgroundImage, "background-image");
+        if (!backgroundImageUrl) {
+          throw new Error("Background image upload failed");
+        }
+      } else if (isBackgroundImageUrl(backgroundImagePreview)) {
+        backgroundImageUrl = backgroundImagePreview;
+      }
+
       // ============================================
       // PROCESS LINKS DATA
       // ============================================
@@ -1197,6 +1363,8 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       // Store WhatsApp modal config in template_config before normalization
       const templateConfigWithMessage = {
         ...templateConfig,
+        [BACKGROUND_IMAGE_CONFIG_KEY]: backgroundImageUrl,
+        [BACKGROUND_PATTERN_CONFIG_KEY]: backgroundPattern,
         // Include whatsapp_modal with enabled flag
         whatsapp_modal: {
           enabled: whatsappModalEnabled,
@@ -1509,11 +1677,18 @@ if (!isOpen) return null;
             description={description}
             slug={slug}
             backgroundColor={backgroundColor}
+            backgroundImagePreview={backgroundImagePreview}
+            onBackgroundImageChange={handleBackgroundImageChange}
+            onBackgroundImageRemove={handleRemoveBackgroundImage}
             templateKey={templateKey}
             footerText={footerText}
             footerPhone={footerPhone}
             footerHidden={footerHidden}
             errors={displayErrors}
+            nameWarning={nameWarning}
+            checkingName={checkingName}
+            checkingSlug={checkingSlug}
+            questionErrors={questionErrors}
             touched={touched}
             onImageChange={handleImageChange}
             onRemoveImage={handleRemoveImage}
@@ -1525,6 +1700,8 @@ if (!isOpen) return null;
             onBackgroundColorChange={handleBackgroundColorChange}
             onBackgroundColorBlur={handleBackgroundColorBlur}
             onTemplateKeyChange={handleTemplateKeyChange}
+            backgroundPattern={backgroundPattern}
+            onBackgroundPatternChange={setBackgroundPattern}
             onFooterTextChange={setFooterText}
             onFooterPhoneChange={setFooterPhone}
             onFooterHiddenChange={setFooterHidden}

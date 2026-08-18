@@ -15,7 +15,6 @@ import Image from "next/image";
 import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
 import {
   LayoutTemplate,
-  LayoutDashboard,
   FileText,
   Search,
   LogOut,
@@ -76,7 +75,6 @@ import {
   useBusinessDashboardRefreshController,
 } from "@/features/business/dashboard-refresh";
 import { BusinessSidebarFooter } from "@/features/business/components/BusinessSidebarFooter";
-import { BusinessDashboardOverviewPage } from "@/features/business/components/BusinessDashboardOverviewPage";
 
 // Dynamically import heavy components with preloading only when needed
 // Create/Edit modal: large multi-step form
@@ -213,7 +211,6 @@ interface BusinessDashboardProps {
 
 type BusinessTheme = "light" | "dark";
 const BUSINESS_PAGE_TITLES: Record<BusinessDashboardPage, string> = {
-  dashboard: "داشبۆرد",
   linktrees: "پەیجەکان",
   "mini-website": "مینی وێبسایت",
   analytics: "شیکاری",
@@ -227,7 +224,7 @@ const BUSINESS_PAGE_TITLES: Record<BusinessDashboardPage, string> = {
 
 function getBusinessPage(pathname: string): BusinessDashboardPage {
   const segment = pathname.split("/").filter(Boolean)[1];
-  if (!segment) return "dashboard";
+  if (!segment) return "linktrees";
   if (segment === "pages") return "linktrees";
   return segment === "mini-website" ||
     segment === "analytics" ||
@@ -238,7 +235,7 @@ function getBusinessPage(pathname: string): BusinessDashboardPage {
     segment === "profile" ||
     segment === "settings"
     ? segment
-    : "dashboard";
+    : "linktrees";
 }
 
 function LockedBusinessContent({
@@ -312,13 +309,6 @@ export const BusinessDashboard = memo(function BusinessDashboard({
   const activeTab = getBusinessPage(pathname);
   const sidebarItems = useMemo<DashboardSidebarItem[]>(
     () => [
-      {
-        id: "dashboard",
-        label: "داشبۆرد",
-        icon: <LayoutDashboard className="h-4 w-4" />,
-        active: activeTab === "dashboard",
-        onClick: () => router.push("/business"),
-      },
       {
         id: "linktrees",
         label: "پەیجەکان",
@@ -415,7 +405,6 @@ export const BusinessDashboard = memo(function BusinessDashboard({
       BusinessDashboardPage,
       Parameters<typeof businessTabTitle>[1]
     > = {
-      dashboard: "Dashboard",
       linktrees: "Pages",
       "mini-website": "Website",
       analytics: "Analytics",
@@ -1628,10 +1617,6 @@ export const BusinessDashboard = memo(function BusinessDashboard({
                 */}
                   {pageLocked ? (
                     <SkeletonDashboardPage statCount={4} body="analytics" />
-                  ) : activeTab === "dashboard" ? (
-                    <BusinessDashboardOverviewPage
-                      access={liveEffectiveAccess}
-                    />
                   ) : activeTab === "linktrees" ? (
                     <BusinessLinktreesPage
                       linktrees={filteredLinktrees}

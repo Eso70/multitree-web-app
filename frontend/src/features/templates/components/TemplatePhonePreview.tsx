@@ -11,22 +11,28 @@ export function TemplatePhonePreview({
   ariaLabel,
   darkTheme = false,
   locked = false,
+  scrollable = false,
   children,
 }: {
   name: string;
   ariaLabel: string;
   darkTheme?: boolean;
   locked?: boolean;
+  scrollable?: boolean;
   children: (isNear: boolean) => ReactNode;
 }) {
   const { ref, isNear } = useNearViewport();
 
   return (
-    <div ref={ref} className="relative mx-auto w-[260px] max-w-full sm:w-[320px]">
+    <div
+      ref={ref}
+      className="relative mx-auto w-[260px] max-w-full sm:w-[320px]"
+    >
       <PhoneMockup
         name={name}
         ariaLabel={ariaLabel}
         darkTheme={darkTheme}
+        scrollable={scrollable}
         overlay={
           locked ? (
             <LockedItemOverlay

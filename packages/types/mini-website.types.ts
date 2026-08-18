@@ -49,6 +49,15 @@ export interface MiniWebsiteSection {
   enabled: boolean;
 }
 
+/** Stable visual-layout identifiers persisted with every mini website. */
+export const MINI_WEBSITE_VISUAL_TEMPLATE_KEYS = ["liquid-glass"] as const;
+
+export type MiniWebsiteVisualTemplateKey =
+  (typeof MINI_WEBSITE_VISUAL_TEMPLATE_KEYS)[number];
+
+export const MINI_WEBSITE_VISUAL_TEMPLATE_DEFAULT =
+  "liquid-glass" satisfies MiniWebsiteVisualTemplateKey;
+
 export const MINI_WEBSITE_BACKGROUND_STYLES = [
   "none",
   "grid",
@@ -1097,8 +1106,17 @@ export function createMiniWebsiteLeadForm(): MiniWebsiteLeadForm {
     consentText: "",
     consentRequired: false,
     fields: [
-      { ...createMiniWebsiteLeadField("text"), label: "ناو", mapping: "name", required: true },
-      { ...createMiniWebsiteLeadField("phone"), label: "ژمارەی مۆبایل", required: true },
+      {
+        ...createMiniWebsiteLeadField("text"),
+        label: "ناو",
+        mapping: "name",
+        required: true,
+      },
+      {
+        ...createMiniWebsiteLeadField("phone"),
+        label: "ژمارەی مۆبایل",
+        required: true,
+      },
       { ...createMiniWebsiteLeadField("textarea"), label: "پەیامەکەت" },
     ],
   };
@@ -1166,9 +1184,7 @@ export function createMiniWebsitePlan(
  * Shared between the editor's preview and the public renderer so both draw the
  * same rows; a tier that does not list one is showing a gap, not a blank.
  */
-export function miniWebsitePlanFeatureRows(
-  plans: MiniWebsitePlan[],
-): string[] {
+export function miniWebsitePlanFeatureRows(plans: MiniWebsitePlan[]): string[] {
   const rows: string[] = [];
   for (const plan of plans)
     for (const feature of plan.features)

@@ -50,7 +50,6 @@ import {
 } from "@/components/shared/SegmentedTabs";
 import { StatCard } from "@/components/shared/StatCard";
 import { SkeletonDashboardPage } from "@/components/shared/Skeleton";
-import { AccentActionButton } from "@/components/shared/AccentActionButton";
 import {
   FunnelChart,
   RetentionGrid,
@@ -1526,11 +1525,13 @@ export function BusinessAnalyticsPage({
                 </button>
               )}
               {surface === "crm" && (
-                <AccentActionButton
+                <button
+                  type="button"
                   onClick={() => void exportCrmLeads()}
-                  busy={exportingCrm}
-                  disabled={!selectedAsset}
+                  aria-busy={exportingCrm}
+                  disabled={!selectedAsset || exportingCrm}
                   title="هەناردەکردنی داتای کڕیاران"
+                  className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
                 >
                   {exportingCrm ? (
                     <MotionSpinner>
@@ -1540,7 +1541,7 @@ export function BusinessAnalyticsPage({
                     <Download className="h-4 w-4" />
                   )}
                   <span className="hidden sm:inline">هەناردەکردن</span>
-                </AccentActionButton>
+                </button>
               )}
             </div>
           }
@@ -1738,12 +1739,13 @@ export function BusinessAnalyticsPage({
                   </div>
                 </div>
                 {tiktok.failed > 0 && (
-                  <AccentActionButton
+                  <button
+                    type="button"
                     onClick={() => void retryTikTok()}
-                    className="mt-4"
+                    className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60 mt-4"
                   >
                     دووبارە هەوڵدانەوە
-                  </AccentActionButton>
+                  </button>
                 )}
               </Section>
               <Section
@@ -1933,13 +1935,15 @@ export function BusinessAnalyticsPage({
             >
               پاشگەزبوونەوە
             </button>
-            <AccentActionButton
+            <button
+              type="button"
               onClick={() => void saveNote()}
-              busy={saving}
-              disabled={!note.trim()}
+              aria-busy={saving}
+              disabled={!note.trim() || saving}
+              className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-transparent px-4 text-xs font-bold text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
             >
               {saving ? "پاراستن..." : "پاراستن"}
-            </AccentActionButton>
+            </button>
           </>
         }
       >

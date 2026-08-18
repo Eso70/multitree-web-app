@@ -20,7 +20,6 @@ import { DashboardSurface } from "@/components/shared/DashboardSurface";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SkeletonDashboardPage } from "@/components/shared/Skeleton";
-import { AccentActionButton } from "@/components/shared/AccentActionButton";
 import { TikTokDeliveryStatusPanel } from "@/features/analytics/components/TikTokDeliveryStatusPanel";
 
 interface PixelConfig {
@@ -359,10 +358,12 @@ export function BusinessTikTokPixelConfigPage() {
       <TikTokDeliveryStatusPanel />
 
       <div className="mt-5 flex justify-end border-t border-slate-100 pt-5 dark:border-white/5">
-        <AccentActionButton
+        <button
+          type="button"
           onClick={() => void save()}
-          busy={saving}
-          disabled={hasInvalidRows}
+          aria-busy={saving}
+          disabled={hasInvalidRows || saving}
+          className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
         >
           {saving ? (
             <MotionSpinner><Loader2 className="h-4 w-4 "  /></MotionSpinner>
@@ -370,7 +371,7 @@ export function BusinessTikTokPixelConfigPage() {
             <Save className="h-4 w-4" />
           )}
           {saving ? "پاشەکەوتکردن..." : "پاشەکەوتکردن"}
-        </AccentActionButton>
+        </button>
       </div>
     </DashboardSurface>
   );

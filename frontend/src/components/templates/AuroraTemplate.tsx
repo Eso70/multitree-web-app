@@ -20,6 +20,7 @@ import {
   TemplateFooter,
   TemplateHeader,
   TemplateViewportLayout,
+  templateBackgroundStyle,
 } from "./shared";
 
 export const AuroraTemplate = memo(function AuroraTemplate({
@@ -31,12 +32,12 @@ export const AuroraTemplate = memo(function AuroraTemplate({
   const { gpsLink, regularLinks } = useMemo(() => splitGpsLinks(links), [links]);
 
   const backgroundStyle = useMemo(
-    () => ({
-      background: theme.isSolid
-        ? theme.from
-        : `radial-gradient(circle at 20% 20%, ${theme.from}, transparent 35%), radial-gradient(circle at 80% 0%, ${theme.via}, transparent 35%), linear-gradient(135deg, ${theme.from}, ${theme.via}, ${theme.to})`,
-    }),
-    [theme.from, theme.via, theme.to, theme.isSolid],
+    () =>
+      templateBackgroundStyle(
+        theme,
+        `radial-gradient(circle at 20% 20%, ${theme.from}, transparent 35%), radial-gradient(circle at 80% 0%, ${theme.via}, transparent 35%), linear-gradient(135deg, ${theme.from}, ${theme.via}, ${theme.to})`,
+      ),
+    [theme],
   );
 
   const textColor = useMemo(() => deriveTextColor(theme.from, theme.via, theme.to), [theme.from, theme.via, theme.to]);
@@ -59,6 +60,8 @@ export const AuroraTemplate = memo(function AuroraTemplate({
   return (
     <TemplateViewportLayout
       isPreview={isPreview}
+      backgroundPattern={theme.backgroundPattern}
+      backgroundPatternAccent={textColor}
       className={`px-6 ${isPreview ? "pt-14" : "pt-10"}`}
       style={backgroundStyle}
       header={

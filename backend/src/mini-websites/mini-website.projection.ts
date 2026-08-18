@@ -16,6 +16,7 @@ export type WebsiteRow = {
   bio: string | null;
   avatar: string | null;
   cover: string | null;
+  template_key: string;
   variation: string;
   background_style: unknown;
   profession_template: string | null;

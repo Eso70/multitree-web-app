@@ -157,7 +157,9 @@
   object-fit: contain;
   filter: grayscale(100%);
   opacity: 0.55;
-  transition: filter 250ms ease, opacity 250ms ease;
+  transition:
+    filter 250ms ease,
+    opacity 250ms ease;
 }
 
 .dark .business-trusted-logo {
@@ -437,7 +439,10 @@ html {
     in srgb,
     var(
         --business-website-color,
-        var(--admin-website-color, var(--theme-primary, var(--multitree-accent)))
+        var(
+          --admin-website-color,
+          var(--theme-primary, var(--multitree-accent))
+        )
       )
       30%,
     transparent
@@ -451,7 +456,10 @@ html {
     in srgb,
     var(
         --business-website-color,
-        var(--admin-website-color, var(--theme-primary, var(--multitree-accent)))
+        var(
+          --admin-website-color,
+          var(--theme-primary, var(--multitree-accent))
+        )
       )
       30%,
     transparent
@@ -465,7 +473,10 @@ html.dark ::selection {
     in srgb,
     var(
         --business-website-color,
-        var(--admin-website-color, var(--theme-primary, var(--multitree-accent)))
+        var(
+          --admin-website-color,
+          var(--theme-primary, var(--multitree-accent))
+        )
       )
       42%,
     transparent
@@ -477,7 +488,10 @@ html.dark ::-moz-selection {
     in srgb,
     var(
         --business-website-color,
-        var(--admin-website-color, var(--theme-primary, var(--multitree-accent)))
+        var(
+          --admin-website-color,
+          var(--theme-primary, var(--multitree-accent))
+        )
       )
       42%,
     transparent
@@ -650,9 +664,17 @@ html.dark ::-moz-selection {
     var(--multitree-accent),
     var(--multitree-accent)
   );
-  --multitree-accent-hover: color-mix(in srgb, var(--multitree-accent) 88%, black);
+  --multitree-accent-hover: color-mix(
+    in srgb,
+    var(--multitree-accent) 88%,
+    black
+  );
   --multitree-accent-ink: #111827;
-  --multitree-accent-text: color-mix(in srgb, var(--multitree-accent) 44%, black);
+  --multitree-accent-text: color-mix(
+    in srgb,
+    var(--multitree-accent) 44%,
+    black
+  );
   --multitree-accent-text-muted: color-mix(
     in srgb,
     var(--multitree-accent) 58%,
@@ -903,7 +925,9 @@ body.multitree-theme-portals {
 .dark :is([data-multitree-theme], body.multitree-theme-portals) .text-brand-500,
 .dark :is([data-multitree-theme], body.multitree-theme-portals) .text-brand-600,
 .dark :is([data-multitree-theme], body.multitree-theme-portals) .text-brand-700,
-.dark :is([data-multitree-theme], body.multitree-theme-portals) .text-brand-500\/80 {
+.dark
+  :is([data-multitree-theme], body.multitree-theme-portals)
+  .text-brand-500\/80 {
   color: var(--multitree-accent-text-dark) !important;
 }
 
@@ -912,7 +936,8 @@ body.multitree-theme-portals {
   color: var(--multitree-accent-ink) !important;
 }
 
-:is([data-multitree-theme], body.multitree-theme-portals) .hover\:bg-brand-50:hover,
+:is([data-multitree-theme], body.multitree-theme-portals)
+  .hover\:bg-brand-50:hover,
 :is([data-multitree-theme], body.multitree-theme-portals)
   .hover\:bg-brand-50\/50:hover,
 :is([data-multitree-theme], body.multitree-theme-portals)
@@ -955,7 +980,8 @@ body.multitree-theme-portals {
   ) !important;
 }
 
-:is([data-multitree-theme], body.multitree-theme-portals) .shadow-brand-500\/30 {
+:is([data-multitree-theme], body.multitree-theme-portals)
+  .shadow-brand-500\/30 {
   --tw-shadow-color: color-mix(
     in srgb,
     var(--multitree-accent) 30%,
@@ -1181,7 +1207,6 @@ a,
   [class*="mix-blend"] {
     mix-blend-mode: normal !important;
   }
-
 }
 
 /* Performance: Optimize button hover effects */
@@ -1251,8 +1276,7 @@ img {
   --warning-icon: #f59e0b;
   --info-icon: #0ea5e9;
   --toast-shadow:
-    0 2px 4px -2px rgb(15 23 42 / 0.04),
-    0 16px 40px -16px rgb(15 23 42 / 0.18);
+    0 2px 4px -2px rgb(15 23 42 / 0.04), 0 16px 40px -16px rgb(15 23 42 / 0.18);
 
   /* Scoped Primary background overrides for Light Mode (default) */
   --color-bg-primary: #ffffff;
@@ -1306,8 +1330,7 @@ img {
   --warning-icon: #fbbf24;
   --info-icon: #38bdf8;
   --toast-shadow:
-    0 2px 4px -2px rgb(0 0 0 / 0.4),
-    0 16px 40px -16px rgb(0 0 0 / 0.6);
+    0 2px 4px -2px rgb(0 0 0 / 0.4), 0 16px 40px -16px rgb(0 0 0 / 0.6);
 
   /* Dark primary background overrides */
   --color-bg-primary: #161b22;
@@ -2478,8 +2501,7 @@ body * {
 
 /* Consistent component scale for regular templates. Hero Image intentionally
    keeps its own image-led proportions and button hierarchy. */
-.public-template-shell
-  :is(.max-w-sm, .max-w-md) {
+.public-template-shell :is(.max-w-sm, .max-w-md) {
   width: 100%;
   max-width: 28rem !important;
 }
@@ -2503,8 +2525,7 @@ body * {
   object-fit: cover;
 }
 
-.public-template-shell
-  :is(button.w-full, button.block) {
+.public-template-shell :is(button.w-full, button.block) {
   width: 100% !important;
   min-height: 3.5rem;
   padding: 0.75rem 1.25rem !important;
@@ -2512,9 +2533,7 @@ body * {
   line-height: 1.5rem !important;
 }
 
-.public-template-shell
-  :is(button.w-full, button.block)
-  > * {
+.public-template-shell :is(button.w-full, button.block) > * {
   max-width: 100%;
 }
 
@@ -2533,6 +2552,38 @@ body * {
   zoom: calc(100cqw / 390px);
 }
 
+.phone-mockup-canvas-scrollable {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--theme-primary, #b6f20d) transparent;
+  scrollbar-width: thin;
+  touch-action: pan-y;
+}
+
+.phone-mockup-canvas-scrollable::-webkit-scrollbar {
+  width: 5px;
+}
+
+.phone-mockup-canvas-scrollable::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--theme-primary, #b6f20d);
+}
+
+/* Dashboard previews live inside a scaled phone, not a real 390px browser
+   viewport. Prevent desktop media-query grids from squeezing the logical
+   mobile canvas into multiple columns when the dashboard itself is wide. */
+.phone-mockup-canvas-scrollable
+  .mini-website-ltr
+  :where(
+    [class*="sm:grid-cols-"],
+    [class*="md:grid-cols-"],
+    [class*="lg:grid-cols-"],
+    [class*="xl:grid-cols-"]
+  ) {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
 .phone-mockup-canvas .public-template-shell {
   min-height: 858px !important;
   padding-bottom: 50px !important;
@@ -2546,9 +2597,7 @@ body * {
   box-shadow: none !important;
 }
 
-.phone-mockup-canvas
-  .public-template-shell
-  h1 {
+.phone-mockup-canvas .public-template-shell h1 {
   font-size: 1.2rem !important;
   line-height: 1.55rem !important;
 }
@@ -2565,9 +2614,7 @@ body * {
   flex-basis: 5.5rem;
 }
 
-.phone-mockup-canvas
-  .public-template-shell
-  :is(button.w-full, button.block) {
+.phone-mockup-canvas .public-template-shell :is(button.w-full, button.block) {
   min-height: 3rem;
   padding: 0.5rem 1rem !important;
   font-size: 0.875rem !important;
@@ -2596,31 +2643,6 @@ body * {
 .phone-mockup-canvas .public-template-shell footer button {
   min-height: 0;
   padding: 0.4rem 1rem !important;
-}
-
-.monitor-preview-frame {
-  container-type: inline-size;
-  scrollbar-width: thin;
-}
-
-.monitor-preview-canvas {
-  --monitor-content-width: 1040px;
-  width: var(--monitor-content-width);
-  zoom: calc(100cqw / var(--monitor-content-width));
-}
-
-/*
- * The real public mini-website page renders full-bleed (fullPage: no
- * border/shadow/rounding). The preview uses embeddedPreview instead (fullPage
- * would hijack document.body/root background + dark class, leaking outside
- * this card). Strip the "windowed" shell chrome here so the preview matches
- * the deployed page's look exactly, with only the monitor bezel framing it.
- */
-.monitor-preview-canvas .mini-website-ltr {
-  max-width: none !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
 }
 
 [data-create-template] > span {
@@ -2687,7 +2709,10 @@ body::-webkit-scrollbar-thumb,
       in srgb,
       var(
           --business-website-color,
-          var(--admin-website-color, var(--theme-primary, var(--multitree-accent)))
+          var(
+            --admin-website-color,
+            var(--theme-primary, var(--multitree-accent))
+          )
         )
         35%,
       transparent
@@ -2701,7 +2726,10 @@ body::-webkit-scrollbar-thumb:hover,
     in srgb,
     var(
         --business-website-color,
-        var(--admin-website-color, var(--theme-primary, var(--multitree-accent)))
+        var(
+          --admin-website-color,
+          var(--theme-primary, var(--multitree-accent))
+        )
       )
       84%,
     #000
@@ -2752,7 +2780,8 @@ html.custom-scrollbar-active body::-webkit-scrollbar {
   border-radius: 999px;
   background: var(--multitree-accent) !important;
   background-clip: padding-box !important;
-  box-shadow: 0 0 6px color-mix(in srgb, var(--multitree-accent) 35%, transparent) !important;
+  box-shadow: 0 0 6px
+    color-mix(in srgb, var(--multitree-accent) 35%, transparent) !important;
 }
 
 .lime-custom-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -2795,7 +2824,10 @@ html.custom-scrollbar-active body::-webkit-scrollbar {
   box-shadow: 0 0 6px
     color-mix(
       in srgb,
-      var(--business-website-color, var(--theme-primary, var(--multitree-accent)))
+      var(
+          --business-website-color,
+          var(--theme-primary, var(--multitree-accent))
+        )
         35%,
       transparent
     ) !important;

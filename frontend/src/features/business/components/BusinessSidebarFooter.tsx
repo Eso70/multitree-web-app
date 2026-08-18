@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowUpRight, Crown, LifeBuoy } from "lucide-react";
-import { AccentActionButton } from "@/components/shared/AccentActionButton";
 
 interface BusinessSidebarFooterProps {
   collapsed: boolean;
@@ -56,16 +55,19 @@ export function BusinessSidebarFooter({
         </div>
 
         {canUpgrade && (
-          <AccentActionButton
+          <button
+            type="button"
             onClick={onUpgrade}
-            className={`mt-3 w-full md:h-9 md:w-9 md:px-0 ${collapsed ? "md:mt-0" : ""}`}
+            className={`mt-3 flex w-full shrink-0 items-center rounded-xl border border-transparent px-3 py-2.5 text-sm font-semibold text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60 ${collapsed ? "md:mt-0 md:justify-center md:px-0" : "gap-3"}`}
             title="پلانەکەت بەرز بکەرەوە"
           >
             <ArrowUpRight className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span className={collapsed ? "md:hidden" : ""}>
+            <span
+              className={`whitespace-nowrap transition-all duration-300 ${collapsed ? "md:pointer-events-none md:w-0 md:overflow-hidden md:opacity-0" : "opacity-100"}`}
+            >
               پلانەکەت بەرز بکەرەوە
             </span>
-          </AccentActionButton>
+          </button>
         )}
       </div>
 

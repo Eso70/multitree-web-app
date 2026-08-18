@@ -5,10 +5,7 @@ import Image from "next/image";
 import { Edit, Trash2, Eye, ShieldCheck, LogIn } from "lucide-react";
 import { formatDate, getRootDomain } from "@/lib/utils/linktree-utils";
 import type { PlatformBusiness as Business } from "@linktree/types";
-import {
-  getBusinessPlanBadgeClasses,
-  getBusinessPlanLabel,
-} from "@/features/platform-admin/utils/business-plan";
+import { BusinessMetaBadges } from "@/features/platform-admin/components/BusinessMetaBadges";
 
 interface BusinessesTableProps {
   data?: Business[];
@@ -64,7 +61,7 @@ const TableRow = memo(function TableRow({
       className="border-b border-slate-100 dark:border-white/5 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors duration-200 transform-gpu"
       style={{
         contentVisibility: "auto",
-        containIntrinsicSize: "65px",
+        containIntrinsicSize: "90px",
       }}
     >
       <td className="px-3 py-3">
@@ -79,6 +76,12 @@ const TableRow = memo(function TableRow({
         <div className="text-xs text-gray-600 truncate">
           @{item.username}
         </div>
+        <div className="mt-0.5 text-[11px] text-gray-400 truncate" title={item.email?.trim() || "—"}>
+          {item.email?.trim() || "—"}
+        </div>
+        <div className="mt-0.5 font-mono text-[11px] text-gray-400 truncate">
+          {item.phone?.trim() || "—"}
+        </div>
       </td>
       <td className="px-3 py-3 hidden lg:table-cell">
         {item.subdomain ? (
@@ -90,23 +93,14 @@ const TableRow = memo(function TableRow({
         )}
       </td>
       <td className="px-3 py-3">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${
-            item.status === "active"
-              ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-              : "bg-red-50 text-red-600 border-red-200"
-          }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${item.status === "active" ? "bg-emerald-500" : "bg-red-500"}`} />
-            {item.status === "active" ? "چالاک" : "ڕاگیراو"}
-          </span>
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getBusinessPlanBadgeClasses(item.plan)}`}>
-            {getBusinessPlanLabel(item)}
-          </span>
-        </div>
+        <BusinessMetaBadges item={item} />
       </td>
       <td className="px-3 py-3 hidden xl:table-cell">
         <div className="text-xs text-gray-600">
           {formatDate(item.created_at)}
+        </div>
+        <div className="mt-0.5 text-[11px] text-gray-400">
+          {formatDate(item.updated_at)}
         </div>
       </td>
       <td className="px-3 py-3">
@@ -182,7 +176,7 @@ const MobileCard = memo(function MobileCard({
       className="p-4 flex gap-4 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors duration-200 transform-gpu"
       style={{
         contentVisibility: "auto",
-        containIntrinsicSize: "130px",
+        containIntrinsicSize: "175px",
       }}
     >
       <div className="relative h-14 w-14 shrink-0 rounded-full overflow-hidden border border-gray-200">
@@ -197,6 +191,8 @@ const MobileCard = memo(function MobileCard({
           <div className="min-w-0">
             <div className="text-base font-semibold text-gray-900 leading-tight truncate">{item.name}</div>
             <div className="text-xs text-gray-600 truncate mt-0.5">@{item.username}</div>
+            <div className="mt-0.5 text-[11px] text-gray-400 truncate">{item.email?.trim() || "—"}</div>
+            <div className="mt-0.5 font-mono text-[11px] text-gray-400 truncate">{item.phone?.trim() || "—"}</div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {onViewAnalytics && <button onClick={() => onViewAnalytics(item)} className="flex items-center justify-center p-2 rounded-lg hover:bg-sky-50 transition-colors cursor-pointer"><Eye className="h-4 w-4 text-sky-600" /></button>}
@@ -206,6 +202,7 @@ const MobileCard = memo(function MobileCard({
             {onDelete && <button onClick={() => onDelete(item.id, item.name)} className="flex items-center justify-center p-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"><Trash2 className="h-4 w-4 text-red-600" /></button>}
           </div>
         </div>
+        <BusinessMetaBadges item={item} />
         <div className="flex flex-wrap items-center gap-2 text-xs text-gray-700">
           {item.subdomain ? (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-50 border border-gray-200 font-mono text-gray-700">
@@ -216,13 +213,8 @@ const MobileCard = memo(function MobileCard({
               no-subdomain
             </span>
           )}
-          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg font-medium ${
-            item.status === "active" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
-          }`}>
-            {item.status === "active" ? "چالاک" : "ڕاگیراو"}
-          </span>
-          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border font-medium ${getBusinessPlanBadgeClasses(item.plan)}`}>
-            {getBusinessPlanLabel(item)}
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-200 bg-gray-50 text-gray-600">
+            دروستکراوە {formatDate(item.created_at)}
           </span>
         </div>
       </div>
@@ -270,16 +262,16 @@ export const BusinessesTable = memo(function BusinessesTable({
                 ناو
               </th>
               <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide hidden sm:table-cell">
-                ناوی بەکارهێنەر
+                بەکارهێنەر / پەیوەندی
               </th>
               <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide hidden lg:table-cell w-48">
                 سەب دۆمەین
               </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide w-64">
                 ڕەوشت / پلان
               </th>
               <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide hidden xl:table-cell w-28">
-                دروستکراوە
+                دروستکراوە / نوێکراوە
               </th>
               <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide w-28">
                 کارەکان

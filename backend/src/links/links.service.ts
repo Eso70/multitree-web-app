@@ -246,6 +246,35 @@ export class LinksService {
     return { success: true };
   }
 
+  /**
+   * The identity a link keeps across a save.
+   *
+   * Analytics hang off the link row: `fn_sync_link_public_action` registers one
+   * `public_page_actions` row per link, and every recorded click is stored in
+   * `analytics_action_daily` against that action's id. Destination is what makes
+   * a button the same button, so platform + url is the key a save matches on.
+   */
+  private static linkIdentity(platform: string, url: string): string {
+    return `${platform.trim().toLowerCase()}\u0000${url.trim()}`;
+  }
+
+  /**
+   * Replaces a linktree's links with the submitted set, preserving the row
+   * identity of every link that survived the edit.
+   *
+   * This used to delete every link and re-insert the lot, which handed each
+   * surviving button a brand-new uuid. The link trigger then registered a new
+   * `public_page_actions` row for it while the old one was archived, and the
+   * analytics breakdown filters archived actions out — so every click a page
+   * had ever recorded disappeared the first time its owner edited it. Views
+   * survived, because those hang off `public_pages`, which is stable. "Views
+   * count but clicks do not" was that, not a broken tracker.
+   *
+   * A link whose destination is unchanged is therefore updated in place and
+   * keeps its click history. Changing a button's url is a genuinely different
+   * destination, so it is retired and replaced rather than silently inheriting
+   * the previous target's numbers.
+   */
   async syncLinks(
     linktreeId: string,
     links: SyncLinkInput[],
@@ -254,52 +283,94 @@ export class LinksService {
     await this.verifyLinktreeOwnership(linktreeId, businessId);
 
     await this.databaseService.transaction(async (client) => {
-      // Archive their analytics actions before the foreign key clears
-      // source_link_id. Otherwise old actions remain active and appear beside
-      // the replacement links in analytics.
-      await client.query(
-        `UPDATE public_page_actions action
-         SET source_link_id = NULL, status = 'archived', updated_at = NOW()
-         FROM links link
-         WHERE action.source_link_id = link.id
-           AND link.linktree_id = $1`,
+      const existing = await client.query<{
+        id: string;
+        platform: string;
+        url: string;
+      }>(
+        `SELECT id, platform, url FROM links
+          WHERE linktree_id = $1
+          ORDER BY display_order, created_at`,
         [linktreeId],
       );
 
-      // 1. Delete all existing links for this page
-      await client.query('DELETE FROM links WHERE linktree_id = $1', [
-        linktreeId,
-      ]);
+      // Queued per identity so a page carrying the same destination twice
+      // matches them one-for-one instead of collapsing both onto one row.
+      const reusable = new Map<string, string[]>();
+      for (const row of existing.rows) {
+        const key = LinksService.linkIdentity(row.platform, row.url);
+        const queue = reusable.get(key);
+        if (queue) queue.push(row.id);
+        else reusable.set(key, [row.id]);
+      }
 
-      // 2. Insert new links
-      if (links && links.length > 0) {
-        for (let i = 0; i < links.length; i++) {
-          const l = links[i];
-          const metadata = l.metadata || {};
+      const claimed = new Set<string>();
+      const incoming = links || [];
+
+      for (let i = 0; i < incoming.length; i++) {
+        const l = incoming[i];
+        const metadata = l.metadata || {};
+        const url = l.url.trim();
+        const params = [
+          l.display_name || null,
+          l.description || null,
+          l.default_message || null,
+          i,
+          metadata.original_input || null,
+          metadata.country_code || null,
+          metadata.gps_lat !== undefined ? Number(metadata.gps_lat) : null,
+          metadata.gps_lng !== undefined ? Number(metadata.gps_lng) : null,
+          metadata.custom_color || null,
+          metadata.custom_icon || null,
+        ];
+
+        const queue = reusable.get(LinksService.linkIdentity(l.platform, url));
+        const reuseId = queue?.shift();
+
+        if (reuseId) {
+          claimed.add(reuseId);
+          // The AFTER UPDATE trigger refreshes the matching action row in
+          // place, so its id — and everything recorded against it — survives.
           await client.query(
-            `INSERT INTO links (
-              linktree_id, business_id, platform, url, display_name, description, default_message,
-              display_order, original_input, country_code, gps_lat, gps_lng,
-              custom_color, custom_icon
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-            [
-              linktreeId,
-              businessId,
-              l.platform,
-              l.url.trim(),
-              l.display_name || null,
-              l.description || null,
-              l.default_message || null,
-              i,
-              metadata.original_input || null,
-              metadata.country_code || null,
-              metadata.gps_lat !== undefined ? Number(metadata.gps_lat) : null,
-              metadata.gps_lng !== undefined ? Number(metadata.gps_lng) : null,
-              metadata.custom_color || null,
-              metadata.custom_icon || null,
-            ],
+            `UPDATE links SET
+               display_name = $1, description = $2, default_message = $3,
+               display_order = $4, original_input = $5, country_code = $6,
+               gps_lat = $7, gps_lng = $8, custom_color = $9, custom_icon = $10,
+               updated_at = NOW()
+             WHERE id = $11`,
+            [...params, reuseId],
           );
+          continue;
         }
+
+        await client.query(
+          `INSERT INTO links (
+            linktree_id, business_id, platform, url, display_name, description, default_message,
+            display_order, original_input, country_code, gps_lat, gps_lng,
+            custom_color, custom_icon
+          ) VALUES ($11, $12, $13, $14, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          [...params, linktreeId, businessId, l.platform, url],
+        );
+      }
+
+      const removed = existing.rows
+        .map((row) => row.id)
+        .filter((id) => !claimed.has(id));
+
+      if (removed.length > 0) {
+        // Retire their actions explicitly rather than relying only on the
+        // BEFORE DELETE trigger: the rows stay for the history that already
+        // references them, and archived actions are excluded from the
+        // breakdown so they cannot appear beside the surviving buttons.
+        await client.query(
+          `UPDATE public_page_actions
+              SET source_link_id = NULL, status = 'archived', updated_at = NOW()
+            WHERE source_link_id = ANY($1::uuid[])`,
+          [removed],
+        );
+        await client.query('DELETE FROM links WHERE id = ANY($1::uuid[])', [
+          removed,
+        ]);
       }
     });
 

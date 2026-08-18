@@ -57,6 +57,12 @@ export function isTemplateKey(value: string): value is TemplateKey {
   return TEMPLATE_OPTIONS.some((option) => option.id === value);
 }
 
+/** Human-readable template name for a persisted key, or null when unknown. */
+export function getTemplateName(templateKey?: string | null): string | null {
+  if (!templateKey) return null;
+  return TEMPLATE_OPTIONS.find((option) => option.id === templateKey)?.name ?? null;
+}
+
 export function normalizeTemplateConfig(
   templateKey?: string | null,
   templateConfig?: Record<string, unknown> | null

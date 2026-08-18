@@ -2,7 +2,7 @@
 
 import { MotionPulse, MotionSpinner } from "@/components/motion/MotionPrimitives";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Eye,
   ExternalLink,
+  MousePointerClick,
   RefreshCw,
   Target,
   Trash2,
@@ -71,7 +72,20 @@ interface BusinessPageAnalyticsModalProps {
   canClearAnalytics?: boolean;
 }
 
-type SortMode = "most-clicks" | "most-conversions" | "least";
+/**
+ * Every control in the header is the same 40px square, or the same 40px tall
+ * with a label. They were a mix of `px-3 py-2.5` and `p-2.5` with 16px and 20px
+ * icons, so the four buttons sat at three different heights.
+ */
+const HEADER_BUTTON_BASE =
+  "group relative inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border text-xs font-bold shadow-sm transition-all duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 hover:shadow";
+
+const HEADER_ICON_BUTTON = `${HEADER_BUTTON_BASE} w-10 shrink-0`;
+
+const HEADER_NEUTRAL_BUTTON =
+  "bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/10 text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-200 dark:hover:border-white/20 hover:text-slate-700 dark:hover:text-gray-200";
+
+export type SortMode = "most-clicks" | "most-conversions" | "least";
 
 const SORT_OPTIONS: Array<[SortMode, string]> = [
   ["most-clicks", "زۆرترین کلیک"],
@@ -156,11 +170,41 @@ function detectPlatform(actionType: string, label: string): string {
   if (l.includes("discord") || l.includes("دسک")) return "discord";
   if (l.includes("x.com") || l.includes("twitter") || l.includes("تویت")) return "x";
   if (l.includes("phone") || l.includes("call") || l.includes("ناو") || l.includes("پەی") || l.includes("تەل")) return "phone";
-  if (l.includes("website") || l.includes("web") || l.includes("site") || l.includes("ماڵ") || l.includes("وێب")) return "website";
+  if (l.includes("website") || l.includes("web") || l.includes("site") || l.includes("ماڵ") || l.includes("وێب")) return "custom";
   if (l.includes("email") || l.includes("مەی") || l.includes("ئیمەی") || l.includes("ایم")) return "email";
   if (l.includes("gps") || l.includes("map") || l.includes("نەخش") || l.includes("شوێ")) return "gps";
   if (l.includes("link") || l.includes("لینک")) return "custom";
   return "custom";
+}
+
+/**
+ * Only the buttons and links a visitor actually used, in the requested order.
+ *
+ * Every clickable thing on a page is registered up front, so an untouched page
+ * would otherwise list dozens of rows of zeros — a mini website alone registers
+ * around thirty-five. A row earns its place by having been clicked or by having
+ * converted; the rest are noise that buries the ones that were.
+ *
+ * Ties break on the label so the order does not reshuffle between renders of
+ * the same data.
+ */
+export function sortAnalyticsActions<
+  T extends Pick<ActionRow, "label" | "totalClicks" | "conversions">,
+>(actions: readonly T[], sortMode: SortMode): T[] {
+  return actions
+    .filter((action) => action.totalClicks > 0 || action.conversions > 0)
+    .sort((a, b) => {
+      if (sortMode === "most-conversions" && b.conversions !== a.conversions) {
+        return b.conversions - a.conversions;
+      }
+      if (sortMode === "least" && a.totalClicks !== b.totalClicks) {
+        return a.totalClicks - b.totalClicks;
+      }
+      if (sortMode === "most-clicks" && b.totalClicks !== a.totalClicks) {
+        return b.totalClicks - a.totalClicks;
+      }
+      return a.label.localeCompare(b.label);
+    });
 }
 
 function formatNumber(value: number): string {
@@ -195,6 +239,8 @@ export function BusinessPageAnalyticsModal({
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const dataRef = useRef(0);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
 
   const load = useCallback(async (bypassCache = false) => {
     const reqId = ++dataRef.current;
@@ -212,14 +258,17 @@ export function BusinessPageAnalyticsModal({
     let hadError = false;
 
     if (totalsResult.status === "fulfilled") {
-      setTotals(totalsResult.value);
+      setTotals(totalsResult.value ?? null);
     } else {
       hadError = true;
       console.error("Analytics summary load failed:", totalsResult.reason);
     }
 
     if (actionsResult.status === "fulfilled") {
-      setActions(actionsResult.value);
+      // A malformed payload would otherwise crash the list on `.filter`.
+      setActions(
+        Array.isArray(actionsResult.value) ? actionsResult.value : [],
+      );
     } else {
       hadError = true;
       console.error("Analytics actions load failed:", actionsResult.reason);
@@ -247,9 +296,15 @@ export function BusinessPageAnalyticsModal({
     return () => window.cancelAnimationFrame(frame);
   }, [isOpen, load]);
 
-  useModalKeyboard({ isOpen, onEscape: onClose });
+  useModalKeyboard({
+    isOpen,
+    onEscape: onClose,
+    escapeEnabled: !isClearModalOpen && !isClearing,
+    dialogRef,
+  });
 
   const refresh = () => {
+    if (refreshing) return;
     setRefreshing(true);
     void load(true);
   };
@@ -277,30 +332,24 @@ export function BusinessPageAnalyticsModal({
     }
   };
 
+  // `mousedown`, not `click`: a click fires on the common ancestor, so a drag
+  // that starts inside the panel and ends on the backdrop used to close the
+  // modal and throw away what the reader was looking at.
   const handleBackdrop = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
   };
 
-  /**
-   * Only the buttons and links a visitor actually used.
-   *
-   * Every clickable thing on a page is registered up front, so an untouched
-   * page would otherwise list dozens of rows of zeros — a mini website alone
-   * registers around thirty-five. A row earns its place by having been clicked
-   * or by having converted; the rest are noise that buries the ones that were.
-   */
-  const filteredActions = useMemo(() => {
-    return actions
-      .filter((action) => action.totalClicks > 0 || action.conversions > 0)
-      .sort((a, b) => {
-        if (sortMode === "most-clicks") return b.totalClicks - a.totalClicks;
-        if (sortMode === "most-conversions") return b.conversions - a.conversions;
-        return a.totalClicks - b.totalClicks;
-      });
-  }, [actions, sortMode]);
+  const filteredActions = useMemo(
+    () => sortAnalyticsActions(actions, sortMode),
+    [actions, sortMode],
+  );
 
+  // Clicks count too: a page can be reached from a QR code or a shared button
+  // and record clicks without a single recorded view.
   const hasAnyData = totals
-    ? totals.total_views > 0 || filteredActions.length > 0
+    ? totals.total_views > 0 ||
+      totals.total_clicks > 0 ||
+      filteredActions.length > 0
     : filteredActions.length > 0;
 
   const conversionRate = useMemo(() => {
@@ -319,10 +368,17 @@ export function BusinessPageAnalyticsModal({
       <style dangerouslySetInnerHTML={{ __html: analyticsModalScrollbarStyles }} />
       <div
         className="modal-ltr fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/40 dark:bg-black/60 backdrop-blur-md overflow-y-auto"
-        onClick={handleBackdrop}
+        onMouseDown={handleBackdrop}
         dir="ltr"
       >
-        <div className="relative w-full max-w-4xl my-4 sm:my-8 rounded-2xl overflow-hidden shadow-2xl bg-white dark:bg-[#161B22] border border-gray-100/80 dark:border-white/8">
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          tabIndex={-1}
+          className="relative w-full max-w-4xl my-4 sm:my-8 rounded-2xl overflow-hidden shadow-2xl outline-none bg-white dark:bg-[#161B22] border border-gray-100/80 dark:border-white/8"
+        >
           <div className="relative p-5 sm:p-6 border-b border-gray-100/80 dark:border-white/8 bg-gradient-to-r from-white to-slate-50/30 dark:from-[#161B22] dark:to-slate-800/5">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
@@ -331,7 +387,10 @@ export function BusinessPageAnalyticsModal({
                     <BarChart3 className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-xl sm:text-2xl font-bold text-slate-700 dark:text-gray-100 font-kurdish">
+                    <h2
+                      id={titleId}
+                      className="text-xl sm:text-2xl font-bold text-slate-700 dark:text-gray-100 font-kurdish"
+                    >
                       ئاماری {pageName}
                     </h2>
                     <p className="text-xs sm:text-sm text-slate-400 dark:text-gray-500 mt-0.5 font-kurdish truncate">
@@ -358,10 +417,9 @@ export function BusinessPageAnalyticsModal({
 
               <div className="flex items-center gap-2 shrink-0">
                 <button
+                  type="button"
                   onClick={goToAdvancedAnalytics}
-                  className="group relative flex items-center gap-1.5 rounded-xl border px-3 py-2.5 text-xs font-bold shadow-sm transition-all duration-200
-                    border-slate-100 dark:border-white/10
-                    hover:shadow"
+                  className={`${HEADER_BUTTON_BASE} w-10 shrink-0 border-slate-100 dark:border-white/10 sm:w-auto sm:px-3`}
                   style={{
                     background: "color-mix(in srgb, var(--theme-primary, #64748b) 10%, transparent)",
                     color: "var(--theme-primary, #64748b)",
@@ -374,49 +432,41 @@ export function BusinessPageAnalyticsModal({
                 </button>
                 {canClearAnalytics && (
                   <button
+                    type="button"
                     onClick={() => setIsClearModalOpen(true)}
                     disabled={!hasAnyData}
-                    className="group relative p-2.5 rounded-xl transition-all duration-200 border shadow-sm
-                      bg-rose-50 dark:bg-rose-500/10
-                      border-rose-100 dark:border-rose-500/20
-                      text-rose-500 dark:text-rose-400
-                      hover:bg-rose-100 dark:hover:bg-rose-500/15
-                      hover:border-rose-200 dark:hover:border-rose-500/30
-                      disabled:opacity-50 disabled:cursor-not-allowed hover:shadow"
+                    className={`${HEADER_ICON_BUTTON} bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20 text-rose-500 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/15 hover:border-rose-200 dark:hover:border-rose-500/30`}
                     aria-label="پاککردنەوەی داتاکان"
-                    title="پاککردنەوەی هەموو داتاکانی ئامار"
+                    title={
+                      hasAnyData
+                        ? "پاککردنەوەی هەموو داتاکانی ئامار"
+                        : "هیچ داتایەک نییە بۆ پاککردنەوە"
+                    }
                   >
-                    <Trash2 className="h-5 w-5" />
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 )}
                 <button
+                  type="button"
                   onClick={refresh}
                   disabled={refreshing}
-                  className="group relative p-2.5 rounded-xl transition-all duration-200 border shadow-sm
-                    bg-slate-50 dark:bg-white/5
-                    border-slate-100 dark:border-white/10
-                    text-slate-500 dark:text-gray-400
-                    hover:bg-slate-100 dark:hover:bg-white/10
-                    hover:border-slate-200 dark:hover:border-white/20
-                    hover:text-slate-700 dark:hover:text-gray-200
-                    disabled:opacity-50 disabled:cursor-not-allowed hover:shadow"
-                  aria-label="Refresh"
+                  aria-busy={refreshing}
+                  className={`${HEADER_ICON_BUTTON} ${HEADER_NEUTRAL_BUTTON}`}
+                  aria-label="نوێکردنەوە"
                   title="نوێکردنەوە"
                 >
-                  <MotionSpinner active={refreshing}><RefreshCw className="h-5 w-5 -transform"  /></MotionSpinner>
+                  <MotionSpinner active={refreshing}>
+                    <RefreshCw className="h-4 w-4" />
+                  </MotionSpinner>
                 </button>
                 <button
+                  type="button"
                   onClick={onClose}
-                  className="group relative p-2.5 rounded-xl transition-all duration-200 border shadow-sm
-                    bg-slate-50 dark:bg-white/5
-                    border-slate-100 dark:border-white/10
-                    text-slate-500 dark:text-gray-400
-                    hover:bg-slate-100 dark:hover:bg-white/10
-                    hover:border-slate-200 dark:hover:border-white/20
-                    hover:text-slate-700 dark:hover:text-gray-200 hover:shadow"
+                  className={`${HEADER_ICON_BUTTON} ${HEADER_NEUTRAL_BUTTON}`}
                   aria-label="داخستن"
+                  title="داخستن"
                 >
-                  <X className="h-5 w-5 transition-transform group-hover:rotate-90" />
+                  <X className="h-4 w-4 transition-transform group-hover:rotate-90" />
                 </button>
               </div>
             </div>
@@ -434,6 +484,14 @@ export function BusinessPageAnalyticsModal({
                 <StatCardGrid columns={2}>
                   <StatCard icon={Eye} label="کۆی بینینەکان" value={totals?.total_views || 0} color="blue" />
                   <StatCard icon={Users} label="بینەری تاک" value={totals?.unique_views || 0} color="green" />
+                  {/*
+                    The page's own click total, which is not the sum of the
+                    button list below it. That list only shows buttons that
+                    still exist, so a page whose links were replaced would
+                    otherwise read as having never been clicked at all.
+                  */}
+                  <StatCard icon={MousePointerClick} label="کۆی کرتەکان" value={totals?.total_clicks || 0} color="purple" />
+                  <StatCard icon={Target} label="کرتەکەری تاک" value={totals?.unique_clicks || 0} color="orange" />
                 </StatCardGrid>
 
                 {!!totals && totals.conversions > 0 && (
@@ -464,6 +522,8 @@ export function BusinessPageAnalyticsModal({
                         {SORT_OPTIONS.map(([value, label]) => (
                           <button
                             key={value}
+                            type="button"
+                            aria-pressed={sortMode === value}
                             onClick={() => setSortMode(value)}
                             className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-all cursor-pointer whitespace-nowrap ${
                               sortMode === value
@@ -503,7 +563,8 @@ export function BusinessPageAnalyticsModal({
                             <button
                               type="button"
                               onClick={() => setExpandedActionId(isExpanded ? null : action.id)}
-                              className="w-full flex items-center gap-3 p-3 text-right transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
+                              aria-expanded={isExpanded}
+                              className="w-full flex items-center gap-3 p-3 text-left cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
                             >
                               <div
                                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white"

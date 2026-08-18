@@ -117,9 +117,31 @@ export const CLICK_EVENTS = new Set<AnalyticsEventName>([
   'share',
 ]);
 
+/**
+ * The events that count as a conversion in a business's own reporting.
+ *
+ * Handing over contact details (`lead_created`) and paying (`order_completed`)
+ * are the unambiguous ones. The three contact taps are here because a linktree
+ * is overwhelmingly an ad landing page: the visitor arrives from a TikTok CTA
+ * and the campaign's whole goal is the WhatsApp, call or email tap. With only
+ * the first two, a linktree could never record a conversion at all — no
+ * linktree event emits either — so the conversion count and conversion-rate
+ * card sat at zero no matter how well a campaign performed.
+ *
+ * This is the *internal* vocabulary only. It does not touch what TikTok is
+ * told: `tiktokEvent` maps by event name and a contact tap already resolves to
+ * its action row's `Contact`, so the deduplication contract is unchanged.
+ *
+ * Applies to events ingested from here on. Rows already rolled up keep the
+ * numbers they were written with, so a range spanning this change is not
+ * comparable to one before it.
+ */
 export const CONVERSION_EVENTS = new Set<AnalyticsEventName>([
   'lead_created',
   'order_completed',
+  'whatsapp_click',
+  'call_click',
+  'email_click',
 ]);
 
 export const ENGAGEMENT_EVENTS = new Set<AnalyticsEventName>([

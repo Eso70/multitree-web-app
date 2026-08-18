@@ -13,6 +13,14 @@ import {
   type MappedLink,
 } from '../links/link.types';
 import { describeError } from '../common/describe-error';
+import {
+  BACKGROUND_IMAGE_CONFIG_KEY,
+  isLinktreeBackgroundImage,
+} from '../common/linktree-background-image';
+import {
+  BACKGROUND_PATTERN_CONFIG_KEY,
+  isLinktreeBackgroundPattern,
+} from '../common/linktree-background-pattern';
 import { ForbiddenException } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import {
@@ -29,7 +37,14 @@ import { LinksService } from '../links/links.service';
 import type { SyncLinkInput } from '../links/link.types';
 import {
   DEFAULT_LINKTREE_BACKGROUND_COLOR,
+  DEFAULT_LINKTREE_DESCRIPTION,
+  DEFAULT_LINKTREE_FOOTER_PHONE,
+  DEFAULT_LINKTREE_FOOTER_TEXT,
+  DEFAULT_LINKTREE_SUBTITLE,
   DEFAULT_LINKTREE_TEMPLATE_KEY,
+  DEFAULT_LINKTREE_WHATSAPP_MODAL_SUBTITLE,
+  DEFAULT_LINKTREE_WHATSAPP_MODAL_TITLE,
+  DEFAULT_LINKTREE_WHATSAPP_QUESTIONS,
 } from '../common/linktree-defaults';
 
 /**
@@ -222,6 +237,19 @@ export class LinktreesService {
     config.buttonStyle = config.buttonStyle || 'pill';
     config.buttonGradient = config.buttonGradient !== false;
     config.whatsapp_modal = config.whatsapp_modal || {};
+
+    // A background image is painted into public page CSS, so anything that is
+    // not one of our own uploads is dropped rather than stored or served.
+    if (!isLinktreeBackgroundImage(config[BACKGROUND_IMAGE_CONFIG_KEY])) {
+      delete config[BACKGROUND_IMAGE_CONFIG_KEY];
+    }
+
+    // A pattern outside the catalogue draws nothing, which would leave the
+    // owner with a setting that appears saved and never applies.
+    if (!isLinktreeBackgroundPattern(config[BACKGROUND_PATTERN_CONFIG_KEY])) {
+      delete config[BACKGROUND_PATTERN_CONFIG_KEY];
+    }
+
     return config as NormalizedTemplateConfig;
   }
 
@@ -380,6 +408,31 @@ export class LinktreesService {
     const result = await this.databaseService.query<{ '?column?': number }>(
       'SELECT 1 FROM linktrees WHERE business_id = $1 AND seo_name = $2 AND ($3::uuid IS NULL OR id <> $3)',
       [businessId, slug, excludeId || null],
+    );
+    return result.rows.length === 0;
+  }
+
+  /**
+   * Whether the business already has a page under this display name.
+   *
+   * `linktrees.name` carries no unique constraint and none is wanted: two pages
+   * may legitimately share a display name at different slugs. This exists so
+   * the editor can warn before the owner ends up with two cards they cannot
+   * tell apart in the pages list.
+   *
+   * Compared case-insensitively and trimmed, because that is how the two would
+   * read side by side.
+   */
+  async isNameAvailable(businessId: string, name: string, excludeId?: string) {
+    const trimmed = (name || '').trim();
+    if (!trimmed) return true;
+    const result = await this.databaseService.query<{ '?column?': number }>(
+      `SELECT 1 FROM linktrees
+        WHERE business_id = $1
+          AND lower(btrim(name)) = lower(btrim($2))
+          AND ($3::uuid IS NULL OR id <> $3)
+        LIMIT 1`,
+      [businessId, trimmed, excludeId || null],
     );
     return result.rows.length === 0;
   }
@@ -851,7 +904,7 @@ export class LinktreesService {
 
   async getDefaultLinktree(businessId: string) {
     const res = await this.databaseService.query<LinktreeRow>(
-      `SELECT lt.id, lt.name, lt.subtitle, lt.seo_name, lt.uid, lt.image, lt.background_color,
+      `SELECT lt.id, lt.name, lt.subtitle, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
               lt.template_key, lt.template_config, lt.whatsapp_modal_enabled,
               lt.footer_text, lt.footer_phone, lt.footer_hidden, lt.status, lt.is_default,
               lt.created_at, lt.updated_at, b.default_avatar AS business_default_avatar
@@ -931,20 +984,30 @@ export class LinktreesService {
       null,
       b.default_template || DEFAULT_LINKTREE_TEMPLATE_KEY,
     );
+    // Same wording the editor puts on a hand-made page; the normalizer's
+    // English placeholders are only there for rows that predate it.
+    config.whatsapp_modal = {
+      ...config.whatsapp_modal,
+      enabled: b.default_whatsapp_enabled ?? false,
+      title: DEFAULT_LINKTREE_WHATSAPP_MODAL_TITLE,
+      subtitle: DEFAULT_LINKTREE_WHATSAPP_MODAL_SUBTITLE,
+    };
 
     const row = await this.databaseService.transaction(async (client) => {
       const ltRes = await client.query<LinktreeRow>(
         `INSERT INTO linktrees (
-          business_id, name, seo_name, uid, image, background_color,
+          business_id, name, subtitle, description, seo_name, uid, image, background_color,
           template_key, template_config, whatsapp_modal_enabled,
           footer_text, footer_phone, footer_hidden, status, is_default
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, 'active', true)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13, $14, 'active', true)
         RETURNING id, name, subtitle, description, seo_name, uid, image, background_color,
                   template_key, template_config, whatsapp_modal_enabled,
                   footer_text, footer_phone, footer_hidden, status, is_default, created_at, updated_at`,
         [
           businessId,
           b.name,
+          DEFAULT_LINKTREE_SUBTITLE || null,
+          DEFAULT_LINKTREE_DESCRIPTION,
           seoName,
           uid,
           b.logo || null,
@@ -955,12 +1018,25 @@ export class LinktreesService {
           config.templateKey,
           JSON.stringify(config),
           b.default_whatsapp_enabled ?? false,
-          b.name,
-          b.default_footer_phone || null,
+          // The business name used to land here, which is the page title, not
+          // the footer credit the editor puts there.
+          b.default_footer_text || DEFAULT_LINKTREE_FOOTER_TEXT,
+          b.default_footer_phone || DEFAULT_LINKTREE_FOOTER_PHONE,
           b.default_footer_hidden ?? false,
         ],
       );
-      return ltRes.rows[0];
+      const created = ltRes.rows[0];
+
+      // The editor seeds the same starter prompts, so the WhatsApp modal opens
+      // with something to pick whichever way the page was created.
+      for (const [order, question] of DEFAULT_LINKTREE_WHATSAPP_QUESTIONS.entries()) {
+        await client.query(
+          `INSERT INTO whatsapp_questions (linktree_id, question_text, message, display_order)
+           VALUES ($1, $2, $3, $4)`,
+          [created.id, question.text, question.message, order],
+        );
+      }
+      return created;
     });
 
     const contactLinks = defaultContactLinks(b.phone);

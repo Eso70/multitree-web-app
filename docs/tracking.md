@@ -176,6 +176,52 @@ Nothing is trackable until the database says it exists.
 Only register things that actually go somewhere. An action row for a card with
 no button reports a permanent zero and pads every breakdown with noise.
 
+### A link keeps its identity across a save
+
+Clicks are stored in `analytics_action_daily` against a
+`public_page_actions` id, and that row is tied to a `links` row by
+`source_link_id`. So a link row's uuid *is* the identity of its click
+history, and `LinksService.syncLinks` must preserve it.
+
+It used to delete every link and re-insert the submitted set. Each surviving
+button came back with a new uuid, the trigger registered a new action for it,
+and the old action was archived — which the breakdown query filters out
+(`action.status <> 'archived'`). Every click a page had ever recorded
+disappeared the first time its owner edited it. Views kept counting the whole
+time, because those hang off `public_pages`, whose id never changed. "Views
+count but clicks do not" was that, and nothing to do with the tracker.
+
+`syncLinks` now reconciles instead: it matches submitted links to stored ones
+on `lower(platform)` + `trim(url)`, updates matches in place, inserts only
+genuinely new links, and archives and deletes only the ones the save removed.
+Changing a button's url retires it and creates a new one, which is correct —
+a different destination is a different button and must not inherit the
+previous target's numbers.
+
+This depends on the editor sending a byte-identical url for a button nobody
+touched. It does not send link ids: it extracts a display value from each
+stored url and rebuilds the url from that value on save, so the round trip has
+to be stable. `features/link-editor/link-url-roundtrip.spec.ts` pins that as a
+matrix — every platform the editor offers, both with and without stored
+`original_input`/`country_code` metadata (different code paths, and the
+metadata one is what real links take), and every dialling code in
+`lib/constants/country-codes.ts`. If you change `generateUrl` or
+`extractValueFromUrl`, that test failing means live pages are about to lose
+their click history — it is not a formatting nit.
+
+Phone numbers are the sharp edge. A national number may legitimately begin
+with digits that spell some country's dialling code: every Iraqi mobile
+starts `75`, `77` or `78` and `7` is Russia/Kazakhstan, while Brazil dials
+`55` and its national numbers also begin `55`. No length rule separates the
+two — a ten-digit Brazilian national leaves eight digits after the prefix,
+which is itself a valid subscriber number. So `formatPhoneNumber` never
+guesses: input marked international with `+` or `00` already carries its
+country, and anything else is national and gets the selected code prepended.
+Earlier versions scanned for "any known dialling code" and stripped what they
+found, which was survivable only while the list held seven countries.
+
+Do not "simplify" this back to delete-all-and-insert.
+
 The reverse is just as easy to miss: a link the trigger registers but the page
 renders through something other than the normal button list. `splitGpsLinks`
 pulls the GPS link out of the rendered buttons and `GpsLocationDisplay` draws

@@ -11,6 +11,8 @@ interface PhoneMockupProps {
   screenClassName?: string;
   statusBarClassName?: string;
   overlay?: ReactNode;
+  /** Lets long page previews scroll inside the logical 390 x 858 screen. */
+  scrollable?: boolean;
 }
 
 /**
@@ -29,6 +31,7 @@ export function PhoneMockup({
   screenClassName,
   statusBarClassName,
   overlay,
+  scrollable = false,
 }: PhoneMockupProps) {
   return (
     <div
@@ -54,7 +57,14 @@ export function PhoneMockup({
           )}
           style={{ colorScheme: darkTheme ? "dark" : "light" }}
         >
-          <div className="phone-mockup-canvas">{children}</div>
+          <div
+            className={cn(
+              "phone-mockup-canvas",
+              scrollable && "phone-mockup-canvas-scrollable",
+            )}
+          >
+            {children}
+          </div>
         </div>
 
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-1/3 rounded-t-[12.5%] bg-gradient-to-b from-white/[0.04] to-transparent" />

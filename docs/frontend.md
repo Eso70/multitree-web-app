@@ -95,8 +95,15 @@ fetching, or rendering systems directly in the large entry components.
 JSON API transport is owned by `frontend/src/lib/api/request.ts`. It applies
 same-origin credentials and no-store defaults, serializes explicit `json`
 bodies, unwraps the standard backend envelope, converts normalized failures to
-`ApiRequestError`, and preserves `AbortError` for effect cleanup. Feature code
+`ApiRequestError`, and preserves `AbortError` for effect cleanup. Safe GET and
+HEAD requests retry short-lived network, 502, 503, and 504 failures with a
+small bounded backoff; mutations are never retried automatically. Feature code
 must not duplicate response parsing or error-envelope extraction.
+
+Mini-website create and update requests additionally pass through
+`createMiniWebsiteSavePayload`. The editor consumes derived list-response
+fields for presentation, but only the explicit `SaveMiniWebsiteDto` field set
+may be sent back to the strict API boundary.
 
 Domain endpoints belong in feature API modules such as `features/business/api`,
 `features/communications/api`, and `features/platform-admin/api`. React hooks
@@ -420,6 +427,36 @@ future segments remain visible at reduced opacity.
 - Linktrees support branding, an avatar, a subtitle tagline under the name, a
   longer description helper text, configurable footer, WhatsApp questions,
   ordered links, TikTok tracking, and 12 selectable templates.
+- A linktree background is either a colour or an uploaded image. The image tile
+  sits beside the custom-colour swatch in `BackgroundColorPicker`, and the two
+  are exclusive: uploading replaces the colour surface, and picking any colour
+  clears the image. The URL lives in `template_config.background_image` because
+  `linktrees.background_color` is `varchar(50)` and cannot hold an upload path;
+  the colour stays stored so text, accents, and borders keep deriving from it.
+  Only same-origin `/images/upload/` paths are painted:
+  `lib/templates/background-image.ts` validates on read, and both the linktree
+  and public services strip anything else, so an owner cannot point public
+  visitors at a third-party host. Templates receive it as
+  `TemplateTheme.backgroundImage` and apply it through the shared
+  `templateBackgroundStyle`, since each template paints its own full-bleed
+  surface over the page background. That helper also veils the photo in the
+  direction `deriveTextColor` already chose, so an arbitrary image cannot leave
+  the page's text unreadable.
+- A background pattern can be drawn over that surface, whichever surface it
+  turned out to be — gradient, solid colour or uploaded image. The catalogue and
+  the SVG renderer live in `lib/templates/background-pattern.tsx`, and the
+  picker in `components/shared/BackgroundPatternModal`; the linktree editor and
+  the mini-website editor open the same modal, and `features/mini-website`
+  keeps thin aliases (`MiniWebsiteBackgroundPattern`,
+  `MiniWebsiteBackgroundStyleModal`) so its own code reads unchanged. The
+  choice lives in `template_config.background_pattern`, validated on read by
+  `readBackgroundPattern` and stripped server-side by
+  `common/linktree-background-pattern.ts` when it is outside the catalogue.
+  Templates receive it as `TemplateTheme.backgroundPattern`;
+  `TemplateViewportLayout` paints it once under the content, so all five
+  templates inherit it without each drawing its own. It is `fixed` on a public
+  page and `absolute` in a preview, so the texture stays put while the page
+  scrolls.
 - Public mini-websites render at `/bio/:slug`.
 - These two routes are the only ones that load a business's TikTok pixel, and
   both report through `createPageTracker`
@@ -438,16 +475,29 @@ future segments remain visible at reduced opacity.
   their configured platform/brand color. Service images open in the shared
   keyboard- and touch-friendly image viewer; compact dashboard previews retain
   their horizontal rail.
-- Mini-websites support four visual variations (`soft`, `glass`, `minimal`,
-  and `warm`) and the currently enabled section types: social links,
+- Mini-websites have one persisted visual template. `liquid-glass` is the
+  default and the only option, and keeps its `soft`, `glass`, `minimal`, and
+  `warm` surface variations. Profession templates remain content/section
+  presets rather than page layouts. The template supports the currently
+  enabled section types: social links,
   locations, business hours, gallery, FAQ, services, appointment booking,
   team members, certificates and achievements, videos and reels, partner
   brands, business-authored reviews, before-and-after comparisons, languages,
   payment methods, special offers, events and workshops, audio and podcasts,
   business advantages, impact stats, a process/how-it-works timeline,
   documents and downloads, owned brands and pages, education history, work
-  experience, a lead-capture enquiry form, pricing plans, and stories
-  (persisted and editable, but not yet rendered on the public page).
+  experience, a lead-capture enquiry form, pricing plans, and stories.
+- The mini-website editor offers no visual-template control. With one template
+  there is nothing to choose, and `templateKey` already defaults to it; a
+  one-option picker would only be dead UI. Linktree selection keeps the shared
+  compact selector shell, cards, animations, selection state, and plan locks.
+  An absent or retired key still resolves to Liquid.
+- Neither the templates page nor the business subdomain landing page shows
+  mini-websites. The templates page catalogues Linktree templates only and no
+  longer carries category tabs; the landing page lists Linktrees alone and
+  does not fetch `/api/public/mini-websites`. The public advertising page
+  footer still links to them, and `/business/mini-website` and the public
+  `/bio/:slug` pages are unaffected.
 - Appointment cards can open a business's public Calendly, Cal.com, Google
   Calendar, or custom HTTPS booking page, or start a WhatsApp conversation.
   MultiTree stores the appointment details and click analytics; availability,
@@ -557,23 +607,12 @@ future segments remain visible at reduced opacity.
 The authenticated business dashboard is available at `/business` on the
 business's own subdomain. It provides:
 
-`/business` is the operational **Dashboard** (`داشبۆرد`), while Linktree
-management lives at `/business/pages`. The Dashboard uses only tenant-owned,
-persisted system data: current and previous filtered analytics totals,
-published public-page status, filtered top-page performance, aggregate CRM
-activity, TikTok delivery health, effective-plan quotas, and conditions that
-actually require action. It does not estimate revenue, fabricate activity, or
-duplicate the detailed Analytics screen. Optional CRM and TikTok requests run
-only when effective access permits them; unavailable optional data does not
-erase the core dashboard summary.
-The page follows the same management composition as Linktree and Mini Website:
-six shared statistic cards precede one shared dashboard surface containing the
-page header, controls, and operational content. Its shared period selector
-supports today, 7, 30, and 90 days plus lifetime; comparisons use the immediately
-preceding equal-length period, while lifetime deliberately has no fabricated
-comparison. Changing the selector dynamically reloads summary analytics,
-per-page rankings, CRM activity, and TikTok delivery results with the same date
-range. Current inventory and subscription quotas remain unfiltered snapshots.
+There is no separate overview screen. `/business` is the address the login
+handoff and the onboarding flow send people to, and it redirects to
+`/business/pages`, the Linktree management screen and the first sidebar entry.
+Every console section therefore keeps exactly one canonical URL. An
+unrecognised `/business/*` segment also resolves to Linktree management rather
+than to a placeholder screen.
 
 Its sidebar footer uses the tenant's effective subscription as its source of
 truth, shows an upgrade action only below the highest plan, and keeps support
@@ -595,10 +634,11 @@ chart, table, form, or list body instead of showing only a spinner or leaving
 the rest of the page blank.
 The business Templates route uses a catalog-specific skeleton while template
 permissions load, including its metrics, category tabs, header, and phone
-preview footprints. Linktree previews retain their lazy shared skeleton. The
-Mini Website category tab is intentionally retained with one empty monitor
-frame and a catalog count of zero; it imports and renders no sample website
-until dedicated mini-website template previews are implemented.
+preview footprints. Linktree and mini-website previews both render lazily.
+Mini-website cards use the stable MultiTree fixture and the real public mobile
+composition inside a scrollable shared phone. Preview interactions are
+disabled, and the preview canvas forces mobile grids even when the surrounding
+dashboard is wide enough to match desktop media queries.
 Background refreshes preserve the existing content, while saves, uploads,
 destructive actions, and other explicit operations retain compact progress
 feedback instead of hiding their surrounding context.
@@ -640,9 +680,10 @@ effective access manifest. Effective access combines capability rules,
 subscription entitlements, field rules, approval requirements, and quotas —
 see [docs/security.md](security.md#authorization).
 
-Routes: `/business`, `/business/mini-website`, `/business/analytics`,
+Routes: `/business/pages`, `/business/mini-website`, `/business/analytics`,
 `/business/crm`, `/business/tiktok-config`, `/business/templates`,
-`/business/profile`, `/business/settings`.
+`/business/profile`, `/business/settings`. `/business` redirects to
+`/business/pages`.
 
 ## Platform-administration console
 
@@ -703,7 +744,7 @@ Assume `ROOT_DOMAIN=example.com` and a business subdomain of `acme`.
 | `https://acme.example.com/bio/:slug`        | Public mini-website          |
 | `https://acme.example.com/login`            | Redirect to business login   |
 | `https://acme.example.com/business/login`   | Business login               |
-| `https://acme.example.com/business`         | Business dashboard           |
+| `https://acme.example.com/business`         | Redirect to business pages   |
 
 The frontend proxy:
 

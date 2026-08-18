@@ -1,5 +1,14 @@
-import { DEFAULT_FOOTER_NAME, DEFAULT_FOOTER_PHONE as GLOBAL_DEFAULT_FOOTER_PHONE } from "@/lib/constants/footer";
+import {
+  LINKTREE_DEFAULT_DESCRIPTION,
+  LINKTREE_DEFAULT_FOOTER_PHONE,
+  LINKTREE_DEFAULT_FOOTER_TEXT,
+  LINKTREE_DEFAULT_SUBTITLE,
+} from "@linktree/types";
 import { getPlatformBrand } from "@/lib/brand/platform-brands";
+import {
+  COUNTRY_DIAL_CODES,
+  COUNTRY_DIAL_CODES_SORTED,
+} from "@/lib/constants/country-codes";
 
 /**
  * Platforms offered by the link editor, in display order. Names, glyphs and
@@ -20,7 +29,6 @@ const EDITOR_PLATFORM_IDS = [
   "snapchat",
   "discord",
   "email",
-  "website",
   "gps",
   "custom",
 ] as const;
@@ -43,19 +51,12 @@ export const SOCIAL_PLATFORMS = EDITOR_PLATFORM_IDS.map((id) => {
   };
 });
 
-// Countries list
-export const COUNTRIES = [
-  { code: "964", name: "Iraq" },
-  { code: "98", name: "Iran" },
-  { code: "90", name: "Turkey" },
-  { code: "966", name: "Saudi Arabia" },
-  { code: "971", name: "United Arab Emirates" },
-  { code: "1", name: "United States / Canada" },
-  { code: "44", name: "United Kingdom" },
-];
+// Countries list — one shared source, see lib/constants/country-codes.ts for
+// why a second, shorter copy of this was a data-corruption bug.
+export const COUNTRIES = COUNTRY_DIAL_CODES;
 
 // Sort countries by code length descending for proper prefix matching
-export const COUNTRIES_SORTED = [...COUNTRIES].sort((a, b) => b.code.length - a.code.length);
+export const COUNTRIES_SORTED = COUNTRY_DIAL_CODES_SORTED;
 
 // Background colors - Mix of gradients and solid colors
 export const BACKGROUND_COLORS = [
@@ -94,14 +95,15 @@ export const BACKGROUND_COLORS = [
   { id: "midnight", name: "Midnight", gradient: "from-slate-900 via-indigo-900 to-purple-900", value: "#1e293b", isSolid: false },
 ];
 
-// Default values
+// Default values, shared with the server-side default-page seeder so both
+// paths produce the same page.
 // `subtitle` is the short tagline shown directly under the page name (e.g.
 // "Brand owner and retail manager"). `description` is the longer helper text
 // shown beneath it (e.g. "click the links below").
-export const DEFAULT_SUBTITLE = "";
-export const DEFAULT_DESCRIPTION = "بۆ پەیوەندی کردن, کلیک لەم لینکانەی خوارەوە بکە";
-export const DEFAULT_FOOTER_TEXT = DEFAULT_FOOTER_NAME; // Default footer name (clickable, opens WhatsApp)
-export const DEFAULT_FOOTER_PHONE = GLOBAL_DEFAULT_FOOTER_PHONE;
+export const DEFAULT_SUBTITLE = LINKTREE_DEFAULT_SUBTITLE;
+export const DEFAULT_DESCRIPTION = LINKTREE_DEFAULT_DESCRIPTION;
+export const DEFAULT_FOOTER_TEXT = LINKTREE_DEFAULT_FOOTER_TEXT; // Clickable footer name, opens WhatsApp
+export const DEFAULT_FOOTER_PHONE = LINKTREE_DEFAULT_FOOTER_PHONE;
 
 // Kurdish platform names mapping
 export function getPlatformNameKurdish(platform: string): string {

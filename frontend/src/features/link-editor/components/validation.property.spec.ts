@@ -1,6 +1,10 @@
 ﻿import * as fc from 'fast-check';
 import { validateBusinessName, validateSubdomain } from './BusinessInfoStep';
-import { validateLinktreeName, validateSlug } from './validation';
+import {
+  LINKTREE_NAME_MAX_LENGTH,
+  validateLinktreeName,
+  validateSlug,
+} from './validation';
 
 /**
  * Property 3: Name Field Minimum Length Validation
@@ -27,11 +31,15 @@ describe('Feature: business-website-color-theming, Property 3: Name Field Minimu
     );
   });
 
-  it('validateLinktreeName accepts iff input.trim().length >= 2', () => {
+  it('validateLinktreeName accepts iff input.trim().length is between 2 and the name ceiling', () => {
     fc.assert(
-      fc.property(fc.string(), (input: string) => {
+      fc.property(
+        fc.oneof(fc.string(), fc.string({ maxLength: LINKTREE_NAME_MAX_LENGTH + 20 })),
+        (input: string) => {
         const result = validateLinktreeName(input);
-        const shouldBeValid = input.trim().length >= 2;
+        const trimmed = input.trim();
+        const shouldBeValid =
+          trimmed.length >= 2 && trimmed.length <= LINKTREE_NAME_MAX_LENGTH;
 
         if (shouldBeValid) {
           expect(result).toBeUndefined();
@@ -39,7 +47,8 @@ describe('Feature: business-website-color-theming, Property 3: Name Field Minimu
           expect(result).toBeDefined();
           expect(typeof result).toBe('string');
         }
-      }),
+      },
+      ),
       { numRuns: 100 },
     );
   });
@@ -73,11 +82,20 @@ describe('Feature: business-website-color-theming, Property 4: Slug/Subdomain Fo
     );
   });
 
-  it('validateSlug accepts iff non-empty input matches /^[a-z0-9-]+$/', () => {
+  /**
+   * The linktree slug carries the extra length floor and ceiling that
+   * `chk_lt_seo_name` and the column width impose; the business subdomain
+   * above is format-only.
+   */
+  it('validateSlug accepts iff the trimmed input matches the pattern and fits the length bounds', () => {
     fc.assert(
       fc.property(fc.string({ minLength: 1 }), (input: string) => {
         const result = validateSlug(input);
-        const shouldBeValid = SLUG_PATTERN.test(input);
+        const trimmed = input.trim();
+        const shouldBeValid =
+          SLUG_PATTERN.test(trimmed) &&
+          trimmed.length >= 2 &&
+          trimmed.length <= LINKTREE_NAME_MAX_LENGTH;
 
         if (shouldBeValid) {
           expect(result).toBeUndefined();

@@ -14,6 +14,7 @@ import {
 import {
   MINI_WEBSITE_MAX_PLANS,
   MINI_WEBSITE_MAX_PAYMENT_METHODS,
+  MINI_WEBSITE_VISUAL_TEMPLATE_KEYS,
 } from '../mini-website.constants';
 
 export class SaveMiniWebsiteDto {
@@ -26,6 +27,9 @@ export class SaveMiniWebsiteDto {
   @IsOptional() @IsString() @MaxLength(4000) bio?: string;
   @IsOptional() @IsString() avatar?: string | null;
   @IsOptional() @IsString() cover?: string | null;
+  @IsOptional()
+  @IsIn(MINI_WEBSITE_VISUAL_TEMPLATE_KEYS)
+  templateKey?: string;
   @IsOptional() @IsIn(['soft', 'glass', 'minimal', 'warm']) variation?: string;
   @IsOptional()
   @IsIn([

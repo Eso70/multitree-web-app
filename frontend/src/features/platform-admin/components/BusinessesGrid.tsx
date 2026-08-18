@@ -3,12 +3,12 @@
 import { memo, useState } from "react";
 import Image from "next/image";
 import { Edit, Trash2, Eye, Globe, ShieldCheck, LogIn } from "lucide-react";
-import { getRootDomain } from "@/lib/utils/linktree-utils";
+import { formatDate, getRootDomain } from "@/lib/utils/linktree-utils";
 import type { PlatformBusiness as Business } from "@linktree/types";
 import {
-  getBusinessPlanBadgeClasses,
-  getBusinessPlanLabel,
-} from "@/features/platform-admin/utils/business-plan";
+  BusinessMetaBadges,
+  BusinessMetaField,
+} from "@/features/platform-admin/components/BusinessMetaBadges";
 
 interface BusinessesGridProps {
   data?: Business[];
@@ -49,10 +49,10 @@ const BusinessCard = memo(function BusinessCard({
 
   return (
     <div
-      className={`group relative bg-transparent p-4 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-all duration-300 transform-gpu ${borderClasses}`}
+      className={`group relative flex h-full flex-col bg-transparent p-4 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-all duration-300 transform-gpu ${borderClasses}`}
       style={{
         contentVisibility: "auto",
-        containIntrinsicSize: "230px",
+        containIntrinsicSize: "330px",
       }}
     >
       {onManageSessions && (
@@ -93,33 +93,29 @@ const BusinessCard = memo(function BusinessCard({
           <p className="text-xs text-gray-600 truncate">
             @{item.username}
           </p>
+          <BusinessMetaBadges item={item} className="mt-1.5" />
         </div>
       </div>
 
-      {/* Status & Plan Section */}
-      <div className="mb-2 sm:mb-3 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gray-50 border border-gray-200 space-y-2">
+      {/* Subdomain Section */}
+      <div className="mb-2 sm:mb-3 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gray-50 border border-gray-200">
         <div className="flex items-center gap-1 sm:gap-1.5">
           <Globe className="h-3.5 w-3.5 text-gray-400 shrink-0" />
           <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide shrink-0">سەب دۆمەین</span>
           <span className="text-xs text-gray-700 font-mono truncate">{item.subdomain ? `${item.subdomain}.${getRootDomain()}` : "دیاری نەکراوە"}</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${
-            item.status === "active"
-              ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-              : "bg-red-50 text-red-600 border-red-200"
-          }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${item.status === "active" ? "bg-emerald-500" : "bg-red-500"}`} />
-            {item.status === "active" ? "چالاک" : "ڕاگیراو"}
-          </span>
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getBusinessPlanBadgeClasses(item.plan)}`}>
-            {getBusinessPlanLabel(item)}
-          </span>
-        </div>
+      </div>
+
+      {/* Details Section */}
+      <div className="mb-2 grid grid-cols-2 gap-2 sm:mb-3">
+        <BusinessMetaField label="ئیمەیڵ" value={item.email?.trim() || "—"} />
+        <BusinessMetaField label="مۆبایل" value={item.phone?.trim() || "—"} mono />
+        <BusinessMetaField label="دروستکراوە" value={formatDate(item.created_at)} />
+        <BusinessMetaField label="نوێکراوە" value={formatDate(item.updated_at)} />
       </div>
 
       {/* Actions Section */}
-      <div className="flex flex-wrap items-center gap-1.5 pt-2 sm:pt-3 border-t border-gray-200 sm:gap-2">
+      <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-2 sm:pt-3 border-t border-gray-200 sm:gap-2">
         {onViewAnalytics && (
           <button onClick={() => onViewAnalytics(item)} className="flex flex-1 items-center justify-center gap-1 rounded-lg sm:rounded-xl border border-sky-500/30 bg-sky-500/10 px-2 py-2 text-xs font-medium text-sky-700 hover:bg-sky-500/20 min-w-0 cursor-pointer" title="بینینی ئامار">
             <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" /><span className="hidden sm:inline">ئامار</span>

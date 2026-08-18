@@ -1,6 +1,8 @@
 "use client";
 
 import { memo, type CSSProperties, type ReactNode } from "react";
+import { BackgroundPattern } from "@/lib/templates/background-pattern";
+import type { BackgroundPatternStyle } from "@linktree/types";
 
 export interface TemplateViewportLayoutProps {
   isPreview: boolean;
@@ -10,6 +12,10 @@ export interface TemplateViewportLayoutProps {
   header: ReactNode;
   main: ReactNode;
   footer: ReactNode;
+  /** Repeating pattern painted over the surface, under the content. */
+  backgroundPattern?: BackgroundPatternStyle | null;
+  /** Colour the pattern is stroked in. Defaults to the page text colour. */
+  backgroundPatternAccent?: string;
 }
 
 /**
@@ -26,6 +32,8 @@ export const TemplateViewportLayout = memo(function TemplateViewportLayout({
   header,
   main,
   footer,
+  backgroundPattern = null,
+  backgroundPatternAccent = "#ffffff",
 }: TemplateViewportLayoutProps) {
   return (
     <div
@@ -34,6 +42,15 @@ export const TemplateViewportLayout = memo(function TemplateViewportLayout({
       dir={dir}
       data-template-viewport-layout
     >
+      {backgroundPattern && backgroundPattern !== "none" && (
+        // `fixed` rather than `absolute`: the layout scrolls, and a pattern
+        // that scrolls with it reads as a moving texture instead of a surface.
+        <BackgroundPattern
+          accent={backgroundPatternAccent}
+          className={`pointer-events-none ${isPreview ? "absolute" : "fixed"} inset-0 h-full w-full`}
+          style={backgroundPattern}
+        />
+      )}
       <div className="relative z-10 w-full">
         <div className="mx-auto w-full max-w-md">{header}</div>
         <main className="w-full py-6">
