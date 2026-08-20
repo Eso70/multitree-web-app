@@ -9,6 +9,7 @@ import {
   type TikTokDeliveryError,
   type TikTokHealth,
 } from "@/features/analytics/api";
+import { apiRequest } from "@/lib/api/request";
 
 /**
  * What is actually wrong with a business's TikTok connection.
@@ -75,13 +76,22 @@ function ErrorRow({ item }: { item: TikTokDeliveryError }) {
         {item.message}
       </p>
       <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-        {item.events} ڕووداو · {item.attempts} هەوڵ · {formatWhen(item.lastSeenAt)}
+        {item.events} ڕووداو · {item.attempts} هەوڵ ·{" "}
+        {formatWhen(item.lastSeenAt)}
       </p>
     </li>
   );
 }
 
-export function TikTokDeliveryStatusPanel() {
+export function TikTokDeliveryStatusPanel({
+  owner = "business",
+  healthEndpoint,
+  errorsEndpoint,
+}: {
+  owner?: "business" | "platform";
+  healthEndpoint?: string;
+  errorsEndpoint?: string;
+} = {}) {
   const [health, setHealth] = useState<TikTokHealth | null>(null);
   const [errors, setErrors] = useState<TikTokDeliveryError[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,8 +100,16 @@ export function TikTokDeliveryStatusPanel() {
   useEffect(() => {
     const controller = new AbortController();
     Promise.all([
-      getTikTokHealth(controller.signal),
-      getTikTokDeliveryErrors(controller.signal),
+      healthEndpoint
+        ? apiRequest<TikTokHealth>(healthEndpoint, {
+            signal: controller.signal,
+          })
+        : getTikTokHealth(controller.signal),
+      errorsEndpoint
+        ? apiRequest<{ items: TikTokDeliveryError[] }>(errorsEndpoint, {
+            signal: controller.signal,
+          })
+        : getTikTokDeliveryErrors(controller.signal),
     ])
       .then(([healthResult, errorResult]) => {
         setHealth(healthResult);
@@ -107,7 +125,7 @@ export function TikTokDeliveryStatusPanel() {
         setLoading(false);
       });
     return () => controller.abort();
-  }, []);
+  }, [errorsEndpoint, healthEndpoint]);
 
   if (loading || unavailable) return null;
   if (!health || health.connections === 0) return null;
@@ -126,12 +144,14 @@ export function TikTokDeliveryStatusPanel() {
             دۆخی گەیاندن
           </p>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            ئەوەی TikTok وەڵامی داوەتەوە بۆ ئەم بزنسە.
+            {owner === "platform"
+              ? "ئەوەی TikTok وەڵامی داوەتەوە بۆ پەڕەکانی پلاتفۆرم."
+              : "ئەوەی TikTok وەڵامی داوەتەوە بۆ ئەم بزنسە."}
           </p>
         </div>
         <span className="text-xs text-slate-500 dark:text-slate-400">
-          {health.delivered} گەیشتوو · {health.retrying} لە ڕیز · {health.failed}{" "}
-          شکستخواردوو
+          {health.delivered} گەیشتوو · {health.retrying} لە ڕیز ·{" "}
+          {health.failed} شکستخواردوو
         </span>
       </div>
 
@@ -153,9 +173,9 @@ export function TikTokDeliveryStatusPanel() {
                 </span>
               </div>
               <p className="mt-2 text-xs text-slate-700 dark:text-slate-200">
-                {health.serverEvents} ڕووداو لە ڕاژەکارەوە نێردراون، بەڵام هیچیان
-                لە وێبگەڕەوە نەنێردراون. زۆرجار مانای ئەوەیە Pixel ID هەڵەیە یان
-                بەربەستی ڕیکلام ڕێی لێ گرتووە.
+                {health.serverEvents} ڕووداو لە ڕاژەکارەوە نێردراون، بەڵام
+                هیچیان لە وێبگەڕەوە نەنێردراون. زۆرجار مانای ئەوەیە Pixel ID
+                هەڵەیە یان بەربەستی ڕیکلام ڕێی لێ گرتووە.
               </p>
             </li>
           )}

@@ -52,6 +52,10 @@ export const REQUIRED_TABLES = [
   'advertising_payment_providers',
   'advertising_page_versions',
   'public_page_tombstones',
+  'creator_accounts',
+  'creator_trial_claims',
+  'creator_registration_attempts',
+  'root_public_slugs',
 ] as const;
 
 export const REQUIRED_COLUMNS = [
@@ -60,6 +64,9 @@ export const REQUIRED_COLUMNS = [
   ['businesses', 'onboarding_completed_at'],
   ['business_sessions', 'remembered'],
   ['platform_admin_sessions', 'remembered'],
+  ['businesses', 'account_type'],
+  ['creator_trial_claims', 'google_subject_hmac'],
+  ['creator_trial_claims', 'device_hmac'],
   ['communication_announcements', 'encrypted_content'],
   ['communication_notifications', 'encrypted_content'],
   ['communication_conversations', 'encrypted_subject'],
@@ -83,6 +90,9 @@ const REQUIRED_INDEXES = [
   'idx_uploaded_media_assets_created',
   'uq_mini_items_key',
   'idx_public_page_tombstones_slug',
+  'uq_businesses_one_platform_workspace',
+  'creator_trial_claims_google_subject_hmac_idx',
+  'creator_trial_claims_device_hmac_idx',
 ] as const;
 
 export async function assertSupportedSchema(client: PoolClient): Promise<void> {
@@ -141,6 +151,9 @@ export async function assertSupportedSchema(client: PoolClient): Promise<void> {
     advertising_permissions: boolean;
     advertising_entitlement: boolean;
     mini_website_entitlement: boolean;
+    platform_content_permissions: boolean;
+    creator_permissions: boolean;
+    platform_workspace: boolean;
   }>(`
     SELECT
       EXISTS (
@@ -176,7 +189,37 @@ export async function assertSupportedSchema(client: PoolClient): Promise<void> {
         SELECT 1
           FROM billing_entitlements
          WHERE entitlement_key = 'feature.mini_websites'
-      ) AS mini_website_entitlement
+      ) AS mini_website_entitlement,
+      (
+        SELECT count(*) = 12
+          FROM auth_permissions
+         WHERE permission_key IN (
+           'platform:settings:tiktok-read',
+           'platform:settings:tiktok-update',
+           'platform:linktrees:read',
+           'platform:linktrees:create',
+           'platform:linktrees:update',
+           'platform:linktrees:delete',
+           'platform:linktrees:upload',
+           'platform:mini-websites:read',
+           'platform:mini-websites:create',
+           'platform:mini-websites:update',
+           'platform:mini-websites:delete',
+           'platform:mini-websites:upload'
+         ) AND status = 'active'
+      ) AS platform_content_permissions,
+      (
+        SELECT count(*) = 2
+          FROM auth_permissions
+         WHERE permission_key IN (
+           'platform:creators:read', 'platform:creators:manage'
+         ) AND status = 'active'
+      ) AS creator_permissions,
+      EXISTS (
+        SELECT 1 FROM businesses
+         WHERE id = '00000000-0000-4000-8000-000000000001'
+           AND account_type = 'platform'
+      ) AS platform_workspace
   `);
   const catalogState = catalog.rows[0];
   const missingCatalogEntries = [
@@ -195,6 +238,13 @@ export async function assertSupportedSchema(client: PoolClient): Promise<void> {
     !catalogState?.mini_website_entitlement
       ? 'feature.mini_websites entitlement'
       : null,
+    !catalogState?.platform_content_permissions
+      ? 'platform content permission set'
+      : null,
+    !catalogState?.creator_permissions
+      ? 'platform Creator permission set'
+      : null,
+    !catalogState?.platform_workspace ? 'platform content workspace' : null,
   ].filter((entry): entry is string => entry !== null);
 
   if (

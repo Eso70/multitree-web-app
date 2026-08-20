@@ -4,6 +4,7 @@ import { PublicService } from './public.service';
 import { DatabaseService } from '../database/database.service';
 import { RedisService } from '../redis/redis.service';
 import { PublicPageAnalyticsService } from '../analytics/public-page-analytics.service';
+import { PlatformContentWorkspaceService } from '../platform-workspace/platform-content-workspace.service';
 
 /**
  * Property 12: Unregistered Subdomain Returns 404
@@ -76,11 +77,19 @@ describe('PublicService - Property Tests', () => {
     } as unknown as PublicPageAnalyticsService;
   }
 
+  function createMockPlatformWorkspace(): PlatformContentWorkspaceService {
+    return {
+      getBranding: jest.fn(),
+      getWorkspaceId: jest.fn(),
+    } as unknown as PlatformContentWorkspaceService;
+  }
+
   it('does not expose the legacy public lookup without a subdomain', () => {
     const service = new PublicService(
       createMockDatabaseService(),
       createMockRedisService(),
       createMockPageAnalytics(),
+      createMockPlatformWorkspace(),
     );
 
     expect('getPublicLinktreeByUid' in service).toBe(false);
@@ -107,6 +116,7 @@ describe('PublicService - Property Tests', () => {
       createMockDatabaseService(),
       redis,
       pageAnalytics,
+      createMockPlatformWorkspace(),
     );
 
     const payload = await service.getPublicLinktreeByUidAndSubdomain(
@@ -133,6 +143,7 @@ describe('PublicService - Property Tests', () => {
       database,
       createMockRedisService(),
       createMockPageAnalytics(),
+      createMockPlatformWorkspace(),
     );
 
     await expect(
@@ -156,6 +167,7 @@ describe('PublicService - Property Tests', () => {
             mockDbService,
             mockRedisService,
             createMockPageAnalytics(),
+            createMockPlatformWorkspace(),
           );
 
           // Act & Assert: should throw NotFoundException
@@ -165,8 +177,8 @@ describe('PublicService - Property Tests', () => {
 
           // Verify DB was queried with the subdomain
           expect(mockDbService.query).toHaveBeenCalledWith(
-            expect.stringContaining(
-              'SELECT id FROM businesses WHERE subdomain',
+            expect.stringMatching(
+              /SELECT id FROM businesses\s+WHERE subdomain = \$1[\s\S]*account_type = 'business'/,
             ),
             [subdomain],
           );
@@ -189,6 +201,7 @@ describe('PublicService - Property Tests', () => {
               mockDbService,
               mockRedisService,
               createMockPageAnalytics(),
+              createMockPlatformWorkspace(),
             );
 
             // Act & Assert: should throw NotFoundException

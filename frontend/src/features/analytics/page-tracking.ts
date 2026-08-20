@@ -1,11 +1,7 @@
 "use client";
 
 import type { PublicPageAnalytics } from "@linktree/types";
-import {
-  analyticsConsent,
-  flushNow,
-  queueAnalyticsEvent,
-} from "@/lib/utils/client-queue";
+import { flushNow, queueAnalyticsEvent } from "@/lib/utils/client-queue";
 import { createRuntimeId } from "@/lib/utils/random-id";
 import { trackTikTokEvent } from "./tiktok-dispatch";
 import { recordTikTokDebug } from "./tiktok-debug";
@@ -13,10 +9,9 @@ import { recordTikTokDebug } from "./tiktok-debug";
 /**
  * The one way a public page reports what happened on it.
  *
- * Two pages use this — the public linktree and the public mini website — and no
- * others, because those are the only surfaces allowed to carry a business's
- * TikTok pixel. Anything new on either page reports through here rather than
- * calling the pixel directly; docs/tracking.md is the procedure.
+ * Every registered public marketing surface uses this. Anything new reports
+ * through here rather than calling the Pixel directly; docs/tracking.md is the
+ * placement and ownership procedure.
  *
  * The design rests on one rule. Every event gets an id, minted once, and that
  * same id goes to both the pixel in the browser and the queue that the server
@@ -127,7 +122,10 @@ function absoluteUrl(value: string): string {
 
 /** The internal event a bare action key implies, when none is given. */
 function inferEventName(actionKey: string): PageEventName {
-  if (actionKey === "mini:whatsapp" || actionKey.startsWith("mini:social:whats"))
+  if (
+    actionKey === "mini:whatsapp" ||
+    actionKey.startsWith("mini:social:whats")
+  )
     return "whatsapp_click";
   if (actionKey === "mini:phone") return "call_click";
   if (actionKey === "mini:email") return "email_click";
@@ -166,18 +164,7 @@ export function createPageTracker(options: PageTrackerOptions): PageTracker {
   const reportedOnce = new Set<string>();
   let viewSent = false;
 
-  /**
-   * Whether this page may fire the pixel at all.
-   *
-   * Consent is read once per tracker construction — the lifetime of the page —
-   * so a report is never half-gated: pixel and queue make the same decision
-   * per event. When consent is denied the browser fires nothing and the queued
-   * event carries the denial, which the ingest reads before it would ever
-   * write a `marketing_event_outbox` row. Both halves stop together.
-   */
-  const deniedConsent = analyticsConsent() === "denied";
-  const hasPixel = () =>
-    !deniedConsent && options.analytics.pixelIds.length > 0;
+  const hasPixel = () => options.analytics.pixelIds.length > 0;
 
   /**
    * Suppresses a repeat of the same key inside the dedupe window.

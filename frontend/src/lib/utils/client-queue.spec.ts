@@ -70,6 +70,19 @@ afterEach(() => {
 });
 
 describe("analytics queue delivery", () => {
+  it("marks every new public-page event for automatic marketing delivery", async () => {
+    const { queueAnalyticsEvent } = await loadQueueModule();
+
+    queueAnalyticsEvent({ pageId: "page-1", eventName: "page_view" });
+
+    const [event] = JSON.parse(
+      localStorage.getItem(QUEUE_KEY) || "[]",
+    ) as Array<{
+      consentState: string;
+    }>;
+    expect(event.consentState).toBe("granted");
+  });
+
   it("discards a stored event whose id the server could never parse", async () => {
     // An id minted by an older build, before createRuntimeId always produced a
     // UUID. It cannot be accepted, so keeping it only blocks the queue.
@@ -129,10 +142,7 @@ describe("analytics queue delivery", () => {
       JSON.stringify(
         Array.from({ length: 120 }, (_, index) =>
           storedEvent({
-            eventId: UUID.replace(
-              /.{4}$/,
-              String(index).padStart(4, "0"),
-            ),
+            eventId: UUID.replace(/.{4}$/, String(index).padStart(4, "0")),
           }),
         ),
       ),
@@ -154,18 +164,12 @@ describe("analytics queue delivery", () => {
       JSON.stringify(
         Array.from({ length: 120 }, (_, index) =>
           storedEvent({
-            eventId: UUID.replace(
-              /.{4}$/,
-              String(index).padStart(4, "0"),
-            ),
+            eventId: UUID.replace(/.{4}$/, String(index).padStart(4, "0")),
           }),
         ),
       ),
     );
-    const sendBeacon = vi
-      .fn()
-      .mockReturnValueOnce(true)
-      .mockReturnValue(false);
+    const sendBeacon = vi.fn().mockReturnValueOnce(true).mockReturnValue(false);
     vi.stubGlobal("navigator", { ...globalThis.navigator, sendBeacon });
     vi.stubGlobal("fetch", vi.fn());
 

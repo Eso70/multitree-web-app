@@ -3,6 +3,8 @@
 import { useState, type ComponentType } from "react";
 import { BadgeDollarSign, BriefcaseBusiness, MonitorPlay, PartyPopper, Send, UserRound, WalletCards } from "lucide-react";
 import { BusinessSectionDecorations } from "@/components/business/BusinessSectionDecorations";
+import { PublicSectionHeading } from "@/components/public/PublicSectionHeading";
+import { PublicSection } from "@/components/public/PublicSection";
 import { StepJourneyMockup } from "@/components/shared/StepJourneyMockup";
 import { TikTokMark } from "@/lib/brand/marks";
 import { cn } from "@/lib/utils";
@@ -83,7 +85,6 @@ const JOURNEY_STEPS: ReadonlyArray<JourneyStep> = [
   },
 ];
 
-const WHATSAPP_NUMBER = "7502485829";
 const WHATSAPP_DIVIDER = "-------------------";
 
 function buildWhatsAppMessage({
@@ -127,6 +128,7 @@ function buildWhatsAppMessage({
 }
 
 interface AdvertisingSponsorshipJourneyProps {
+  whatsappNumber: string;
   videoUrl?: string;
   videoTutorialTitle?: string;
   tutorialSteps: string[];
@@ -136,6 +138,7 @@ interface AdvertisingSponsorshipJourneyProps {
 }
 
 export function AdvertisingSponsorshipJourney({
+  whatsappNumber,
   videoUrl,
   videoTutorialTitle,
   tutorialSteps,
@@ -146,8 +149,8 @@ export function AdvertisingSponsorshipJourney({
   const [activeStep, setActiveStep] = useState(0);
   const [sponsorType, setSponsorType] = useState<SponsorType>("personal");
   const [selectedPrices, setSelectedPrices] = useState<Record<SponsorType, number>>({
-    personal: packageTiers?.personal[0]?.price ?? 15_000,
-    business: packageTiers?.business[0]?.price ?? 25_000,
+    personal: packageTiers?.personal?.[0]?.price ?? 0,
+    business: packageTiers?.business?.[0]?.price ?? 0,
   });
   // Businesses can rename/delete providers, so no catalog name is a safe
   // default — take whatever is actually first in their list, and nothing at all
@@ -158,20 +161,25 @@ export function AdvertisingSponsorshipJourney({
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [videoCode, setVideoCode] = useState("");
 
-  // Sponsor type, package, and payment already hold a valid default, so next
-  // works right away on those steps. Only the receipt and video-code steps
-  // start empty and need to block progress until filled in.
   const canAdvance =
-    activeStep === 3
-      ? Boolean(receiptUrl)
-      : activeStep === 4
-        ? TIKTOK_VIDEO_CODE_PATTERN.test(videoCode.trim())
-        : true;
+    activeStep === 1
+      ? selectedPrices[sponsorType] > 0
+      : activeStep === 2
+        ? Boolean(paymentProvider)
+        : activeStep === 3
+          ? Boolean(receiptUrl)
+          : activeStep === 4
+            ? TIKTOK_VIDEO_CODE_PATTERN.test(videoCode.trim())
+            : activeStep === 5
+              ? Boolean(whatsappNumber.replace(/\D/g, ""))
+              : true;
 
   const selectPrice = (type: SponsorType, price: number) =>
     setSelectedPrices((current) => ({ ...current, [type]: price }));
 
   const handleWhatsAppSubmit = () => {
+    const destination = whatsappNumber.replace(/\D/g, "");
+    if (!destination) return;
     const message = buildWhatsAppMessage({
       sponsorType,
       price: selectedPrices[sponsorType],
@@ -179,36 +187,29 @@ export function AdvertisingSponsorshipJourney({
       receiptUrl,
       videoCode,
     });
-    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    const url = `https://wa.me/${destination}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
   return (
-    <section
+    <PublicSection
       id="how-it-works"
-      aria-labelledby="advertising-journey-title"
-      className="relative scroll-mt-24 overflow-hidden bg-transparent px-4 py-20 sm:px-8 sm:py-28 lg:py-32"
+      labelledBy="advertising-journey-title"
+      decorations={
+        <BusinessSectionDecorations
+          colors={["#38bdf8", "#34d399"]}
+          labels={["هەڵبژاردن", "ئەکتیڤکردن"]}
+          variant={1}
+        />
+      }
     >
-      <BusinessSectionDecorations
-        colors={["#38bdf8", "#34d399"]}
-        labels={["هەڵبژاردن", "ئەکتیڤکردن"]}
-        variant={1}
-      />
-
-      <div className="relative mx-auto max-w-7xl">
-        <header className="mx-auto max-w-4xl text-center">
-          <p className="text-xs font-black text-[var(--advertising-accent)]">Quick sponsorship guide</p>
-          <h2
-            id="advertising-journey-title"
-            className="mt-4 break-words text-[clamp(2.35rem,5vw,4.9rem)] font-medium leading-[1.06] tracking-[-0.04em] text-balance [overflow-wrap:anywhere]"
-            dir="auto"
-          >
-            قۆناغەکانی سپۆنسەر کردن
-          </h2>
-          <p className="mx-auto mt-6 max-w-2xl break-words text-sm leading-7 text-black/52 dark:text-white/52 sm:text-base sm:leading-8" dir="auto">
-            لە هەڵبژاردنی جۆری سپۆنسەرەوە تا ئەکتیڤبوونی ڤیدیۆکەت، هەموو هەنگاوەکان بە سادەیی ببینە
-          </p>
-        </header>
+        <PublicSectionHeading
+          id="advertising-journey-title"
+          eyebrow="Quick sponsorship guide"
+          eyebrowColor="var(--advertising-accent)"
+          title="قۆناغەکانی سپۆنسەر کردن"
+          description="لە هەڵبژاردنی جۆری سپۆنسەرەوە تا ئەکتیڤبوونی ڤیدیۆکەت، هەموو هەنگاوەکان بە سادەیی ببینە"
+        />
 
         <StepJourneyMockup
           title="Sponsorship guide"
@@ -280,7 +281,6 @@ export function AdvertisingSponsorshipJourney({
           )}
           {activeStep === 5 && <AdvertisingActivationStep />}
         </StepJourneyMockup>
-      </div>
-    </section>
+    </PublicSection>
   );
 }

@@ -27,6 +27,30 @@ pnpm --filter frontend test
 pnpm --filter frontend build
 ```
 
+## End-to-end suite
+
+`pnpm test:e2e` needs no environment set up by hand.
+`backend/test/e2e-environment.ts` runs before any module loads and resolves
+what the suite depends on:
+
+- It loads the `.env` files in the same order the migration scripts do.
+  `migration-upgrade.e2e-spec.ts` connects with raw `pg` pools and had nothing
+  to load them, so the run used to die on the first connection with
+  `client password must be a string`.
+- It pins `ROOT_DOMAIN=localhost`. Every injected request is addressed to a
+  `<subdomain>.localhost` host and `BusinessGuard` derives the tenant by
+  stripping the root domain off it, so a developer value such as
+  `lvh.me:3011` leaves no derivable subdomain and a valid session is rejected
+  as `Invalid business session`. The `x-subdomain` header is not a way around
+  that — `internal-proxy-trust.ts` ignores it without an internal proxy key.
+- It defaults `DB_NAME` to `multitree_e2e`, and never overrides a name that
+  already looks disposable. Both suites truncate tables and drop databases,
+  and both refuse to run against a name that does not look disposable; this
+  only supplies a safe default.
+
+An e2e spec must not depend on the developer's `.env`. Anything it needs goes
+in that setup file, so the result is the same on every machine.
+
 No fixed passing-test count is documented because the suite changes with the
 code. Use the command output from the current revision as the source of
 truth.

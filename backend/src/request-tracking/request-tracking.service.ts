@@ -33,7 +33,8 @@ interface RequestEventInput {
   routePattern?: string | null;
   statusCode?: number | null;
   durationMs?: number | null;
-  actorType?: 'anonymous' | 'business' | 'platform-admin' | 'multitree';
+  actorType?:
+    'anonymous' | 'business' | 'creator' | 'platform-admin' | 'multitree';
   actorId?: string | null;
   actorLabel?: string | null;
   businessId?: string | null;

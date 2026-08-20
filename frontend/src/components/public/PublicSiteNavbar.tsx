@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
 import { Menu, Moon, Sun, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { persistAppTheme, readAppTheme } from "@/lib/app-theme";
-import { BUSINESS_LOGO_PLACEHOLDER } from "@/lib/brand/brand-assets";
+import {
+  BUSINESS_LOGO_PLACEHOLDER,
+  MULTITREE_LOGO,
+} from "@/lib/brand/brand-assets";
 
 interface PublicNavbarBranding {
   logo?: string;
@@ -22,6 +25,13 @@ interface PublicSiteNavbarProps {
   sectionBaseHref?: string;
   navigationItems?: ReadonlyArray<{ label: string; href: string }>;
   action?: { label: string; href: string; external?: boolean } | null;
+  secondaryAction?: {
+    label: string;
+    href: string;
+    external?: boolean;
+  } | null;
+  actionColor?: string;
+  actionInk?: string;
   /** Whether the first nav item is emphasized like an active page. Default true. */
   emphasizeFirstNavItem?: boolean;
 }
@@ -33,9 +43,18 @@ export function PublicSiteNavbar({
   sectionBaseHref = "",
   navigationItems,
   action,
+  secondaryAction,
+  actionColor,
+  actionInk,
   emphasizeFirstNavItem = true,
 }: PublicSiteNavbarProps = {}) {
   const primaryColor = branding?.accentColor || "var(--multitree-accent)";
+  const primaryActionColor = actionColor || primaryColor;
+  const primaryActionInk = actionInk || "var(--multitree-accent-ink)";
+  const primaryActionStyle = {
+    "--public-navbar-action-color": primaryActionColor,
+    "--public-navbar-action-ink": primaryActionInk,
+  } as CSSProperties;
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -79,7 +98,9 @@ export function PublicSiteNavbar({
     appearance === "business"
       ? businessGlassActive
         ? glassBackground
-        : "transparent"
+        : theme === "dark"
+          ? "rgba(11, 13, 14, 0)"
+          : "rgba(248, 249, 250, 0)"
       : theme === "dark"
         ? "rgb(15, 23, 42)"
         : "rgb(248, 249, 250)";
@@ -100,7 +121,13 @@ export function PublicSiteNavbar({
   const brandingContent = (
     <>
       <Image
-        src={branding?.logo || BUSINESS_LOGO_PLACEHOLDER}
+        /* No `branding` means this is MultiTree's own chrome, which wears
+           MultiTree's mark. The neutral placeholder belongs to a business that
+           has not uploaded a logo yet, and must not stand in for the platform
+           — see `brand-assets.ts`. */
+        src={
+          branding ? branding.logo || BUSINESS_LOGO_PLACEHOLDER : MULTITREE_LOGO
+        }
         alt={branding ? `${branding.name} logo` : "MultiTree logo"}
         width={30}
         height={30}
@@ -211,13 +238,21 @@ export function PublicSiteNavbar({
             )}
           </button>
 
+          {secondaryAction ? (
+            <a
+              className="hidden min-h-9 items-center rounded-lg border border-black/10 px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-black/5 hover:text-slate-950 dark:border-white/12 dark:text-white/75 dark:hover:bg-white/8 dark:hover:text-white lg:inline-flex"
+              href={secondaryAction.href}
+              target={secondaryAction.external ? "_blank" : undefined}
+              rel={secondaryAction.external ? "noopener noreferrer" : undefined}
+            >
+              {secondaryAction.label}
+            </a>
+          ) : null}
+
           {resolvedAction ? (
             <a
-              className="hidden min-h-9 items-center rounded-lg px-4 py-2 text-sm font-bold shadow-sm transition-[opacity,box-shadow] hover:opacity-90 hover:shadow lg:inline-flex"
-              style={{
-                backgroundColor: primaryColor,
-                color: "var(--multitree-accent-ink)",
-              }}
+              className="public-navbar-primary-action hidden min-h-9 items-center rounded-lg px-4 py-2 text-sm font-bold shadow-sm transition-[opacity,box-shadow] hover:opacity-90 hover:shadow lg:inline-flex"
+              style={primaryActionStyle}
               href={resolvedAction.href}
               target={resolvedAction.external ? "_blank" : undefined}
               rel={resolvedAction.external ? "noopener noreferrer" : undefined}
@@ -226,7 +261,9 @@ export function PublicSiteNavbar({
             </a>
           ) : null}
 
-          {(resolvedNavigationItems.length > 0 || resolvedAction) && (
+          {(resolvedNavigationItems.length > 0 ||
+            resolvedAction ||
+            secondaryAction) && (
             <button
               type="button"
               className="flex size-9 items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-black/6 hover:text-slate-950 dark:text-white/75 dark:hover:bg-white/8 dark:hover:text-white lg:hidden"
@@ -234,7 +271,11 @@ export function PublicSiteNavbar({
               aria-label="Toggle navigation"
               aria-expanded={menuOpen}
             >
-              {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+              {menuOpen ? (
+                <X className="size-5" />
+              ) : (
+                <Menu className="size-5" />
+              )}
             </button>
           )}
         </div>
@@ -256,14 +297,29 @@ export function PublicSiteNavbar({
                 {item.label}
               </a>
             ))}
+            {secondaryAction ? (
+              <a
+                href={secondaryAction.href}
+                target={secondaryAction.external ? "_blank" : undefined}
+                rel={
+                  secondaryAction.external ? "noopener noreferrer" : undefined
+                }
+                onClick={() => setMenuOpen(false)}
+                className="mt-2 rounded-lg border border-black/10 px-3 py-3 font-semibold text-slate-800 dark:border-white/10 dark:text-white"
+              >
+                {secondaryAction.label}
+              </a>
+            ) : null}
             {resolvedAction && (
               <a
                 href={resolvedAction.href}
                 target={resolvedAction.external ? "_blank" : undefined}
-                rel={resolvedAction.external ? "noopener noreferrer" : undefined}
+                rel={
+                  resolvedAction.external ? "noopener noreferrer" : undefined
+                }
                 onClick={() => setMenuOpen(false)}
-                className="mt-2 px-2 py-3 font-semibold"
-                style={{ color: primaryColor }}
+                className="public-navbar-primary-action mt-2 rounded-lg px-3 py-3 font-semibold"
+                style={primaryActionStyle}
               >
                 {resolvedAction.label}
               </a>

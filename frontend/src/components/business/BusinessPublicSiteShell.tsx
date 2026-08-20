@@ -1,18 +1,9 @@
-"use client";
-
-import { useEffect, type CSSProperties, type ReactNode } from "react";
-import { CustomScrollbar } from "@/components/home/CustomScrollbar";
-import { PublicSiteNavbar } from "@/components/public/PublicSiteNavbar";
-import { BusinessGridBackdrop } from "@/components/business/BusinessGridBackdrop";
+import type { ReactNode } from "react";
 import {
   BusinessPublicFooter,
   type BusinessPublicFooterProps,
 } from "@/components/business/BusinessPublicFooter";
-import {
-  getMultiTreeAccentInk,
-  MULTITREE_ACCENT_COLOR,
-} from "@/lib/multitree-theme";
-import { applyCursorColor, resetCursorColor } from "@/lib/utils/cursor-theme";
+import { PublicMarketingSiteShell } from "@/components/public/PublicMarketingSiteShell";
 
 interface BusinessPublicSiteShellProps {
   accentColor: string;
@@ -41,64 +32,18 @@ export function BusinessPublicSiteShell({
   action,
   emphasizeFirstNavItem = true,
 }: BusinessPublicSiteShellProps) {
-  const accentInk = getMultiTreeAccentInk(accentColor);
-
-  useEffect(() => {
-    if (embedded) return;
-    let cancelled = false;
-    const root = document.documentElement;
-    root.style.setProperty("--business-website-color", accentColor);
-    root.style.setProperty("--multitree-accent", accentColor);
-    root.style.setProperty(
-      "--multitree-accent-gradient",
-      `linear-gradient(to right, ${accentColor}, ${accentColor})`,
-    );
-    root.style.setProperty("--multitree-accent-ink", accentInk);
-    void applyCursorColor(accentColor, root, () => !cancelled).catch(
-      () => undefined,
-    );
-
-    return () => {
-      cancelled = true;
-      root.style.removeProperty("--business-website-color");
-      root.style.setProperty("--multitree-accent", MULTITREE_ACCENT_COLOR);
-      root.style.setProperty(
-        "--multitree-accent-gradient",
-        `linear-gradient(to right, ${MULTITREE_ACCENT_COLOR}, ${MULTITREE_ACCENT_COLOR})`,
-      );
-      root.style.setProperty(
-        "--multitree-accent-ink",
-        getMultiTreeAccentInk(MULTITREE_ACCENT_COLOR),
-      );
-      resetCursorColor(root);
-    };
-  }, [accentColor, accentInk, embedded]);
-
-  const content = (
-    <>
-      {!embedded && (
-        <>
-          <PublicSiteNavbar
-            appearance="business"
-            branding={{ name: businessName, logo: logo || undefined, accentColor }}
-            homeHref={homeHref}
-            navigationItems={navigationItems}
-            action={action}
-            emphasizeFirstNavItem={emphasizeFirstNavItem}
-          />
-          <CustomScrollbar />
-        </>
-      )}
-
-      <div className="relative isolate">
-        <BusinessGridBackdrop
-          className="-z-10 opacity-45"
-          mask="linear-gradient(to bottom, black 0%, black 96%, transparent 100%)"
-        />
-        <div className="relative">{children}</div>
-      </div>
-
-      {!embedded && (
+  return (
+    <PublicMarketingSiteShell
+      id={id}
+      accentColor={accentColor}
+      brandName={businessName}
+      logo={logo}
+      homeHref={homeHref}
+      navigationItems={navigationItems}
+      primaryAction={action}
+      emphasizeFirstNavItem={emphasizeFirstNavItem}
+      embedded={embedded}
+      footer={
         <BusinessPublicFooter
           {...footer}
           businessName={businessName}
@@ -106,24 +51,9 @@ export function BusinessPublicSiteShell({
           logo={footer.logo || logo}
           homeHref={homeHref}
         />
-      )}
-    </>
-  );
-
-  const className = `theme-custom-scrollbar relative isolate bg-[#f8f9fa] text-[#111827] transition-colors duration-300 dark:bg-[#0b0d0e] dark:text-white ${
-    embedded
-      ? "max-h-[72vh] overflow-y-auto overflow-x-hidden rounded-3xl border border-black/10 dark:border-white/10"
-      : "min-h-screen overflow-x-clip"
-  }`;
-  const style = { "--business-accent": accentColor } as CSSProperties;
-
-  return embedded ? (
-    <div id={id} dir="ltr" className={className} style={style}>
-      {content}
-    </div>
-  ) : (
-    <main id={id} dir="ltr" className={className} style={style}>
-      {content}
-    </main>
+      }
+    >
+      {children}
+    </PublicMarketingSiteShell>
   );
 }

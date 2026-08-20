@@ -25,13 +25,13 @@ import { StorageService } from '../storage/storage.service';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { createHash, randomUUID } from 'crypto';
 import { SecretCryptoService } from '../auth/secret-crypto.service';
-import { CLICK_EVENTS } from '../analytics/unified-analytics.service';
 import type { PoolClient } from 'pg';
 import {
   pageMetadata,
   type BusinessListQueryDto,
 } from '../common/dto/admin-list-query.dto';
 import { BusinessAdministrationRepository } from './business-administration.repository';
+import { AnalyticsReadRepository } from '../analytics/analytics-read.repository';
 
 /**
  * Row shapes for the platform business-administration queries.
@@ -206,6 +206,9 @@ export class BusinessAdministrationService {
     // silent no-op, which is what it exists to stop.
     private readonly advertising: AdvertisingService,
     private readonly repository: BusinessAdministrationRepository = new BusinessAdministrationRepository(
+      databaseService,
+    ),
+    private readonly analyticsRead: AnalyticsReadRepository = new AnalyticsReadRepository(
       databaseService,
     ),
     @Optional() private readonly secretCrypto?: SecretCryptoService,
@@ -593,7 +596,7 @@ export class BusinessAdministrationService {
          LEFT JOIN links l ON l.linktree_id = lt.id
          WHERE lt.business_id = a.id AND lt.is_default = true
        ) dl ON true
-       WHERE a.id = $1`,
+       WHERE a.id = $1 AND a.account_type = 'business'`,
       [id],
     );
     const business = res.rows[0];
@@ -623,6 +626,7 @@ export class BusinessAdministrationService {
        FROM businesses
        WHERE ($1 = '' OR name ILIKE $1 OR username ILIKE $1)
          AND ($2::text IS NULL OR status = $2)
+         AND account_type = 'business'
        ORDER BY name
        LIMIT $3`,
       [`%${search}%`, query.status || null, query.limit],
@@ -640,7 +644,7 @@ export class BusinessAdministrationService {
        FROM businesses a
        LEFT JOIN business_branding b ON b.business_id = a.id
        LEFT JOIN business_defaults d ON d.business_id = a.id
-       WHERE a.id = $1`,
+       WHERE a.id = $1 AND a.account_type = 'business'`,
       [id],
     );
     if (!businessRes.rows || businessRes.rows.length === 0) {
@@ -931,7 +935,7 @@ export class BusinessAdministrationService {
       `SELECT b.logo, b.favicon, b.default_avatar, a.subdomain
        FROM businesses a
        LEFT JOIN business_branding b ON b.business_id = a.id
-       WHERE a.id = $1`,
+       WHERE a.id = $1 AND a.account_type = 'business'`,
       [id],
     );
     if (!businessRes.rows || businessRes.rows.length === 0) {
@@ -951,7 +955,7 @@ export class BusinessAdministrationService {
     await this.redisService.clearBusinessSessions(id);
 
     const res = await this.databaseService.query(
-      'DELETE FROM businesses WHERE id = $1',
+      `DELETE FROM businesses WHERE id = $1 AND account_type = 'business'`,
       [id],
     );
     if (res.rowCount === 0) throw new NotFoundException('Business not found');
@@ -981,67 +985,42 @@ export class BusinessAdministrationService {
   }
 
   async getBusinessLinktrees(id: string) {
-    const linktreesRes =
-      await this.databaseService.query<BusinessLinktreeStatsRow>(
-        `WITH unique_views AS (
-           -- Read straight from the event log rather than the daily
-           -- rollup's new_visitors column: that column only marks a
-           -- visitor's first-ever event, which would undercount a
-           -- returning visitor across a lifetime total (see getSummary
-           -- in unified-analytics.service.ts).
-           SELECT page.source_linktree_id AS linktree_id,
-                  COUNT(DISTINCT event.visitor_id)::bigint AS unique_views
-           FROM analytics_events event
-           JOIN public_pages page ON page.id = event.public_page_id
-           WHERE page.business_id = $1
-             AND page.source_linktree_id IS NOT NULL
-             AND event.event_name = 'page_view'
-           GROUP BY page.source_linktree_id
-         ),
-         unique_clicks AS (
-           SELECT page.source_linktree_id AS linktree_id,
-                  COUNT(DISTINCT event.visitor_id)::bigint AS unique_clicks
-           FROM analytics_events event
-           JOIN public_pages page ON page.id = event.public_page_id
-           WHERE page.business_id = $1
-             AND page.source_linktree_id IS NOT NULL
-             AND event.event_name = ANY($2::varchar[])
-           GROUP BY page.source_linktree_id
-         )
-         SELECT
-         lt.id, lt.uid, lt.name, lt.subtitle, lt.description, lt.seo_name, lt.image,
-         lt.background_color, lt.status, lt.is_default, lt.created_at, lt.updated_at,
-         COALESCE(uv.unique_views, 0)::BIGINT AS unique_views,
-         COALESCE(uc.unique_clicks, 0)::BIGINT AS unique_clicks,
-         COALESCE(SUM(daily.total_clicks), 0)::BIGINT AS total_clicks
-       FROM linktrees lt
-       LEFT JOIN public_pages page ON page.source_linktree_id = lt.id
-       LEFT JOIN analytics_page_daily daily ON daily.public_page_id = page.id
-       LEFT JOIN unique_views uv ON uv.linktree_id = lt.id
-       LEFT JOIN unique_clicks uc ON uc.linktree_id = lt.id
-       WHERE lt.business_id = $1
-       GROUP BY lt.id, uv.unique_views, uc.unique_clicks
-       ORDER BY lt.is_default DESC, lt.created_at DESC`,
-        [id, [...CLICK_EVENTS]],
-      );
+    // The per-linktree totals are the same question the business's own pages
+    // list asks, so both go through `AnalyticsReadRepository` rather than
+    // keeping two copies of the aggregate in step by hand.
+    const [linktreesRes, totals] = await Promise.all([
+      this.databaseService.query<BusinessLinktreeStatsRow>(
+        `SELECT lt.id, lt.uid, lt.name, lt.subtitle, lt.description, lt.seo_name,
+                lt.image, lt.background_color, lt.status, lt.is_default,
+                lt.created_at, lt.updated_at
+           FROM linktrees lt
+          WHERE lt.business_id = $1
+          ORDER BY lt.is_default DESC, lt.created_at DESC`,
+        [id],
+      ),
+      this.analyticsRead.linktreeTotalsForBusiness(id),
+    ]);
 
-    return (linktreesRes.rows || []).map((row) => ({
-      id: row.id,
-      uid: row.uid,
-      name: row.name,
-      subtitle: row.subtitle,
-      description: row.description,
-      seo_name: row.seo_name,
-      image: row.image,
-      background_color: row.background_color,
-      status: row.status,
-      is_default: row.is_default,
-      created_at: row.created_at,
-      updated_at: row.updated_at,
-      unique_views: Number(row.unique_views) || 0,
-      unique_clicks: Number(row.unique_clicks) || 0,
-      total_clicks: Number(row.total_clicks) || 0,
-    }));
+    return (linktreesRes.rows || []).map((row) => {
+      const rowTotals = totals.get(row.id);
+      return {
+        id: row.id,
+        uid: row.uid,
+        name: row.name,
+        subtitle: row.subtitle,
+        description: row.description,
+        seo_name: row.seo_name,
+        image: row.image,
+        background_color: row.background_color,
+        status: row.status,
+        is_default: row.is_default,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        unique_views: rowTotals?.unique_views ?? 0,
+        unique_clicks: rowTotals?.unique_clicks ?? 0,
+        total_clicks: rowTotals?.total_clicks ?? 0,
+      };
+    });
   }
 
   async updateTikTokConfig(
@@ -1051,7 +1030,8 @@ export class BusinessAdministrationService {
     tiktokConfigs?: Array<{ pixel_id?: string; events_token?: string }>,
   ) {
     const check = await this.databaseService.query<{ subdomain: string }>(
-      'SELECT subdomain FROM businesses WHERE id = $1',
+      `SELECT subdomain FROM businesses
+       WHERE id = $1 AND account_type = 'business'`,
       [id],
     );
     if (!check.rows || check.rows.length === 0)
@@ -1098,9 +1078,11 @@ export class BusinessAdministrationService {
   async exportBusinessLinktrees(id: string) {
     const businessRes = await this.databaseService.query<
       Pick<BusinessRow, 'id' | 'username' | 'name' | 'subdomain'>
-    >('SELECT id, username, name, subdomain FROM businesses WHERE id = $1', [
-      id,
-    ]);
+    >(
+      `SELECT id, username, name, subdomain FROM businesses
+       WHERE id = $1 AND account_type = 'business'`,
+      [id],
+    );
     if (!businessRes.rows.length)
       throw new NotFoundException('Business not found');
     const pagesRes = await this.databaseService.query<ExportedLinktreeRow>(
@@ -1155,7 +1137,8 @@ export class BusinessAdministrationService {
       throw new BadRequestException('Invalid or unsupported MultiTree backup');
     }
     const businessRes = await this.databaseService.query<{ id: string }>(
-      'SELECT id FROM businesses WHERE id = $1',
+      `SELECT id FROM businesses
+       WHERE id = $1 AND account_type = 'business'`,
       [id],
     );
     if (!businessRes.rows.length)

@@ -28,10 +28,8 @@ export interface PublicPageAction {
 /**
  * Everything a public page needs to report itself, resolved server-side.
  *
- * Served by exactly two surfaces — the public linktree page and the public
- * mini-website page — because those are the only places a business's pixel is
- * allowed to load. See docs/tracking.md; adding a third caller is a product
- * decision, not a wiring detail.
+ * Served only to identities in the public marketing-page allowlist. Ownership
+ * determines whether the group belongs to a customer or the platform.
  *
  * `actions` is keyed by `public_page_actions.action_key`, so a page renders a
  * button and looks its identity up by the same key the database registered.
@@ -42,6 +40,14 @@ export interface PublicPageAnalytics {
   /** Empty when the business has no pixel or has lost the `feature.tiktok` plan entitlement. */
   pixelIds: string[];
   actions: Record<string, PublicPageAction>;
+}
+
+/** Tracking identity for an explicitly allowlisted fixed public route. */
+export interface PublicRouteTracking {
+  pageId: string;
+  pageName: string;
+  contentType: string;
+  analytics: PublicPageAnalytics;
 }
 
 export interface BusinessLinktreeAnalyticsSummary {
@@ -86,11 +92,7 @@ export interface BusinessDashboardPageAsset {
 }
 
 export type BusinessCrmLeadStatus =
-  | "new"
-  | "contacted"
-  | "qualified"
-  | "won"
-  | "lost";
+  "new" | "contacted" | "qualified" | "won" | "lost";
 
 export interface BusinessDashboardCrmSummary {
   statuses: Record<BusinessCrmLeadStatus, number>;

@@ -14,6 +14,9 @@ function clientWithSchema(
     'idx_uploaded_media_assets_created',
     'uq_mini_items_key',
     'idx_public_page_tombstones_slug',
+    'uq_businesses_one_platform_workspace',
+    'creator_trial_claims_google_subject_hmac_idx',
+    'creator_trial_claims_device_hmac_idx',
   ],
   catalog = {
     mini_website_create_permission: true,
@@ -21,6 +24,9 @@ function clientWithSchema(
     advertising_permissions: true,
     advertising_entitlement: true,
     mini_website_entitlement: true,
+    platform_content_permissions: true,
+    creator_permissions: true,
+    platform_workspace: true,
   },
 ) {
   return {
@@ -98,6 +104,9 @@ describe('migration compatibility checks', () => {
           advertising_permissions: true,
           advertising_entitlement: true,
           mini_website_entitlement: true,
+          platform_content_permissions: true,
+          creator_permissions: true,
+          platform_workspace: true,
         }),
       ),
     ).rejects.toThrow(/missing catalog entries/);

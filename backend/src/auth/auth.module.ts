@@ -16,6 +16,7 @@ import { SessionService } from './session.service';
 import { AccessRuleEnforcementService } from './access-rule-enforcement.service';
 import { GoogleIdentityService } from './google-identity.service';
 import { ImpersonationService } from './impersonation.service';
+import { TikTokPixelConfigService } from './tiktok-pixel-config.service';
 
 @Module({
   imports: [BillingModule, StorageModule],
@@ -34,6 +35,7 @@ import { ImpersonationService } from './impersonation.service';
     AccessRuleEnforcementService,
     GoogleIdentityService,
     ImpersonationService,
+    TikTokPixelConfigService,
   ],
   exports: [
     SessionService,
@@ -48,6 +50,7 @@ import { ImpersonationService } from './impersonation.service';
     AccessRuleEnforcementService,
     GoogleIdentityService,
     ImpersonationService,
+    TikTokPixelConfigService,
   ],
 })
 export class AuthModule {}

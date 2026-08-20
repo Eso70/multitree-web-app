@@ -118,6 +118,36 @@ placeholders.
 
 # Component Ownership
 
+The MultiTree root marketing website and tenant business websites share the
+neutral `PublicMarketingSiteShell`. Surface-specific shells are thin adapters:
+they may supply branding, navigation, actions, footer content, and explicit
+capabilities, but must not duplicate navbar behavior, theme handling,
+backdrops, scrolling, or page chrome. Root marketing sections live in
+`features/public-site/components`-style feature files (currently directly
+under `features/public-site`) and remain individually reusable across the home
+and dedicated marketing routes.
+
+Marketing previews must demonstrate the real product category without
+pretending that mock people, revenue, traffic, endorsements, or pricing are
+real. Use clearly illustrative templates and interface states. Keep all copy
+and repeatable data in the centralized marketing content module so a future
+platform content manager can replace the source without replacing the UI.
+
+MultiTree marketing prose and primary calls to action remain Kurdish. English
+is reserved for established product terms, concise top-level navigation, and
+the intentionally LTR root footer. Root marketing primary CTAs use the fixed
+MultiTree lime color rather than the configurable platform accent. Visible
+marketing sentences do not use terminal full stops.
+
+Business landing pages, MultiTree marketing pages, and business advertising
+pages share `PublicMarketingHero`, `PublicHeroAccentBackdrop`,
+`PublicSection`, `PublicSectionHeading`, and `PublicCallToActionSection`.
+Responsive spacing, heading scale, light/dark surfaces, action hierarchy, and
+tablet/mobile behavior belong to those primitives. Each surface supplies only
+its copy, accent, actions, decorations, section data, and permission-specific
+behavior. Advertising editor statistics and public-section visibility controls
+also live in standalone feature components rather than inside the editor page.
+
 Shared UI belongs in:
 
 - `frontend/src/components/ui`
@@ -182,6 +212,26 @@ semantics, focus entry, focus trapping, Escape behavior, and focus restoration
 remain consistent. Custom overlay shells are reserved for interactions that
 are not management dialogs or cannot satisfy the shared primitive's contract.
 
+## Business and platform UI parity
+
+The business and platform dashboards use one implementation for every shared
+component and workflow. A change to shared layout, editors, forms, validation,
+cards, tables, grid views, dialogs, buttons, loading skeletons, empty states,
+analytics controls, uploads, previews, or public rendering applies to both
+surfaces and must be checked in both contexts.
+
+Business and platform route components remain thin adapters. Differences such
+as endpoints, ownership scope, public paths, branding, analytics sources, or
+available actions are supplied through typed configuration and capability
+props. Do not copy a shared component or patch only one adapter to change
+shared presentation or behavior.
+
+A platform-only control is permitted when the operation is genuinely reserved
+for platform administrators or its permission is unavailable to business
+users. Gate that control with an explicit permission or capability and keep
+the surrounding layout, state handling, feedback, and reusable UI shared.
+Permission differences must not cause the two surfaces to drift.
+
 ## Inline field validation
 
 A field reports its own problem under itself, in the field's own colour
@@ -218,7 +268,15 @@ that `useModalKeyboard` needs for focus entry, trapping and restoration.
 Dismiss on backdrop fires on `mousedown`, not `click`: a click event fires on
 the common ancestor, so a drag that starts inside the panel and ends on the
 backdrop would close the dialog. `components/shared/ManagementModal` is the
-reference implementation.
+reference implementation; `BusinessPageAnalyticsModal` and the platform admin's
+`BusinessAnalyticsModal` both follow it.
+
+A list inside a modal sorts through a pure exported comparator, not an inline
+one. Both analytics modals had the same two defects while the comparator was
+inline: no tie-break, so equally scoring rows reshuffled on every refresh, and
+in the platform-admin one a pinned-row test that returned `-1` whenever `a` was
+pinned without looking at `b` — not a valid comparator, and self-contradicting
+for a pair of pinned rows. Extracting it makes both testable.
 
 ---
 
@@ -250,7 +308,7 @@ Modal field markup lives in one shared system so every dialog looks identical:
   primary action. A row sized by padding (`px-4 py-2.5 sm:px-5 sm:py-3`) keeps
   padding; a row on a fixed `h-10`/`h-11` keeps that height. Standalone accent
   buttons with no neighbours use `flex h-10 shrink-0 items-center gap-2
-  rounded-xl border border-transparent px-3.5 text-xs font-black`. In-flight
+rounded-xl border border-transparent px-3.5 text-xs font-black`. In-flight
   actions set `aria-busy` and include the busy flag in `disabled` so the wait
   cursor applies. Segmented controls, toggle switches, and circular icon buttons
   keep their own patterns.
@@ -584,6 +642,22 @@ previews use the base shared `Skeleton` rather than standalone pulse markup.
 An intentionally empty preview is a stable product state and must not animate
 like loading or announce itself as pending.
 
+## Dashboard notification bell
+
+Business and platform headers use the same `NotificationBell` presentation and
+`useNotificationInbox` behavior. Bell geometry, unread badge, dropdown header,
+item density, unread treatment, action icons, skeleton, empty state, keyboard
+behavior, and detail modal must change together on both surfaces. Clicking an
+inbox item marks it read and opens the shared detail modal; navigation or reply
+actions are offered from that modal rather than replacing the detail view.
+
+Endpoint paths, action-route normalization, theme color, and platform pending
+approvals are adapter configuration. Pending approvals remain platform-only
+because approval review requires platform permissions, but they are rendered
+as an extension of the shared dropdown instead of forking it. Notification
+action URLs accept root-relative paths or HTTPS only; protocol-relative and
+unsafe schemes must never be opened.
+
 Stat-card loading must use `SkeletonStatCard` or `SkeletonStatCards` with the
 same variant and layout as the resulting cards. The base `Skeleton` primitive
 and the shared table, grid-card, form, modal, and management-page compositions
@@ -646,6 +720,35 @@ Accessibility should be considered during implementation, not added afterwards.
 Current supported visual options:
 
 ### Linktrees
+
+The Linktree editor is a shared domain feature. Business and platform-admin
+screens must use the same wizard, validation, templates, link mapping, upload
+states, and availability checks, while providing their own API endpoint set.
+The platform-admin list also reuses `LinktreesGrid` and `LinktreesTable`; its
+public path prefix is `/linktree` on the root domain. Its `ئامار` action opens
+the shared business page analytics modal in summary-only mode, loading current
+lifetime totals through the platform-scoped API; advanced analytics and action
+details remain hidden, while the standard loading skeleton, refresh, and
+clear-analytics confirmation stay consistent with business pages.
+The list-level clear-all action uses the same shared rose analytics button and
+confirmation modal as the business Linktree list; it is disabled when no
+platform Linktree analytics exist.
+
+### Platform mini websites
+
+The platform mini-website page renders the same `MiniWebsitesPage` manager as
+the business dashboard. Platform customization is limited to workspace
+branding, guarded API endpoints, root `/bio` links, internal template policy,
+and platform analytics ownership. Do not fork editor steps, cards, grid/table
+views, skeletons, dialogs, uploads, or the public renderer.
+
+Mini-website lists use the complete shared Linktree grid/table presentation:
+card density, image treatment, metadata rows, traffic blocks, actions,
+responsive mobile cards, table columns, and pagination stay visually aligned.
+`MiniWebsiteListMeta` supplies mini-website status and template badges, and the
+mini-website traffic labels describe the second metric as total actions rather
+than Linktree clickers. Domain wording must be configured without forking the
+shared list layout.
 
 - 12 selectable templates
 - Registered through the template registry

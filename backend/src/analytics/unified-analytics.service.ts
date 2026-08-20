@@ -28,25 +28,18 @@ export interface AnalyticsRequestContext {
 interface PublicPageRow {
   id: string;
   business_id: string;
-  page_type: 'linktree' | 'mini_website' | 'advertising';
+  page_type: 'linktree' | 'mini_website' | 'advertising' | 'route';
   timezone: string;
   name: string;
   slug: string;
 }
 
 /**
- * Page types whose events are forwarded to TikTok.
- *
- * Internal analytics still records every public page — the business wants its
- * own numbers for all of them. What is scoped here is the *outbound* half: only
- * the public linktree and the public mini website carry a pixel, so only they
- * may put a row in `marketing_event_outbox`. Forwarding a page that never
- * loaded the pixel would send TikTok a server event with no browser counterpart
- * to deduplicate against, inflating the very conversion counts the ads optimise
- * on. See docs/tracking.md.
+ * Approved public-page identities whose events may be forwarded to TikTok.
+ * Route identities are created only for the explicit marketing allowlist.
  */
 const TIKTOK_FORWARDED_PAGE_TYPES: ReadonlySet<PublicPageRow['page_type']> =
-  new Set(['linktree', 'mini_website']);
+  new Set(['linktree', 'mini_website', 'advertising', 'route']);
 
 /**
  * Internal events that describe engagement rather than a conversion.
@@ -712,7 +705,6 @@ export class UnifiedAnalyticsService {
 
       if (
         !bot &&
-        consent !== 'denied' &&
         forwardsToTikTok({
           pageType: page.page_type,
           eventName: input.eventName,
@@ -777,7 +769,13 @@ export class UnifiedAnalyticsService {
              -- sending server events for a pixel its pages no longer load,
              -- which is a server-only stream with nothing to deduplicate
              -- against.
-             AND ${entitledSql(ENTITLEMENT.tiktok)}
+             AND (
+               business.account_type = 'platform'
+               OR (
+                 business.account_type = 'business'
+                 AND ${entitledSql(ENTITLEMENT.tiktok)}
+               )
+             )
            ON CONFLICT (analytics_event_id, destination_id) DO NOTHING`,
           [
             databaseEventId,

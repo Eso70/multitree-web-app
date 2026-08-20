@@ -5,12 +5,14 @@ interface AuthenticationPreviewPanelProps {
   description: string;
   brandName?: string;
   brandLogo?: string | null;
+  title?: string;
 }
 
 export function AuthenticationPreviewPanel({
   description,
   brandName = "MultiTree",
   brandLogo,
+  title,
 }: AuthenticationPreviewPanelProps) {
   return (
     <aside className="relative hidden min-h-[calc(100vh-1.5rem)] overflow-hidden rounded-[32px] bg-[var(--multitree-accent)] p-10 lg:flex lg:items-center lg:justify-center lg:ml-4 lg:mr-[-2.5rem] lg:min-h-[calc(100vh-2rem)]">
@@ -31,7 +33,8 @@ export function AuthenticationPreviewPanel({
           {brandName}
         </p>
         <h2 className="mt-4 text-4xl font-black leading-tight tracking-tight">
-          {brandName === "MultiTree" ? "پانێڵی پلاتفۆڕم" : "پانێڵی بزنس"}
+          {title ??
+            (brandName === "MultiTree" ? "پانێڵی پلاتفۆڕم" : "پانێڵی بزنس")}
         </h2>
         <p className="mx-auto mt-5 max-w-sm text-sm font-medium leading-7 text-white/85">
           {description}

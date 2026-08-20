@@ -1,5 +1,15 @@
 # Frontend
 
+## Public marketing tracking
+
+`components/analytics/PublicRouteTracking.tsx` is the central positive
+allowlist for fixed public routes. It resolves the canonical server identity,
+reports through `createPageTracker`, and mounts the shared TikTok loader.
+Tracking starts automatically on allowlisted public pages. Linktree and
+mini-website renderers keep their specialized action tracking but use the same
+dispatch primitives. Individual landing, join, and advertising components
+must not call TikTok directly.
+
 ## Private business onboarding
 
 `/join?token=...` validates an administrator-issued, one-time 24-hour invitation before showing
@@ -75,6 +85,16 @@ operation, branding, and account actions, while the shared components own the
 responsive sidebar, collapse behavior, global header controls, active states,
 and profile-menu presentation. Do not recreate dashboard chrome inside a
 feature entry point.
+
+Both dashboards render notifications through the communications feature's
+shared inbox hook and `NotificationBell`. The unread badge, responsive
+dropdown, loading and empty states, read/delete/read-all/delete-all behavior,
+keyboard dismissal, and notification detail modal are one implementation.
+Selecting a notification marks it read and opens the modal before any optional
+navigation. Business and platform adapters provide only their authenticated
+endpoint and safe action-route resolver. Platform pending-approval cards are a
+permission-specific extension inside the same dropdown and are never exposed
+to business users.
 
 Large pages and templates compose focused modules rather than owning every
 data lifecycle and renderer inline. The liquid-glass mini-website template uses
@@ -424,6 +444,12 @@ future segments remain visible at reduced opacity.
   shared contrast-aware ink calculation so its label remains readable.
 - Public linktrees render at `/linktree/:uid`. The same route also resolves a
   linktree by its SEO name.
+- On the configured root domain (including `www`), `/linktree/:uid` resolves
+  only a MultiTree-owned platform Linktree. On a business subdomain the same
+  path remains strictly tenant-scoped. Host resolution chooses two explicit
+  backend endpoints; an empty subdomain is never treated as an implicit
+  business lookup. Root-owned pages keep first-party analytics but mount no
+  TikTok base code or client pixel.
 - Linktrees support branding, an avatar, a subtitle tagline under the name, a
   longer description helper text, configurable footer, WhatsApp questions,
   ordered links, TikTok tracking, and 12 selectable templates.
@@ -457,6 +483,10 @@ future segments remain visible at reduced opacity.
   templates inherit it without each drawing its own. It is `fixed` on a public
   page and `absolute` in a preview, so the texture stays put while the page
   scrolls.
+- Each Linktree card and table row shows its own lifetime unique viewers and
+  unique clickers, served by `GET /linktrees`. The table's traffic column is
+  gated on one table-level flag rather than per row, so a row without totals
+  cannot shear the column out of line with its header.
 - Public mini-websites render at `/bio/:slug`.
 - These two routes are the only ones that load a business's TikTok pixel, and
   both report through `createPageTracker`
@@ -649,6 +679,9 @@ keeps the current route, filters, tabs, pagination, dialogs, and visible
 content in place, and reports partial failures without performing a browser
 reload. Editors and settings forms must not register a loader that replaces
 unsaved local input; they may refresh only independent read-only data.
+The platform header refresh also invokes the shared notification adapter, so
+its communication inbox and permission-specific pending approvals refresh with
+the rest of the platform dashboard rather than waiting for the next poll.
 The Linktree and mini-website management pages each expose six equivalent
 metrics—owned page count, views, unique visitors, interactions, interaction
 rate, and conversions—but query them through separate analytics page-type
@@ -685,6 +718,20 @@ Routes: `/business/pages`, `/business/mini-website`, `/business/analytics`,
 `/business/profile`, `/business/settings`. `/business` redirects to
 `/business/pages`.
 
+## Shared business and platform UI
+
+Every component or workflow used by both the business and platform dashboards
+has one shared implementation. Updating shared UI or behavior must update and
+be verified on both surfaces. The route-level business and platform components
+only adapt typed configuration such as API endpoints, ownership, public paths,
+branding, analytics scope, and capabilities.
+
+Platform-admin-specific controls may differ only when an operation is
+platform-exclusive or requires a platform-admin permission. Those controls are
+injected or gated through an explicit capability boundary; permission-specific
+actions must not fork the shared editor, manager, modal, table, loading state,
+or public renderer around them.
+
 ## Platform-administration console
 
 The platform-administrator console is exposed only on the root domain through
@@ -693,6 +740,20 @@ segment directly; there is no physical public implementation route.
 
 The console provides:
 
+- platform-owned Linktree creation, editing, uploads, availability checks,
+  deletion, root-domain previews, and a simple lifetime analytics summary,
+  reusing the shared Linktree editor, list projections, and business page
+  analytics modal in summary-only mode; it shows unique viewers, total clicks,
+  unique clickers, and click rate while retaining the shared refresh, loading,
+  and clear-analytics interactions without exposing the advanced business
+  analytics workspace; the list toolbar also reuses the business clear-all
+  analytics button and shared confirmation modal for all platform Linktrees;
+- platform-owned mini-website creation at root-domain `/bio/:slug`, using the
+  exact business manager, editor steps, templates, preview, grid/table,
+  skeletons, uploads, map resolution, analytics modal, clear actions, public
+  renderer, lead form, and tracking behavior through workspace configuration;
+  the grid and table also reuse the Linktree list presentation while injecting
+  mini-website status/template badges and action-specific analytics labels;
 - business editing, deletion, session revocation, profile-change
   request review, session revocation, asset uploads, TikTok configuration,
   and linktree import/export;
@@ -726,7 +787,7 @@ quota system. It does not collect money. There is no payment-provider
 checkout, payment-method management, invoice generation, refund processing,
 or payment reconciliation.
 
-Routes (mounted beneath the private console path): `/`, `/templates`,
+Routes (mounted beneath the private console path): `/`, `/linktrees`, `/templates`,
 `/blocklists`, `/access-control`, `/billing`, `/activity`,
 `/communication-center`, `/api`, `/settings`.
 
@@ -739,6 +800,8 @@ Assume `ROOT_DOMAIN=example.com` and a business subdomain of `acme`.
 | `https://example.com/`                      | Platform landing page        |
 | `https://example.com/<PLATFORM_ADMIN_PATH>` | Platform console             |
 | `https://www.example.com/`                  | Treated as root domain       |
+| `https://example.com/linktree/:uid`         | Platform-owned Linktree      |
+| `https://example.com/bio/:slug`             | Platform-owned mini website  |
 | `https://acme.example.com/`                 | Business public landing page |
 | `https://acme.example.com/linktree/:uid`    | Public linktree              |
 | `https://acme.example.com/bio/:slug`        | Public mini-website          |
@@ -746,12 +809,41 @@ Assume `ROOT_DOMAIN=example.com` and a business subdomain of `acme`.
 | `https://acme.example.com/business/login`   | Business login               |
 | `https://acme.example.com/business`         | Redirect to business pages   |
 
+### Root marketing website
+
+The root-domain marketing website uses the same public design system as the
+business website through `PublicMarketingSiteShell`, `PublicSiteNavbar`, and
+`PublicSiteFooter`. MultiTree provides only branding, navigation, authentication
+actions, and marketing content; it must not fork those shared primitives.
+
+Public marketing routes are `/`, `/features`, `/link-in-bio`,
+`/mini-website`, `/templates`, `/pricing`, `/about`, and `/contact`. They are
+root-domain routes and are rejected on business subdomains. The navbar always
+offers Creator sign-up and sign-in. Business authentication remains a tenant
+subdomain concern and must not be linked from the root-domain website.
+Creator sign-up and sign-in compose the shared `AuthenticationShell` and
+`AuthenticationCard` used by the other authentication surfaces. Their
+feature-specific panel configures the shared Google authentication button and
+account-mode switch with Creator-facing Kurdish copy. Creator authentication
+does not expose email or phone inputs.
+
+Marketing copy, feature definitions, use cases, FAQs, and temporary template
+examples are centralized in `features/public-site/marketing-content.ts`.
+Until platform-managed website content is implemented, these values are
+presentation-only mock content: do not invent prices, customer counts,
+testimonials, endorsements, or other claims. A future dashboard-backed content
+service should replace that module behind a typed server-side adapter while the
+sections and shared shell remain unchanged. Published content requires draft,
+preview, publish, rollback, validation, sanitization, and explicit fallbacks;
+it must never read partially edited dashboard state directly.
+
 The frontend proxy:
 
 - derives the subdomain from the `Host` header;
 - checks business subdomains against the backend;
 - attaches `x-subdomain` to internal requests;
 - blocks `/business` on the root domain;
+- blocks root marketing and Creator-account routes on business subdomains;
 - blocks the private platform path on business subdomains;
 - keeps the retired physical console path concealed as a compatibility and
   security tombstone;

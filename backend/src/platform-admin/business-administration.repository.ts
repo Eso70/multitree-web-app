@@ -31,7 +31,8 @@ export class BusinessAdministrationRepository {
     const pattern = `%${search}%`;
     const status = query.status || null;
     const offset = (query.page - 1) * query.limit;
-    const where = `WHERE ($1 = '' OR a.name ILIKE $1 OR a.username ILIKE $1 OR a.subdomain ILIKE $1)
+    const where = `WHERE a.account_type = 'business'
+       AND ($1 = '' OR a.name ILIKE $1 OR a.username ILIKE $1 OR a.subdomain ILIKE $1)
        AND ($2::text IS NULL OR a.status = $2)`;
     const [businesses, count, summary] = await Promise.all([
       this.database.query<BusinessListRow>(
@@ -71,7 +72,8 @@ export class BusinessAdministrationRepository {
                 (SELECT COUNT(*) FROM business_signup_applications WHERE status = 'pending')::int AS "pendingApplications",
                 (SELECT COUNT(*) FROM business_signup_applications)::int AS "totalApplications",
                 (SELECT COUNT(*) FROM business_signup_invitations WHERE consumed_at IS NULL AND revoked_at IS NULL AND expires_at > NOW())::int AS "activeInvitations"
-         FROM businesses`,
+         FROM businesses
+         WHERE account_type = 'business'`,
       ),
     ]);
     return {

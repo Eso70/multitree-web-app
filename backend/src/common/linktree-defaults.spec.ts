@@ -1,5 +1,5 @@
-import { readFileSync } from 'fs';
 import { join } from 'path';
+import { readBaselineSql } from '../database/baseline';
 import {
   DEFAULT_LINKTREE_BACKGROUND_COLOR,
   DEFAULT_LINKTREE_FOOTER_HIDDEN,
@@ -17,21 +17,7 @@ import {
  * the row — which is not a difference anyone would think to look for.
  */
 
-const SCHEMA = readFileSync(
-  join(__dirname, '..', 'database', 'migrations', 'full_schema.sql'),
-  'utf8',
-);
-const TEMPLATE_RENAME_MIGRATION = readFileSync(
-  join(
-    __dirname,
-    '..',
-    'database',
-    'migrations',
-    '2026-08-12_rename_linktree_templates.sql',
-  ),
-  'utf8',
-);
-
+const SCHEMA = readBaselineSql(join(__dirname, '..', 'database', 'migrations'));
 function businessDefaultsTable(): string {
   const start = SCHEMA.indexOf('CREATE TABLE public.business_defaults');
   expect(start).toBeGreaterThan(-1);
@@ -52,11 +38,17 @@ describe('linktree page defaults', () => {
     expect(DEFAULT_LINKTREE_WHATSAPP_ENABLED).toBe(false);
   });
 
-  it('matches the effective schema defaults after forward migrations', () => {
+  /**
+   * The template rename used to live in a forward migration, so this read the
+   * migration for the effective default. The 2026-08-19 rebaseline folded it
+   * into `full_schema.sql` and the migration files were deleted, so the
+   * baseline is now the only place the default is written.
+   */
+  it('matches the schema defaults', () => {
     const table = businessDefaultsTable();
 
-    expect(TEMPLATE_RENAME_MIGRATION).toContain(
-      `ALTER COLUMN template_key SET DEFAULT '${DEFAULT_LINKTREE_TEMPLATE_KEY}'`,
+    expect(table).toContain(
+      `template_key character varying(50) DEFAULT '${DEFAULT_LINKTREE_TEMPLATE_KEY}'`,
     );
     expect(table).toContain(
       `background_color character varying(100) DEFAULT '${DEFAULT_LINKTREE_BACKGROUND_COLOR}'`,

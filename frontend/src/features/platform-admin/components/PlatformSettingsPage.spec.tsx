@@ -2,7 +2,10 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { PlatformSettingsPage } from "./PlatformSettingsPage";
 
 vi.mock("next/image", () => ({
-  default: ({ unoptimized: _unoptimized, ...props }: React.ImgHTMLAttributes<HTMLImageElement> & { unoptimized?: boolean }) => (
+  default: ({
+    unoptimized: _unoptimized,
+    ...props
+  }: React.ImgHTMLAttributes<HTMLImageElement> & { unoptimized?: boolean }) => (
     // eslint-disable-next-line @next/next/no-img-element
     <img {...props} alt={props.alt || ""} />
   ),
@@ -57,7 +60,9 @@ describe("PlatformSettingsPage General tab", () => {
     expect(screen.getByDisplayValue("operator")).toBeInTheDocument();
     expect(screen.getByDisplayValue("admin@example.com")).toBeInTheDocument();
     expect(screen.getByDisplayValue("+964 750 123 4567")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("https://multitree.example")).toBeInTheDocument();
+    expect(
+      screen.getByDisplayValue("https://multitree.example"),
+    ).toBeInTheDocument();
     expect(screen.getByAltText("Logo")).toHaveAttribute(
       "src",
       "/images/upload/multitree/logo.png",
@@ -135,10 +140,12 @@ describe("PlatformSettingsPage General tab", () => {
 
     await screen.findByText("تۆماری داواکارییەکانی سیستەم");
     expect(screen.getAllByDisplayValue("365")).toHaveLength(1);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
-      "/api/platform/settings/data-retention",
-      expect.objectContaining({ method: "GET" }),
-    ));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/platform/settings/data-retention",
+        expect.objectContaining({ method: "GET" }),
+      ),
+    );
   });
 
   it("loads the enforced media and uploads policy", async () => {
@@ -170,9 +177,57 @@ describe("PlatformSettingsPage General tab", () => {
     await screen.findByText("جۆری فایلە ڕێگەپێدراوەکان");
     expect(screen.getByDisplayValue("2048")).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "JPG / JPEG" })).toBeChecked();
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
-      "/api/platform/settings/media",
-      expect.objectContaining({ method: "GET" }),
-    ));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/platform/settings/media",
+        expect.objectContaining({ method: "GET" }),
+      ),
+    );
+  });
+
+  it("shows the Kurdish TikTok tab with the shared business configuration UI", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async (input) => {
+      const endpoint = String(input);
+      if (endpoint === "/api/platform/settings/tiktok") {
+        return jsonResponse({ success: true, data: { tiktok_configs: [] } });
+      }
+      if (endpoint === "/api/platform/settings/tiktok/health") {
+        return jsonResponse({
+          success: true,
+          data: { connections: 0, serverEvents: 0, browserEvents: 0 },
+        });
+      }
+      if (endpoint === "/api/platform/settings/tiktok/errors") {
+        return jsonResponse({ success: true, data: { items: [] } });
+      }
+      return jsonResponse({ success: true, data: savedSettings });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<PlatformSettingsPage />);
+    await screen.findByDisplayValue("Saved MultiTree");
+
+    expect(
+      screen.queryByRole("tab", { name: "TikTok Tracking" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "شوێنکەوتنی TikTok" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "پەیوەستکردنی TikTok" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("گرووپەکانی Pixel و Events API"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Pixel و Events APIی تایبەت بە پەڕە گشتییەکانی MultiTree. هیچ کاتێک بۆ پەڕەی بزنسەکان بەکار نایەت.",
+      ),
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/platform/settings/tiktok",
+        expect.objectContaining({ credentials: "include" }),
+      ),
+    );
   });
 });

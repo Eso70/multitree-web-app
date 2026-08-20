@@ -17,9 +17,11 @@ const ENGAGED_AFTER_MS = 15_000;
 export function PublicMiniWebsite({
   profile,
   subdomain,
+  leadFormEndpoint,
 }: {
   profile: MiniWebsite;
-  subdomain: string;
+  subdomain?: string;
+  leadFormEndpoint?: string;
 }) {
   // One tracker for the page. Rebuilding it on every render would reset the
   // dedupe window and let a jittery scroll report the same section twice.
@@ -173,9 +175,12 @@ export function PublicMiniWebsite({
           // Built here rather than inside the template: only this component
           // knows which subdomain served the page, and the form must post to
           // the page it is actually on.
-          leadFormEndpoint={`/api/public/mini-websites/${encodeURIComponent(
-            subdomain,
-          )}/${encodeURIComponent(profile.slug)}/leads`}
+          leadFormEndpoint={
+            leadFormEndpoint ||
+            `/api/public/mini-websites/${encodeURIComponent(
+              subdomain || "",
+            )}/${encodeURIComponent(profile.slug)}/leads`
+          }
           // The lead endpoint records the event itself, so only the pixel half
           // is fired here — under the same id, which is what lets TikTok treat
           // the pair as one conversion.

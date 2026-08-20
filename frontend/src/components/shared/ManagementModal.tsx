@@ -83,6 +83,7 @@ export function ManagementModal({
       ? ({
           "--theme-primary": "var(--multitree-accent)",
           "--theme-css": "var(--multitree-accent)",
+          "--theme-ink": "var(--multitree-accent-ink)",
         } as React.CSSProperties)
       : undefined;
 

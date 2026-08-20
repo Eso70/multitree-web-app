@@ -29,7 +29,6 @@ import { RequireCapabilities } from '../auth/require-capabilities.decorator';
 import { Subdomain } from '../auth/subdomain.decorator';
 import type { SessionUser } from '../auth/session.service';
 import { StorageService } from '../storage/storage.service';
-import { validateImageUpload } from '../storage/image-upload';
 import { SaveMiniWebsiteDto } from './dto/mini-website.dto';
 import { SubmitMiniWebsiteLeadDto } from './dto/mini-website-lead.dto';
 import { extractCoordinatesFromMapUrl, resolveShortMapLink } from './map-link';
@@ -37,6 +36,7 @@ import { MiniWebsiteLeadsService } from './mini-website-leads.service';
 import { MiniWebsitesService } from './mini-websites.service';
 import { AccessRuleEnforcementService } from '../auth/access-rule-enforcement.service';
 import { requestIp } from '../common/request-context';
+import { uploadMiniWebsiteImage } from './mini-website-image-upload';
 
 @Controller('api/mini-websites')
 @UseGuards(BusinessGuard, AuthorizationGuard)
@@ -190,18 +190,12 @@ export class MiniWebsitesController {
   ) {
     const data = await req.file();
     if (!data) return res.status(400).send({ error: 'No file provided' });
-    const buffer = await data.toBuffer();
-    const extension = validateImageUpload(buffer, data.mimetype);
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).slice(2, 9);
-    const base = (data.filename.split('.').slice(0, -1).join('.') || 'image')
-      .replace(/[^a-z0-9]+/gi, '-')
-      .toLowerCase();
-    const url = await this.storage.uploadImage(
-      buffer,
-      `businesses/${business.id}/mini-websites/_drafts/${base}-${timestamp}-${random}.${extension}`,
+    const url = await uploadMiniWebsiteImage(
+      data,
+      this.storage,
+      business.id,
+      'businesses',
     );
-    await this.storage.claimBusinessAssets(business.id, url);
     return res.send({ success: true, data: { url }, url });
   }
 }
@@ -244,6 +238,22 @@ export class PublicMiniWebsitesController {
     };
   }
 
+  @Get('platform/:slug')
+  async getPlatform(
+    @Param('slug') slug: string,
+    @Subdomain() subdomain: string,
+    @Req() request: FastifyRequest,
+  ) {
+    if (subdomain && subdomain !== 'www') {
+      throw new NotFoundException('Not Found');
+    }
+    await this.accessRules.assertAllowed(requestIp(request));
+    return {
+      success: true,
+      data: await this.service.getPlatformPublic(slug),
+    };
+  }
+
   /**
    * Accepts one public submission of a page's lead form.
    *
@@ -282,6 +292,45 @@ export class PublicMiniWebsitesController {
     return {
       success: true,
       data: await this.leads.submit(subdomain, slug, body, context),
+    };
+  }
+
+  @Post('platform/:slug/leads')
+  @HttpCode(HttpStatus.OK)
+  async submitPlatformLead(
+    @Param('slug') slug: string,
+    @Subdomain() subdomain: string,
+    @Body() body: SubmitMiniWebsiteLeadDto,
+    @Req() request: FastifyRequest,
+  ) {
+    if (subdomain && subdomain !== 'www') {
+      throw new NotFoundException('Not Found');
+    }
+    const context = analyticsRequestContext(request);
+    await this.accessRules.assertAllowed(context.ip);
+    if (
+      await this.redis.isRateLimited(
+        `rl:mini-lead:${context.ip}:platform:${slug}`.slice(0, 220),
+        5,
+        600,
+      )
+    ) {
+      throw new HttpException(
+        {
+          message: 'Too many submissions. Try again shortly.',
+          retryAfter: 600,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    return {
+      success: true,
+      data: await this.leads.submitPlatform(
+        await this.service.getRootOwnerId(slug),
+        slug,
+        body,
+        context,
+      ),
     };
   }
 }

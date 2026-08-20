@@ -3,17 +3,8 @@
 import Image from "next/image";
 import { useState } from "react";
 import { MotionPulseIcon } from "@/components/motion/MotionPrimitives";
-import {
-  ImagePlus,
-  Images,
-  Palette,
-  Trash2,
-  Video,
-} from "lucide-react";
-import {
-  type MiniWebsiteContent,
-  type MiniWebsiteDraft,
-} from "./types";
+import { ImagePlus, Images, Palette, Trash2, Video } from "lucide-react";
+import { type MiniWebsiteContent, type MiniWebsiteDraft } from "./types";
 import { MiniWebsiteFieldLabel } from "./MiniWebsiteFieldLabel";
 import { MiniWebsiteBackgroundStyleField } from "./MiniWebsiteBackgroundStyleField";
 import { ColorGradientField } from "@/features/link-editor/ColorGradientField";
@@ -26,6 +17,7 @@ import {
   validateUploadFile,
 } from "@/lib/api/inline-request-error";
 import { enqueueImageUpload } from "@/lib/api/enqueue-image-upload";
+import { useMiniWebsiteWorkspace } from "./workspace-config";
 
 const inputClass = modalInputClass(false, "h-11 py-0");
 
@@ -332,6 +324,7 @@ export function MediaUpload({
   required?: boolean;
   defaultValue?: string;
 }) {
+  const { api } = useMiniWebsiteWorkspace();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<InlineRequestErrorData | null>(null);
   const addFiles = async (files: FileList | null) => {
@@ -357,7 +350,7 @@ export function MediaUpload({
         const url = await enqueueImageUpload(async () => {
           const form = new FormData();
           form.append("file", file);
-          const response = await fetch("/api/mini-websites/upload/image", {
+          const response = await fetch(api.uploadImage, {
             method: "POST",
             body: form,
             credentials: "include",
@@ -368,7 +361,8 @@ export function MediaUpload({
             return null;
           }
           const fileUrl = payload?.data?.url || payload?.url;
-          if (typeof fileUrl !== "string") throw new Error("Upload URL is missing");
+          if (typeof fileUrl !== "string")
+            throw new Error("Upload URL is missing");
           return fileUrl;
         });
         if (url === null) return;

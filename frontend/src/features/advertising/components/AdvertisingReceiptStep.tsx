@@ -14,24 +14,26 @@ interface AdvertisingReceiptStepProps {
 
 export function AdvertisingReceiptStep({ receiptUrl, onReceiptChange, exampleImageUrl }: AdvertisingReceiptStepProps) {
   return (
-    <div className="grid w-full grid-cols-2 items-center justify-items-center gap-3 sm:gap-6">
-      <div className="relative mx-auto w-[130px] max-w-full sm:w-[150px] lg:w-[190px]">
-        <PhoneMockup ariaLabel="پێشبینینی وەسڵی گواستنەوەی پارە" name="Receipt">
-          <div className="relative flex h-full w-full items-center justify-center bg-[#f4efe8]">
-            <Image
-              src={exampleImageUrl || "/images/advertising/example-money-send.jpg"}
-              alt="وێنەی نموونەی وەسڵی گواستنەوەی پارە"
-              fill
-              sizes="190px"
-              className="object-contain"
-              unoptimized={Boolean(exampleImageUrl)}
-            />
-          </div>
-        </PhoneMockup>
-        <p className="mt-2 text-center text-[9px] font-bold uppercase tracking-wide text-black/40 dark:text-white/40 sm:mt-3 sm:text-[10px]">
-          نموونەی وەسڵ
-        </p>
-      </div>
+    <div className={cn("grid w-full items-center justify-items-center gap-3 sm:gap-6", exampleImageUrl ? "grid-cols-2" : "grid-cols-1")}>
+      {exampleImageUrl && (
+        <div className="relative mx-auto w-[130px] max-w-full sm:w-[150px] lg:w-[190px]">
+          <PhoneMockup ariaLabel="پێشبینینی وەسڵی گواستنەوەی پارە" name="Receipt">
+            <div className="relative flex h-full w-full items-center justify-center bg-[#f4efe8]">
+              <Image
+                src={exampleImageUrl}
+                alt="وێنەی نموونەی وەسڵی گواستنەوەی پارە"
+                fill
+                sizes="190px"
+                className="object-contain"
+                unoptimized
+              />
+            </div>
+          </PhoneMockup>
+          <p className="mt-2 text-center text-[9px] font-bold uppercase tracking-wide text-black/40 dark:text-white/40 sm:mt-3 sm:text-[10px]">
+            نموونەی وەسڵ
+          </p>
+        </div>
+      )}
 
       <div className="relative mx-auto w-[130px] max-w-full sm:w-[150px] lg:w-[190px]">
         <ReceiptDropzone receiptUrl={receiptUrl} onReceiptChange={onReceiptChange} />

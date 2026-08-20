@@ -105,6 +105,7 @@ async function bootstrap() {
       '/api/public/business',
       '/api/public/linktrees',
       '/api/public/linktree/',
+      '/api/public/platform/linktree/',
       '/api/public/mini-websites',
       '/api/public/analytics',
     ].some((prefix) => path === prefix || path.startsWith(`${prefix}/`));

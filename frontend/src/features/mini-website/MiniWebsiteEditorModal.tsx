@@ -66,6 +66,7 @@ import {
 import { ensureEnabledSectionDefaults } from "./section-defaults";
 import { getSectionCountLabel } from "./section-count";
 import { useTemplateAccess } from "@/hooks/useTemplateAccess";
+import { useMiniWebsiteWorkspace } from "./workspace-config";
 import {
   validateCompleteMiniWebsite,
   validateMiniWebsiteStep,
@@ -169,9 +170,10 @@ export function MiniWebsiteEditorModal({
   onClose: () => void;
   onSave: (draft: MiniWebsiteDraft) => void | Promise<void>;
 }) {
+  const workspace = useMiniWebsiteWorkspace();
   const { color: businessTheme } = useTheme();
   const { isLoading: isTemplateAccessLoading, isTemplateAllowed } =
-    useTemplateAccess();
+    useTemplateAccess(!workspace.allowAllTemplates);
   const [draft, setDraft] = useState(initial);
   const [step, setStep] = useState<EditorStep>("identity");
   const [slugError, setSlugError] = useState<string | null>(null);
@@ -208,7 +210,7 @@ export function MiniWebsiteEditorModal({
       try {
         const params = new URLSearchParams({ slug });
         if (editorId) params.set("excludeId", editorId);
-        const res = await fetch(`/api/mini-websites/check-slug?${params}`, {
+        const res = await fetch(`${workspace.api.checkSlug}?${params}`, {
           credentials: "include",
           signal: controller.signal,
         });
@@ -227,7 +229,7 @@ export function MiniWebsiteEditorModal({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [draft.slug, editorId]);
+  }, [draft.slug, editorId, workspace.api.checkSlug]);
 
   const setField = <K extends keyof MiniWebsiteDraft>(
     key: K,
@@ -367,7 +369,11 @@ export function MiniWebsiteEditorModal({
     if (step === "identity" || isFinalStep) {
       if (!draft.slug.trim()) errors.slug = "لینکی تایبەت پێویستە.";
       else if (slugError) errors.slug = slugError;
-      if (!isTemplateAccessLoading && !isTemplateAllowed(draft.templateKey)) {
+      if (
+        !workspace.allowAllTemplates &&
+        !isTemplateAccessLoading &&
+        !isTemplateAllowed(draft.templateKey)
+      ) {
         errors.templateKey = "ئەم قالبە لە پلانی ئێستاتدا بەردەست نییە.";
       }
     }
@@ -377,6 +383,7 @@ export function MiniWebsiteEditorModal({
     isFinalStep,
     isTemplateAccessLoading,
     isTemplateAllowed,
+    workspace.allowAllTemplates,
     slugError,
     step,
   ]);
@@ -633,7 +640,7 @@ export function MiniWebsiteEditorModal({
                         onAddPlatformInstance={addPlatformInstance}
                         onMoveLink={moveSocialLink}
                         onBlurLink={(id) => touchField(`social.${id}`)}
-                        iconUploadUrl="/api/mini-websites/upload/image"
+                        iconUploadUrl={workspace.api.uploadImage}
                       />
                     )}
                     {section.key === "location" && (

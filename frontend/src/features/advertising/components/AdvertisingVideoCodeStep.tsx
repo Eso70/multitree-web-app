@@ -15,7 +15,7 @@ interface AdvertisingVideoCodeStepProps {
   onVideoCodeChange: (code: string) => void;
   videoSrc?: string;
   tutorialSteps: string[];
-  /** Heading above the tutorial; falls back to the shipped prefilled title when unset. */
+  /** Optional heading above the tutorial. */
   title?: string;
 }
 
@@ -29,7 +29,7 @@ export function AdvertisingVideoCodeStep({
   const inputRef = useRef<HTMLInputElement>(null);
   const trimmedCode = videoCode.trim();
   const isInvalid = trimmedCode.length > 0 && !TIKTOK_VIDEO_CODE_PATTERN.test(trimmedCode);
-  const heading = title?.trim() || "کۆدی ڤیدیۆکەت چۆن دەردێنی؟";
+  const heading = title?.trim();
 
   const pasteCode = async () => {
     try {
@@ -55,9 +55,11 @@ export function AdvertisingVideoCodeStep({
       </div>
 
       <div className="mx-auto flex w-full min-w-0 flex-col gap-3">
-        <h3 className="text-sm font-black text-slate-900 dark:text-white sm:text-lg" dir="auto">
-          {heading}
-        </h3>
+        {heading && (
+          <h3 className="text-sm font-black text-slate-900 dark:text-white sm:text-lg" dir="auto">
+            {heading}
+          </h3>
+        )}
 
         <ol className="flex flex-col gap-1.5 sm:gap-2.5">
           {tutorialSteps.map((step, index) => (

@@ -31,6 +31,7 @@ type PublicSiteFooterProps = {
   appearance?: "adaptive" | "dark" | "landing";
   /** When set, the logo + brand name link back to this href. */
   homeHref?: string;
+  direction?: "ltr" | "rtl";
 };
 
 function FooterLink({ link }: { link: PublicFooterLink }) {
@@ -141,6 +142,7 @@ export function PublicSiteFooter({
   verifiedLabel,
   appearance = "adaptive",
   homeHref,
+  direction,
 }: PublicSiteFooterProps) {
   const totalColumns = 1 + columns.length;
   const gridClass =
@@ -160,6 +162,7 @@ export function PublicSiteFooter({
 
   return (
     <footer
+      dir={direction}
       className={`relative z-10 overflow-hidden border-t py-12 transition-colors duration-300 sm:py-16 ${appearanceClass}`}
       style={{ "--public-footer-accent": accentColor } as CSSProperties}
     >

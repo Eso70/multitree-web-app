@@ -36,6 +36,7 @@ import type { SessionUser } from '../auth/session.service';
 import { AuditEvent } from '../auth/audit-event.decorator';
 import { AuditInterceptor } from '../auth/audit.interceptor';
 import { AccessRuleEnforcementService } from '../auth/access-rule-enforcement.service';
+import { CreatorAuthService } from '../creator/creator-auth.service';
 
 function secureRequest(request: FastifyRequest): boolean {
   return (
@@ -46,7 +47,10 @@ function secureRequest(request: FastifyRequest): boolean {
 
 @Controller('api/auth')
 export class GoogleBusinessAuthController {
-  constructor(private readonly onboarding: BusinessOnboardingService) {}
+  constructor(
+    private readonly onboarding: BusinessOnboardingService,
+    private readonly creatorAuth: CreatorAuthService,
+  ) {}
 
   @Get('google/start')
   @HttpCode(HttpStatus.FOUND)
@@ -123,6 +127,20 @@ export class GoogleBusinessAuthController {
   ) {
     if (subdomain)
       throw new UnauthorizedException('Invalid OAuth callback host');
+    if (this.creatorAuth.isCreatorOAuthState(state)) {
+      const creator = await this.creatorAuth.finishGoogleCallback(code, state, {
+        ipAddress: requestIp(request),
+        userAgent: request.headers['user-agent'] || '',
+      });
+      response.setCookie('creator_session', creator.sessionToken, {
+        httpOnly: true,
+        secure: secureRequest(request),
+        sameSite: 'lax',
+        path: '/',
+        maxAge: creator.ttlSeconds,
+      });
+      return response.redirect(creator.redirectUrl, HttpStatus.FOUND);
+    }
     const result = await this.onboarding.finishGoogleCallback(code, state, {
       ipAddress: requestIp(request),
       userAgent: request.headers['user-agent'] || '',

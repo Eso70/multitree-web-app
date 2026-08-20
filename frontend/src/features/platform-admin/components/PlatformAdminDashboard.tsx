@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { MotionPulseIcon } from "@/components/motion/MotionPrimitives";
 import {
@@ -15,6 +15,8 @@ import {
   Settings,
   CreditCard,
   UserCog,
+  Link2,
+  IdCard,
 } from "lucide-react";
 import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
 import { CreateBusinessModal } from "@/features/platform-admin/components/CreateBusinessModal";
@@ -32,7 +34,10 @@ import { useBusinesses } from "@/features/platform-admin/hooks/useBusinesses";
 import type { PlatformBusiness as Business } from "@linktree/types";
 import { PlatformBusinessesPage } from "@/features/platform-admin/components/PlatformBusinessesPage";
 import { AccessControlPage } from "@/features/platform-admin/components/AccessControlPage";
-import { ApprovalNotifications } from "@/features/platform-admin/components/ApprovalNotifications";
+import {
+  ApprovalNotifications,
+  type ApprovalNotificationsHandle,
+} from "@/features/platform-admin/components/ApprovalNotifications";
 import { BusinessSessionsModal } from "@/features/platform-admin/components/BusinessSessionsModal";
 import { CommunicationCenterPage } from "@/features/platform-admin/components/CommunicationCenterPage";
 import { parseWebsiteColor } from "@/lib/utils/parse-website-color";
@@ -51,6 +56,9 @@ import {
 } from "@/components/shared/DashboardSidebar";
 import { DashboardHeader } from "@/components/shared/DashboardHeader";
 import { apiRequest } from "@/lib/api/request";
+import { PlatformLinktreesPage } from "@/features/platform-admin/components/PlatformLinktreesPage";
+import { PlatformMiniWebsitesPage } from "@/features/platform-admin/components/PlatformMiniWebsitesPage";
+import { CreatorUsersPage } from "@/features/platform-admin/components/CreatorUsersPage";
 
 const BusinessAnalyticsModal = dynamic(
   () =>
@@ -63,6 +71,9 @@ const BusinessAnalyticsModal = dynamic(
 type PlatformTheme = "light" | "dark";
 type PlatformPage =
   | "businesses"
+  | "linktrees"
+  | "mini-websites"
+  | "users"
   | "templates"
   | "blocklists"
   | "access-control"
@@ -74,6 +85,9 @@ type PlatformPage =
 function getPlatformPage(pathname: string): PlatformPage {
   const segment = pathname.split("/").filter(Boolean)[1];
   return segment === "templates" ||
+    segment === "linktrees" ||
+    segment === "mini-websites" ||
+    segment === "users" ||
     segment === "blocklists" ||
     segment === "access-control" ||
     segment === "activity" ||
@@ -86,6 +100,7 @@ function getPlatformPage(pathname: string): PlatformPage {
 }
 
 export function PlatformAdminDashboard() {
+  const notificationsRef = useRef<ApprovalNotificationsHandle>(null);
   const [platformBranding, setPlatformBranding] = useState({
     name: "MultiTree",
     logo: null as string | null,
@@ -275,6 +290,7 @@ export function PlatformAdminDashboard() {
     await Promise.all([
       handleRefresh(),
       loadAdministratorProfile().catch(() => undefined),
+      notificationsRef.current?.refresh().catch(() => undefined),
     ]);
     router.refresh();
   }, [handleRefresh, loadAdministratorProfile, router]);
@@ -288,6 +304,30 @@ export function PlatformAdminDashboard() {
         active: activePage === "businesses",
         hidden: permissionsLoaded && !canPage("businesses"),
         onClick: () => router.push(consoleBasePath),
+      },
+      {
+        id: "users",
+        label: "بەکارهێنەرەکان",
+        icon: <UserCog className="h-4 w-4" />,
+        active: activePage === "users",
+        hidden: permissionsLoaded && !canPage("users"),
+        onClick: () => router.push(`${consoleBasePath}/users`),
+      },
+      {
+        id: "linktrees",
+        label: "پەیجەکان",
+        icon: <Link2 className="h-4 w-4" />,
+        active: activePage === "linktrees",
+        hidden: permissionsLoaded && !canPage("linktrees"),
+        onClick: () => router.push(`${consoleBasePath}/linktrees`),
+      },
+      {
+        id: "mini-websites",
+        label: "مینی وێبسایتەکان",
+        icon: <IdCard className="h-4 w-4" />,
+        active: activePage === "mini-websites",
+        hidden: permissionsLoaded && !canPage("mini-websites"),
+        onClick: () => router.push(`${consoleBasePath}/mini-websites`),
       },
       {
         id: "templates",
@@ -357,6 +397,9 @@ export function PlatformAdminDashboard() {
 
   const pageTitle: Record<PlatformPage, string> = {
     businesses: "بەڕێوەبردنی بزنسەکان",
+    linktrees: "پەیجەکان",
+    "mini-websites": "مینی وێبسایتەکان",
+    users: "بەکارهێنەرەکان",
     templates: "قاڵبەکان",
     blocklists: "ڕێساکانی دەستگەیشتن",
     "access-control": "کۆنترۆڵی دەستگەیشتن",
@@ -551,7 +594,7 @@ export function PlatformAdminDashboard() {
           }}
           onToggleTheme={toggleTheme}
           onRefresh={handleGlobalRefresh}
-          notifications={<ApprovalNotifications />}
+          notifications={<ApprovalNotifications ref={notificationsRef} />}
           profile={{
             name: administrator.name,
             email: administrator.email,
@@ -639,6 +682,12 @@ export function PlatformAdminDashboard() {
                 onManageSessions={setSessionsBusiness}
                 onOpenDashboard={handleOpenDashboard}
               />
+            ) : activePage === "linktrees" ? (
+              <PlatformLinktreesPage />
+            ) : activePage === "users" ? (
+              <CreatorUsersPage />
+            ) : activePage === "mini-websites" ? (
+              <PlatformMiniWebsitesPage />
             ) : activePage === "templates" ? (
               <TemplatesPage />
             ) : activePage === "billing" ? (

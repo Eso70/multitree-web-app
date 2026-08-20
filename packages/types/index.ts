@@ -6,3 +6,4 @@ export * from "./analytics.types";
 export * from "./billing.types";
 export * from "./audit.types";
 export * from "./authorization.types";
+export * from "./legal.types";

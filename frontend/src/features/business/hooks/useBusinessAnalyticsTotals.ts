@@ -31,6 +31,7 @@ function numeric(value: unknown): number {
 export function useBusinessAnalyticsTotals(
   pageType?: AnalyticsPageType,
   enabled = true,
+  endpoint?: string,
 ) {
   const [totals, setTotals] = useState<BusinessAnalyticsTotals>(
     EMPTY_BUSINESS_ANALYTICS_TOTALS,
@@ -39,28 +40,31 @@ export function useBusinessAnalyticsTotals(
   const [isRefreshing, setIsRefreshing] = useState(false);
   const loadedRef = useRef(false);
 
-  const refresh = useCallback(async (options?: { rethrow?: boolean }) => {
-    if (loadedRef.current) setIsRefreshing(true);
-    else setIsLoading(true);
-    try {
-      const data = await getBusinessAnalyticsSummary(pageType);
-      setTotals({
-        total_views: numeric(data.total_views),
-        unique_views: numeric(data.unique_views),
-        total_clicks: numeric(data.total_clicks),
-        unique_clicks: numeric(data.unique_clicks),
-        conversions: numeric(data.conversions),
-        conversion_value: numeric(data.conversion_value),
-      });
-    } catch (error) {
-      console.error("Error fetching analytics totals:", error);
-      if (options?.rethrow) throw error;
-    } finally {
-      loadedRef.current = true;
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [pageType]);
+  const refresh = useCallback(
+    async (options?: { rethrow?: boolean }) => {
+      if (loadedRef.current) setIsRefreshing(true);
+      else setIsLoading(true);
+      try {
+        const data = await getBusinessAnalyticsSummary(pageType, endpoint);
+        setTotals({
+          total_views: numeric(data.total_views),
+          unique_views: numeric(data.unique_views),
+          total_clicks: numeric(data.total_clicks),
+          unique_clicks: numeric(data.unique_clicks),
+          conversions: numeric(data.conversions),
+          conversion_value: numeric(data.conversion_value),
+        });
+      } catch (error) {
+        console.error("Error fetching analytics totals:", error);
+        if (options?.rethrow) throw error;
+      } finally {
+        loadedRef.current = true;
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
+    },
+    [endpoint, pageType],
+  );
 
   useEffect(() => {
     if (!enabled) return;

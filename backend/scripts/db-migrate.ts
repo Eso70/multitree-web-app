@@ -1,13 +1,12 @@
 ﻿/**
  * Database Migration Script
- * Applies the single consolidated full_schema.sql baseline to an empty database.
- * Existing databases are only baselined when they already match that schema.
- * This command does not replay forward migration files or upgrade old schemas.
+ * Applies the consolidated baseline (migrations/baseline/*.sql) to an empty database.
+ * Existing databases are baselined only when they already match that schema,
+ * then any dated forward migrations are applied in order.
  * Usage: pnpm db:migrate
  */
 
 import { Pool } from 'pg';
-import * as fs from 'fs';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
 import { seedDefaultCommunications } from './seed-communications';
@@ -19,6 +18,12 @@ import { ensureAdvertisingPages } from './ensure-advertising-pages';
 import { seedPlatformAdmin } from './seed-platform-admin';
 import { assertSupportedSchema } from '../src/database/migration-compatibility';
 import { applyForwardMigrations } from '../src/database/forward-migrations';
+import {
+  applyBaseline,
+  baselineDir,
+  baselineFiles,
+  BASELINE_LEDGER_NAME,
+} from '../src/database/baseline';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -72,7 +77,7 @@ async function migrate() {
   const pool = new Pool({ ...connection, database: dbName });
 
   const client = await pool.connect();
-  const schemaFile = 'full_schema.sql';
+  const schemaFile = BASELINE_LEDGER_NAME;
   let appliedCount = 0;
   const migrationLockKey = 'multitree:schema-migrations';
 
@@ -83,11 +88,8 @@ async function migrate() {
     console.log('Running database migration baseline...\n');
 
     const migrationsDir = path.resolve(__dirname, '../src/database/migrations');
-    const schemaPath = path.join(migrationsDir, schemaFile);
-    if (!fs.existsSync(schemaPath)) {
-      console.error('full_schema.sql not found at:', schemaPath);
-      process.exit(1);
-    }
+    // Throws with the offending path when the baseline is missing or empty.
+    baselineFiles(migrationsDir);
 
     const ledger = await client.query<{ exists: string | null }>(
       `SELECT to_regclass('public.schema_migrations')::text AS exists`,
@@ -104,10 +106,9 @@ async function migrate() {
         );
       }
 
-      console.log(`  Applying: ${schemaFile}`);
-      const sql = fs.readFileSync(schemaPath, 'utf8').replace(/^\uFEFF/, '');
+      console.log(`  Applying baseline from ${baselineDir(migrationsDir)}`);
       await client.query('BEGIN');
-      await client.query(sql);
+      await applyBaseline(client, migrationsDir);
       await client.query(
         'INSERT INTO schema_migrations (filename) VALUES ($1)',
         [schemaFile],
@@ -150,13 +151,9 @@ async function migrate() {
           );
           console.log(`  OK ${schemaFile} baselined for existing schema`);
         } else {
-          console.log(`  Applying: ${schemaFile}`);
-          const sql = fs
-            .readFileSync(schemaPath, 'utf8')
-            .replace(/^\uFEFF/, '');
-
+          console.log(`  Applying baseline from ${baselineDir(migrationsDir)}`);
           await client.query('BEGIN');
-          await client.query(sql);
+          await applyBaseline(client, migrationsDir);
           await client.query(
             'INSERT INTO schema_migrations (filename) VALUES ($1)',
             [schemaFile],

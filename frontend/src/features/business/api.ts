@@ -33,7 +33,9 @@ export type AnalyticsPageType = "linktree" | "mini_website";
 
 export function getBusinessAnalyticsSummary(
   pageType?: AnalyticsPageType,
+  endpoint?: string,
 ): Promise<Record<string, unknown>> {
+  if (endpoint) return apiRequest<Record<string, unknown>>(endpoint);
   const query = pageType ? `?pageType=${encodeURIComponent(pageType)}` : "";
   return apiRequest<Record<string, unknown>>(
     `/api/analytics/v2/summary${query}`,

@@ -14,7 +14,6 @@ import {
   Table2,
   Target,
   TrendingUp,
-  Trash2,
   Users,
   X,
 } from "lucide-react";
@@ -25,6 +24,7 @@ import { SkeletonCardGrid, SkeletonTable } from "@/components/shared/Skeleton";
 import type { BusinessLinktreeSummary as Linktree } from "@linktree/types";
 import { useRegisterBusinessDashboardRefresh } from "@/features/business/dashboard-refresh";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
+import { ClearAnalyticsButton } from "@/components/shared/ClearAnalyticsButton";
 
 const LinktreesGrid = dynamic(
   () =>
@@ -90,7 +90,8 @@ export function BusinessLinktreesPage({
   onViewAnalytics,
 }: BusinessLinktreesPageProps) {
   useRegisterBusinessDashboardRefresh("linktrees", () => onRefresh(true));
-  const ctr = totalViews > 0 ? ((totalClicks / totalViews) * 100).toFixed(1) : "0.0";
+  const ctr =
+    totalViews > 0 ? ((totalClicks / totalViews) * 100).toFixed(1) : "0.0";
 
   return (
     <>
@@ -146,20 +147,11 @@ export function BusinessLinktreesPage({
           icon={FileText}
           action={
             <div className="flex items-center gap-2">
-              <button
+              <ClearAnalyticsButton
                 onClick={onClearAnalytics}
-                disabled={
-                  isRefreshing || isClearingAnalytics || !hasAnalyticsData
-                }
-                className="group flex h-10 w-10 items-center justify-center rounded-xl border border-rose-100 bg-gradient-to-br from-rose-50 to-pink-50 text-rose-500 shadow-sm transition-all hover:shadow disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-500/20 dark:from-rose-500/10 dark:to-pink-500/10 dark:text-rose-400"
-                title={
-                  !hasAnalyticsData
-                    ? "هیچ داتایەک نییە"
-                    : "پاککردنەوەی هەموو داتاکانی بینین و کلیک"
-                }
-              >
-                <Trash2 className="h-4 w-4 transition-transform group-hover:scale-110" />
-              </button>
+                hasData={hasAnalyticsData}
+                disabled={isRefreshing || isClearingAnalytics}
+              />
               <button
                 onClick={() => void onRefresh()}
                 aria-busy={isRefreshing}
@@ -167,9 +159,9 @@ export function BusinessLinktreesPage({
                 className="group flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:shadow disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
                 title="نوێکردنەوە"
               >
-                <MotionSpinner active={isRefreshing}><RefreshCw
-                  className="h-4 w-4 -transform"
-                 /></MotionSpinner>
+                <MotionSpinner active={isRefreshing}>
+                  <RefreshCw className="h-4 w-4 -transform" />
+                </MotionSpinner>
               </button>
               <button
                 onClick={onSearchAction}

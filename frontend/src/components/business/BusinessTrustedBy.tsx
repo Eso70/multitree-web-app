@@ -2,6 +2,7 @@
 
 import { Marquee } from "@/components/ui/marquee";
 import { BusinessSectionDecorations } from "@/components/business/BusinessSectionDecorations";
+import { PublicSectionHeading } from "@/components/public/PublicSectionHeading";
 import {
   BUSINESS_LANDING_DECORATION_COLORS,
   BUSINESS_LANDING_DECORATION_LABELS,
@@ -33,12 +34,7 @@ export function BusinessTrustedBy({
         labels={BUSINESS_LANDING_DECORATION_LABELS.trusted}
         variant={2}
       />
-      <h2
-        id="business-trusted-by-title"
-        className="mx-auto max-w-4xl break-words text-center text-[clamp(2.35rem,5vw,4.9rem)] font-medium leading-[1.06] tracking-[-0.04em] text-[#111827] text-balance [overflow-wrap:anywhere] dark:text-white"
-      >
-        {title}
-      </h2>
+      <PublicSectionHeading id="business-trusted-by-title" title={title} />
 
       <Marquee
         pauseOnHover

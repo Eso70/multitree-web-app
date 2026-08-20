@@ -37,6 +37,8 @@ import {
   BUSINESS_LANDING_SECTION_IDS,
 } from "@/components/business/business-landing-sections";
 import { BusinessSectionDecorations } from "@/components/business/BusinessSectionDecorations";
+import { PublicSectionHeading } from "@/components/public/PublicSectionHeading";
+import { PublicSection } from "@/components/public/PublicSection";
 
 
 interface MobileWebsitePreview {
@@ -232,28 +234,23 @@ export function BusinessMobileShowcase({
   }, [screens.length]);
 
   return (
-    <section
+    <PublicSection
       id={BUSINESS_LANDING_SECTION_IDS.mobileShowcase}
-      aria-labelledby="business-mobile-showcase-title"
-      className="relative scroll-mt-24 overflow-hidden bg-transparent px-5 pb-0 pt-24 text-[#111827] dark:text-white sm:px-8 sm:pt-28 lg:pt-32"
+      labelledBy="business-mobile-showcase-title"
+      className="pb-0 sm:pb-0 lg:pb-0"
+      decorations={
+        <BusinessSectionDecorations
+          colors={BUSINESS_LANDING_DECORATION_COLORS.mobileShowcase}
+          labels={BUSINESS_LANDING_DECORATION_LABELS.mobileShowcase}
+          variant={5}
+        />
+      }
     >
-      <BusinessSectionDecorations
-        colors={BUSINESS_LANDING_DECORATION_COLORS.mobileShowcase}
-        labels={BUSINESS_LANDING_DECORATION_LABELS.mobileShowcase}
-        variant={5}
-      />
-      <div className="relative mx-auto max-w-7xl">
-        <header className="mx-auto max-w-4xl text-center">
-          <h2
-            id="business-mobile-showcase-title"
-            className="break-words text-[clamp(2.35rem,5vw,4.9rem)] font-medium leading-[1.06] tracking-[-0.04em] text-balance [overflow-wrap:anywhere]"
-          >
-            {title}
-          </h2>
-          <p className="mx-auto mt-7 max-w-3xl break-words text-base leading-8 text-black/55 [overflow-wrap:anywhere] dark:text-white/55 sm:text-lg sm:leading-9">
-            {description}
-          </p>
-        </header>
+        <PublicSectionHeading
+          id="business-mobile-showcase-title"
+          title={title}
+          description={description}
+        />
 
         <div
           role="group"
@@ -332,7 +329,6 @@ export function BusinessMobileShowcase({
             {screens[activeIndex]?.label}
           </p>
         </div>
-      </div>
-    </section>
+    </PublicSection>
   );
 }

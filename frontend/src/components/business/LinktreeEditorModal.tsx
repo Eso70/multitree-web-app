@@ -50,56 +50,20 @@ import {
   BACKGROUND_PATTERN_DEFAULT,
   type BackgroundPatternStyle,
 } from "@linktree/types";
-
-interface EditLinkData {
-  linktree: {
-    id: string;
-    name: string;
-    subtitle?: string | null;
-    description?: string | null;
-    seo_name?: string | null;
-    uid: string;
-    image?: string | null;
-    background_color: string;
-    template_config?: Record<string, unknown> | null;
-    footer_text?: string | null;
-    footer_phone?: string | null;
-    footer_hidden?: boolean | null;
-    status?: string;
-  };
-  links: Array<{
-    id: string;
-    platform: string;
-    url: string;
-    display_name?: string | null;
-    description?: string | null;
-    default_message?: string | null;
-    display_order: number;
-    metadata?: Record<string, unknown> | null;
-  }>;
-}
+import type {
+  EditLinkData,
+  LinktreeEditorSubmitData,
+} from "@/features/link-editor/editor-types";
+export type {
+  EditLinkData,
+  LinktreeEditorSubmitData,
+} from "@/features/link-editor/editor-types";
 
 interface LinktreeEditorModalProps {
   isOpen: boolean;
   onClose: () => void;
   isDefault?: boolean;
-  onSubmit: (data: {
-    is_default?: boolean;
-    name: string;
-    subtitle?: string;
-    description?: string;
-    slug: string;
-    image: string | null;
-    background_color: string;
-    templateKey: TemplateKey;
-    templateConfig: Record<string, unknown>;
-    footer_text?: string;
-    footer_phone?: string;
-    footer_hidden?: boolean;
-    platforms: string[];
-    links: Record<string, string[]>;
-    linkMetadata?: Record<string, Array<{display_name?: string; description?: string; default_message?: string; metadata?: Record<string, unknown>}>>;
-  }, editId?: string) => void;
+  onSubmit: (data: LinktreeEditorSubmitData, editId?: string) => void;
   editData?: EditLinkData | null;
   isLoadingEditData?: boolean;
   /** Business defaults set by the platform administrator. */
@@ -116,7 +80,18 @@ interface LinktreeEditorModalProps {
     name?: string | null;
     phone?: string | null;
   } | null;
+  apiEndpoints?: {
+    upload: string;
+    checkSlug: string;
+    checkName: string;
+  };
 }
+
+const DEFAULT_API_ENDPOINTS = {
+  upload: "/api/linktrees/upload",
+  checkSlug: "/api/linktrees/check-slug",
+  checkName: "/api/linktrees/check-name",
+} as const;
 
 /**
  * What a new page's canvas starts as when the business has set no page default.
@@ -163,6 +138,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
   businessDefaults,
   businessIdentity,
   isDefault = false,
+  apiEndpoints = DEFAULT_API_ENDPOINTS,
 }: LinktreeEditorModalProps) {
   const { color: businessTheme } = useTheme();
   const [currentStep, setCurrentStep] = useState<"basic" | "select" | "links">("basic");
@@ -528,7 +504,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
         formData.append("linktreeKey", linktreeKey);
         formData.append("assetType", assetType);
 
-        const response = await fetch("/api/linktrees/upload", {
+        const response = await fetch(apiEndpoints.upload, {
           method: "POST",
           cache: 'no-store', // Always fetch fresh data
           credentials: 'include', // Include cookies for authentication
@@ -842,7 +818,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       try {
         const params = new URLSearchParams({ slug: s });
         if (isEditMode && editData?.linktree?.id) params.set('excludeId', editData.linktree.id);
-        const res = await fetch(`/api/linktrees/check-slug?${params}`, { credentials: 'include' });
+        const res = await fetch(`${apiEndpoints.checkSlug}?${params}`, { credentials: 'include' });
         const json = await res.json();
         if (cancelled) return;
         if (json.success) {
@@ -859,7 +835,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [slug, isEditMode, editData?.linktree?.id]);
+  }, [slug, isEditMode, editData?.linktree?.id, apiEndpoints.checkSlug]);
 
   /**
    * Debounced duplicate-name check.
@@ -880,7 +856,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       try {
         const params = new URLSearchParams({ name: trimmed });
         if (isEditMode && editData?.linktree?.id) params.set('excludeId', editData.linktree.id);
-        const res = await fetch(`/api/linktrees/check-name?${params}`, { credentials: 'include' });
+        const res = await fetch(`${apiEndpoints.checkName}?${params}`, { credentials: 'include' });
         const json = await res.json();
         if (cancelled) return;
         if (json.success) {
@@ -896,7 +872,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [name, isEditMode, editData?.linktree?.id]);
+  }, [name, isEditMode, editData?.linktree?.id, apiEndpoints.checkName]);
 
   // Merge API slug error into displayed errors
   const displayErrors = useMemo(() => {

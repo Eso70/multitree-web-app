@@ -1,5 +1,15 @@
 # Backend
 
+## Platform TikTok tracking
+
+Platform Settings exposes guarded TikTok configuration and delivery-health
+endpoints. The controller never accepts an owner id: `PlatformSettingsService`
+resolves the internal platform workspace and uses the shared encrypted
+`TikTokPixelConfigService`. `PublicPageAnalyticsService` and the analytics
+outbox select destinations from the canonical public-page owner, requiring a
+live customer entitlement for business owners and allowing the non-billable
+platform owner explicitly.
+
 ## Google business identity configuration
 
 Set `APP_BASE_URL` to root frontend origin. Configure `GOOGLE_CLIENT_ID`,
@@ -8,6 +18,11 @@ exact root-domain `/api/auth/google/callback` URL registered in Google Cloud.
 Integration requests only `openid email profile` and retains no Google access
 or refresh token. Missing configuration disables Google signup/sign-in with a
 safe service-unavailable response.
+Creator signup and login use the same root callback and shared verified Google
+identity service through `/api/creator/auth/google/start?intent=signup|login`.
+The callback dispatches Creator-prefixed single-use OAuth state back to the
+Creator domain, creates its isolated session cookie, and never stores a Google
+access or refresh token.
 Tenant OAuth handoff redirects must be built with `buildTenantUrl`; never assign
 a path containing `?` directly to `URL.pathname`, because that percent-encodes
 the query marker and routes the callback to a nonexistent page.
@@ -100,6 +115,59 @@ Both mirror `@linktree/types` and both carry a spec asserting the copy matches,
 because the shared package is source-only and Node cannot resolve it at
 runtime.
 
+## Dependency graph test
+
+`src/app.module.di.spec.ts` compiles the whole `AppModule` so every provider in
+every module is instantiated.
+
+Nothing else catches an unregistered provider. `tsc` and `nest build` only
+compile, and the service specs construct their subject with `new`, bypassing
+the injector — so a constructor parameter whose provider is missing from its
+module compiles, passes its unit tests, and fails at boot with
+`UnknownDependenciesException`.
+
+A default parameter value does **not** make an injected parameter optional.
+Nest resolves constructor parameters from the emitted type metadata and never
+consults the default, so `private readonly thing: Thing = new Thing(db)` reads
+as optional in TypeScript while still requiring `Thing` to be a provider of
+that module. `BusinessAdministrationService` uses that pattern for its
+repositories, which works only because each one is listed in
+`PlatformAdminModule`. Use `@Optional()` when a dependency is genuinely
+optional.
+
+## Per-linktree traffic totals
+
+`AnalyticsReadRepository.linktreeTotalsForBusiness` returns lifetime
+`unique_views`, `unique_clicks` and `total_clicks` per linktree for one
+business, as a map keyed by linktree id.
+
+Two screens ask that question and used to carry their own copy of the SQL: the
+business dashboard's pages list (`GET /linktrees`, which had no analytics at
+all, so the cards could not show traffic) and the platform admin's business
+analytics modal. Both go through the repository now.
+
+Uniques are counted from `analytics_events`, not from
+`analytics_page_daily.new_visitors`: that column marks only a visitor's
+first-ever event, so a returning visitor would be undercounted in a lifetime
+total. `total_clicks` does come from the rollup, which is what it is for.
+
+`getAllLinktrees` attaches the totals with one aggregate for the whole list
+rather than a query per card, and defaults a page with no traffic to zeroes so
+the card never has to tell "no data" apart from "not loaded". A failure there
+is logged and degrades to zeroes rather than failing the request: traffic is
+supplementary to the pages list, and an owner must still be able to see and
+edit their pages during an analytics outage.
+
+The aggregate is driven from a `pages` CTE holding the business's own pages,
+not from the event log. Filtering `analytics_events` by `event_name` first
+makes the planner read every matching event for **every tenant** and discard
+the rest on the join — confirmed with `EXPLAIN`, which chose
+`idx_analytics_events_name_time`. Starting from the small, business-scoped set
+lets each branch reach the event log through
+`idx_analytics_events_page_visitor_name (public_page_id, visitor_id,
+event_name)`, which is the shape it needs. This endpoint loads on every
+dashboard open, so the difference is not academic.
+
 ## Linktree availability checks
 
 `GET /linktrees/check-slug` answers whether a `seo_name` is free. `seo_name` is
@@ -111,6 +179,51 @@ none is wanted — two pages may legitimately share a display name at different
 slugs — so the editor shows the answer and still allows the save. Both compare
 case-insensitively against the trimmed value and accept an `excludeId` so
 editing a page does not collide with itself.
+
+## Platform-owned root-domain content
+
+Platform administrators manage reusable MultiTree-owned pages through
+`/api/platform/linktrees`. The controller has separate read, create, update,
+delete, and upload capabilities, uses the normal platform session and audit
+guards, and never accepts a business/workspace ID from the request.
+
+The implementation delegates page validation, template normalization, link
+mapping, image rules, public-page synchronization, tombstones, and analytics
+registration to the existing Linktree services. A write scope only suppresses
+business subscription/template checks and business webhooks for the internal
+workspace; it does not create a parallel Linktree implementation. Public reads
+use `/api/public/platform/linktree/:identifier`, require a root-domain request,
+apply the global IP rule and public rate limit, and use a separate cache key.
+
+Platform Linktrees retain first-party public-page analytics and resolve only
+the Pixel group configured in Platform Settings. They never inherit or combine
+with a tenant's Pixel group; owner selection is derived from the internal
+workspace rather than accepted from the request.
+
+`GET /api/platform/linktrees/:id/analytics` reads the shared lifetime summary
+after verifying that the Linktree belongs to the internal platform workspace.
+`DELETE /api/platform/linktrees/:id/analytics` performs the same ownership
+check before clearing the page analytics and requires the platform Linktree
+delete capability. Both endpoints power the shared page analytics modal rather
+than a platform-specific modal implementation.
+
+`DELETE /api/platform/linktrees/analytics` clears analytics for every
+platform-owned Linktree and leaves other platform public routes untouched. It
+uses the same delete capability and records a dedicated clear-all audit event.
+
+Platform mini websites use the same internal workspace and the existing
+`MiniWebsitesService`; platform mode bypasses customer subscription checks but
+does not duplicate DTO validation, projection, versioning, child-row writes,
+asset cleanup, public-page synchronization, action registration, or rendering.
+The guarded `/api/platform/mini-websites` surface provides CRUD, slug checks,
+map resolution, validated image uploads, per-page analytics, summary analytics,
+and mini-website-only clear-all analytics.
+
+`GET /api/public/mini-websites/platform/:slug` is root-domain only and resolves
+only `businesses.account_type='platform'`. The same public renderer and tracker
+serve tenant and platform pages. Platform lead submissions use the same
+validated lead-form and analytics/CRM pipeline under the internal workspace,
+through the separately rate-limited root-domain endpoint.
 
 ## Request validation boundaries
 

@@ -109,9 +109,15 @@ export interface LinktreeListItem {
   is_default?: boolean;
   business_logo?: string | null;
   business_default_avatar?: string | null;
+  /**
+   * Lifetime totals for this page. Filled in by the list endpoints; a page
+   * with no traffic yet reads as zeroes rather than being absent, so a card
+   * never has to distinguish "no data" from "not loaded".
+   */
   analytics?: {
     unique_views: number;
     unique_clicks: number;
+    total_clicks?: number;
   };
 }
 

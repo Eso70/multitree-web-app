@@ -11,7 +11,13 @@ import {
   Min,
 } from 'class-validator';
 
-const ACTOR_TYPES = ['anonymous', 'business', 'platform-admin', 'multitree'];
+const ACTOR_TYPES = [
+  'anonymous',
+  'business',
+  'creator',
+  'platform-admin',
+  'multitree',
+];
 const OUTCOMES = ['success', 'failure', 'denied'];
 const SORT_OPTIONS = [
   'newest',

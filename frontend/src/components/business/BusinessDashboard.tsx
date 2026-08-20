@@ -747,7 +747,12 @@ export const BusinessDashboard = memo(function BusinessDashboard({
       mapLinktrees((item) => ({
         ...item,
         analytics: item.analytics
-          ? { ...item.analytics, unique_views: 0, unique_clicks: 0 }
+          ? {
+              ...item.analytics,
+              unique_views: 0,
+              unique_clicks: 0,
+              total_clicks: 0,
+            }
           : item.analytics,
       }));
       setIsClearAnalyticsModalOpen(false);

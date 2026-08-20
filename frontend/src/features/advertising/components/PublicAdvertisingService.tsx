@@ -49,6 +49,14 @@ export function PublicAdvertisingService({
     "--advertising-accent": accent,
     "--advertising-accent-ink": accentInk,
   } as CSSProperties;
+  const hasPackages = Object.values(config.packageTiers).some((tiers) => tiers.length > 0);
+  const hasTutorialVideo = Boolean(config.videoUrl.trim());
+  const hasHeroContent = Boolean(config.title.trim() || config.description.trim());
+  const hasClosingCta = Boolean(
+    config.closingCta.title.trim() ||
+      config.closingCta.description.trim() ||
+      config.closingCta.buttonLabel.trim(),
+  );
 
   return (
     <BusinessPublicSiteShell
@@ -66,7 +74,7 @@ export function PublicAdvertisingService({
         },
         config.sections.results &&
           config.results.length > 0 && { label: "ئەنجامەکان", href: "#results" },
-        config.sections.packages && { label: "نرخەکان", href: "#packages" },
+        config.sections.packages && hasPackages && { label: "نرخەکان", href: "#packages" },
         config.sections.testimonials &&
           config.testimonials.length > 0 && {
             label: "ڕای کڕیاران",
@@ -74,7 +82,7 @@ export function PublicAdvertisingService({
           },
         config.sections.faq &&
           config.faqs.length > 0 && { label: "پرسیارەکان", href: "#faq" },
-        { label: "ڤیدیۆی فێرکاری", href: "/advertising/video-code" },
+        hasTutorialVideo && { label: "ڤیدیۆی فێرکاری", href: "/advertising/video-code" },
       ].filter((item): item is { label: string; href: string } =>
         Boolean(item),
       )}
@@ -96,7 +104,7 @@ export function PublicAdvertisingService({
       }}
     >
       <div className="overflow-hidden" style={pageStyle}>
-        {config.sections.hero && (
+        {config.sections.hero && hasHeroContent && (
           <AdvertisingHeroSection
             title={config.title}
             description={config.description}
@@ -107,6 +115,7 @@ export function PublicAdvertisingService({
 
         {config.sections.journey && (
           <AdvertisingSponsorshipJourney
+            whatsappNumber={config.whatsappNumber}
             videoUrl={config.videoUrl}
             videoTutorialTitle={config.videoTutorialTitle}
             tutorialSteps={config.tutorialSteps}
@@ -125,7 +134,9 @@ export function PublicAdvertisingService({
           <AdvertisingResultsShowcaseSection items={config.results} />
         )}
 
-        {config.sections.packages && <AdvertisingPackagesSection packageTiers={config.packageTiers} />}
+        {config.sections.packages && hasPackages && (
+          <AdvertisingPackagesSection packageTiers={config.packageTiers} />
+        )}
 
         {config.sections.testimonials && config.testimonials.length > 0 && (
           <AdvertisingTestimonialsSection items={config.testimonials} />
@@ -135,7 +146,7 @@ export function PublicAdvertisingService({
           <AdvertisingFaqSection items={config.faqs} />
         )}
 
-        {config.sections.closingCta && (
+        {config.sections.closingCta && hasClosingCta && (
           <AdvertisingClosingCtaSection
             title={config.closingCta.title}
             description={config.closingCta.description}

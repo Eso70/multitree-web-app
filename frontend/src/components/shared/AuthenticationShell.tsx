@@ -13,6 +13,7 @@ interface AuthenticationShellProps {
   brandName?: string;
   brandLogo?: string | null;
   accentColor?: string | null;
+  previewTitle?: string;
 }
 
 export function AuthenticationShell({
@@ -29,6 +30,7 @@ export function AuthenticationShell({
   // not inherit that placeholder.
   brandLogo = MULTITREE_LOGO,
   accentColor,
+  previewTitle,
 }: AuthenticationShellProps) {
   const controlClass =
     "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/85 text-slate-500 shadow-sm backdrop-blur transition hover:text-slate-900 dark:border-white/10 dark:bg-[#171a20]/90 dark:text-slate-400 dark:hover:text-white";
@@ -73,6 +75,7 @@ export function AuthenticationShell({
           description={brandDescription}
           brandName={brandName}
           brandLogo={brandLogo}
+          title={previewTitle}
         />
       </div>
     </main>

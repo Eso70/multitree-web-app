@@ -36,6 +36,7 @@ import { CommunicationModule } from '../communications/communication.module';
     TikTokOutboxProcessor,
   ],
   exports: [
+    AnalyticsReadRepository,
     AnalyticsReadService,
     UnifiedAnalyticsService,
     PublicPageAnalyticsService,

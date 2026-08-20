@@ -51,8 +51,16 @@ import {
   type AuthHandoffPayload,
 } from '../auth/auth-handoff';
 
+/**
+ * Mirrored from `LEGAL_TERMS_VERSION` / `LEGAL_PRIVACY_VERSION` in
+ * `@linktree/types`, which `/legal/terms` and `/legal/privacy` render as the
+ * document label. An acceptance row must name the revision the owner actually
+ * read, so the two must not drift; the shared package is source-only and Node
+ * cannot resolve it at runtime, hence the copy. `legal-versions.spec.ts`
+ * asserts they stay identical.
+ */
 export const TERMS_VERSION = '2026-08-09';
-export const PRIVACY_VERSION = '2026-08-09';
+export const PRIVACY_VERSION = '2026-08-19';
 const SIGNUP_SESSION_SECONDS = 2 * 60 * 60;
 const DEFAULT_INVITATION_TTL_HOURS = 24;
 const DEFAULT_MULTITREE_WEBSITE_COLOR = '#b6f20d';

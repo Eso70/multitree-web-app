@@ -35,6 +35,7 @@ import {
   UpdateMediaSettingsDto,
   UpdatePlatformBrandingDto,
   UpdatePlatformProfileDto,
+  UpdatePlatformTikTokDto,
 } from './dto/platform-settings.dto';
 import { DataRetentionService } from './data-retention.service';
 
@@ -47,6 +48,61 @@ export class PlatformSettingsController {
     private readonly storageService: StorageService,
     private readonly dataRetentionService: DataRetentionService,
   ) {}
+
+  @Get('tiktok')
+  @RequireCapabilities(Capability.PlatformSettingsTikTokRead)
+  async getTikTokSettings() {
+    return {
+      success: true,
+      data: await this.platformSettingsService.getTikTokSettings(),
+    };
+  }
+
+  @Put('tiktok')
+  @RequireCapabilities(Capability.PlatformSettingsTikTokUpdate)
+  @AuditEvent('platform.settings.tiktok.update', {
+    resourceType: 'platform-settings',
+  })
+  async updateTikTokSettings(@Body() body: UpdatePlatformTikTokDto) {
+    return {
+      success: true,
+      data: await this.platformSettingsService.updateTikTokSettings(
+        body.tiktok_configs,
+      ),
+    };
+  }
+
+  @Get('tiktok/health')
+  @RequireCapabilities(Capability.PlatformSettingsTikTokRead)
+  async getTikTokHealth() {
+    return {
+      success: true,
+      data: await this.platformSettingsService.getTikTokHealth(),
+    };
+  }
+
+  @Get('tiktok/errors')
+  @RequireCapabilities(Capability.PlatformSettingsTikTokRead)
+  async getTikTokErrors() {
+    return {
+      success: true,
+      data: await this.platformSettingsService.getTikTokErrors(),
+    };
+  }
+
+  @Post('tiktok/retry-failed')
+  @RequireCapabilities(Capability.PlatformSettingsTikTokUpdate)
+  @AuditEvent('platform.settings.tiktok.retry-failed', {
+    resourceType: 'platform-settings',
+  })
+  async retryFailedTikTokEvents() {
+    return {
+      success: true,
+      data: {
+        retried: await this.platformSettingsService.retryFailedTikTokEvents(),
+      },
+    };
+  }
 
   @Get('media')
   @RequireCapabilities(Capability.PlatformSettingsRead)

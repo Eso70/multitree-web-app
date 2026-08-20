@@ -29,6 +29,8 @@ const ALLOWED = new Set([
   "components/public/LinktreePage.tsx",
   // Public mini website pages.
   "features/mini-website/PublicMiniWebsite.tsx",
+  // Central fixed-route allowlist (home, join and advertising routes).
+  "components/analytics/PublicRouteTracking.tsx",
 ]);
 
 function sourceFiles(directory: string, found: string[] = []): string[] {
@@ -47,7 +49,10 @@ function filesMounting(pattern: RegExp): string[] {
   return sourceFiles(SOURCE_ROOT)
     .filter((file) => pattern.test(readFileSync(file, "utf8")))
     .map((file) =>
-      file.slice(SOURCE_ROOT.length + 1).split(/[\\/]/).join("/"),
+      file
+        .slice(SOURCE_ROOT.length + 1)
+        .split(/[\\/]/)
+        .join("/"),
     );
 }
 
@@ -55,7 +60,9 @@ describe("TikTok pixel placement", () => {
   it("is mounted only on public surfaces", () => {
     // `\b` keeps `<TikTokPixelBaseCode` (the SSR half of the same feature) from
     // being read as a client pixel mount: it is pinned separately below.
-    const mounts = filesMounting(/<TikTokPixel\b|from "@\/components\/analytics\/TikTokPixel"/);
+    const mounts = filesMounting(
+      /<TikTokPixel\b|from "@\/components\/analytics\/TikTokPixel"/,
+    );
 
     expect([...mounts].sort()).toEqual([...ALLOWED].sort());
   });
@@ -66,21 +73,21 @@ describe("TikTok pixel placement", () => {
     // `app/business/**` is authenticated: the dashboard and the login page.
     expect(mounts.some((file) => file.startsWith("app/business/"))).toBe(false);
     expect(
-      mounts.some((file) => file.startsWith("components/business/Business" + "Dashboard")),
+      mounts.some((file) =>
+        file.startsWith("components/business/Business" + "Dashboard"),
+      ),
     ).toBe(false);
   });
 
-  it("is absent from the platform's own root site and admin console", () => {
+  it("is absent from the platform admin console", () => {
     const mounts = filesMounting(/<TikTokPixel/);
 
-    // The root domain renders `HomeLanding`; the console lives under
-    // `features/platform-admin`. Neither serves a business, so neither has a
-    // pixel to report to.
-    expect(mounts.some((file) => file.includes("home/HomeLanding"))).toBe(false);
+    // Platform-owned public routes are handled only by PublicRouteTracking;
+    // the authenticated console must never mount a Pixel directly.
     expect(mounts.some((file) => file.includes("platform-admin"))).toBe(false);
   });
 
-  it("is absent from the subdomain landing page and the advertising page", () => {
+  it("does not let individual landing or advertising components mount a pixel", () => {
     const mounts = filesMounting(/<TikTokPixel/);
 
     // Both are public and both belong to a business, which is exactly why they
@@ -150,5 +157,15 @@ describe("TikTok pixel placement", () => {
     // token encrypted at rest. An env var would be one value shared by every
     // tenant, which is the wrong shape as well as a leak.
     expect(offenders).toEqual([]);
+  });
+
+  it("does not gate allowlisted marketing tracking behind a visitor choice", () => {
+    const consentGates = sourceFiles(SOURCE_ROOT).filter((file) =>
+      /mt_marketing_consent|analyticsConsent|setAnalyticsConsent|Marketing cookie choice|ڕێگەدان بە کوکییەکانی ڕیکلام/.test(
+        readFileSync(file, "utf8"),
+      ),
+    );
+
+    expect(consentGates).toEqual([]);
   });
 });

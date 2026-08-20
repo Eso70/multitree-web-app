@@ -9,9 +9,10 @@ import {
 } from './business-onboarding.controller';
 import { BusinessOnboardingService } from './business-onboarding.service';
 import { MailModule } from '../mail/mail.module';
+import { CreatorModule } from '../creator/creator.module';
 
 @Module({
-  imports: [AuthModule, StorageModule, MailModule],
+  imports: [AuthModule, StorageModule, MailModule, CreatorModule],
   controllers: [
     GoogleBusinessAuthController,
     PlatformGoogleAuthController,

@@ -25,6 +25,7 @@ import { EntitlementService } from '../billing/entitlement.service';
 import { SecretCryptoService } from './secret-crypto.service';
 import { TemplateAccessService } from '../billing/template-access.service';
 import { StorageService } from '../storage/storage.service';
+import { TikTokPixelConfigService } from './tiktok-pixel-config.service';
 
 @Injectable()
 export class AuthService {
@@ -35,6 +36,8 @@ export class AuthService {
     @Optional() private readonly secretCrypto?: SecretCryptoService,
     @Optional() private readonly templateAccessService?: TemplateAccessService,
     @Optional() private readonly storageService?: StorageService,
+    @Optional()
+    private readonly tiktokPixelConfigs?: TikTokPixelConfigService,
   ) {}
 
   async getBusinessOnboarding(businessId: string) {
@@ -75,7 +78,7 @@ export class AuthService {
          ORDER BY membership.created_at ASC
          LIMIT 1
        ) owner_account ON true
-       WHERE business.id = $1`,
+       WHERE business.id = $1 AND business.account_type = 'business'`,
       [businessId],
     );
     if (!result.rows[0]) throw new BadRequestException('Business not found');
@@ -736,6 +739,30 @@ export class AuthService {
         ],
       );
     } else {
+      if (this.tiktokPixelConfigs) {
+        const configs = this.tiktokPixelConfigs.normalize(body.tiktok_configs);
+        const allowedGroups = this.entitlementService
+          ? await this.entitlementService.getInteger(
+              businessId,
+              'limit.tiktok_pixels',
+              0,
+            )
+          : 0;
+        if (allowedGroups !== -1 && configs.length > allowedGroups) {
+          throw new ForbiddenException(
+            'The TikTok pixel limit has been reached',
+          );
+        }
+        await this.tiktokPixelConfigs.replace(businessId, configs);
+        const business = await this.databaseService.query<{
+          subdomain: string | null;
+        }>('SELECT subdomain FROM businesses WHERE id = $1', [businessId]);
+        await this.clearBusinessPublicLinktreeCache(
+          businessId,
+          business.rows[0]?.subdomain,
+        );
+        return this.getBusinessSettings(businessId);
+      }
       const configs = this.normalizeTikTokConfigs(body.tiktok_configs);
       const allowedGroups = this.entitlementService
         ? await this.entitlementService.getInteger(
@@ -905,7 +932,8 @@ export class AuthService {
       `SELECT b.website_color, a.name, b.favicon, b.logo
        FROM businesses a
        LEFT JOIN business_branding b ON b.business_id = a.id
-       WHERE a.subdomain = $1 AND a.status = 'active' LIMIT 1`,
+       WHERE a.subdomain = $1 AND a.status = 'active'
+         AND a.account_type = 'business' LIMIT 1`,
       [subdomain],
     );
     return res.rows[0] || null;
@@ -918,7 +946,9 @@ export class AuthService {
   async subdomainExists(subdomain: string): Promise<boolean> {
     if (!subdomain) return false;
     const res = await this.databaseService.query<{ id: string }>(
-      `SELECT id FROM businesses WHERE subdomain = $1 AND status = 'active' LIMIT 1`,
+      `SELECT id FROM businesses
+       WHERE subdomain = $1 AND status = 'active'
+         AND account_type = 'business' LIMIT 1`,
       [subdomain],
     );
     return !!(res.rows && res.rows.length > 0);

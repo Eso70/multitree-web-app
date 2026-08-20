@@ -87,9 +87,15 @@ interface LinktreePageProps {
   linktree: Linktree;
   links: Link[];
   analytics: PublicPageAnalytics;
+  enableMarketingTracking?: boolean;
 }
 
-export const LinktreePage = memo(function LinktreePage({ linktree: rawLinktree, links, analytics }: LinktreePageProps) {
+export const LinktreePage = memo(function LinktreePage({
+  linktree: rawLinktree,
+  links,
+  analytics,
+  enableMarketingTracking = true,
+}: LinktreePageProps) {
   // Identifies the page to the pixel across a soft navigation. Next.js keeps
   // this component mounted when moving between two linktrees, so without a key
   // that changes the second page would never report a view. The record's own
@@ -496,7 +502,9 @@ export const LinktreePage = memo(function LinktreePage({ linktree: rawLinktree, 
 
   return (
     <div className="relative">
-      <TikTokPixel pixelIds={analytics.pixelIds} pageKey={pixelPageKey} />
+      {enableMarketingTracking ? (
+        <TikTokPixel pixelIds={analytics.pixelIds} pageKey={pixelPageKey} />
+      ) : null}
       <div className="relative z-10">
         {/* Dynamic template renders based on template_config from database */}
         <DynamicTemplate

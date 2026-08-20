@@ -26,9 +26,14 @@ import { IconActionButton } from "@/components/shared/IconActionButton";
 import { LocationMap } from "./LocationMap";
 import { MediaUpload } from "./MiniWebsiteContentStep";
 import { MiniWebsiteFieldLabel } from "./MiniWebsiteFieldLabel";
-import { coordinatesFromMapUrl, firstUrl, isShortenedMapUrl } from "./location-url";
+import {
+  coordinatesFromMapUrl,
+  firstUrl,
+  isShortenedMapUrl,
+} from "./location-url";
 import type { MiniWebsiteDraft } from "./types";
 import type { MiniWebsiteValidationErrors } from "./validation";
+import { useMiniWebsiteWorkspace } from "./workspace-config";
 
 const inputClass = modalInputClass(false, "h-11 py-0");
 
@@ -47,12 +52,17 @@ function Field({
 }) {
   return (
     <label className="block">
-      <MiniWebsiteFieldLabel required={required} className="mb-1.5 block text-[11px] font-black text-slate-600 dark:text-slate-300">
+      <MiniWebsiteFieldLabel
+        required={required}
+        className="mb-1.5 block text-[11px] font-black text-slate-600 dark:text-slate-300"
+      >
         {label}
       </MiniWebsiteFieldLabel>
       {children}
       {hint && !error && (
-        <span className="mt-1 block text-[10px] leading-4 text-slate-400">{hint}</span>
+        <span className="mt-1 block text-[10px] leading-4 text-slate-400">
+          {hint}
+        </span>
       )}
       {error && (
         <span className="mt-1 block text-[10px] font-bold leading-4 text-red-500">
@@ -117,7 +127,9 @@ export function MiniWebsiteLocationFields({
           errors={errors}
           onPatch={(patch) => patchAt(index, patch)}
           onRemove={() =>
-            setLocations(locations.filter((_, entryIndex) => entryIndex !== index))
+            setLocations(
+              locations.filter((_, entryIndex) => entryIndex !== index),
+            )
           }
           onMove={(direction) => move(index, direction)}
         />
@@ -126,7 +138,9 @@ export function MiniWebsiteLocationFields({
       {locations.length < MINI_WEBSITE_MAX_LOCATIONS && (
         <button
           type="button"
-          onClick={() => setLocations([...locations, createMiniWebsiteLocation()])}
+          onClick={() =>
+            setLocations([...locations, createMiniWebsiteLocation()])
+          }
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 py-3 text-xs font-black text-slate-500 transition hover:border-slate-400 hover:bg-slate-50 dark:border-white/15 dark:text-slate-400 dark:hover:bg-white/5"
         >
           <Plus className="h-4 w-4" />
@@ -157,9 +171,10 @@ function LocationEntryFields({
   onRemove: () => void;
   onMove: (direction: -1 | 1) => void;
 }) {
-  const [resolveState, setResolveState] = useState<"idle" | "resolving" | "failed">(
-    "idle",
-  );
+  const { api } = useMiniWebsiteWorkspace();
+  const [resolveState, setResolveState] = useState<
+    "idle" | "resolving" | "failed"
+  >("idle");
   const resolveToken = useRef(0);
 
   const approximate = location.precision === "approximate";
@@ -198,7 +213,7 @@ function LocationEntryFields({
     void (async () => {
       try {
         const response = await fetch(
-          `/api/mini-websites/resolve-map-link?url=${encodeURIComponent(mapUrl)}`,
+          `${api.resolveMapLink}?url=${encodeURIComponent(mapUrl)}`,
           { credentials: "include", cache: "no-store" },
         );
         const result = await response.json();
@@ -238,7 +253,8 @@ function LocationEntryFields({
               <span
                 className="rounded-full px-2 py-0.5 text-[9px] font-black"
                 style={{
-                  background: "color-mix(in srgb, var(--theme-primary, #64748b) 12%, transparent)",
+                  background:
+                    "color-mix(in srgb, var(--theme-primary, #64748b) 12%, transparent)",
                   color: "var(--theme-primary, #64748b)",
                 }}
               >
@@ -281,7 +297,11 @@ function LocationEntryFields({
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field required label="ناونیشان" error={errors[`location.${index}.address`]}>
+        <Field
+          required
+          label="ناونیشان"
+          error={errors[`location.${index}.address`]}
+        >
           <input
             className={inputClass}
             value={location.address}
@@ -314,7 +334,9 @@ function LocationEntryFields({
           value={location.phone}
           countryCode={location.phoneCountryCode}
           onChange={(phone) => onPatch({ phone })}
-          onCountryCodeChange={(phoneCountryCode) => onPatch({ phoneCountryCode })}
+          onCountryCodeChange={(phoneCountryCode) =>
+            onPatch({ phoneCountryCode })
+          }
         />
       </Field>
 
@@ -323,7 +345,9 @@ function LocationEntryFields({
           className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px] font-bold leading-5 text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400"
           role="status"
         >
-          <MotionSpinner><Loader2 aria-hidden="true" className="h-3.5 w-3.5 shrink-0 "  /></MotionSpinner>
+          <MotionSpinner>
+            <Loader2 aria-hidden="true" className="h-3.5 w-3.5 shrink-0 " />
+          </MotionSpinner>
           لینکەکە دەکرێتەوە بۆ دۆزینەوەی شوێن...
         </p>
       )}
@@ -394,7 +418,9 @@ function LocationEntryFields({
             max={MINI_WEBSITE_LOCATION_RADIUS_MAX}
             step={100}
             value={location.radiusMeters}
-            onChange={(event) => onPatch({ radiusMeters: Number(event.target.value) })}
+            onChange={(event) =>
+              onPatch({ radiusMeters: Number(event.target.value) })
+            }
             className="w-full accent-[var(--theme-primary,#64748b)]"
             dir="ltr"
           />

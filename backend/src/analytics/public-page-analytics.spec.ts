@@ -73,7 +73,7 @@ describe('TikTok forwarding scope', () => {
     'utf8',
   );
 
-  it('forwards the two public pages that carry a pixel, and no others', () => {
+  it('forwards every registered public marketing page type', () => {
     const declaration = source.match(
       /TIKTOK_FORWARDED_PAGE_TYPES[\s\S]*?new Set\(\[([^\]]*)\]\)/,
     );
@@ -85,7 +85,8 @@ describe('TikTok forwarding scope', () => {
     // and would inflate the counts ads optimise on.
     expect(declaration?.[1]).toContain("'linktree'");
     expect(declaration?.[1]).toContain("'mini_website'");
-    expect(declaration?.[1]).not.toContain('advertising');
+    expect(declaration?.[1]).toContain("'advertising'");
+    expect(declaration?.[1]).toContain("'route'");
   });
 
   it('gates the outbox insert on the same entitlement as the public read', () => {

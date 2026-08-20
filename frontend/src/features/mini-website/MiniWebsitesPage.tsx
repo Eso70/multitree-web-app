@@ -14,7 +14,6 @@ import {
   Table2,
   Target,
   TrendingUp,
-  Trash2,
   Users,
   X,
 } from "lucide-react";
@@ -39,18 +38,45 @@ import { StatCardGrid } from "@/components/shared/StatCardGrid";
 import { MINI_WEBSITE_TEMPLATE_DEFAULT_ID } from "@/components/templates/mini-website";
 import { apiRequest } from "@/lib/api/request";
 import { createMiniWebsiteSavePayload } from "./save-payload";
+import { ClearAnalyticsButton } from "@/components/shared/ClearAnalyticsButton";
+import {
+  MINI_WEBSITE_TRAFFIC_LABELS,
+  MiniWebsiteListMeta,
+} from "./MiniWebsiteListMeta";
+import {
+  BUSINESS_MINI_WEBSITE_WORKSPACE,
+  MiniWebsiteWorkspaceProvider,
+  useMiniWebsiteWorkspace,
+  type MiniWebsiteWorkspaceConfig,
+} from "./workspace-config";
 
 type ViewMode = "grid" | "table";
 
-export function MiniWebsitesPage({
-  businessLogo = null,
-  businessDefaultAvatar = null,
-  websiteColor = "#b6f20d",
-}: {
+export interface MiniWebsitesPageProps {
   businessLogo?: string | null;
   businessDefaultAvatar?: string | null;
   websiteColor?: string | null;
-}) {
+  workspaceConfig?: MiniWebsiteWorkspaceConfig;
+  maxPages?: number;
+}
+
+export function MiniWebsitesPage(props: MiniWebsitesPageProps) {
+  return (
+    <MiniWebsiteWorkspaceProvider
+      config={props.workspaceConfig ?? BUSINESS_MINI_WEBSITE_WORKSPACE}
+    >
+      <MiniWebsitesWorkspacePage {...props} />
+    </MiniWebsiteWorkspaceProvider>
+  );
+}
+
+function MiniWebsitesWorkspacePage({
+  businessLogo = null,
+  businessDefaultAvatar = null,
+  websiteColor = "#b6f20d",
+  maxPages,
+}: MiniWebsitesPageProps) {
+  const workspace = useMiniWebsiteWorkspace();
   const accent = websiteColor?.startsWith("#") ? websiteColor : "#b6f20d";
   const defaultAvatar =
     businessDefaultAvatar || businessLogo || "/images/DefaultAvatar.png";
@@ -74,20 +100,26 @@ export function MiniWebsitesPage({
     id: string;
     name: string;
   } | null>(null);
+  const [clearAnalyticsOpen, setClearAnalyticsOpen] = useState(false);
+  const [clearingAnalytics, setClearingAnalytics] = useState(false);
   const {
     totals: analyticsTotals,
     hasData: hasAnalyticsData,
     isLoading: isAnalyticsLoading,
     isRefreshing: isAnalyticsRefreshing,
     refresh: refreshAnalytics,
-  } = useBusinessAnalyticsTotals("mini_website");
+  } = useBusinessAnalyticsTotals(
+    "mini_website",
+    true,
+    workspace.api.analyticsSummary,
+  );
 
   const loadProfiles = useCallback(
     async (quiet = false, rethrow = false) => {
       if (!quiet) setLoading(true);
       else setRefreshing(true);
       try {
-        const response = await fetch("/api/mini-websites", {
+        const response = await fetch(workspace.api.collection, {
           credentials: "include",
           cache: "no-store",
         });
@@ -223,7 +255,12 @@ export function MiniWebsitesPage({
         setRefreshing(false);
       }
     },
-    [businessDefaultAvatar, businessLogo, defaultAvatar],
+    [
+      businessDefaultAvatar,
+      businessLogo,
+      defaultAvatar,
+      workspace.api.collection,
+    ],
   );
 
   const refreshForDashboard = useCallback(async () => {
@@ -257,6 +294,7 @@ export function MiniWebsitesPage({
         image: profile.avatar || defaultAvatar,
         name: profile.name,
         subtitle: profile.headline,
+        description: profile.bio,
         seo_name:
           profile.status === "published"
             ? "بڵاوکراوە"
@@ -265,8 +303,9 @@ export function MiniWebsitesPage({
               : "ڕەشنووس",
         public_identifier: profile.slug,
         uid: profile.slug,
-        created_at: profile.updatedAt,
+        created_at: profile.createdAt || profile.updatedAt,
         updated_at: profile.updatedAt,
+        template_key: profile.templateKey,
         business_logo: businessLogo || undefined,
         analytics: {
           unique_views: profile.views,
@@ -319,7 +358,7 @@ export function MiniWebsitesPage({
   const saveProfile = async (next: MiniWebsiteDraft) => {
     try {
       await apiRequest<MiniWebsite>(
-        editorId ? `/api/mini-websites/${editorId}` : "/api/mini-websites",
+        editorId ? workspace.api.item(editorId) : workspace.api.collection,
         {
           method: editorId ? "PATCH" : "POST",
           json: createMiniWebsiteSavePayload(next),
@@ -342,6 +381,42 @@ export function MiniWebsitesPage({
       );
     }
   };
+
+  const refreshWorkspace = useCallback(
+    async () => Promise.all([loadProfiles(true), refreshAnalytics()]),
+    [loadProfiles, refreshAnalytics],
+  );
+
+  const clearAllAnalytics = useCallback(async () => {
+    if (clearingAnalytics || !hasAnalyticsData) return;
+    setClearingAnalytics(true);
+    try {
+      if (workspace.api.clearAllAnalytics) {
+        await apiRequest(workspace.api.clearAllAnalytics, { method: "DELETE" });
+      } else {
+        await Promise.all(
+          profiles.map((profile) =>
+            apiRequest(workspace.api.analytics(profile.id), {
+              method: "DELETE",
+            }),
+          ),
+        );
+      }
+      await refreshWorkspace();
+      toast.success("ئامارەکان پاککرانەوە");
+    } catch (error) {
+      toast.error("پاککردنەوەی ئامارەکان سەرکەوتوو نەبوو");
+      throw error;
+    } finally {
+      setClearingAnalytics(false);
+    }
+  }, [
+    clearingAnalytics,
+    hasAnalyticsData,
+    profiles,
+    refreshWorkspace,
+    workspace.api,
+  ]);
   const findProfile = (id: string) =>
     profiles.find((profile) => profile.id === id);
 
@@ -399,48 +474,27 @@ export function MiniWebsitesPage({
           icon={IdCard}
           action={
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    await Promise.all(
-                      profiles.map(async (profile) => {
-                        const response = await fetch(
-                          `/api/mini-websites/${profile.id}/analytics`,
-                          { method: "DELETE", credentials: "include" },
-                        );
-                        if (!response.ok)
-                          throw new Error("پاککردنەوە سەرکەوتوو نەبوو");
-                      }),
-                    );
-                    await Promise.all([loadProfiles(true), refreshAnalytics()]);
-                    toast.success("ئامارەکان پاککرانەوە");
-                  } catch {
-                    toast.error("پاککردنەوەی ئامارەکان سەرکەوتوو نەبوو");
-                  }
-                }}
+              <ClearAnalyticsButton
+                onClick={() => setClearAnalyticsOpen(true)}
+                hasData={hasAnalyticsData}
                 disabled={
-                  refreshing || isAnalyticsRefreshing || !hasAnalyticsData
+                  refreshing || isAnalyticsRefreshing || clearingAnalytics
                 }
-                className="group flex h-10 w-10 items-center justify-center rounded-xl border border-rose-100 bg-gradient-to-br from-rose-50 to-pink-50 text-rose-500 shadow-sm transition-all hover:shadow disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-500/20 dark:from-rose-500/10 dark:to-pink-500/10 dark:text-rose-400"
-                title="پاککردنەوەی هەموو داتاکانی بینین و کلیک"
-              >
-                <Trash2 className="h-4 w-4 transition-transform group-hover:scale-110" />
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  void Promise.all([loadProfiles(true), refreshAnalytics()])
-                }
-                disabled={refreshing || isAnalyticsRefreshing}
-                aria-busy={refreshing || isAnalyticsRefreshing}
-                className="group flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:shadow dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
-                title="نوێکردنەوە"
-              >
-                <MotionSpinner active={refreshing || isAnalyticsRefreshing}>
-                  <RefreshCw className="h-4 w-4 -transform" />
-                </MotionSpinner>
-              </button>
+              />
+              {maxPages === undefined || profiles.length < maxPages ? (
+                <button
+                  type="button"
+                  onClick={() => void refreshWorkspace()}
+                  disabled={refreshing || isAnalyticsRefreshing}
+                  aria-busy={refreshing || isAnalyticsRefreshing}
+                  className="group flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:shadow dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
+                  title="نوێکردنەوە"
+                >
+                  <MotionSpinner active={refreshing || isAnalyticsRefreshing}>
+                    <RefreshCw className="h-4 w-4 -transform" />
+                  </MotionSpinner>
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() =>
@@ -522,7 +576,7 @@ export function MiniWebsitesPage({
         <div className="border-t border-slate-100 pt-6 dark:border-white/5">
           {view === "grid" ? (
             <LinktreesGrid
-              publicPathPrefix="/bio"
+              publicPathPrefix={workspace.publicPathPrefix}
               data={displayProfiles}
               isLoading={loading}
               emptyTitle="هیچ مینی وێبسایتێک نەدۆزرایەوە"
@@ -536,10 +590,13 @@ export function MiniWebsitesPage({
                 if (profile) setDeleteTarget(profile);
               }}
               onViewAnalytics={(id, name) => setAnalyticsTarget({ id, name })}
+              showPageMeta
+              MetaBadgesComponent={MiniWebsiteListMeta}
+              trafficLabels={MINI_WEBSITE_TRAFFIC_LABELS}
             />
           ) : (
             <LinktreesTable
-              publicPathPrefix="/bio"
+              publicPathPrefix={workspace.publicPathPrefix}
               data={displayProfiles}
               isLoading={loading}
               emptyTitle="هیچ مینی وێبسایتێک نەدۆزرایەوە"
@@ -552,6 +609,9 @@ export function MiniWebsitesPage({
                 if (profile) setDeleteTarget(profile);
               }}
               onViewAnalytics={(id, name) => setAnalyticsTarget({ id, name })}
+              showPageMeta
+              MetaBadgesComponent={MiniWebsiteListMeta}
+              trafficLabels={MINI_WEBSITE_TRAFFIC_LABELS}
             />
           )}
         </div>
@@ -564,6 +624,9 @@ export function MiniWebsitesPage({
           pageId={analyticsTarget.id}
           pageName={analyticsTarget.name}
           pageKind="mini_website"
+          dataSource={workspace.analyticsDataSource}
+          summaryOnly={workspace.analyticsDataSource !== "business"}
+          onAnalyticsCleared={() => refreshAnalytics()}
         />
       )}
 
@@ -596,7 +659,7 @@ export function MiniWebsitesPage({
                   className="mt-0.5 block truncate text-[10px] text-slate-400"
                   dir="ltr"
                 >
-                  /bio/{profile.slug}
+                  {workspace.publicPathPrefix}/{profile.slug}
                 </span>
               </span>
             </div>
@@ -612,14 +675,32 @@ export function MiniWebsitesPage({
         onSave={saveProfile}
       />
       <ConfirmDeleteModal
+        isOpen={clearAnalyticsOpen}
+        onClose={() => {
+          if (!clearingAnalytics) setClearAnalyticsOpen(false);
+        }}
+        onConfirm={clearAllAnalytics}
+        title="پاککردنەوەی هەموو ئامارەکان"
+        confirmLabel="بەڵێ، هەمووی پاک بکەوە"
+        loadingLabel="پاکدەکرێتەوە..."
+        cancelLabel="هەڵوەشاندنەوە"
+        isDeleting={clearingAnalytics}
+        message={
+          <p>
+            دڵنیایت لە پاککردنەوەی هەموو داتاکانی بینین و کلیکی مینی
+            وێبسایتەکان؟ ئەم کردارە ناگەڕێتەوە.
+          </p>
+        }
+      />
+      <ConfirmDeleteModal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={async () => {
           if (!deleteTarget) return;
-          const response = await fetch(
-            `/api/mini-websites/${deleteTarget.id}`,
-            { method: "DELETE", credentials: "include" },
-          );
+          const response = await fetch(workspace.api.item(deleteTarget.id), {
+            method: "DELETE",
+            credentials: "include",
+          });
           if (!response.ok) throw new Error("سڕینەوە سەرکەوتوو نەبوو");
           setDeleteTarget(null);
           await Promise.all([loadProfiles(true), refreshAnalytics()]);

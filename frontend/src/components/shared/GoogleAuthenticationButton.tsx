@@ -2,10 +2,12 @@ import Image from "next/image";
 
 interface GoogleAuthenticationButtonProps {
   href: string;
+  label?: string;
 }
 
 export function GoogleAuthenticationButton({
   href,
+  label = "Continue with Google",
 }: GoogleAuthenticationButtonProps) {
   return (
     <a
@@ -19,7 +21,7 @@ export function GoogleAuthenticationButton({
         height={20}
         aria-hidden="true"
       />
-      Continue with Google
+      {label}
     </a>
   );
 }

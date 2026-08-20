@@ -51,12 +51,14 @@ export function PublicVideoCodePage({
       <section className="relative overflow-hidden bg-transparent px-5 pb-20 pt-36 text-center sm:px-8 sm:pb-24 sm:pt-40">
         <BusinessHeroAccentBackdrop accentColor={accent} />
         <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-6">
-          <h1
-            className="text-2xl font-black text-slate-900 dark:text-white sm:text-3xl"
-            dir="auto"
-          >
-            {config.videoTutorialTitle}
-          </h1>
+          {config.videoTutorialTitle.trim() && (
+            <h1
+              className="text-2xl font-black text-slate-900 dark:text-white sm:text-3xl"
+              dir="auto"
+            >
+              {config.videoTutorialTitle}
+            </h1>
+          )}
 
           <div className="w-full max-w-sm overflow-hidden rounded-[2rem] border border-black/10 shadow-xl dark:border-white/10">
             <div className="aspect-[9/16] w-full">

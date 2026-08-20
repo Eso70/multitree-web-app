@@ -24,6 +24,7 @@ import {
   BUSINESS_LOGO_PLACEHOLDER,
   DEFAULT_AVATAR,
 } from "@/lib/brand/brand-assets";
+import { resolveLinktreeHost } from "@/lib/public/linktree-host";
 
 // Dynamically import LinktreePage to reduce initial bundle size
 const LinktreePage = dynamicImport(
@@ -63,10 +64,13 @@ interface PublicLinktreeResponse extends PublicLinktreeBody {
 /** No pixel and no registered actions, for a response that carried neither. */
 const NO_ANALYTICS: PublicPageAnalytics = { pixelIds: [], actions: {} };
 
-async function fetchLinktreeData(
-  uid: string,
-): Promise<
-  | { linktree: Linktree; links: Link[]; analytics: PublicPageAnalytics }
+async function fetchLinktreeData(uid: string): Promise<
+  | {
+      linktree: Linktree;
+      links: Link[];
+      analytics: PublicPageAnalytics;
+      isPlatformRoot: boolean;
+    }
   | "bad-gateway"
   | "gone"
   | "gateway-timeout"
@@ -84,11 +88,10 @@ async function fetchLinktreeData(
     const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost")
       .split(":")[0]
       .toLowerCase();
-    const isIp = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname);
-    const subdomain =
-      !isIp && hostname.endsWith(`.${rootDomain}`)
-        ? hostname.slice(0, -(rootDomain.length + 1)).split(".")[0]
-        : "";
+    const { isPlatformRoot, subdomain } = resolveLinktreeHost(
+      hostname,
+      rootDomain,
+    );
     const clientIp =
       headerStore.get("x-forwarded-for") || headerStore.get("x-real-ip") || "";
 
@@ -100,7 +103,10 @@ async function fetchLinktreeData(
       fetchHeaders["x-forwarded-for"] = clientIp;
     }
 
-    const res = await fetch(`${backendUrl}/api/public/linktree/${uid}`, {
+    const endpoint = isPlatformRoot
+      ? `/api/public/platform/linktree/${uid}`
+      : `/api/public/linktree/${uid}`;
+    const res = await fetch(`${backendUrl}${endpoint}`, {
       headers: fetchHeaders,
       cache: "no-store",
       signal: AbortSignal.timeout(30_000),
@@ -125,6 +131,7 @@ async function fetchLinktreeData(
       linktree: data.linktree,
       links: data.links || [],
       analytics: data.analytics || NO_ANALYTICS,
+      isPlatformRoot,
     };
   } catch (error) {
     console.error(
@@ -167,12 +174,16 @@ export default async function LinktreePublicPage({ params }: PageProps) {
   // page view and fires events; this only makes the tag present and loadable.
   const headerStore = await headers();
   const nonce = headerStore.get("x-nonce") || "";
-
   // Reporting is the page's own job; see docs/tracking.md.
   return (
     <>
       <TikTokPixelBaseCode pixelIds={analytics.pixelIds} nonce={nonce} />
-      <LinktreePage linktree={linktree} links={links} analytics={analytics} />
+      <LinktreePage
+        linktree={linktree}
+        links={links}
+        analytics={analytics}
+        enableMarketingTracking
+      />
     </>
   );
 }
@@ -221,7 +232,9 @@ export async function generateMetadata({ params }: PageProps) {
   return {
     title: shortTabTitle(linktree.name),
     description:
-      linktree.description || linktree.subtitle || "بۆ پەیوەندی کردن, کلیک لەم لینکانەی خوارەوە بکە",
+      linktree.description ||
+      linktree.subtitle ||
+      "بۆ پەیوەندی کردن, کلیک لەم لینکانەی خوارەوە بکە",
     icons: {
       icon: iconEntries,
       apple: linktree.business_logo || BUSINESS_LOGO_PLACEHOLDER,

@@ -1,5 +1,5 @@
-import { readFileSync } from 'fs';
 import { join } from 'path';
+import { readBaselineSql } from './baseline';
 
 /**
  * Secrets in the schema are stored one way, in one place.
@@ -16,10 +16,7 @@ import { join } from 'path';
  * denormalising "just for the admin list".
  */
 
-const SCHEMA = readFileSync(
-  join(__dirname, 'migrations', 'full_schema.sql'),
-  'utf8',
-);
+const SCHEMA = readBaselineSql(join(__dirname, 'migrations'));
 
 describe('TikTok credential storage', () => {
   it('has exactly one table holding a business pixel', () => {

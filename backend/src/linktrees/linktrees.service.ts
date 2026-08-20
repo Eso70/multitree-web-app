@@ -34,6 +34,10 @@ import { TemplateAccessService } from '../billing/template-access.service';
 import { WebhookDeliveryService } from '../api-platform/webhook-delivery.service';
 import { StorageService } from '../storage/storage.service';
 import { LinksService } from '../links/links.service';
+import {
+  AnalyticsReadRepository,
+  type LinktreeAnalyticsTotals,
+} from '../analytics/analytics-read.repository';
 import type { SyncLinkInput } from '../links/link.types';
 import {
   DEFAULT_LINKTREE_BACKGROUND_COLOR,
@@ -126,6 +130,8 @@ type Queryable = {
   ): Promise<QueryResult<T>>;
 };
 
+type LinktreeWriteScope = 'business' | 'platform';
+
 /**
  * A value reduced to what `chk_lt_seo_name` accepts: `^[a-z0-9-]+$`, at least
  * two characters. Returns '' when nothing usable survives, which is what a name
@@ -208,6 +214,7 @@ export class LinktreesService {
     private readonly webhooks: WebhookDeliveryService,
     private readonly storage: StorageService,
     private readonly linksService: LinksService,
+    private readonly analyticsRead: AnalyticsReadRepository,
   ) {}
 
   private async ensureTemplateAllowed(businessId: string, templateKey: string) {
@@ -370,6 +377,39 @@ export class LinktreesService {
     return linksToCreate;
   }
 
+  /**
+   * Converts the editor's grouped link payload to the canonical sync shape.
+   * Platform administration uses the same mapping as business creation so
+   * metadata, phone inputs, GPS values, labels, and descriptions cannot drift.
+   */
+  buildSyncLinks(data: CreateLinktreeDto): SyncLinkInput[] {
+    return this.buildCreateLinks(data).map((link) => ({
+      platform: link.platform,
+      url: link.url,
+      display_name: link.display_name,
+      description: link.description,
+      default_message: link.default_message,
+      metadata: {
+        original_input: link.original_input,
+        country_code: link.country_code,
+        gps_lat: link.gps_lat,
+        gps_lng: link.gps_lng,
+        custom_color: link.custom_color,
+        custom_icon: link.custom_icon,
+      },
+    }));
+  }
+
+  async syncSubmittedLinks(
+    linktreeId: string,
+    data: CreateLinktreeDto,
+    businessId: string,
+  ) {
+    const links = this.buildSyncLinks(data);
+    await this.linksService.syncLinks(linktreeId, links, businessId);
+    return this.linksService.getLinksByLinktree(linktreeId, businessId);
+  }
+
   async getAllLinktrees(businessId: string) {
     const res = await this.databaseService.query<LinktreeRow>(
       `SELECT lt.id, lt.name, lt.subtitle, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
@@ -385,7 +425,30 @@ export class LinktreesService {
     const mappedRows: MappedLinktree[] = [];
     for (const row of res.rows)
       mappedRows.push(await this.mapLinktreeRow(this.databaseService, row));
-    return mappedRows;
+
+    // One aggregate for the whole list rather than a query per card. A page
+    // with no traffic yet has no row, so it reads as zeroes instead of being
+    // left without an `analytics` object the card would have to special-case.
+    //
+    // Traffic is supplementary to this screen: an owner must still be able to
+    // see, open and edit their pages when the analytics tables are unavailable,
+    // so a failure here degrades to zeroes rather than failing the whole list.
+    let totals = new Map<string, LinktreeAnalyticsTotals>();
+    try {
+      totals = await this.analyticsRead.linktreeTotalsForBusiness(businessId);
+    } catch (error) {
+      this.logger.error(
+        `Linktree traffic totals unavailable for business ${businessId}: ${describeError(error)}`,
+      );
+    }
+    return mappedRows.map((row) => ({
+      ...row,
+      analytics: totals.get(row.id) ?? {
+        unique_views: 0,
+        unique_clicks: 0,
+        total_clicks: 0,
+      },
+    }));
   }
 
   async getLinktreeById(id: string, businessId: string) {
@@ -408,6 +471,17 @@ export class LinktreesService {
     const result = await this.databaseService.query<{ '?column?': number }>(
       'SELECT 1 FROM linktrees WHERE business_id = $1 AND seo_name = $2 AND ($3::uuid IS NULL OR id <> $3)',
       [businessId, slug, excludeId || null],
+    );
+    return result.rows.length === 0;
+  }
+
+  async isRootSlugAvailable(slug: string, excludeId?: string) {
+    const result = await this.databaseService.query(
+      `SELECT 1 FROM root_public_slugs
+        WHERE page_type='linktree' AND slug=$1
+          AND ($2::uuid IS NULL OR linktree_id<>$2)
+        LIMIT 1`,
+      [slug, excludeId || null],
     );
     return result.rows.length === 0;
   }
@@ -456,12 +530,19 @@ export class LinktreesService {
     return (res.rows || []).map((row) => this.mapLinkRow(row));
   }
 
-  async createLinktree(data: CreateLinktreeDto, businessId: string) {
-    const linktreeLimit = await this.entitlementService.getInteger(
-      businessId,
-      'limit.linktrees',
-      0,
-    );
+  async createLinktree(
+    data: CreateLinktreeDto,
+    businessId: string,
+    scope: LinktreeWriteScope = 'business',
+  ) {
+    const isPlatform = scope === 'platform';
+    const linktreeLimit = isPlatform
+      ? -1
+      : await this.entitlementService.getInteger(
+          businessId,
+          'limit.linktrees',
+          0,
+        );
     let uid = '';
     let attempts = 0;
     while (attempts < 10) {
@@ -507,7 +588,9 @@ export class LinktreesService {
       data.template_config,
       business.default_template,
     );
-    await this.ensureTemplateAllowed(businessId, config.templateKey);
+    if (!isPlatform) {
+      await this.ensureTemplateAllowed(businessId, config.templateKey);
+    }
     const whatsappModal = config.whatsapp_modal || {};
     const whatsappQuestions: WhatsappQuestionInput[] = Array.isArray(
       whatsappModal.questions,
@@ -531,7 +614,7 @@ export class LinktreesService {
         [businessId],
       );
 
-      if (data.is_default) {
+      if (!isPlatform && data.is_default) {
         const existingDefault = await client.query<{ id: string }>(
           `SELECT id FROM linktrees WHERE business_id = $1 AND is_default = true LIMIT 1`,
           [businessId],
@@ -624,7 +707,7 @@ export class LinktreesService {
         );
       }
 
-      const isDefaultFlag = data.is_default ? true : false;
+      const isDefaultFlag = !isPlatform && data.is_default ? true : false;
       const ltRes = await client.query<LinktreeRow>(
         `INSERT INTO linktrees (
           name, subtitle, description, seo_name, uid, image, background_color,
@@ -698,18 +781,20 @@ export class LinktreesService {
           ],
         );
       }
-      await this.webhooks.emitWithClient(
-        client,
-        businessId,
-        'linktree.created',
-        'linktree',
-        createdLinktree.id,
-        {
-          id: createdLinktree.id,
-          uid: createdLinktree.uid,
-          slug: createdLinktree.seo_name,
-        },
-      );
+      if (!isPlatform) {
+        await this.webhooks.emitWithClient(
+          client,
+          businessId,
+          'linktree.created',
+          'linktree',
+          createdLinktree.id,
+          {
+            id: createdLinktree.id,
+            uid: createdLinktree.uid,
+            slug: createdLinktree.seo_name,
+          },
+        );
+      }
       return createdLinktree;
     });
 
@@ -753,7 +838,9 @@ export class LinktreesService {
     id: string,
     data: UpdateLinktreeDto,
     businessId: string,
+    scope: LinktreeWriteScope = 'business',
   ) {
+    const isPlatform = scope === 'platform';
     const current = await this.getLinktreeById(id, businessId);
     const nextSeoName = data.seo_name || data.slug;
 
@@ -796,7 +883,9 @@ export class LinktreesService {
         : current.template_config,
       current.template_key,
     );
-    await this.ensureTemplateAllowed(businessId, config.templateKey);
+    if (!isPlatform) {
+      await this.ensureTemplateAllowed(businessId, config.templateKey);
+    }
     const whatsappModal = config.whatsapp_modal || {};
     const whatsappEnabled = !!whatsappModal.enabled;
     const whatsappQuestions: WhatsappQuestionInput[] = Array.isArray(
@@ -875,18 +964,20 @@ export class LinktreesService {
         );
       }
 
-      await this.webhooks.emitWithClient(
-        client,
-        businessId,
-        'linktree.updated',
-        'linktree',
-        updatedLinktree.id,
-        {
-          id: updatedLinktree.id,
-          uid: updatedLinktree.uid,
-          slug: updatedLinktree.seo_name,
-        },
-      );
+      if (!isPlatform) {
+        await this.webhooks.emitWithClient(
+          client,
+          businessId,
+          'linktree.updated',
+          'linktree',
+          updatedLinktree.id,
+          {
+            id: updatedLinktree.id,
+            uid: updatedLinktree.uid,
+            slug: updatedLinktree.seo_name,
+          },
+        );
+      }
 
       return updatedLinktree;
     });
@@ -1029,7 +1120,10 @@ export class LinktreesService {
 
       // The editor seeds the same starter prompts, so the WhatsApp modal opens
       // with something to pick whichever way the page was created.
-      for (const [order, question] of DEFAULT_LINKTREE_WHATSAPP_QUESTIONS.entries()) {
+      for (const [
+        order,
+        question,
+      ] of DEFAULT_LINKTREE_WHATSAPP_QUESTIONS.entries()) {
         await client.query(
           `INSERT INTO whatsapp_questions (linktree_id, question_text, message, display_order)
            VALUES ($1, $2, $3, $4)`,
@@ -1047,7 +1141,12 @@ export class LinktreesService {
     return this.mapLinktreeRow(this.databaseService, row);
   }
 
-  async deleteLinktree(id: string, businessId: string) {
+  async deleteLinktree(
+    id: string,
+    businessId: string,
+    scope: LinktreeWriteScope = 'business',
+  ) {
+    const isPlatform = scope === 'platform';
     const current = await this.getLinktreeById(id, businessId);
 
     if (current.is_default) {
@@ -1055,14 +1154,16 @@ export class LinktreesService {
     }
 
     await this.databaseService.transaction(async (client) => {
-      await this.webhooks.emitWithClient(
-        client,
-        businessId,
-        'linktree.deleted',
-        'linktree',
-        id,
-        { id, uid: current.uid, slug: current.seo_name },
-      );
+      if (!isPlatform) {
+        await this.webhooks.emitWithClient(
+          client,
+          businessId,
+          'linktree.deleted',
+          'linktree',
+          id,
+          { id, uid: current.uid, slug: current.seo_name },
+        );
+      }
       await client.query(
         `INSERT INTO public_page_tombstones
            (business_id, page_type, public_identifier, slug, deleted_at)

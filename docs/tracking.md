@@ -1,53 +1,63 @@
 # Tracking
 
-How a public page reports what happened on it, and how a business's TikTok
-pixel and Events API delivery are wired to that.
+How an allowlisted public marketing page reports what happened on it, and how
+owner-scoped TikTok Pixel and Events API delivery are wired to that.
 
-This is the procedure for **every** new feature added to either public page. It
-is short on purpose: there is one way to do this, and adding a second is what
-this document exists to prevent.
+This is the procedure for every new public marketing surface. There is one
+page registry, tracker, and delivery pipeline.
 
 ---
 
 ## The scope rule
 
-The TikTok pixel loads, and TikTok server events are sent, on exactly two
-surfaces:
+TikTok tracking is an explicit allowlist. It is never inferred from a route
+merely being unauthenticated.
 
-- the **public linktree page** (`/linktree/:uid` on a business subdomain)
-- the **public mini website page** (`/bio/:slug` on a business subdomain)
+| Owner    | Allowed surfaces                                                                                         |
+| -------- | -------------------------------------------------------------------------------------------------------- |
+| Business | subdomain `/`, `/linktree/:uid`, `/bio/:slug`, `/advertising`, `/advertising/video-code`                 |
+| Platform | root `/`, `/join`, `/join/application`, platform-owned `/linktree/:uid`, and platform-owned `/bio/:slug` |
 
-Both are per-business. Nowhere else in MultiTree reports to TikTok:
-
-| Surface | Pixel | Why not |
-| ------- | ----- | ------- |
-| Business subdomain landing (`/`) | ✗ | Not a page ads point at; its traffic is navigation, not audience |
-| Advertising page (`/advertising`) | ✗ | Same |
-| Business dashboard and login | ✗ | The owner's own sessions are not their audience, and counting them trains the ad algorithm on the wrong person |
-| Platform root domain (`multitree.*`) | ✗ | Serves no business |
-| Platform admin console | ✗ | Serves no business |
+Authentication, callbacks, dashboards, platform administration, legal pages,
+errors, previews, API routes, and static assets are excluded. Adding another
+route requires a `public_pages` identity and an update to the central frontend
+and backend allowlists.
 
 The business's TikTok **configuration** UI is untouched by this rule — entering
 a pixel id and an Events API token in the dashboard is configuration, not
-reporting. What is scoped is where the pixel *renders* and which page types get
+reporting. What is scoped is where the pixel _renders_ and which page types get
 forwarded to the Events API.
 
 Three things enforce it, so a mistake fails loudly rather than quietly shipping:
 
 1. `frontend/src/components/analytics/pixel-placement.spec.ts` fails if
-   `TikTokPixel` is mounted anywhere but those two files, or if any file other
+   `TikTokPixel` is mounted outside the specialized page renderers and the
+   fixed-route allowlist component, or if any file other
    than `features/analytics/tiktok-dispatch.ts` (the queue), the pure snippet
    builder `features/analytics/tiktok-base-code-snippet.ts`, or the debug
    reporter touches `window.ttq`.
 2. `forwardsToTikTok` in
    `backend/src/analytics/unified-analytics.service.ts` decides whether an
    ingested event gets a `marketing_event_outbox` row. It applies two rules:
-   `TIKTOK_FORWARDED_PAGE_TYPES` scopes it to the two page types, and
+   `TIKTOK_FORWARDED_PAGE_TYPES` scopes it to registered public page types, and
    `ENGAGEMENT_ONLY_EVENTS` drops an engagement event that resolved to no
    registered action. Internal analytics still records every public page and
    every engagement signal; only the outbound half is scoped.
-3. `PublicPageAnalyticsService` is the only resolver for pixel ids, and only
-   the two public reads call it.
+3. `PublicPageAnalyticsService` is the only resolver for pixel ids. Customer
+   owners require the live `feature.tiktok` entitlement; the non-billable
+   platform workspace uses only the group saved in Platform Settings.
+
+Platform pixels are never inherited by or combined with customer pixels. Page
+ownership selects exactly one destination group.
+
+### Automatic delivery
+
+TikTok Pixel and Events API delivery starts automatically on every allowlisted
+public marketing surface when its owner has an active pixel configuration.
+There is no visitor-facing marketing-cookie prompt and no consent cookie or
+local-storage gate. The legacy `consentState` transport/database field remains
+for backward compatibility and first-party CRM records, but it does not decide
+whether an otherwise eligible marketing event reaches TikTok.
 
 ---
 
@@ -65,8 +75,8 @@ So:
   the same value to the pixel call and to the queued event the server forwards.
   Never generate an id on one side only.
 - **One event name, owned by the server.** It comes from
-  `public_page_actions.tiktok_event`, which the browser is *told* and the
-  server *reads*. Neither side derives it. A TypeScript copy of that mapping
+  `public_page_actions.tiktok_event`, which the browser is _told_ and the
+  server _reads_. Neither side derives it. A TypeScript copy of that mapping
   used to exist beside the SQL one; when two copies of a deduplication rule
   disagree, every conversion is counted twice and nothing looks broken.
 - **Suppress the whole report, not half of it.** The tracker's repeat window
@@ -83,7 +93,7 @@ them by count:
   the path nearly every business is on and it is deliberately unchanged.
 - **Two or more**: one `ttq.instance(<id>).track(...)` per pixel, so each
   receives the event explicitly rather than leaving the fan-out to the SDK.
-  All of them get the *same* `event_id` — the server sends one outbox row per
+  All of them get the _same_ `event_id` — the server sends one outbox row per
   active pixel under that same id, and deduplication is per pixel.
 
 `instance` is added by the real `events.js`. Before it lands — and if every
@@ -103,11 +113,11 @@ itself is only observable at the destination.
 
 They are different and must not be conflated.
 
-| | Internal (`PageEventName`) | TikTok (`PublicPageTikTokEvent`) |
-| --- | --- | --- |
-| Answers | "how many WhatsApp taps did this business get?" | "what should the ad algorithm optimise for?" |
-| Chosen by | the caller, from what the visitor did | the action row, written when the page was saved |
-| Example | `whatsapp_click` | `Contact` |
+|           | Internal (`PageEventName`)                      | TikTok (`PublicPageTikTokEvent`)                |
+| --------- | ----------------------------------------------- | ----------------------------------------------- |
+| Answers   | "how many WhatsApp taps did this business get?" | "what should the ad algorithm optimise for?"    |
+| Chosen by | the caller, from what the visitor did           | the action row, written when the page was saved |
+| Example   | `whatsapp_click`                                | `Contact`                                       |
 
 A WhatsApp tap is `whatsapp_click` internally and `Contact` to TikTok. Both are
 correct. Never pass a TikTok name where an internal one belongs.
@@ -129,7 +139,8 @@ Both public reads serve one shape, `PublicPageAnalytics` in
 }
 ```
 
-Resolved by `PublicPageAnalyticsService.forSource('linktree' | 'mini_website', id)`.
+Specialized pages resolve with `forSource`; fixed routes resolve their
+`page_type='route'` identity through `/api/public/tracking/:routeKey`.
 
 `pixelIds` is re-checked against `feature.tiktok` on **every read**, never
 trusted from when the pixel was saved. A plan can lapse and nothing rewrites
@@ -142,9 +153,9 @@ for two hours; entitlement and action identity are not.
 
 ### Base code delivery
 
-The pixel base code is server-rendered inline into the initial HTML of both
-public pages (`TikTokPixelBaseCode`, carrying the request CSP nonce), not
-injected only after hydration. TikTok's "verify Pixel setup" and Event Builder
+For Linktree and mini-website pages, the pixel base code is server-rendered
+inline (`TikTokPixelBaseCode`, carrying the request CSP nonce), not injected
+only after hydration. TikTok's "verify Pixel setup" and Event Builder
 read the served document, and a tag that appears only once React has hydrated
 is invisible to a snapshot taken before that — Pixel Helper still sees it
 because it runs inside the live page. The inline snippet loads `events.js` at
@@ -170,7 +181,7 @@ Nothing is trackable until the database says it exists.
   everything else.
 - **Linktree**: links are registered automatically by
   `fn_sync_linktree_public_page` in `full_schema.sql`, keyed `link:<uuid>`. A
-  new *kind* of linktree action needs a row there and a matching key in
+  new _kind_ of linktree action needs a row there and a matching key in
   `LinktreePage.tsx`. Those two are the only pair that has to agree by hand.
 
 Only register things that actually go somewhere. An action row for a card with
@@ -180,7 +191,7 @@ no button reports a permanent zero and pads every breakdown with noise.
 
 Clicks are stored in `analytics_action_daily` against a
 `public_page_actions` id, and that row is tied to a `links` row by
-`source_link_id`. So a link row's uuid *is* the identity of its click
+`source_link_id`. So a link row's uuid _is_ the identity of its click
 history, and `LinksService.syncLinks` must preserve it.
 
 It used to delete every link and re-insert the submitted set. Each surviving
@@ -290,7 +301,7 @@ per active pixel — and delivered by `TikTokOutboxProcessor` every two seconds.
   unnormalised input silently halves the match rate.
 - Eight attempts, exponential backoff capped at an hour, overridden by
   `Retry-After` when TikTok sends one.
-- Bot traffic and `consent === 'denied'` are never forwarded.
+- Bot traffic is never forwarded.
 - Engagement that resolved to no registered action is never forwarded
   (`ENGAGEMENT_ONLY_EVENTS`). **Expect reported conversions to fall after this
   ships**: `action_open` and `engaged_view` were arriving as `ClickButton`, and
@@ -320,7 +331,7 @@ forever because of the notification about it being stuck. It is throttled to
 one per pixel per six hours, scoped on `source_id = destination_id`, so a
 business running three pixels still learns which one broke.
 
-Note what is *not* reported: a pixel that fails in the visitor's browser leaves
+Note what is _not_ reported: a pixel that fails in the visitor's browser leaves
 no server-side record, so there is no error to quote for it. The panel derives
 that case instead — events queued while none carried a browser dispatch is what
 a pixel that never fires looks like from the server — and labels it as derived.
@@ -338,10 +349,10 @@ still carries the click id it was earned by.
 
 Beyond the clicks a visitor makes, both pages report two page-level facts:
 
-| Signal | When | Reaches TikTok |
-| ------ | ---- | -------------- |
-| `page_view` | on mount, once per tracker | yes, as `ViewContent` |
-| `engaged_view` | after 15 seconds on the page, once | no |
+| Signal         | When                               | Reaches TikTok        |
+| -------------- | ---------------------------------- | --------------------- |
+| `page_view`    | on mount, once per tracker         | yes, as `ViewContent` |
+| `engaged_view` | after 15 seconds on the page, once | no                    |
 
 `engaged_view` is what separates a visit from a bounce, and both pages use the
 same threshold so one report can compare them. The mini website additionally
@@ -357,24 +368,22 @@ TikTok sees, and the conversion is deliberately withheld until a question is
 actually chosen. Opening the chooser and abandoning it is now visible instead
 of looking identical to never tapping WhatsApp at all.
 
-## Consent
+## Automatic tracking behavior
 
-The tracker reads `localStorage["mt:analytics-consent"]` on page mount —
-`"granted"`, `"denied"`, or absent (unknown, treated as allowed, matching the
-backend's `consentState !== 'denied'` rule). No UI writes it yet; the read
-exists so a consent manager or privacy toggle has one place to set it. A
-denied visitor gets a page with no SDK loaded (`TikTokPixel` skips it) and no
-pixel fired, while every queued event carries the denial so the ingest records
-internal analytics but never writes a `marketing_event_outbox` row. Consent is
-read per tracker construction and per queued event, so a mid-session revocation
-stops both halves on the next report.
+Every allowlisted public marketing page loads its configured Pixel and queues
+eligible Events API delivery without waiting for a visitor choice. New browser
+events carry `consentState='granted'` for compatibility with the existing API
+and schema. The backend does not use that legacy field as a marketing-delivery
+gate, so events queued by an older frontend follow the same automatic rule.
+Bots, non-allowlisted page types, and unregistered engagement-only signals
+remain excluded.
 
 ## Debugging a live page
 
 Append `?ttdebug=1`, then in the console:
 
 ```js
-window.__ttDebug.report()
+window.__ttDebug.report();
 ```
 
 It lists every pixel dispatch and queue handoff with its event name, event id

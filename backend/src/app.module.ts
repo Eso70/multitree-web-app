@@ -18,6 +18,7 @@ import { MiniWebsitesModule } from './mini-websites/mini-websites.module';
 import { AdvertisingModule } from './advertising/advertising.module';
 import { ObservabilityModule } from './observability/observability.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
+import { CreatorModule } from './creator/creator.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { OnboardingModule } from './onboarding/onboarding.module';
     PlatformAdminModule,
     RequestTrackingModule,
     OnboardingModule,
+    CreatorModule,
   ],
   controllers: [AppController],
   providers: [AppService],

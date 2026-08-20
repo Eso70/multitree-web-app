@@ -180,7 +180,8 @@ export class BillingManagementService {
              WHERE current_subscription.business_id=business.id
              ORDER BY current_subscription.created_at DESC LIMIT 1
            ) subscription ON true
-           WHERE ($1='' OR business.name ILIKE $1 OR business.username ILIKE $1
+           WHERE business.account_type = 'business'
+             AND ($1='' OR business.name ILIKE $1 OR business.username ILIKE $1
                     OR subscription.plan_name ILIKE $1)
              AND ($2::text IS NULL
                OR ($2='unassigned' AND subscription.id IS NULL)

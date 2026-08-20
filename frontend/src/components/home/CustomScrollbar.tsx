@@ -10,8 +10,13 @@ import {
   useTransform,
 } from "motion/react";
 
+/* `--theme-primary` is left out on purpose: `:root` defines it as the neutral
+   slate `#64748b`, so including it meant this thumb never reached the brand
+   accent on MultiTree's own pages, where no tenant colour is set. A tenant
+   surface still overrides through `--business-website-color`, which precedes
+   it — matching the document-scrollbar rules in `globals.css`. */
 const THUMB_COLOR =
-  "var(--business-website-color, var(--theme-primary, var(--multitree-accent)))";
+  "var(--business-website-color, var(--multitree-accent))";
 const THUMB_MIN_HEIGHT = 24;
 const THUMB_WIDTH = 5;
 const THUMB_RADIUS = 999;

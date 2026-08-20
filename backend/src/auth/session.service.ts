@@ -22,7 +22,7 @@ export interface SessionUser {
   username: string;
   name: string;
   email?: string;
-  role: 'business' | 'platform-admin';
+  role: 'business' | 'creator' | 'platform-admin';
   subdomain?: string;
   userId?: string;
   impersonation?: SessionImpersonation;
@@ -69,6 +69,7 @@ export class SessionService {
     userAgent: string;
     ttlSeconds?: number;
     rememberDevice?: boolean;
+    sessionRole?: 'business' | 'creator';
     impersonation?: {
       platformAdminId: string;
       platformAdminName: string;
@@ -145,7 +146,7 @@ export class SessionService {
         username: input.sessionUser.username,
         name: input.sessionUser.name,
         subdomain: input.sessionUser.subdomain,
-        role: 'business',
+        role: input.sessionRole ?? 'business',
         ...(input.impersonation
           ? {
               impersonation: {
@@ -258,12 +259,14 @@ export class SessionService {
       username: string;
       name: string;
       subdomain: string | null;
+      account_type: 'business' | 'platform' | 'creator';
       session_expires_at: string;
       impersonated_by_platform_admin_id: string | null;
       impersonated_by_name: string | null;
       impersonation_started_at: Date | null;
     }>(
-      `SELECT a.id as business_id, s.user_id, a.username, a.name, a.subdomain, s.session_expires_at,
+      `SELECT a.id as business_id, s.user_id, a.username, a.name, a.subdomain,
+              a.account_type, s.session_expires_at,
               s.impersonated_by_platform_admin_id,
               admin.name AS impersonated_by_name,
               s.impersonation_started_at
@@ -282,7 +285,7 @@ export class SessionService {
         id: business.business_id,
         username: business.username,
         name: business.name,
-        role: 'business',
+        role: business.account_type === 'creator' ? 'creator' : 'business',
         ...(business.subdomain ? { subdomain: business.subdomain } : {}),
         ...(business.user_id ? { userId: business.user_id } : {}),
         ...(business.impersonated_by_platform_admin_id
@@ -373,7 +376,7 @@ export class SessionService {
   async destroySession(sessionToken: string, user: SessionUser): Promise<void> {
     // 1. Delete from Redis
     const sessionKey =
-      user.role === 'business'
+      user.role === 'business' || user.role === 'creator'
         ? this.businessTokenHash(sessionToken)
         : sessionToken;
     await this.redisService.del(`session:${sessionKey}`);

@@ -28,11 +28,12 @@ export const LinktreePill = memo(function LinktreePill({
   );
 });
 
-interface LinktreeMetaBadgesProps {
+export interface LinktreeMetaBadgesProps {
   item: Pick<
     LinktreeListItem,
     | "created_at"
     | "is_default"
+    | "seo_name"
     | "status"
     | "template_key"
     | "whatsapp_modal_enabled"
@@ -45,6 +46,18 @@ interface LinktreeMetaBadgesProps {
   showTemplate?: boolean;
   className?: string;
 }
+
+export interface PageListTrafficLabels {
+  column: string;
+  views: string;
+  interactions: string;
+}
+
+export const LINKTREE_TRAFFIC_LABELS: PageListTrafficLabels = {
+  column: "ترافیک",
+  views: "بینەری تاک",
+  interactions: "کرتەکەری تاک",
+};
 
 /**
  * Status pills shared by the Linktree grid card, table row and mobile card.

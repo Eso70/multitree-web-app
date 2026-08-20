@@ -57,6 +57,7 @@ export class MiniWebsiteLeadsService {
   private async loadForm(
     subdomain: string,
     slug: string,
+    ownerId?: string,
   ): Promise<LeadFormPage> {
     const result = await this.database.query<{
       id: string;
@@ -96,10 +97,13 @@ export class MiniWebsiteLeadsService {
                   AND item.section_key = 'leadForm') AS lead_fields
          FROM mini_websites website
          JOIN businesses business ON business.id = website.business_id
-        WHERE lower(business.subdomain) = lower($1)
+        WHERE (
+          ($3::uuid IS NULL AND lower(business.subdomain) = lower($1) AND business.account_type='business')
+          OR ($3::uuid IS NOT NULL AND business.id = $3::uuid AND business.account_type='platform')
+        )
           AND website.slug = $2
           AND website.status = 'published'`,
-      [subdomain, slug],
+      [subdomain, slug, ownerId || null],
     );
     const row = result.rows[0];
     if (!row) throw new NotFoundException('Mini website not found');
@@ -162,8 +166,9 @@ export class MiniWebsiteLeadsService {
     slug: string,
     body: SubmitMiniWebsiteLeadDto,
     context: AnalyticsRequestContext,
+    ownerId?: string,
   ): Promise<{ submitted: true; successMessage: string }> {
-    const page = await this.loadForm(subdomain, slug);
+    const page = await this.loadForm(subdomain, slug, ownerId);
     const { leadForm } = page;
     // A filled honeypot means no human was involved. The reply is deliberately
     // the same shape a real submission gets — a script that is told it failed
@@ -229,5 +234,14 @@ export class MiniWebsiteLeadsService {
     );
 
     return { submitted: true, successMessage: leadForm.successMessage };
+  }
+
+  async submitPlatform(
+    ownerId: string,
+    slug: string,
+    body: SubmitMiniWebsiteLeadDto,
+    context: AnalyticsRequestContext,
+  ) {
+    return this.submit('', slug, body, context, ownerId);
   }
 }

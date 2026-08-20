@@ -125,13 +125,13 @@ export interface AdvertisingServiceConfig {
   testimonials: AdvertisingTestimonial[];
   faqs: AdvertisingFaq[];
   closingCta: AdvertisingClosingCtaContent;
-  /** Shared TikTok code-extraction video: empty string falls back to the bundled default asset. */
+  /** Shared TikTok code-extraction video; empty string means no video is configured. */
   videoUrl: string;
   /** Heading above the code-extraction tutorial (journey step 5 and the /advertising/video-code page). */
   videoTutorialTitle: string;
   tutorialSteps: string[];
   paymentProviders: AdvertisingPaymentProvider[];
-  /** Optional custom mockup image for the guide's receipt step; falls back to the bundled example screenshot when unset. */
+  /** Optional mockup image for the guide's receipt step. */
   receiptExampleImageUrl?: string;
 }
 

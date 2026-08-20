@@ -94,7 +94,7 @@ export class ImpersonationService {
       status: string;
     }>(
       `SELECT id, username, name, subdomain, status
-       FROM businesses WHERE id = $1`,
+       FROM businesses WHERE id = $1 AND account_type = 'business'`,
       [input.businessId],
     );
     const target = business.rows[0];

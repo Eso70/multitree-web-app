@@ -205,11 +205,7 @@ export class SaveAdvertisingDto {
   @Type(() => AdvertisingPaymentProviderDto)
   paymentProviders?: AdvertisingPaymentProviderDto[];
 
-  /**
-   * Empty string is meaningful: it restores the bundled default asset, so it
-   * must not be rejected by the URL pattern the way a genuinely malformed
-   * value would be.
-   */
+  /** Empty string clears the configured video. */
   @IsOptional()
   @ValidateIf((_object, value) => value !== '')
   @IsString()
@@ -226,7 +222,7 @@ export class SaveAdvertisingDto {
   @MaxLength(300, { each: true })
   tutorialSteps?: string[];
 
-  /** `null` clears the custom receipt image and restores the bundled default. */
+  /** `null` clears the configured receipt example image. */
   @IsOptional()
   @IsString()
   @MaxLength(2048)

@@ -5,6 +5,8 @@ import {
 } from "@/components/business/business-landing-sections";
 import { BUSINESS_PROFILE_CARD_PALETTE } from "@/components/business/business-profile-palette";
 import { BusinessSectionDecorations } from "@/components/business/BusinessSectionDecorations";
+import { PublicSectionHeading } from "@/components/public/PublicSectionHeading";
+import { PublicSection } from "@/components/public/PublicSection";
 
 interface BusinessAboutProps {
   accentColor: string;
@@ -28,25 +30,18 @@ export function BusinessAbout({
   ] as const;
 
   return (
-    <section
+    <PublicSection
       id={BUSINESS_LANDING_SECTION_IDS.about}
-      aria-labelledby="business-about-title"
-      className="relative scroll-mt-24 overflow-hidden bg-transparent px-5 py-24 text-[#111827] dark:text-white sm:px-8 sm:py-28 lg:py-32"
+      labelledBy="business-about-title"
+      decorations={
+        <BusinessSectionDecorations
+          colors={BUSINESS_LANDING_DECORATION_COLORS.about}
+          labels={BUSINESS_LANDING_DECORATION_LABELS.about}
+          variant={3}
+        />
+      }
     >
-      <BusinessSectionDecorations
-        colors={BUSINESS_LANDING_DECORATION_COLORS.about}
-        labels={BUSINESS_LANDING_DECORATION_LABELS.about}
-        variant={3}
-      />
-      <div className="relative mx-auto max-w-7xl">
-        <header className="mx-auto max-w-4xl text-center">
-          <h2
-            id="business-about-title"
-            className="break-words text-[clamp(2.35rem,5vw,4.9rem)] font-medium leading-[1.06] tracking-[-0.04em] text-balance [overflow-wrap:anywhere]"
-          >
-            {title}
-          </h2>
-        </header>
+        <PublicSectionHeading id="business-about-title" title={title} />
 
         <div className="relative mx-auto mt-16 max-w-5xl rounded-[2rem] border border-black/10 bg-[#f4f5f6] px-7 py-12 text-center shadow-[0_34px_100px_-60px_rgba(15,23,42,.48)] dark:border-white/10 dark:bg-[#151719] dark:shadow-[0_38px_110px_-62px_rgba(0,0,0,.88)] sm:mt-20 sm:px-11 sm:py-16 lg:px-16 lg:py-20">
           <p className="mx-auto max-w-3xl break-words text-[clamp(1.35rem,2.2vw,2.2rem)] font-medium leading-[1.55] tracking-[-0.02em] text-black/72 [overflow-wrap:anywhere] dark:text-white/74">
@@ -87,7 +82,6 @@ export function BusinessAbout({
             </div>
           </div>
         </div>
-      </div>
-    </section>
+    </PublicSection>
   );
 }

@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Trash2,
   Upload,
+  Radio,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -42,12 +43,11 @@ import {
 } from "@/lib/api/inline-request-error";
 import { enqueueImageUpload } from "@/lib/api/enqueue-image-upload";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
-import {
-  MULTITREE_LOGO,
-  MULTITREE_LOGO_MARK,
-} from "@/lib/brand/brand-assets";
+import { MULTITREE_LOGO, MULTITREE_LOGO_MARK } from "@/lib/brand/brand-assets";
+import { BusinessTikTokPixelConfigPage } from "@/features/analytics/components/BusinessTikTokPixelConfigPage";
+import { ThemeProvider } from "@/lib/contexts/ThemeProvider";
 
-type Tab = "general" | "security" | "retention" | "media";
+type Tab = "general" | "security" | "retention" | "media" | "tiktok";
 
 type PlatformSettings = {
   id: string;
@@ -127,6 +127,7 @@ const tabs = [
   { id: "security" as const, label: "چوونەژوورەوە و دانیشتنەکان", icon: Lock },
   { id: "retention" as const, label: "داتا و ماوەی هەڵگرتن", icon: Database },
   { id: "media" as const, label: "میدیا و بارکردن", icon: ImageIcon },
+  { id: "tiktok" as const, label: "شوێنکەوتنی TikTok", icon: Radio },
 ];
 
 export function PlatformSettingsPage() {
@@ -586,6 +587,12 @@ export function PlatformSettingsPage() {
         "قەبارە، جۆر، کوالێتی و پاککردنەوەی وێنە بارکراوەکان بەڕێوەببە.",
       icon: ImageIcon,
     },
+    tiktok: {
+      title: "شوێنکەوتنی TikTok",
+      description:
+        "Pixel و Events API بۆ پەڕە گشتییەکانی خاوەندارێتی MultiTree بەڕێوەببە.",
+      icon: Radio,
+    },
   };
 
   const meta = tabMeta[tab];
@@ -629,6 +636,12 @@ export function PlatformSettingsPage() {
         onChange={changeTab}
         accent="var(--multitree-accent)"
       />
+
+      {tab === "tiktok" && (
+        <ThemeProvider websiteColor={accentColor}>
+          <BusinessTikTokPixelConfigPage owner="platform" />
+        </ThemeProvider>
+      )}
 
       {/* ─── General ─── */}
       {tab === "general" && (
@@ -865,9 +878,9 @@ export function PlatformSettingsPage() {
                   className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/5"
                   aria-label="Refresh sessions"
                 >
-                  <MotionSpinner active={isSecurityLoading}><RefreshCw
-                    className="h-4 w-4"
-                   /></MotionSpinner>
+                  <MotionSpinner active={isSecurityLoading}>
+                    <RefreshCw className="h-4 w-4" />
+                  </MotionSpinner>
                 </button>
               </div>
               <div className="space-y-3">

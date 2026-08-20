@@ -1,8 +1,18 @@
 "use client";
 
-import { MotionPulse, MotionSpinner } from "@/components/motion/MotionPrimitives";
+import {
+  MotionPulse,
+  MotionSpinner,
+} from "@/components/motion/MotionPrimitives";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
@@ -18,14 +28,15 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { getPlatformColors, getPlatformIcon, getPlatformName } from "@/components/public/LinktreeButtons";
+import {
+  getPlatformColors,
+  getPlatformIcon,
+  getPlatformName,
+} from "@/components/public/LinktreeButtons";
 import { toast } from "sonner";
 import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 import { StatCard } from "@/components/shared/StatCard";
-import {
-  SkeletonList,
-  SkeletonStatCards,
-} from "@/components/shared/Skeleton";
+import { SkeletonList, SkeletonStatCards } from "@/components/shared/Skeleton";
 import { analyticsModalScrollbarStyles } from "@/features/analytics/modalStyles";
 import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
@@ -63,6 +74,13 @@ interface ActionRow {
  */
 export type AnalyticsPageKind = "linktree" | "mini_website";
 
+export type PageAnalyticsDataSource =
+  | "business"
+  | "platform-linktree"
+  | "platform-mini-website"
+  | "creator-linktree"
+  | "creator-mini-website";
+
 interface BusinessPageAnalyticsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -70,6 +88,10 @@ interface BusinessPageAnalyticsModalProps {
   pageName: string;
   pageKind?: AnalyticsPageKind;
   canClearAnalytics?: boolean;
+  /** Reuses this modal shell and its stat cards without business-only actions. */
+  summaryOnly?: boolean;
+  dataSource?: PageAnalyticsDataSource;
+  onAnalyticsCleared?: () => void | Promise<void>;
 }
 
 /**
@@ -157,22 +179,56 @@ function detectPlatform(actionType: string, label: string): string {
   const l = label.toLowerCase();
   if (l.includes("whatsapp") || l.includes("واتس")) return "whatsapp";
   if (l.includes("viber") || l.includes("ڤایب")) return "viber";
-  if (l.includes("telegram") || l.includes("تیلی") || l.includes("تێلی") || l.includes("tele")) return "telegram";
+  if (
+    l.includes("telegram") ||
+    l.includes("تیلی") ||
+    l.includes("تێلی") ||
+    l.includes("tele")
+  )
+    return "telegram";
   if (l.includes("instagram") || l.includes("ئینست")) return "instagram";
   if (l.includes("facebook") || l.includes("فیسب")) return "facebook";
   if (l.includes("youtube") || l.includes("یوت")) return "youtube";
-  if (l.includes("tiktok") || l.includes("تیک") || l.includes("تيك")) return "tiktok";
+  if (l.includes("tiktok") || l.includes("تیک") || l.includes("تيك"))
+    return "tiktok";
   if (l.includes("snapchat") || l.includes("سناپ")) return "snapchat";
   // Only the brand itself. «لینک» is simply the Kurdish word for "link", so
   // matching it here labelled every ordinary link on the page as LinkedIn.
   if (l.includes("linkedin") || l.includes("لینکدئین") || l.includes("لینکدین"))
     return "linkedin";
   if (l.includes("discord") || l.includes("دسک")) return "discord";
-  if (l.includes("x.com") || l.includes("twitter") || l.includes("تویت")) return "x";
-  if (l.includes("phone") || l.includes("call") || l.includes("ناو") || l.includes("پەی") || l.includes("تەل")) return "phone";
-  if (l.includes("website") || l.includes("web") || l.includes("site") || l.includes("ماڵ") || l.includes("وێب")) return "custom";
-  if (l.includes("email") || l.includes("مەی") || l.includes("ئیمەی") || l.includes("ایم")) return "email";
-  if (l.includes("gps") || l.includes("map") || l.includes("نەخش") || l.includes("شوێ")) return "gps";
+  if (l.includes("x.com") || l.includes("twitter") || l.includes("تویت"))
+    return "x";
+  if (
+    l.includes("phone") ||
+    l.includes("call") ||
+    l.includes("ناو") ||
+    l.includes("پەی") ||
+    l.includes("تەل")
+  )
+    return "phone";
+  if (
+    l.includes("website") ||
+    l.includes("web") ||
+    l.includes("site") ||
+    l.includes("ماڵ") ||
+    l.includes("وێب")
+  )
+    return "custom";
+  if (
+    l.includes("email") ||
+    l.includes("مەی") ||
+    l.includes("ئیمەی") ||
+    l.includes("ایم")
+  )
+    return "email";
+  if (
+    l.includes("gps") ||
+    l.includes("map") ||
+    l.includes("نەخش") ||
+    l.includes("شوێ")
+  )
+    return "gps";
   if (l.includes("link") || l.includes("لینک")) return "custom";
   return "custom";
 }
@@ -212,12 +268,60 @@ function formatNumber(value: number): string {
 }
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, { credentials: "include", cache: "no-store", ...init });
+  const res = await fetch(url, {
+    credentials: "include",
+    cache: "no-store",
+    ...init,
+  });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(json?.message || `Request failed (${res.status}): ${url}`);
   }
   return json.data as T;
+}
+
+function summaryUrl(
+  dataSource: PageAnalyticsDataSource,
+  pageId: string,
+  bypassCache: boolean,
+): string {
+  const params = new URLSearchParams();
+  if (bypassCache) params.set("_t", String(Date.now()));
+
+  if (dataSource === "platform-linktree") {
+    const query = params.toString();
+    return `/api/platform/linktrees/${pageId}/analytics${query ? `?${query}` : ""}`;
+  }
+
+  if (dataSource === "platform-mini-website") {
+    const query = params.toString();
+    return `/api/platform/mini-websites/${pageId}/analytics${query ? `?${query}` : ""}`;
+  }
+
+  if (dataSource === "creator-linktree") {
+    const query = params.toString();
+    return `/api/creator/linktrees/${pageId}/analytics${query ? `?${query}` : ""}`;
+  }
+
+  if (dataSource === "creator-mini-website") {
+    const query = params.toString();
+    return `/api/creator/mini-websites/${pageId}/analytics${query ? `?${query}` : ""}`;
+  }
+
+  params.set("pageId", pageId);
+  return `/api/analytics/v2/summary?${params}`;
+}
+
+function clearUrl(dataSource: PageAnalyticsDataSource, pageId: string): string {
+  return dataSource === "platform-linktree"
+    ? `/api/platform/linktrees/${pageId}/analytics`
+    : dataSource === "platform-mini-website"
+      ? `/api/platform/mini-websites/${pageId}/analytics`
+      : dataSource === "creator-linktree"
+        ? `/api/creator/linktrees/${pageId}/analytics`
+        : dataSource === "creator-mini-website"
+          ? `/api/creator/mini-websites/${pageId}/analytics`
+          : `/api/analytics/v2/pages/${pageId}`;
 }
 
 export function BusinessPageAnalyticsModal({
@@ -227,6 +331,9 @@ export function BusinessPageAnalyticsModal({
   pageName,
   pageKind = "linktree",
   canClearAnalytics = true,
+  summaryOnly = false,
+  dataSource = "business",
+  onAnalyticsCleared,
 }: BusinessPageAnalyticsModalProps) {
   const router = useRouter();
   const [totals, setTotals] = useState<Totals | null>(null);
@@ -242,49 +349,76 @@ export function BusinessPageAnalyticsModal({
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
-  const load = useCallback(async (bypassCache = false) => {
-    const reqId = ++dataRef.current;
+  const load = useCallback(
+    async (bypassCache = false) => {
+      const reqId = ++dataRef.current;
 
-    const params = new URLSearchParams({ pageId: pageId });
-    if (bypassCache) params.set("_t", String(Date.now()));
+      if (summaryOnly) {
+        try {
+          const nextTotals = await fetchJson<Totals>(
+            summaryUrl(dataSource, pageId, bypassCache),
+          );
+          if (reqId !== dataRef.current) return;
+          setTotals(nextTotals ?? null);
+          setActions([]);
+          setLastUpdated(new Date());
+        } catch (error) {
+          if (reqId !== dataRef.current) return;
+          console.error("Analytics summary load failed:", error);
+          toast.error("داتاکانی ئامار بارنەکران");
+        } finally {
+          if (reqId === dataRef.current) {
+            setLoading(false);
+            setRefreshing(false);
+          }
+        }
+        return;
+      }
 
-    const results = await Promise.allSettled([
-      fetchJson<Totals>(`/api/analytics/v2/summary?${params}`),
-      fetchJson<ActionRow[]>(`/api/analytics/v2/pages/${pageId}/actions?${params}`),
-    ]);
-    if (reqId !== dataRef.current) return;
+      const params = new URLSearchParams({ pageId: pageId });
+      if (bypassCache) params.set("_t", String(Date.now()));
 
-    const [totalsResult, actionsResult] = results;
-    let hadError = false;
+      const results = await Promise.allSettled([
+        fetchJson<Totals>(`/api/analytics/v2/summary?${params}`),
+        fetchJson<ActionRow[]>(
+          `/api/analytics/v2/pages/${pageId}/actions?${params}`,
+        ),
+      ]);
+      if (reqId !== dataRef.current) return;
 
-    if (totalsResult.status === "fulfilled") {
-      setTotals(totalsResult.value ?? null);
-    } else {
-      hadError = true;
-      console.error("Analytics summary load failed:", totalsResult.reason);
-    }
+      const [totalsResult, actionsResult] = results;
+      let hadError = false;
 
-    if (actionsResult.status === "fulfilled") {
-      // A malformed payload would otherwise crash the list on `.filter`.
-      setActions(
-        Array.isArray(actionsResult.value) ? actionsResult.value : [],
-      );
-    } else {
-      hadError = true;
-      console.error("Analytics actions load failed:", actionsResult.reason);
-    }
+      if (totalsResult.status === "fulfilled") {
+        setTotals(totalsResult.value ?? null);
+      } else {
+        hadError = true;
+        console.error("Analytics summary load failed:", totalsResult.reason);
+      }
 
-    if (hadError) {
-      toast.error("داتاکانی ئامار بارنەکران");
-    } else {
-      setLastUpdated(new Date());
-    }
+      if (actionsResult.status === "fulfilled") {
+        // A malformed payload would otherwise crash the list on `.filter`.
+        setActions(
+          Array.isArray(actionsResult.value) ? actionsResult.value : [],
+        );
+      } else {
+        hadError = true;
+        console.error("Analytics actions load failed:", actionsResult.reason);
+      }
 
-    if (reqId === dataRef.current) {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [pageId]);
+      if (hadError) {
+        toast.error("داتاکانی ئامار بارنەکران");
+      } else {
+        setLastUpdated(new Date());
+      }
+
+      if (reqId === dataRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [dataSource, pageId, summaryOnly],
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -317,10 +451,13 @@ export function BusinessPageAnalyticsModal({
   const handleClearAnalytics = async () => {
     setIsClearing(true);
     try {
-      await fetchJson(`/api/analytics/v2/pages/${pageId}`, { method: "DELETE" });
+      await fetchJson(clearUrl(dataSource, pageId), {
+        method: "DELETE",
+      });
       setTotals(null);
       setActions([]);
       setLastUpdated(new Date());
+      await onAnalyticsCleared?.();
       toast.success("داتاکانی ئامار پاککرانەوە");
     } catch (error) {
       toast.error("پاککردنەوەی داتاکان سەرکەوتوو نەبوو", {
@@ -357,6 +494,11 @@ export function BusinessPageAnalyticsModal({
     return ((totals.conversions / totals.total_views) * 100).toFixed(1);
   }, [totals]);
 
+  const clickRate = useMemo(() => {
+    if (!totals || totals.unique_views === 0) return "0.0";
+    return ((totals.unique_clicks / totals.unique_views) * 100).toFixed(1);
+  }, [totals]);
+
   // After every hook, so the early return cannot change the hook order.
   if (!isOpen) return null;
 
@@ -365,7 +507,9 @@ export function BusinessPageAnalyticsModal({
   // a fixed overlay ends up clipped to the panel that opened it.
   return createPortal(
     <>
-      <style dangerouslySetInnerHTML={{ __html: analyticsModalScrollbarStyles }} />
+      <style
+        dangerouslySetInnerHTML={{ __html: analyticsModalScrollbarStyles }}
+      />
       <div
         className="modal-ltr fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/40 dark:bg-black/60 backdrop-blur-md overflow-y-auto"
         onMouseDown={handleBackdrop}
@@ -383,7 +527,10 @@ export function BusinessPageAnalyticsModal({
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 rounded-xl shadow-sm" style={{ background: "var(--theme-primary, #64748b)" }}>
+                  <div
+                    className="p-2.5 rounded-xl shadow-sm"
+                    style={{ background: "var(--theme-primary, #64748b)" }}
+                  >
                     <BarChart3 className="h-5 w-5 text-white" />
                   </div>
                   <div>
@@ -394,7 +541,9 @@ export function BusinessPageAnalyticsModal({
                       ئاماری {pageName}
                     </h2>
                     <p className="text-xs sm:text-sm text-slate-400 dark:text-gray-500 mt-0.5 font-kurdish truncate">
-                      هەموو داتاکان
+                      {summaryOnly
+                        ? "کورتەی ئاماری هەموو ماوە"
+                        : "هەموو داتاکان"}
                     </p>
                   </div>
                 </div>
@@ -402,10 +551,13 @@ export function BusinessPageAnalyticsModal({
                   <div className="flex items-center gap-2 mt-2 text-xs text-slate-400 dark:text-gray-500">
                     <MotionPulse
                       className="h-1.5 w-1.5 rounded-full shadow-sm"
-                      style={{ backgroundColor: "var(--theme-primary, #64748b)" }}
+                      style={{
+                        backgroundColor: "var(--theme-primary, #64748b)",
+                      }}
                     />
                     <span className="font-kurdish">
-                      دواین نوێکردنەوە: {new Intl.DateTimeFormat("ku", {
+                      دواین نوێکردنەوە:{" "}
+                      {new Intl.DateTimeFormat("ku", {
                         hour: "2-digit",
                         minute: "2-digit",
                         second: "2-digit",
@@ -416,20 +568,23 @@ export function BusinessPageAnalyticsModal({
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={goToAdvancedAnalytics}
-                  className={`${HEADER_BUTTON_BASE} w-10 shrink-0 border-slate-100 dark:border-white/10 sm:w-auto sm:px-3`}
-                  style={{
-                    background: "color-mix(in srgb, var(--theme-primary, #64748b) 10%, transparent)",
-                    color: "var(--theme-primary, #64748b)",
-                  }}
-                  aria-label="ئاماری وردتر"
-                  title="بینینی ئاماری وردتر"
-                >
-                  <TrendingUp className="h-4 w-4 transition-transform group-hover:scale-110" />
-                  <span className="hidden sm:inline">ئاماری وردتر</span>
-                </button>
+                {!summaryOnly && (
+                  <button
+                    type="button"
+                    onClick={goToAdvancedAnalytics}
+                    className={`${HEADER_BUTTON_BASE} w-10 shrink-0 border-slate-100 dark:border-white/10 sm:w-auto sm:px-3`}
+                    style={{
+                      background:
+                        "color-mix(in srgb, var(--theme-primary, #64748b) 10%, transparent)",
+                      color: "var(--theme-primary, #64748b)",
+                    }}
+                    aria-label="ئاماری وردتر"
+                    title="بینینی ئاماری وردتر"
+                  >
+                    <TrendingUp className="h-4 w-4 transition-transform group-hover:scale-110" />
+                    <span className="hidden sm:inline">ئاماری وردتر</span>
+                  </button>
+                )}
                 {canClearAnalytics && (
                   <button
                     type="button"
@@ -476,27 +631,83 @@ export function BusinessPageAnalyticsModal({
             {loading ? (
               // Shaped like what loads: the stat tiles, then the action list.
               <div className="space-y-5">
-                <SkeletonStatCards count={2} />
-                <SkeletonList rows={5} />
+                <SkeletonStatCards count={summaryOnly ? 4 : 2} />
+                {!summaryOnly && <SkeletonList rows={5} />}
               </div>
             ) : (
               <div className="space-y-5">
                 <StatCardGrid columns={2}>
-                  <StatCard icon={Eye} label="کۆی بینینەکان" value={totals?.total_views || 0} color="blue" />
-                  <StatCard icon={Users} label="بینەری تاک" value={totals?.unique_views || 0} color="green" />
-                  {/*
-                    The page's own click total, which is not the sum of the
-                    button list below it. That list only shows buttons that
-                    still exist, so a page whose links were replaced would
-                    otherwise read as having never been clicked at all.
-                  */}
-                  <StatCard icon={MousePointerClick} label="کۆی کرتەکان" value={totals?.total_clicks || 0} color="purple" />
-                  <StatCard icon={Target} label="کرتەکەری تاک" value={totals?.unique_clicks || 0} color="orange" />
+                  {summaryOnly ? (
+                    <>
+                      <StatCard
+                        icon={Eye}
+                        label="بینەری تاک"
+                        value={totals?.unique_views || 0}
+                        color="blue"
+                      />
+                      <StatCard
+                        icon={MousePointerClick}
+                        label="کۆی کلیکەکان"
+                        value={totals?.total_clicks || 0}
+                        color="purple"
+                      />
+                      <StatCard
+                        icon={Users}
+                        label="کلیککەری تاک"
+                        value={totals?.unique_clicks || 0}
+                        color="green"
+                      />
+                      <StatCard
+                        icon={Target}
+                        label="ڕێژەی کلیک"
+                        value={`${clickRate}%`}
+                        color="orange"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <StatCard
+                        icon={Eye}
+                        label="کۆی بینینەکان"
+                        value={totals?.total_views || 0}
+                        color="blue"
+                      />
+                      <StatCard
+                        icon={Users}
+                        label="بینەری تاک"
+                        value={totals?.unique_views || 0}
+                        color="green"
+                      />
+                      {/*
+                        The page's own click total, which is not the sum of the
+                        button list below it. That list only shows buttons that
+                        still exist, so a page whose links were replaced would
+                        otherwise read as having never been clicked at all.
+                      */}
+                      <StatCard
+                        icon={MousePointerClick}
+                        label="کۆی کرتەکان"
+                        value={totals?.total_clicks || 0}
+                        color="purple"
+                      />
+                      <StatCard
+                        icon={Target}
+                        label="کرتەکەری تاک"
+                        value={totals?.unique_clicks || 0}
+                        color="orange"
+                      />
+                    </>
+                  )}
                 </StatCardGrid>
 
-                {!!totals && totals.conversions > 0 && (
+                {!summaryOnly && !!totals && totals.conversions > 0 && (
                   <StatCardGrid columns={2}>
-                    <StatCard icon={TrendingUp} label="گۆڕانەکان" value={totals.conversions} color="slate" />
+                    <StatCard
+                      icon={TrendingUp}
+                      label="گۆڕانەکان"
+                      value={totals.conversions}
+                      color="slate"
+                    />
                     <StatCard
                       icon={BarChart3}
                       label="بەهای گۆڕان"
@@ -507,161 +718,217 @@ export function BusinessPageAnalyticsModal({
                   </StatCardGrid>
                 )}
 
-                <div>
-                  <div className="flex items-center justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg shadow-sm" style={{ background: "var(--theme-primary, #64748b)" }}>
-                        <Target className="h-3.5 w-3.5 text-white" />
+                {!summaryOnly && (
+                  <div>
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="p-1.5 rounded-lg shadow-sm"
+                          style={{
+                            background: "var(--theme-primary, #64748b)",
+                          }}
+                        >
+                          <Target className="h-3.5 w-3.5 text-white" />
+                        </div>
+                        <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-200 font-kurdish">
+                          دوگمەکان ({filteredActions.length})
+                        </h3>
                       </div>
-                      <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-200 font-kurdish">
-                        دوگمەکان ({filteredActions.length})
-                      </h3>
+                      {filteredActions.length > 0 && (
+                        <div className="flex gap-1.5">
+                          {SORT_OPTIONS.map(([value, label]) => (
+                            <button
+                              key={value}
+                              type="button"
+                              aria-pressed={sortMode === value}
+                              onClick={() => setSortMode(value)}
+                              className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-all cursor-pointer whitespace-nowrap ${
+                                sortMode === value
+                                  ? "text-white shadow-sm"
+                                  : "bg-white dark:bg-[#161B22] border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-400 hover:border-slate-300 dark:hover:border-white/20"
+                              }`}
+                              style={
+                                sortMode === value
+                                  ? {
+                                      background:
+                                        "var(--theme-primary, #64748b)",
+                                      borderColor:
+                                        "var(--theme-primary, #64748b)",
+                                    }
+                                  : undefined
+                              }
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    {filteredActions.length > 0 && (
-                      <div className="flex gap-1.5">
-                        {SORT_OPTIONS.map(([value, label]) => (
-                          <button
-                            key={value}
-                            type="button"
-                            aria-pressed={sortMode === value}
-                            onClick={() => setSortMode(value)}
-                            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-all cursor-pointer whitespace-nowrap ${
-                              sortMode === value
-                                ? "text-white shadow-sm"
-                                : "bg-white dark:bg-[#161B22] border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-400 hover:border-slate-300 dark:hover:border-white/20"
-                            }`}
-                            style={sortMode === value ? { background: "var(--theme-primary, #64748b)", borderColor: "var(--theme-primary, #64748b)" } : undefined}
-                          >
-                            {label}
-                          </button>
-                        ))}
+
+                    {filteredActions.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 gap-3 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
+                        <Eye className="h-10 w-10 text-slate-300 dark:text-gray-600" />
+                        <p className="text-sm text-slate-400 dark:text-gray-500 font-kurdish">
+                          هێشتا هیچ داتایەک نییە
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-slate-100 dark:border-white/8 divide-y divide-slate-100 dark:divide-white/5 overflow-hidden">
+                        {filteredActions.map((action) => {
+                          const platform = resolvePlatform(action);
+                          const colors = getPlatformColors(platform);
+                          const icon = getPlatformIcon(platform, "h-4 w-4");
+                          // A mini website's actions are sections, offers, plans
+                          // and a form, so the section it belongs to says more
+                          // than the platform a linktree button would show.
+                          const rowCaption =
+                            (pageKind === "mini_website" &&
+                              miniActionSection(action.actionKey || "")) ||
+                            getPlatformName(platform);
+                          const isExpanded = expandedActionId === action.id;
+                          return (
+                            <div key={action.id}>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedActionId(
+                                    isExpanded ? null : action.id,
+                                  )
+                                }
+                                aria-expanded={isExpanded}
+                                className="w-full flex items-center gap-3 p-3 text-left cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
+                              >
+                                <div
+                                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white"
+                                  style={{
+                                    background: `linear-gradient(135deg, ${colors.from}, ${colors.via}, ${colors.to})`,
+                                  }}
+                                >
+                                  {icon}
+                                </div>
+                                <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4 items-center">
+                                  <div className="col-span-2 sm:col-span-2 min-w-0">
+                                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">
+                                      {action.label}
+                                    </p>
+                                    <p className="text-[10px] text-slate-400 dark:text-gray-500 truncate mt-0.5">
+                                      {rowCaption}
+                                    </p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                                      {formatNumber(action.totalClicks)}
+                                    </p>
+                                    <p className="text-[10px] text-slate-400 dark:text-gray-500">
+                                      کلیک
+                                    </p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                                      {formatNumber(action.uniqueClickers)}
+                                    </p>
+                                    <p className="text-[10px] text-slate-400 dark:text-gray-500">
+                                      تاک
+                                    </p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p
+                                      className="text-sm font-bold"
+                                      style={{ color: "var(--theme-primary)" }}
+                                    >
+                                      {action.ctr.toFixed(1)}%
+                                    </p>
+                                    <p className="text-[10px] text-slate-400 dark:text-gray-500">
+                                      CTR
+                                    </p>
+                                  </div>
+                                </div>
+                                <ChevronDown
+                                  className={`h-4 w-4 shrink-0 text-slate-400 dark:text-gray-500 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                                />
+                              </button>
+                              {isExpanded && (
+                                <div className="px-3 pb-3 pl-[3.25rem]">
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-xl bg-slate-50 dark:bg-white/[0.04] p-3">
+                                    <div>
+                                      <p className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1">
+                                        <Target
+                                          className="h-3 w-3"
+                                          style={{
+                                            color: "var(--theme-primary)",
+                                          }}
+                                        />
+                                        {formatNumber(action.conversions)}
+                                      </p>
+                                      <p className="text-[10px] text-slate-400 dark:text-gray-500 mt-0.5">
+                                        گۆڕانی ڕاستەقینە
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1">
+                                        <TrendingUp
+                                          className="h-3 w-3"
+                                          style={{
+                                            color: "var(--theme-primary)",
+                                          }}
+                                        />
+                                        {formatNumber(action.conversionValue)}
+                                      </p>
+                                      <p className="text-[10px] text-slate-400 dark:text-gray-500 mt-0.5">
+                                        بەهای گۆڕان
+                                      </p>
+                                    </div>
+                                    {action.destination && (
+                                      <a
+                                        href={action.destination}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="col-span-2 sm:col-span-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-gray-400 hover:underline truncate self-center"
+                                      >
+                                        <ExternalLink className="h-3 w-3 shrink-0" />
+                                        <span className="truncate">
+                                          {action.destination}
+                                        </span>
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
-
-                  {filteredActions.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 gap-3 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
-                      <Eye className="h-10 w-10 text-slate-300 dark:text-gray-600" />
-                      <p className="text-sm text-slate-400 dark:text-gray-500 font-kurdish">هێشتا هیچ داتایەک نییە</p>
-                    </div>
-                  ) : (
-                    <div className="rounded-2xl border border-slate-100 dark:border-white/8 divide-y divide-slate-100 dark:divide-white/5 overflow-hidden">
-                      {filteredActions.map((action) => {
-                        const platform = resolvePlatform(action);
-                        const colors = getPlatformColors(platform);
-                        const icon = getPlatformIcon(platform, "h-4 w-4");
-                        // A mini website's actions are sections, offers, plans
-                        // and a form, so the section it belongs to says more
-                        // than the platform a linktree button would show.
-                        const rowCaption =
-                          (pageKind === "mini_website" &&
-                            miniActionSection(action.actionKey || "")) ||
-                          getPlatformName(platform);
-                        const isExpanded = expandedActionId === action.id;
-                        return (
-                          <div key={action.id}>
-                            <button
-                              type="button"
-                              onClick={() => setExpandedActionId(isExpanded ? null : action.id)}
-                              aria-expanded={isExpanded}
-                              className="w-full flex items-center gap-3 p-3 text-left cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
-                            >
-                              <div
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white"
-                                style={{ background: `linear-gradient(135deg, ${colors.from}, ${colors.via}, ${colors.to})` }}
-                              >
-                                {icon}
-                              </div>
-                              <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4 items-center">
-                                <div className="col-span-2 sm:col-span-2 min-w-0">
-                                  <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">
-                                    {action.label}
-                                  </p>
-                                  <p className="text-[10px] text-slate-400 dark:text-gray-500 truncate mt-0.5">
-                                    {rowCaption}
-                                  </p>
-                                </div>
-                                <div className="text-center">
-                                  <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                                    {formatNumber(action.totalClicks)}
-                                  </p>
-                                  <p className="text-[10px] text-slate-400 dark:text-gray-500">کلیک</p>
-                                </div>
-                                <div className="text-center">
-                                  <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                                    {formatNumber(action.uniqueClickers)}
-                                  </p>
-                                  <p className="text-[10px] text-slate-400 dark:text-gray-500">تاک</p>
-                                </div>
-                                <div className="text-center">
-                                  <p className="text-sm font-bold" style={{ color: "var(--theme-primary)" }}>
-                                    {action.ctr.toFixed(1)}%
-                                  </p>
-                                  <p className="text-[10px] text-slate-400 dark:text-gray-500">CTR</p>
-                                </div>
-                              </div>
-                              <ChevronDown
-                                className={`h-4 w-4 shrink-0 text-slate-400 dark:text-gray-500 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                              />
-                            </button>
-                            {isExpanded && (
-                              <div className="px-3 pb-3 pl-[3.25rem]">
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-xl bg-slate-50 dark:bg-white/[0.04] p-3">
-                                  <div>
-                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1">
-                                      <Target className="h-3 w-3" style={{ color: "var(--theme-primary)" }} />
-                                      {formatNumber(action.conversions)}
-                                    </p>
-                                    <p className="text-[10px] text-slate-400 dark:text-gray-500 mt-0.5">گۆڕانی ڕاستەقینە</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1">
-                                      <TrendingUp className="h-3 w-3" style={{ color: "var(--theme-primary)" }} />
-                                      {formatNumber(action.conversionValue)}
-                                    </p>
-                                    <p className="text-[10px] text-slate-400 dark:text-gray-500 mt-0.5">بەهای گۆڕان</p>
-                                  </div>
-                                  {action.destination && (
-                                    <a
-                                      href={action.destination}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="col-span-2 sm:col-span-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-gray-400 hover:underline truncate self-center"
-                                    >
-                                      <ExternalLink className="h-3 w-3 shrink-0" />
-                                      <span className="truncate">{action.destination}</span>
-                                    </a>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
 
-      <ConfirmDeleteModal
-        isOpen={isClearModalOpen}
-        onClose={() => {
-          if (!isClearing) setIsClearModalOpen(false);
-        }}
-        onConfirm={handleClearAnalytics}
-        title="پاککردنەوەی داتاکانی ئامار"
-        confirmLabel="بەڵێ، پاکی بکەوە"
-        loadingLabel="پاکدەکرێتەوە..."
-        cancelLabel="هەڵوەشاندنەوە"
-        isDeleting={isClearing}
-        zIndexClassName="z-[60]"
-        message={<p>دڵنیایت لە پاککردنەوەی هەموو داتاکانی بینین و کلیکی ئەم پەڕەیە؟ ئەم کردارە ناگەڕێتەوە.</p>}
-      />
+      {canClearAnalytics && (
+        <ConfirmDeleteModal
+          isOpen={isClearModalOpen}
+          onClose={() => {
+            if (!isClearing) setIsClearModalOpen(false);
+          }}
+          onConfirm={handleClearAnalytics}
+          title="پاککردنەوەی داتاکانی ئامار"
+          confirmLabel="بەڵێ، پاکی بکەوە"
+          loadingLabel="پاکدەکرێتەوە..."
+          cancelLabel="هەڵوەشاندنەوە"
+          isDeleting={isClearing}
+          zIndexClassName="z-[60]"
+          message={
+            <p>
+              دڵنیایت لە پاککردنەوەی هەموو داتاکانی بینین و کلیکی ئەم پەڕەیە؟
+              ئەم کردارە ناگەڕێتەوە.
+            </p>
+          }
+        />
+      )}
     </>,
     document.body,
   );

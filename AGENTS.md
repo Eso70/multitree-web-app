@@ -143,6 +143,29 @@ shared component instead of duplicating markup or state logic.
 When a local component already exists in a page file, extract it into a
 component file at the first opportunity.
 
+## Business and Platform UI Parity
+
+Any UI, workflow, or behavior shared by the Business Dashboard and Platform
+Dashboard must have one shared implementation. Updating that shared
+implementation must update both surfaces, and the change must be verified in
+both contexts. This includes layouts, editors, forms, validation, cards,
+tables, grid views, modals, buttons, loading skeletons, empty states,
+analytics interactions, uploads, and public renderers.
+
+Do not patch only one surface or create business/platform copies of shared UI.
+Keep surface entry points thin and pass differences through explicit typed
+configuration, adapters, or capability props.
+
+Platform-only UI is allowed only when the action is genuinely exclusive to a
+platform administrator or requires a platform-admin permission. Add or remove
+that control through an explicit permission or capability boundary; do not
+fork the surrounding shared layout, state, or behavior. A permission
+difference alone is not justification for duplicating a shared component.
+
+Tests for a shared UI change must cover the shared implementation and both
+business and platform integrations whenever their configuration or permissions
+differ.
+
 ---
 
 # Architecture
@@ -255,8 +278,10 @@ Redis should only be used for:
 * rate limiting
 * temporary data
 
-The repository uses one consolidated schema baseline
-(`backend/src/database/migrations/full_schema.sql`) for fresh installs.
+The repository uses one consolidated schema baseline for fresh installs,
+split across numbered parts in `backend/src/database/migrations/baseline/`
+(`00_settings_and_extensions.sql` through `99_data.sql`).
+`src/database/baseline.ts` owns which parts exist and the order they apply in.
 Never edit that baseline for a schema change. Every schema change must be
 delivered as a new dated forward migration file in
 `backend/src/database/migrations/` (for example

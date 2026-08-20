@@ -3,6 +3,8 @@
 import { useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, CircleHelp } from "lucide-react";
 import { BusinessSectionDecorations } from "@/components/business/BusinessSectionDecorations";
+import { PublicSectionHeading } from "@/components/public/PublicSectionHeading";
+import { PublicSection } from "@/components/public/PublicSection";
 import type { AdvertisingFaq } from "../types";
 
 type FaqColor = "cyan" | "orange" | "violet" | "emerald";
@@ -155,24 +157,21 @@ export function AdvertisingFaqSection({ items }: { items: readonly AdvertisingFa
   const activeIndex = index % items.length;
 
   return (
-    <section
+    <PublicSection
       id="faq"
-      className="relative scroll-mt-24 overflow-hidden bg-transparent px-5 py-24 sm:px-8 sm:py-28 lg:py-32"
+      contentClassName="max-w-2xl"
+      decorations={
+        <BusinessSectionDecorations
+          colors={["#22d3ee", "#f97316"]}
+          labels={["وەڵامی ڕوون", "پێش داواکاری"]}
+          variant={3}
+        />
+      }
     >
-      <BusinessSectionDecorations
-        colors={["#22d3ee", "#f97316"]}
-        labels={["وەڵامی ڕوون", "پێش داواکاری"]}
-        variant={3}
-      />
-      <div className="relative mx-auto max-w-2xl">
-        <div className="text-center">
-          <h2 className="break-words text-[clamp(2.35rem,5vw,4.9rem)] font-medium leading-[1.06] tracking-[-0.04em] text-balance [overflow-wrap:anywhere]">
-            پرسیارە باوەکان
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl break-words text-sm leading-7 text-black/52 [overflow-wrap:anywhere] dark:text-white/52">
-            وەڵامی هەموو ئەو پرسیارانەی پێش دەستپێکردنی سپۆنسەر پێویستە بیزانیت.
-          </p>
-        </div>
+        <PublicSectionHeading
+          title="پرسیارە باوەکان"
+          description="وەڵامی هەموو ئەو پرسیارانەی پێش دەستپێکردنی سپۆنسەر پێویستە بیزانیت"
+        />
 
         <FaqCarousel
           items={items}
@@ -182,7 +181,6 @@ export function AdvertisingFaqSection({ items }: { items: readonly AdvertisingFa
           onNext={() => setIndex((current) => (current + 1) % items.length)}
           className="mt-10"
         />
-      </div>
-    </section>
+    </PublicSection>
   );
 }

@@ -1,6 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
-import { readFileSync } from 'fs';
 import { join } from 'path';
+import { readBaselineSql } from '../database/baseline';
 import { BatchSyncLinksDto } from './dto/sync-links.dto';
 
 /**
@@ -83,9 +83,8 @@ describe('BatchSyncLinksDto', () => {
   it('matches the schemes the database itself allows', () => {
     // `links_url_check` is the real gate. A DTO that accepted more would move
     // the failure from a 400 to a 500 at insert time.
-    const schema = readFileSync(
-      join(__dirname, '..', 'database', 'migrations', 'full_schema.sql'),
-      'utf8',
+    const schema = readBaselineSql(
+      join(__dirname, '..', 'database', 'migrations'),
     );
     expect(schema).toContain(
       "url ~ '^https?://|^tel:|^mailto:|^viber://'::text",

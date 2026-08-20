@@ -1,5 +1,10 @@
 # Architecture
 
+Self-service root-domain accounts are documented in
+[`creator-accounts.md`](creator-accounts.md). Creator workspaces reuse the
+Linktree and mini-website domain services but have a separate session guard,
+one-page ownership record, trial lifecycle, and global root-slug registry.
+
 ## Invite-only business identity
 
 Business identity uses invite-only Google OAuth authorization-code flow. One
@@ -25,6 +30,17 @@ live behind domain modules rather than expanding those entry points further.
   coordination, and transaction orchestration. Mutation SQL that participates
   in an existing service transaction remains with that transaction until it can
   be moved as one cohesive repository operation.
+- Business and platform mini-website dashboards use one workspace-configured
+  manager and editor. Endpoint selection, public path, template policy, and
+  analytics ownership are configuration; form steps, validation, payloads,
+  uploads, list UI, renderer, and tracking behavior are shared.
+- All presentation shared by business and platform surfaces has one
+  implementation with thin surface adapters. Platform-admin-only actions are
+  introduced through explicit permission or capability configuration; they do
+  not justify forking the surrounding shared component, workflow, or state.
+- `PlatformContentWorkspaceService` is the single resolver for the internal
+  owner of all MultiTree root-domain content. Feature names must not create a
+  second platform workspace convention.
 - The liquid-glass template keeps page composition and section dispatch in its
   entry component. Its structural frame, shared visual utilities, and
   informational section renderers are separate modules that can be reviewed
@@ -50,6 +66,18 @@ live behind domain modules rather than expanding those entry points further.
   Feature API modules own endpoint paths and transport types; feature hooks own
   cancellation and local request state. Components do not define another
   response-envelope parser.
+- Root-domain Linktrees and mini websites reuse their existing domains rather
+  than introducing second page models. One non-customer
+  `businesses.account_type='platform'` workspace owns their content,
+  public-page, action, analytics, and media rows.
+  `PlatformContentWorkspaceService` is the only resolver for that owner;
+  platform-admin controllers never accept an owner identifier from the browser.
+  Customer-facing business queries exclude this workspace explicitly.
+- The same internal workspace owns the platform TikTok Pixel group and every
+  platform public-page analytics identity. Customer and platform groups share
+  encrypted persistence and delivery code but are selected strictly by the
+  `public_pages.business_id` owner; they are never combined. Fixed marketing
+  routes use `page_type='route'` identities and a positive route allowlist.
 
 New persistence projections, renderer sections, and dashboard data lifecycles
 must extend these seams instead of adding another parallel implementation to
@@ -168,9 +196,11 @@ Feature ownership (`frontend/src/features/`):
   templates, and the public mini-website renderer.
 - `templates`: template selection and management.
 - `analytics`: reusable analytics presentation.
-- `communications`: announcement banners, the notification bell, and the
-  business/platform-admin conversation panel — shared because both sides of
-  a conversation render through it.
+- `communications`: announcement banners, the shared notification inbox hook,
+  bell dropdown/detail modal, and the business/platform-admin conversation
+  panel. Business and platform adapters supply scoped endpoints and action
+  routing; platform approval cards remain a permission-specific extension of
+  the shared bell rather than a second inbox implementation.
 
 Component ownership (`frontend/src/components/`):
 
@@ -344,13 +374,15 @@ PostgreSQL is the durable source of truth. Redis is disposable acceleration
 and session infrastructure; cache-clearing operations delete only
 owned key patterns and must never flush unrelated Redis data.
 
-The complete PostgreSQL definition is maintained in
-`backend/src/database/migrations/full_schema.sql`. `pnpm db:migrate` applies
-that file transactionally to a fresh database. That baseline is never edited
-for a schema change: every schema change is delivered as a new dated forward
-migration file in `backend/src/database/migrations/` so existing databases
-can be upgraded in place, and `db:migrate` verifies existing databases after
-applying them. Production startup never applies schema changes.
+The complete PostgreSQL definition is maintained in the numbered files under
+`backend/src/database/migrations/baseline/`. `pnpm db:migrate` applies those
+parts transactionally to a fresh database and records the compatibility ledger
+name `full_schema.sql`. That baseline is never edited for an ordinary schema
+change: every schema change is first delivered as a new dated forward migration
+file in `backend/src/database/migrations/` so existing databases can be upgraded
+in place. Periodic rebaselines fold the accumulated final state into the
+numbered parts and remove the absorbed files. Production startup never applies
+schema changes.
 
 An existing database is baselined only after its required tables, columns,
 indexes, removed columns, and catalog data pass compatibility checks. A

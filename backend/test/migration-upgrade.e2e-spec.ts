@@ -1,16 +1,29 @@
 import { spawnSync } from 'child_process';
-import { readFileSync, readdirSync } from 'fs';
+import { readdirSync } from 'fs';
 import { join } from 'path';
 import { Pool } from 'pg';
+import {
+  BASELINE_LEDGER_NAME,
+  readBaselineSql,
+} from '../src/database/baseline';
 
 const DATABASE_PREFIX = 'multitree_migration_e2e_';
 const fixtureDatabase = `${DATABASE_PREFIX}${process.pid}`;
 const migrationsDirectory = join(__dirname, '../src/database/migrations');
+const DATED_MIGRATION = /^\d{4}-\d{2}-\d{2}_.+\.sql$/;
 
+/**
+ * What the ledger should hold after upgrading a pre-ledger installation: the
+ * baseline, plus any dated forward migration shipped since.
+ *
+ * The baseline is recorded under one name however many parts carry it, so it
+ * is named here rather than derived from the directory listing.
+ */
 function expectedUpgradeLedger(): string[] {
-  return readdirSync(migrationsDirectory)
-    .filter((filename) => filename.endsWith('.sql'))
+  const forward = readdirSync(migrationsDirectory)
+    .filter((filename) => DATED_MIGRATION.test(filename))
     .sort();
+  return [BASELINE_LEDGER_NAME, ...forward].sort();
 }
 
 function connection(database: string) {
@@ -56,10 +69,11 @@ describe('consolidated database schema commands (e2e)', () => {
     // A supported pre-ledger installation has the application structure but
     // no schema_migrations history. Removing this optional session setting
     // keeps the fixture usable with older disposable developer databases too.
-    const baseline = readFileSync(
-      join(migrationsDirectory, 'full_schema.sql'),
-      'utf8',
-    ).replace(/^SET transaction_timeout = 0;\r?\n/m, '');
+    // Built from every baseline part, the same way the migration scripts do.
+    const baseline = readBaselineSql(migrationsDirectory)
+      .split('\n')
+      .filter((line) => line.trim() !== 'SET transaction_timeout = 0;')
+      .join('\n');
     await fixture.query(baseline);
     await fixture.query('TRUNCATE schema_migrations');
   });
@@ -174,6 +188,8 @@ describe('consolidated database schema commands (e2e)', () => {
     const ledger = await fixture.query<{ filename: string }>(
       'SELECT filename FROM schema_migrations ORDER BY filename',
     );
-    expect(ledger.rows.map((row) => row.filename)).toEqual(['full_schema.sql']);
+    expect(ledger.rows.map((row) => row.filename)).toEqual([
+      BASELINE_LEDGER_NAME,
+    ]);
   });
 });

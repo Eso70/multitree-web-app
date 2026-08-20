@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 async function load(
   slug: string,
 ): Promise<
-  | { profile: MiniWebsite; subdomain: string }
+  | { profile: MiniWebsite; subdomain: string; platformOwned: boolean }
   | "bad-gateway"
   | "gone"
   | "gateway-timeout"
@@ -31,12 +31,16 @@ async function load(
   const subdomain = hostname.endsWith(`.${root}`)
     ? hostname.slice(0, -(root.length + 1)).split(".")[0]
     : "";
-  if (!subdomain) return null;
+  const platformOwned =
+    hostname === root || hostname === `www.${root}` || hostname === "localhost";
+  if (!subdomain && !platformOwned) return null;
   const backend = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
   let response: Response;
   try {
     response = await fetch(
-      `${backend}/api/public/mini-websites/${encodeURIComponent(subdomain)}/${encodeURIComponent(slug)}`,
+      platformOwned
+        ? `${backend}/api/public/mini-websites/platform/${encodeURIComponent(slug)}`
+        : `${backend}/api/public/mini-websites/${encodeURIComponent(subdomain)}/${encodeURIComponent(slug)}`,
       { cache: "no-store", signal: AbortSignal.timeout(30_000) },
     );
   } catch (error) {
@@ -50,7 +54,9 @@ async function load(
   if (response.status === 504) return "gateway-timeout";
   if (!response.ok) return null;
   const payload = await response.json();
-  return payload?.data ? { profile: payload.data, subdomain } : null;
+  return payload?.data
+    ? { profile: payload.data, subdomain, platformOwned }
+    : null;
 }
 
 export default async function BusinessBioPage({
@@ -81,7 +87,15 @@ export default async function BusinessBioPage({
         pixelIds={result.profile.analytics?.pixelIds}
         nonce={nonce}
       />
-      <PublicMiniWebsite profile={result.profile} subdomain={result.subdomain} />
+      <PublicMiniWebsite
+        profile={result.profile}
+        subdomain={result.subdomain}
+        leadFormEndpoint={
+          result.platformOwned
+            ? `/api/public/mini-websites/platform/${encodeURIComponent(result.profile.slug)}/leads`
+            : undefined
+        }
+      />
     </>
   );
 }

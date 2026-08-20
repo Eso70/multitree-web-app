@@ -35,9 +35,7 @@ function normalizeConfigs(value: unknown): PixelConfig[] {
   if (!Array.isArray(value)) return [];
   return value.map((item) => {
     const row =
-      item && typeof item === "object"
-        ? (item as Record<string, unknown>)
-        : {};
+      item && typeof item === "object" ? (item as Record<string, unknown>) : {};
     const tokenLastFour =
       typeof row.token_last_four === "string" ? row.token_last_four : null;
     return {
@@ -51,7 +49,11 @@ function normalizeConfigs(value: unknown): PixelConfig[] {
   });
 }
 
-export function BusinessTikTokPixelConfigPage() {
+export function BusinessTikTokPixelConfigPage({
+  owner = "business",
+}: {
+  owner?: "business" | "platform";
+} = {}) {
   const [configs, setConfigs] = useState<PixelConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -59,6 +61,7 @@ export function BusinessTikTokPixelConfigPage() {
   const [access, setAccess] = useState<EffectiveAccessManifest | null>(null);
 
   const pixelLimit = useMemo(() => {
+    if (owner === "platform") return 3;
     const raw = access?.entitlements["limit.tiktok_pixels"];
     if (typeof raw === "number") return raw;
     if (typeof raw === "string" && raw.trim()) {
@@ -66,37 +69,48 @@ export function BusinessTikTokPixelConfigPage() {
       return Number.isFinite(parsed) ? parsed : 0;
     }
     return 0;
-  }, [access]);
+  }, [access, owner]);
 
   const canAdd = pixelLimit === -1 || configs.length < pixelLimit;
   const hasInvalidRows = configs.some((config) => !config.pixel_id.trim());
 
-  const loadConfig = useCallback(async (rethrow = false) => {
-    try {
-      const [settingsResponse, accessResponse] = await Promise.all([
-        fetch("/api/auth/settings", {
-          credentials: "include",
-          cache: "no-store",
-        }),
-        fetch("/api/auth/effective-access", {
-          credentials: "include",
-          cache: "no-store",
-        }),
-      ]);
-      if (!settingsResponse.ok || !accessResponse.ok) {
-        throw new Error("Failed to load");
+  const loadConfig = useCallback(
+    async (rethrow = false) => {
+      try {
+        const settingsEndpoint =
+          owner === "platform"
+            ? "/api/platform/settings/tiktok"
+            : "/api/auth/settings";
+        const [settingsResponse, accessResponse] = await Promise.all([
+          fetch(settingsEndpoint, {
+            credentials: "include",
+            cache: "no-store",
+          }),
+          owner === "platform"
+            ? Promise.resolve(
+                new Response(JSON.stringify({ data: null }), { status: 200 }),
+              )
+            : fetch("/api/auth/effective-access", {
+                credentials: "include",
+                cache: "no-store",
+              }),
+        ]);
+        if (!settingsResponse.ok || !accessResponse.ok) {
+          throw new Error("بارکردنی ڕێکخستنەکان سەرکەوتوو نەبوو");
+        }
+        const [settingsPayload, accessPayload] = await Promise.all([
+          settingsResponse.json(),
+          accessResponse.json(),
+        ]);
+        setConfigs(normalizeConfigs(settingsPayload.data?.tiktok_configs));
+        setAccess(owner === "platform" ? null : accessPayload.data || null);
+      } catch (error) {
+        if (rethrow) throw error;
+        toast.error("بارکردنی ڕێکخستنەکانی TikTok سەرکەوتوو نەبوو");
       }
-      const [settingsPayload, accessPayload] = await Promise.all([
-        settingsResponse.json(),
-        accessResponse.json(),
-      ]);
-      setConfigs(normalizeConfigs(settingsPayload.data?.tiktok_configs));
-      setAccess(accessPayload.data || null);
-    } catch (error) {
-      if (rethrow) throw error;
-      toast.error("بارکردنی ڕێکخستنەکانی TikTok سەرکەوتوو نەبوو");
-    }
-  }, []);
+    },
+    [owner],
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -130,24 +144,31 @@ export function BusinessTikTokPixelConfigPage() {
     }
     setSaving(true);
     try {
-      const response = await fetch("/api/auth/settings", {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          section: "integrations",
-          tiktok_configs: configs.map((config) => ({
-            id: config.id,
-            pixel_id: config.pixel_id.trim(),
-            events_token: config.events_token.trim(),
-            keep_events_token:
-              config.keep_events_token && !config.events_token.trim(),
-          })),
-        }),
-      });
+      const response = await fetch(
+        owner === "platform"
+          ? "/api/platform/settings/tiktok"
+          : "/api/auth/settings",
+        {
+          method: owner === "platform" ? "PUT" : "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...(owner === "business" ? { section: "integrations" } : {}),
+            tiktok_configs: configs.map((config) => ({
+              id: config.id,
+              pixel_id: config.pixel_id.trim(),
+              events_token: config.events_token.trim(),
+              keep_events_token:
+                config.keep_events_token && !config.events_token.trim(),
+            })),
+          }),
+        },
+      );
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
-        throw new Error(payload?.message || "Save failed");
+        throw new Error(
+          payload?.message || "پاشەکەوتکردنی ڕێکخستنەکان سەرکەوتوو نەبوو",
+        );
       }
       const nextConfigs = normalizeConfigs(payload?.data?.tiktok_configs);
       setConfigs(nextConfigs);
@@ -181,7 +202,11 @@ export function BusinessTikTokPixelConfigPage() {
       <PageHeader
         icon={KeyRound}
         title="پەیوەستکردنی TikTok"
-        description="Pixel ID بۆ شوێنکەوتنی وێبگەڕ پێویستە. Events API token ئارەزوومەندانەیەە و تەنها کاتێک بەکار دەکەوێت کە دابنرێت."
+        description={
+          owner === "platform"
+            ? "Pixel و Events APIی تایبەت بە پەڕە گشتییەکانی MultiTree. هیچ کاتێک بۆ پەڕەی بزنسەکان بەکار نایەت."
+            : "Pixel ID بۆ شوێنکەوتنی وێبگەڕ پێویستە. Events API token ئارەزوومەندانەیەە و تەنها کاتێک بەکار دەکەوێت کە دابنرێت."
+        }
       />
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5 dark:border-white/5">
@@ -335,7 +360,9 @@ export function BusinessTikTokPixelConfigPage() {
                       }))
                     }
                     className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200"
-                    aria-label={showTokens[index] ? "شاردنەوەی token" : "پیشاندانی token"}
+                    aria-label={
+                      showTokens[index] ? "شاردنەوەی token" : "پیشاندانی token"
+                    }
                   >
                     {showTokens[index] ? (
                       <EyeOff className="h-4 w-4" />
@@ -355,7 +382,19 @@ export function BusinessTikTokPixelConfigPage() {
         </div>
       )}
 
-      <TikTokDeliveryStatusPanel />
+      <TikTokDeliveryStatusPanel
+        owner={owner}
+        healthEndpoint={
+          owner === "platform"
+            ? "/api/platform/settings/tiktok/health"
+            : undefined
+        }
+        errorsEndpoint={
+          owner === "platform"
+            ? "/api/platform/settings/tiktok/errors"
+            : undefined
+        }
+      />
 
       <div className="mt-5 flex justify-end border-t border-slate-100 pt-5 dark:border-white/5">
         <button
@@ -366,7 +405,9 @@ export function BusinessTikTokPixelConfigPage() {
           className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
         >
           {saving ? (
-            <MotionSpinner><Loader2 className="h-4 w-4 "  /></MotionSpinner>
+            <MotionSpinner>
+              <Loader2 className="h-4 w-4 " />
+            </MotionSpinner>
           ) : (
             <Save className="h-4 w-4" />
           )}

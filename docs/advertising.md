@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS public.advertising_pages (
   tutorial_steps text[] NOT NULL DEFAULT '{}'::text[]
     CHECK (cardinality(tutorial_steps) <= 20),
 
-  -- Optional replacement for the bundled receipt screenshot in journey step 4.
+  -- Optional business-provided receipt example for journey step 4.
   receipt_example_image_url varchar(2048) NOT NULL DEFAULT '',
 
   published_at timestamptz,
@@ -492,30 +492,32 @@ $$;
 The route is not slug-derived; the slug exists so the row is well-formed and
 so analytics URLs read consistently with the other page types.
 
-### Tracked actions: none, deliberately
+### TikTok tracking
 
-An earlier draft of this document specified four `public_page_actions` rows
+The two published advertising routes are approved marketing surfaces. The
+main route uses the advertising page's existing `public_pages` identity;
+`/advertising/video-code` uses a distinct fixed-route identity so their views
+do not collapse into one report. `PublicRouteTracking` reports their page
+views automatically through the shared tracker.
+
+There are still no advertising `public_page_actions` rows. An earlier draft
+specified four rows
 seeded on publish (`advertising:cta-whatsapp`, `advertising:package:<key>`,
 `advertising:receipt-sent`, `advertising:video-code-viewed`), each carrying a
 `tiktok_event`. That was built and has been removed. It contradicted
 [docs/tracking.md](tracking.md), which is the authoritative scope rule:
 
-- `/advertising` is explicitly **not** one of the two surfaces allowed to load
-  a business's pixel or send Events API traffic.
-- `TIKTOK_FORWARDED_PAGE_TYPES` in `unified-analytics.service.ts` is
-  `{linktree, mini_website}`, so an advertising row could never be forwarded.
-- Neither `PublicAdvertisingService` nor `PublicVideoCodePage` calls
-  `createPageTracker`, so nothing ever reported against those rows.
+- The central route tracker reports the page visit, not component-local calls.
+- No advertising CTA currently has a stable registered action identity.
+- Creating action rows without wiring the corresponding controls would leave
+  permanent zero rows and misleading breakdowns.
 
 The result was rows that reported a permanent zero on every breakdown —
 precisely what tracking.md warns against: "An action row for a card with no
 button reports a permanent zero and pads every breakdown with noise."
 
-The advertising page therefore registers no actions. It still gets a
-`public_pages` identity row from `fn_sync_advertising_public_page`, so adding
-**internal-only** analytics later (engagement events that never reach TikTok)
-remains possible without a schema change. That is a product decision to make
-deliberately, not a side effect of publishing.
+Adding CTA conversion tracking later requires registering each real control
+and routing it through `createPageTracker`; direct Pixel calls remain forbidden.
 
 ---
 
@@ -545,16 +547,16 @@ precedent.
 `@UseInterceptors(AuditInterceptor)`. Every handler resolves the page from
 `@CurrentUser().id` — the business id is never accepted from the client.
 
-| Method | Path                 | Capability                                                | Audit event                           |
-| ------ | -------------------- | --------------------------------------------------------- | ------------------------------------- |
-| GET    | `/api/advertising`   | `pages:advertising-access` + `advertising:read`             | —                                     |
-| PATCH  | `/api/advertising`   | `pages:advertising-access` + `advertising:update`           | `business.advertising.update`         |
-| POST   | `/api/advertising/save-and-publish` | `advertising:update` + `advertising:publish` | `business.advertising.publish`        |
-| POST   | `/api/advertising/publish`   | `advertising:publish`                               | `business.advertising.publish`        |
-| POST   | `/api/advertising/unpublish` | `advertising:publish`                               | `business.advertising.unpublish`      |
-| GET    | `/api/advertising/versions`  | `advertising:read`                                  | —                                     |
-| POST   | `/api/advertising/versions/:version/restore` | `advertising:publish`               | `business.advertising.restore`        |
-| POST   | `/api/advertising/upload/image` | `advertising:update`                             | `business.advertising.asset.upload`   |
+| Method | Path                                         | Capability                                        | Audit event                         |
+| ------ | -------------------------------------------- | ------------------------------------------------- | ----------------------------------- |
+| GET    | `/api/advertising`                           | `pages:advertising-access` + `advertising:read`   | —                                   |
+| PATCH  | `/api/advertising`                           | `pages:advertising-access` + `advertising:update` | `business.advertising.update`       |
+| POST   | `/api/advertising/save-and-publish`          | `advertising:update` + `advertising:publish`      | `business.advertising.publish`      |
+| POST   | `/api/advertising/publish`                   | `advertising:publish`                             | `business.advertising.publish`      |
+| POST   | `/api/advertising/unpublish`                 | `advertising:publish`                             | `business.advertising.unpublish`    |
+| GET    | `/api/advertising/versions`                  | `advertising:read`                                | —                                   |
+| POST   | `/api/advertising/versions/:version/restore` | `advertising:publish`                             | `business.advertising.restore`      |
+| POST   | `/api/advertising/upload/image`              | `advertising:update`                              | `business.advertising.asset.upload` |
 
 `save-and-publish` is what the editor's Save button calls, and it is the reason
 the pair cannot land apart: it writes the config and promotes it inside one
@@ -585,8 +587,8 @@ steps — matching the `cardinality` and boundary-validation rules in
 exactly like `PublicController.getBusiness`, and gated by
 `AccessRuleEnforcementService.assertForBusinessSubdomain(requestIp(request), subdomain)`.
 
-| Method | Path                     | Returns                                                        |
-| ------ | ------------------------ | -------------------------------------------------------------- |
+| Method | Path                      | Returns                                                         |
+| ------ | ------------------------- | --------------------------------------------------------------- |
 | GET    | `/api/public/advertising` | Published `AdvertisingServiceConfig` for the subdomain business |
 
 Behaviour:
@@ -625,7 +627,6 @@ So: the rows are the draft, the `published = true` payload is production, and
 > plan must re-check its entitlement on every read, using
 > `entitledSql()` from `backend/src/billing/entitlement-sql.ts`. Mini websites
 > follow the same pattern via `feature.mini_websites`.
-
 
 `/advertising` and `/advertising/video-code` are only served for a business
 whose plan currently carries `feature.advertising_page`. The entitlement is
@@ -671,12 +672,12 @@ Draft reads are never cached; the editor must see its own last write.
 
 New `Capability` entries in `backend/src/auth/capabilities.ts`:
 
-| Capability key                        | Enum member                     | Risk        |
-| ------------------------------------- | ------------------------------- | ----------- |
-| `business:pages:advertising-access`   | `BusinessPagesAdvertisingAccess` | `standard`  |
-| `business:advertising:read`           | `BusinessAdvertisingRead`        | `standard`  |
-| `business:advertising:update`         | `BusinessAdvertisingUpdate`      | `sensitive` |
-| `business:advertising:publish`        | `BusinessAdvertisingPublish`     | `sensitive` |
+| Capability key                      | Enum member                      | Risk        |
+| ----------------------------------- | -------------------------------- | ----------- |
+| `business:pages:advertising-access` | `BusinessPagesAdvertisingAccess` | `standard`  |
+| `business:advertising:read`         | `BusinessAdvertisingRead`        | `standard`  |
+| `business:advertising:update`       | `BusinessAdvertisingUpdate`      | `sensitive` |
+| `business:advertising:publish`      | `BusinessAdvertisingPublish`     | `sensitive` |
 
 Each needs a matching `auth_permissions` seed row (category
 `Business navigation` for the access key, `Advertising` for the rest) plus
@@ -752,9 +753,9 @@ in the same change, per the shared-first workflow:
 ### Seeding, and why it is not optional
 
 `ensureAdvertisingPages` (run from both `db:migrate` and `db:reset`) gives each
-business that holds the `feature.advertising_page` entitlement a **draft** page
-with the default content, so the editor opens on real rows instead of a shape
-the browser invented.
+business that holds the `feature.advertising_page` entitlement a clean
+**draft** page, so the editor opens on real rows instead of a shape the browser
+invented.
 
 Two deliberate limits:
 
@@ -764,14 +765,15 @@ Two deliberate limits:
   entitlement, which only the top plan carries. Seeding a page for a Basic or
   Pro business would create a row it can neither open nor remove.
 
-The default content is deliberately thin: the real price tiers, the
-code-extraction tutorial steps, and the hero and closing copy. Results,
-testimonials, FAQs and payment providers all start **empty** — a business must
-not publish invented customer reviews or someone else's payment number just
-because it never opened the editor. There is no bundled fallback list anywhere
-in the renderer for the same reason; the public page skips a content section
-that has nothing in it, and the guide's payment step says the details have not
-been published yet rather than showing an example number.
+All business-owned content starts **empty**: hero and closing copy, price tiers,
+results, testimonials, FAQs, payment providers, tutorial title and steps,
+tutorial video, and receipt example. The empty personal/business category
+shells remain because the current public journey uses them as editor structure;
+they contain no prices or view claims. The business phone may be prefilled
+because it is tenant data rather than a demo value. There are no bundled price,
+video, receipt, or WhatsApp fallbacks in the renderer. Empty content sections
+stay hidden, and journey steps requiring a price, provider, or destination
+remain blocked until the business configures real values.
 
 Without it, moving the content into the database would have 404'd `/advertising`
 for every existing business until its owner opened the Ads tab and pressed
@@ -782,17 +784,13 @@ never overwrites edited content.
 `AdvertisingService.ensurePage` covers the other direction: a business created
 after this seed ran gets its page on first editor open, as a `draft`.
 
-### Where defaults live afterwards
+### Where the initial draft lives
 
-`DEFAULT_ADVERTISING_CONFIG` currently does two jobs: the shipped starting
-content, and the repair fallback for damaged stored configs. The second job
-disappears. The first moves server-side: creating a business seeds an
-`advertising_pages` row in `draft` with the default copy, the seven
-`advertising_sections` rows, and the `personal`/`business` categories — the
-same idempotent seed style as the demo-business fixture in
-[docs/database.md](database.md#demo-business-fixture). The frontend constant is
-then only the Kurdish copy the seed inserts, and should live with the seed, not
-in the client bundle.
+The initial shape is built server-side by
+`backend/src/advertising/advertising.defaults.ts`. It contains the seven
+section switches and empty business-owned fields; the frontend does not invent
+or repair content. This follows the same idempotent seed style as the
+demo-business fixture in [docs/database.md](database.md#demo-business-fixture).
 
 ---
 

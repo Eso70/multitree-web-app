@@ -9,11 +9,9 @@ import { ENTITLEMENT, entitledSql } from '../billing/entitlement-sql';
 /**
  * The tracking block a public page is served with.
  *
- * Exactly two callers are allowed: the public linktree read and the public
- * mini-website read. Those are the only surfaces where a business's TikTok
- * pixel may load, and this service exists so the rule is enforced in one place
- * instead of being re-derived — differently — by each of them. Anything else
- * that wants a pixel is a product decision first; see docs/tracking.md.
+ * All approved public marketing surfaces resolve through this service. Pixel
+ * ownership follows the page owner: customer pages use that customer's group,
+ * while MultiTree-owned pages use the internal platform workspace group.
  *
  * Two facts are resolved together because they are useless apart. A pixel id
  * with no registered actions can only report a page view, and an action with no
@@ -38,7 +36,13 @@ export class PublicPageAnalyticsService {
          JOIN public.businesses business ON business.id = pixel.business_id
         WHERE pixel.business_id = $1
           AND pixel.status = 'active'
-          AND ${entitledSql(ENTITLEMENT.tiktok)}
+          AND (
+            business.account_type = 'platform'
+            OR (
+              business.account_type = 'business'
+              AND ${entitledSql(ENTITLEMENT.tiktok)}
+            )
+          )
         ORDER BY pixel.display_order, pixel.created_at`,
       [businessId],
     );
@@ -89,13 +93,16 @@ export class PublicPageAnalyticsService {
     return { pixelIds, actions };
   }
 
-  /** Resolves by source record, for callers that hold a linktree or mini-website id. */
+  /** Resolves by source record for a specialized public content model. */
   async forSource(
-    source: 'linktree' | 'mini_website',
+    source: 'linktree' | 'mini_website' | 'advertising',
     sourceId: string,
   ): Promise<PublicPageAnalytics> {
-    const column =
-      source === 'linktree' ? 'source_linktree_id' : 'source_mini_website_id';
+    const column = {
+      linktree: 'source_linktree_id',
+      mini_website: 'source_mini_website_id',
+      advertising: 'source_advertising_page_id',
+    }[source];
     const page = await this.database.query<{
       id: string;
       business_id: string;

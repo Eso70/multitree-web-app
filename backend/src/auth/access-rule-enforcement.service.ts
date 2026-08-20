@@ -100,7 +100,8 @@ export class AccessRuleEnforcementService {
   ): Promise<void> {
     const result = await this.database.query<{ id: string }>(
       `SELECT id::text FROM businesses
-       WHERE lower(subdomain)=lower($1) AND status='active' LIMIT 1`,
+       WHERE lower(subdomain)=lower($1) AND status='active'
+         AND account_type='business' LIMIT 1`,
       [subdomain],
     );
     const businessId = result.rows[0]?.id;
@@ -128,6 +129,7 @@ export class AccessRuleEnforcementService {
        JOIN linktrees linktree ON linktree.business_id=business.id
        WHERE lower(business.subdomain)=lower($1)
          AND business.status='active' AND linktree.status='active'
+         AND business.account_type='business'
          AND (linktree.uid=$2 OR linktree.seo_name=$2)
        LIMIT 1`,
       [subdomain, uid],

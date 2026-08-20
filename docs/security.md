@@ -1,5 +1,30 @@
 # Security
 
+Creator signup security, identity claims, rate limits, and session isolation
+are defined in [`creator-accounts.md`](creator-accounts.md). A verified Google
+identity proves control of that Google account; it is not legal identity proof.
+
+## Marketing tracking ownership and consent
+
+TikTok destinations are owner-scoped. A customer public page can resolve only
+that customer's active Pixel group and live entitlement; a platform-owned page
+can resolve only the internal platform workspace group. Owner ids for Platform
+Settings are resolved server-side and are never accepted from the browser.
+Events API tokens are AES-GCM encrypted at rest and responses expose only the
+last four characters.
+
+Platform mini-website administration never accepts an owner id. Every CRUD,
+upload, analytics, and clear request resolves the singleton platform workspace
+server-side and is protected by dedicated platform capabilities. Root `/bio`
+reads require a root-domain request and query only `account_type='platform'`;
+tenant `/bio` reads retain their subdomain and entitlement predicates.
+
+Browser Pixel loading and Events API outbox creation both require explicit
+marketing consent. The public cookie control is available only on the approved
+marketing route allowlist and supports withdrawal. Login, authentication,
+dashboard, administration, legal, error, preview, API, and asset routes never
+mount the tracker.
+
 ## Invite-only Google business authentication
 
 Business password authentication has been removed outright: there is no
@@ -417,6 +442,23 @@ Rule resolution is deterministic. The most specific applicable scope wins
 the longest network prefix. A deny wins only when scope and prefix specificity
 are equal. An explicit host allow such as `/32` can therefore override a
 broader denied subnet, while an equally specific conflict fails closed.
+
+## Platform Linktree isolation
+
+Root-domain Linktrees are platform resources, not tenants. Their CRUD and
+upload routes require a platform-admin session plus the matching
+`platform:linktrees:*` capability and produce audit events. The server resolves
+the singleton internal owner itself; browser-supplied owner IDs are never
+accepted. Every read, update, and delete remains scoped by that owner, and the
+workspace is excluded from business lists, billing, impersonation,
+authentication/subdomain lookup, and business public-page resolution.
+
+The anonymous platform read is a separate root-only endpoint with identifier
+validation, the shared 30-per-minute public IP limit, global access-rule
+enforcement, and permanent-deletion tombstones. Business-subdomain reads
+require `account_type='business'`; platform reads require
+`account_type='platform'`, preventing hostname ambiguity from crossing the
+ownership boundary.
 
 ## Webhook security
 

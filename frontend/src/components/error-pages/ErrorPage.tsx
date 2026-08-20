@@ -13,6 +13,7 @@ import {
 } from "@/components/business/business-landing-sections";
 import { getMultiTreeAccentInk } from "@/lib/multitree-theme";
 import { applyBusinessTabBranding } from "@/lib/utils/business-error-theme";
+import { MARKETING_NAVIGATION } from "@/features/public-site/marketing-content";
 import type { ErrorPageTheme } from "./error-theme";
 
 interface ErrorContentProps {
@@ -225,9 +226,12 @@ export function ErrorPage(props: ErrorPageProps) {
       className="flex min-h-screen flex-col overflow-x-clip bg-[#f8f9fa] text-[#111827] transition-colors duration-300 dark:bg-[#0f172a] dark:text-slate-100"
     >
       <PublicSiteNavbar
-        appearance="multitree"
+        appearance="business"
         homeHref={homeHref}
-        sectionBaseHref="/"
+        navigationItems={MARKETING_NAVIGATION}
+        action={{ label: "هەژمار دروست بکە", href: "/signup" }}
+        secondaryAction={{ label: "چوونەژوورەوە", href: "/login" }}
+        emphasizeFirstNavItem={false}
       />
       <CustomScrollbar />
 

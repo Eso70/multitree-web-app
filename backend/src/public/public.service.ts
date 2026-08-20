@@ -3,6 +3,7 @@ import { DatabaseService } from '../database/database.service';
 import { GoneException } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { PublicPageAnalyticsService } from '../analytics/public-page-analytics.service';
+import { PlatformContentWorkspaceService } from '../platform-workspace/platform-content-workspace.service';
 import {
   BACKGROUND_IMAGE_CONFIG_KEY,
   isLinktreeBackgroundImage,
@@ -17,6 +18,7 @@ import type {
   LinktreeStatus,
   PublicLinktree,
   PublicLinktreePayload,
+  PublicRouteTracking,
 } from '@linktree/types';
 
 /**
@@ -150,7 +152,81 @@ export class PublicService {
     private readonly databaseService: DatabaseService,
     private readonly redisService: RedisService,
     private readonly pageAnalytics: PublicPageAnalyticsService,
+    private readonly platformWorkspace: PlatformContentWorkspaceService,
   ) {}
+
+  async getPublicRouteTracking(
+    routeKey: string,
+    subdomain?: string,
+  ): Promise<PublicRouteTracking> {
+    const businessRoutes = new Set([
+      'home',
+      'advertising',
+      'advertising-video-code',
+    ]);
+    const platformRoutes = new Set(['home', 'join', 'join-application']);
+    const isBusiness = Boolean(subdomain && subdomain !== 'www');
+    if (!(isBusiness ? businessRoutes : platformRoutes).has(routeKey)) {
+      throw new NotFoundException('Not Found');
+    }
+
+    const ownerId = isBusiness
+      ? (
+          await this.databaseService.query<{ id: string }>(
+            `SELECT id::text
+               FROM businesses
+              WHERE lower(subdomain) = lower($1)
+                AND account_type = 'business'
+                AND status = 'active'`,
+            [subdomain],
+          )
+        ).rows[0]?.id
+      : await this.platformWorkspace.getWorkspaceId();
+    if (!ownerId) throw new NotFoundException('Not Found');
+
+    const page = await this.databaseService.query<{
+      id: string;
+      name: string;
+      page_type: string;
+    }>(
+      routeKey === 'advertising'
+        ? `SELECT page.id::text, page.name, page.page_type
+             FROM public_pages page
+             JOIN advertising_pages advertising
+               ON advertising.id = page.source_advertising_page_id
+             JOIN businesses business ON business.id = page.business_id
+            WHERE page.business_id = $1::uuid
+              AND page.page_type = 'advertising'
+              AND page.status = 'published'
+              AND advertising.status = 'published'
+              AND ${entitledSql(ENTITLEMENT.advertisingPage)}`
+        : `SELECT page.id::text, page.name, page.page_type
+             FROM public_pages page
+             JOIN businesses business ON business.id = page.business_id
+            WHERE page.business_id = $1::uuid
+              AND page.page_type = 'route'
+              AND page.slug = $2
+              AND page.status = 'published'
+              AND (
+                $2 <> 'advertising-video-code'
+                OR EXISTS (
+                  SELECT 1 FROM advertising_pages advertising
+                   WHERE advertising.business_id = business.id
+                     AND advertising.status = 'published'
+                ) AND ${entitledSql(ENTITLEMENT.advertisingPage)}
+              )`,
+      routeKey === 'advertising' ? [ownerId] : [ownerId, routeKey],
+    );
+    const row = page.rows[0];
+    if (!row) throw new NotFoundException('Not Found');
+    return {
+      pageId: row.id,
+      pageName: row.name,
+      contentType:
+        row.page_type === 'route' ? `route:${routeKey}` : row.page_type,
+      analytics: await this.pageAnalytics.forPublicPage(ownerId, row.id),
+    };
+  }
 
   private normalizeTemplateConfig(
     templateConfig: TemplateConfig | string | null | undefined,
@@ -234,7 +310,8 @@ export class PublicService {
 
   async getLinktreesBySubdomain(subdomain: string) {
     const businessRes = await this.databaseService.query<{ id: string }>(
-      `SELECT id FROM businesses WHERE subdomain = $1`,
+      `SELECT id FROM businesses
+       WHERE subdomain = $1 AND account_type = 'business'`,
       [subdomain],
     );
     if (!businessRes.rows || businessRes.rows.length === 0)
@@ -256,6 +333,7 @@ export class PublicService {
        FROM linktrees lt
        INNER JOIN businesses a ON lt.business_id = a.id
        WHERE lt.status = 'active' AND a.subdomain = $1
+         AND a.account_type = 'business'
        ORDER BY lt.name`,
       [subdomain],
     );
@@ -263,9 +341,12 @@ export class PublicService {
     return linktreesRes.rows || [];
   }
 
-  private publicLinktreeSelect() {
+  private publicLinktreeSelect(enforceBusinessEntitlement = true) {
+    const templateKey = enforceBusinessEntitlement
+      ? allowedTemplateKeySql('lt.template_key', 'a')
+      : 'lt.template_key';
     return `SELECT lt.id, lt.name, lt.subtitle, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
-                   ${allowedTemplateKeySql('lt.template_key', 'a')} AS template_key,
+                   ${templateKey} AS template_key,
                    lt.template_config, lt.whatsapp_modal_enabled,
                    lt.footer_text, lt.footer_phone, lt.footer_hidden, lt.status, lt.is_default,
                    b.logo AS business_logo, b.favicon AS business_favicon,
@@ -295,14 +376,16 @@ export class PublicService {
     const base = this.publicLinktreeSelect();
     let ltRes = await this.databaseService.query<PublicLinktreeRow>(
       `${base}
-       WHERE lt.uid = $1 AND lt.status = 'active' AND a.subdomain = $2`,
+       WHERE lt.uid = $1 AND lt.status = 'active' AND a.subdomain = $2
+         AND a.account_type = 'business'`,
       [uid, subdomain],
     );
 
     if (!ltRes.rows || ltRes.rows.length === 0) {
       ltRes = await this.databaseService.query<PublicLinktreeRow>(
         `${base}
-         WHERE lt.seo_name = $1 AND lt.status = 'active' AND a.subdomain = $2`,
+         WHERE lt.seo_name = $1 AND lt.status = 'active' AND a.subdomain = $2
+           AND a.account_type = 'business'`,
         [uid, subdomain],
       );
       if (!ltRes.rows || ltRes.rows.length === 0) {
@@ -314,6 +397,7 @@ export class PublicService {
              WHERE tombstone.page_type='linktree'
                AND (tombstone.public_identifier=$1 OR tombstone.slug=$1)
                AND lower(business.subdomain)=lower($2)
+               AND business.account_type='business'
            ) AS exists`,
           [uid, subdomain],
         );
@@ -342,6 +426,120 @@ export class PublicService {
       // can be edited, so a two-hour-old copy of either would keep a page
       // reporting to a pixel the business no longer has.
       analytics: await this.pageAnalytics.forSource('linktree', linktree.id),
+    };
+    await this.redisService.set(
+      cacheKey,
+      { linktree: payload.linktree, links: payload.links },
+      7200,
+    );
+    return payload;
+  }
+
+  /** Resolve a MultiTree-owned page only on the root-domain public route. */
+  async getPlatformPublicLinktree(
+    identifier: string,
+  ): Promise<PublicLinktreePayload> {
+    const ownerResult = await this.databaseService.query<{
+      account_type: 'platform' | 'creator';
+      linktree_id: string;
+    }>(
+      `SELECT business.account_type, root_slug.linktree_id
+         FROM root_public_slugs root_slug
+         JOIN businesses business ON business.id = root_slug.business_id
+         LEFT JOIN creator_accounts creator ON creator.business_id = business.id
+        WHERE root_slug.page_type = 'linktree'
+          AND root_slug.slug = $1
+          AND business.status = 'active'
+          AND (
+            business.account_type = 'platform'
+            OR (business.account_type = 'creator' AND creator.status = 'active'
+                AND (creator.paid_started_at IS NOT NULL
+                     OR creator.grace_ends_at > NOW()))
+          )
+        LIMIT 1`,
+      [identifier],
+    );
+    const owner = ownerResult.rows[0];
+    if (!owner) throw new NotFoundException('Page not found');
+    const cacheKey = `cache:platform-linktree:${identifier}`;
+    const cachedData =
+      await this.redisService.get<CachedLinktreeBody>(cacheKey);
+    if (cachedData && cachedData.linktree.id === owner.linktree_id) {
+      const analytics = await this.pageAnalytics.forSource(
+        'linktree',
+        cachedData.linktree.id,
+      );
+      return {
+        ...cachedData,
+        analytics,
+      };
+    }
+
+    const base = this.publicLinktreeSelect(false);
+    const result = await this.databaseService.query<PublicLinktreeRow>(
+      `${base}
+       WHERE (lt.uid = $1 OR lt.seo_name = $1)
+         AND lt.status = 'active'
+         AND a.account_type IN ('platform', 'creator')
+         AND EXISTS (
+           SELECT 1 FROM root_public_slugs root_slug
+            WHERE root_slug.page_type = 'linktree'
+              AND root_slug.slug = $1
+              AND root_slug.linktree_id = lt.id
+         )
+       LIMIT 1`,
+      [identifier],
+    );
+    if (!result.rows.length) {
+      const tombstone = await this.databaseService.query<{ exists: boolean }>(
+        `SELECT EXISTS (
+           SELECT 1
+             FROM public_page_tombstones tombstone
+             JOIN businesses business ON business.id = tombstone.business_id
+            WHERE tombstone.page_type = 'linktree'
+              AND (tombstone.public_identifier = $1 OR tombstone.slug = $1)
+              AND business.account_type IN ('platform', 'creator')
+         ) AS exists`,
+        [identifier],
+      );
+      if (tombstone.rows[0]?.exists) {
+        throw new GoneException('Page permanently removed');
+      }
+      throw new NotFoundException('Page not found');
+    }
+
+    const mapped = await this.mapLinktreeRow(result.rows[0]);
+    const branding =
+      owner.account_type === 'platform'
+        ? await this.platformWorkspace.getBranding()
+        : null;
+    const linktree: PublicLinktree = {
+      ...mapped,
+      business_logo: branding?.logo ?? mapped.business_logo,
+      business_favicon: branding?.favicon ?? mapped.business_favicon,
+      business_website_color:
+        branding?.accentColor ?? mapped.business_website_color,
+      business_default_avatar:
+        branding?.avatar ?? mapped.business_default_avatar,
+      is_default: false,
+    };
+    const linksResult = await this.databaseService.query<PublicLinkRow>(
+      `SELECT id, platform, url, display_name, description, default_message,
+              display_order, original_input, country_code, gps_lat, gps_lng,
+              custom_color, custom_icon
+         FROM links
+        WHERE linktree_id = $1
+        ORDER BY display_order ASC`,
+      [linktree.id],
+    );
+    const analytics = await this.pageAnalytics.forSource(
+      'linktree',
+      linktree.id,
+    );
+    const payload: PublicLinktreePayload = {
+      linktree,
+      links: linksResult.rows.map((row) => this.mapLinkRow(row)),
+      analytics,
     };
     await this.redisService.set(
       cacheKey,
@@ -417,7 +615,8 @@ export class PublicService {
        FROM businesses a
        LEFT JOIN business_branding b ON b.business_id = a.id
        LEFT JOIN business_defaults d ON d.business_id = a.id
-       WHERE LOWER(a.subdomain) = LOWER($1) AND a.status = 'active'`,
+       WHERE LOWER(a.subdomain) = LOWER($1) AND a.status = 'active'
+         AND a.account_type = 'business'`,
       [subdomain],
     );
     if (!res.rows || res.rows.length === 0)

@@ -5,6 +5,8 @@ import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
 import { ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import { BusinessSectionDecorations } from "@/components/business/BusinessSectionDecorations";
+import { PublicSectionHeading } from "@/components/public/PublicSectionHeading";
+import { PublicSection } from "@/components/public/PublicSection";
 import {
   GLASS_CONTROL_SHADOW,
   GLASS_SURFACE_CLASS,
@@ -373,24 +375,21 @@ export function AdvertisingResultsShowcaseSection({ items }: { items: readonly A
   const showNext = () => setActiveIndex((current) => (current + 1) % total);
 
   return (
-    <section
+    <PublicSection
       id="results"
-      className="relative scroll-mt-24 overflow-hidden bg-transparent px-5 py-24 sm:px-8 sm:py-28 lg:py-32"
+      contentClassName="max-w-6xl"
+      decorations={
+        <BusinessSectionDecorations
+          colors={["#ec4899", "#6366f1"]}
+          labels={["نموونەی ئەنجام", "سەرکەوتوو"]}
+          variant={5}
+        />
+      }
     >
-      <BusinessSectionDecorations
-        colors={["#ec4899", "#6366f1"]}
-        labels={["نموونەی ئەنجام", "سەرکەوتوو"]}
-        variant={5}
-      />
-      <div className="relative mx-auto max-w-6xl">
-        <div className="text-center">
-          <h2 className="break-words text-[clamp(2.35rem,5vw,4.9rem)] font-medium leading-[1.06] tracking-[-0.04em] text-balance [overflow-wrap:anywhere]">
-            نموونەی ئەنجامی ڕاستەقینە
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl break-words text-sm leading-7 text-black/52 [overflow-wrap:anywhere] dark:text-white/52">
-            سلایدەرەکە بجوڵێنە بۆ بەراوردکردنی بینینی پێش و دوای سپۆنسەر.
-          </p>
-        </div>
+        <PublicSectionHeading
+          title="نموونەی ئەنجامی ڕاستەقینە"
+          description="سلایدەرەکە بجوڵێنە بۆ بەراوردکردنی بینینی پێش و دوای سپۆنسەر"
+        />
 
         <ResultCardFan
           items={items}
@@ -406,7 +405,6 @@ export function AdvertisingResultsShowcaseSection({ items }: { items: readonly A
           onSelect={setActiveIndex}
           className="mt-6"
         />
-      </div>
-    </section>
+    </PublicSection>
   );
 }

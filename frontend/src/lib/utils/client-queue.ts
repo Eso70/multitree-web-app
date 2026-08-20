@@ -83,12 +83,12 @@ function validEvent(value: unknown): value is QueuedAnalyticsEvent {
   const event = value as Partial<QueuedAnalyticsEvent>;
   return Boolean(
     event.eventId &&
-      UUID_PATTERN.test(event.eventId) &&
-      event.pageId &&
-      event.eventName &&
-      event.visitorId &&
-      event.sessionId &&
-      event.occurredAt,
+    UUID_PATTERN.test(event.eventId) &&
+    event.pageId &&
+    event.eventName &&
+    event.visitorId &&
+    event.sessionId &&
+    event.occurredAt,
   );
 }
 
@@ -100,8 +100,7 @@ function readQueue(): QueuedAnalyticsEvent[] {
     const cutoff = Date.now() - MAX_AGE_MS;
     const queue = parsed.filter(
       (event) =>
-        validEvent(event) &&
-        new Date(event.occurredAt).getTime() >= cutoff,
+        validEvent(event) && new Date(event.occurredAt).getTime() >= cutoff,
     );
     if (queue.length !== parsed.length) writeQueue(queue);
     return queue;
@@ -124,7 +123,9 @@ function writeQueue(events: QueuedAnalyticsEvent[]): void {
 
 function cookie(name: string): string | undefined {
   const match = document.cookie.match(
-    new RegExp(`(?:^|;\\s*)${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}=([^;]+)`),
+    new RegExp(
+      `(?:^|;\\s*)${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}=([^;]+)`,
+    ),
   );
   return match?.[1] ? decodeURIComponent(match[1]) : undefined;
 }
@@ -143,27 +144,6 @@ function attribution(): {
     ttclid: params.get("ttclid") || undefined,
     ttp: cookie("_ttp"),
   };
-}
-
-export type AnalyticsConsentState = "unknown" | "granted" | "denied";
-
-/**
- * The visitor's analytics consent, if a consent manager has recorded one.
- *
- * No UI sets this yet; it exists so a consent manager (or a privacy toggle)
- * has one place to write to. Values come from `localStorage.mt:analytics-consent`.
- * Absent means "unknown", which every consumer treats as allowed — matching
- * how the backend already treats `consentState !== 'denied'`.
- */
-export function analyticsConsent(): AnalyticsConsentState {
-  if (typeof window === "undefined") return "unknown";
-  try {
-    const stored = window.localStorage.getItem("mt:analytics-consent");
-    if (stored === "granted" || stored === "denied") return stored;
-  } catch {
-    // Private-mode storage refusals fall back to unknown, i.e. allowed.
-  }
-  return "unknown";
 }
 
 function add(event: QueuedAnalyticsEvent): void {
@@ -194,9 +174,9 @@ function createEvent(input: {
     sessionId: getAnalyticsSessionId(),
     occurredAt: new Date().toISOString(),
     ...attribution(),
-    // Read per event: a visitor who revokes consent mid-session flips the
-    // next report rather than only the one that happened to be queued first.
-    consentState: analyticsConsent(),
+    // Marketing tracking is automatic on allowlisted public pages. Keep the
+    // existing transport field for backward-compatible API and database rows.
+    consentState: "granted",
     browserDispatched: input.browserDispatched || false,
     browserEventName: input.browserEventName,
     conversionValue: input.conversionValue,
@@ -247,9 +227,7 @@ async function flushQueue(): Promise<void> {
       retryable?: boolean;
     }) => {
       if (typeof window === "undefined") return;
-      window.dispatchEvent(
-        new CustomEvent("mt:analytics-flush", { detail }),
-      );
+      window.dispatchEvent(new CustomEvent("mt:analytics-flush", { detail }));
     };
     // A 4xx is the server saying this batch will never be accepted — a
     // malformed event, a page that no longer exists, a payload a newer server
@@ -261,8 +239,7 @@ async function flushQueue(): Promise<void> {
       writeQueue([
         ...snapshot.slice(50),
         ...readQueue().filter(
-          (event) =>
-            !snapshot.some((sent) => sent.eventId === event.eventId),
+          (event) => !snapshot.some((sent) => sent.eventId === event.eventId),
         ),
       ]);
       report({
@@ -298,7 +275,9 @@ async function flushQueue(): Promise<void> {
       ...remaining,
       ...readQueue().filter(
         (event) =>
-          !remaining.some((remainingEvent) => remainingEvent.eventId === event.eventId),
+          !remaining.some(
+            (remainingEvent) => remainingEvent.eventId === event.eventId,
+          ),
       ),
     ]);
   } catch {

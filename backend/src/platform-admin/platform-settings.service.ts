@@ -13,6 +13,9 @@ import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../database/database.service';
 import { RedisService } from '../redis/redis.service';
 import { StorageService } from '../storage/storage.service';
+import { PlatformContentWorkspaceService } from '../platform-workspace/platform-content-workspace.service';
+import { TikTokPixelConfigService } from '../auth/tiktok-pixel-config.service';
+import { AnalyticsReadService } from '../analytics/analytics-read.service';
 
 export interface PlatformAdminProfile {
   id: string;
@@ -55,7 +58,58 @@ export class PlatformSettingsService {
     private readonly redisService: RedisService,
     @Optional() private readonly configService?: ConfigService,
     @Optional() private readonly storageService?: StorageService,
+    @Optional()
+    private readonly platformWorkspace?: PlatformContentWorkspaceService,
+    @Optional() private readonly tiktokPixels?: TikTokPixelConfigService,
+    @Optional() private readonly analyticsReads?: AnalyticsReadService,
   ) {}
+
+  private trackingDependencies() {
+    if (!this.platformWorkspace || !this.tiktokPixels || !this.analyticsReads) {
+      throw new Error('Platform TikTok tracking services are unavailable');
+    }
+    return {
+      workspace: this.platformWorkspace,
+      pixels: this.tiktokPixels,
+      analytics: this.analyticsReads,
+    };
+  }
+
+  async getTikTokSettings() {
+    const { workspace, pixels } = this.trackingDependencies();
+    const ownerId = await workspace.getWorkspaceId();
+    return {
+      tiktok_configs: await pixels.list(ownerId),
+      max_groups: 3,
+    };
+  }
+
+  async updateTikTokSettings(configs: unknown) {
+    const { workspace, pixels } = this.trackingDependencies();
+    const ownerId = await workspace.getWorkspaceId();
+    return {
+      tiktok_configs: await pixels.replace(ownerId, configs),
+      max_groups: 3,
+    };
+  }
+
+  async getTikTokHealth() {
+    const { workspace, analytics } = this.trackingDependencies();
+    const ownerId = await workspace.getWorkspaceId();
+    return analytics.getTikTokHealth(ownerId, {});
+  }
+
+  async getTikTokErrors(limit = 20) {
+    const { workspace, analytics } = this.trackingDependencies();
+    const ownerId = await workspace.getWorkspaceId();
+    return analytics.getTikTokDeliveryErrors(ownerId, limit);
+  }
+
+  async retryFailedTikTokEvents() {
+    const { workspace, analytics } = this.trackingDependencies();
+    const ownerId = await workspace.getWorkspaceId();
+    return analytics.retryFailedTikTokEvents(ownerId);
+  }
 
   private lookupEnv(name: string): string | undefined {
     return this.configService?.get<string>(name) ?? process.env[name];
@@ -306,10 +360,14 @@ export class PlatformSettingsService {
   async getStats() {
     const [businesses, linktrees, analytics] = await Promise.all([
       this.databaseService.query<{ count: string }>(
-        'SELECT COUNT(*)::BIGINT AS count FROM businesses',
+        `SELECT COUNT(*)::BIGINT AS count FROM businesses
+         WHERE account_type = 'business'`,
       ),
       this.databaseService.query<{ count: string }>(
-        'SELECT COUNT(*)::BIGINT AS count FROM linktrees',
+        `SELECT COUNT(*)::BIGINT AS count
+         FROM linktrees linktree
+         JOIN businesses business ON business.id = linktree.business_id
+         WHERE business.account_type = 'business'`,
       ),
       this.databaseService.query<{
         total_views: string;

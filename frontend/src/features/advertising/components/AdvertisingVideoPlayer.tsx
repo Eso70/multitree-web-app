@@ -1,17 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Play } from "lucide-react";
+import { Play, VideoOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { youtubeVideoId } from "@/features/mini-website/BannerVideo";
-
-const TUTORIAL_VIDEO_SRC = "/images/advertising/extracting-tiktok-code-video.MP4";
 
 interface AdvertisingVideoPlayerProps {
   /** "full" is used on the dedicated video page; "compact" fits inside the phone mockup in the guide. */
   size?: "compact" | "full";
   className?: string;
-  /** Overrides the bundled default video (e.g. a business-uploaded video or a YouTube link). */
+  /** Business-uploaded video or YouTube link. */
   src?: string;
 }
 
@@ -27,8 +25,19 @@ interface AdvertisingVideoPlayerProps {
 export function AdvertisingVideoPlayer({ size = "compact", className, src }: AdvertisingVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const videoSrc = src || TUTORIAL_VIDEO_SRC;
+  const videoSrc = src?.trim() ?? "";
   const youtubeId = youtubeVideoId(videoSrc);
+
+  if (!videoSrc) {
+    return (
+      <div className={cn("flex h-full w-full flex-col items-center justify-center gap-3 bg-slate-100 px-5 text-center dark:bg-white/[0.04]", className)}>
+        <VideoOff className="h-8 w-8 text-black/25 dark:text-white/25" />
+        <p className="text-xs font-bold text-black/45 dark:text-white/45" dir="auto">
+          هیچ ڤیدیۆیەک دانەنراوە
+        </p>
+      </div>
+    );
+  }
 
   if (youtubeId) {
     return (

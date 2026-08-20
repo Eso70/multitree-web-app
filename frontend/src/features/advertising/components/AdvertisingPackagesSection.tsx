@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { Building2, User, type LucideIcon } from "lucide-react";
 import { BusinessSectionDecorations } from "@/components/business/BusinessSectionDecorations";
+import { PublicSectionHeading } from "@/components/public/PublicSectionHeading";
+import { PublicSection } from "@/components/public/PublicSection";
 import { AdvertisingPriceTable, SPONSOR_CATEGORY_THEME } from "./AdvertisingPriceTable";
-import { ADVERTISING_PRICING, type AdvertisingPriceRow, type SponsorCategory } from "../pricing-data";
+import type { AdvertisingPriceRow, SponsorCategory } from "../pricing-data";
 
 interface AdvertisingPackagesSectionProps {
   packageTiers?: Record<SponsorCategory, AdvertisingPriceRow[]>;
@@ -20,29 +22,23 @@ const formatThousandDinar = (price: number) => `${price / 1000} هەزار دی�
 export function AdvertisingPackagesSection({ packageTiers }: AdvertisingPackagesSectionProps) {
   const [category, setCategory] = useState<SponsorCategory>("personal");
   const theme = SPONSOR_CATEGORY_THEME[category];
-  const rows = packageTiers?.[category]?.length
-    ? packageTiers[category]
-    : ADVERTISING_PRICING[category];
+  const rows = packageTiers?.[category] ?? [];
 
   return (
-    <section
+    <PublicSection
       id="packages"
-      className="relative scroll-mt-24 overflow-hidden bg-transparent px-5 py-24 sm:px-8 sm:py-28 lg:py-32"
+      decorations={
+        <BusinessSectionDecorations
+          colors={["#a3e635", "#a78bfa"]}
+          labels={["پاکێجی گونجاو", "نرخی ڕوون"]}
+          variant={2}
+        />
+      }
     >
-      <BusinessSectionDecorations
-        colors={["#a3e635", "#a78bfa"]}
-        labels={["پاکێجی گونجاو", "نرخی ڕوون"]}
-        variant={2}
-      />
-      <div className="relative mx-auto max-w-7xl">
-        <div className="text-center">
-          <h2 className="break-words text-[clamp(2.35rem,5vw,4.9rem)] font-medium leading-[1.06] tracking-[-0.04em] text-balance [overflow-wrap:anywhere]">
-            نرخی سپۆنسەر
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl break-words text-sm leading-7 text-black/52 [overflow-wrap:anywhere] dark:text-white/52">
-            ژمارەی بینینەکان مەزەندەییە و بە جۆری ناوەڕۆک دەگۆڕێت
-          </p>
-        </div>
+        <PublicSectionHeading
+          title="نرخی سپۆنسەر"
+          description="ژمارەی بینینەکان مەزەندەییە و بە جۆری ناوەڕۆک دەگۆڕێت"
+        />
 
         <div className="mx-auto mt-10 max-w-2xl">
           <div
@@ -85,7 +81,6 @@ export function AdvertisingPackagesSection({ packageTiers }: AdvertisingPackages
         <p className="mx-auto mt-8 max-w-3xl text-center text-xs leading-6 text-black/45 dark:text-white/40">
           ژمارەی بینەرەکان (قیو) نزیکەیی و خەملێنراون؛ ئەنجامی کۆتایی پەیوەندی بە ناوەڕۆکی ڤیدیۆ، ئامانجی سپۆنسەر و ڕەفتاری بینەران جیاواز دەبێت.
         </p>
-      </div>
-    </section>
+    </PublicSection>
   );
 }

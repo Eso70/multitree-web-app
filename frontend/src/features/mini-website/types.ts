@@ -239,6 +239,8 @@ export interface MiniWebsite {
    * pixel does not load in the dashboard — see docs/tracking.md.
    */
   analytics?: PublicPageAnalytics;
+  /** Creation time returned by authenticated management reads. */
+  createdAt?: string;
   updatedAt: string;
 }
 

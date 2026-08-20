@@ -522,7 +522,11 @@ export class MiniWebsitesService {
     );
   }
 
-  async create(data: SaveMiniWebsiteDto, businessId: string) {
+  async create(
+    data: SaveMiniWebsiteDto,
+    businessId: string,
+    ownerKind: 'business' | 'platform' = 'business',
+  ) {
     if (!data.name) throw new BadRequestException('Name is required');
     const safeSlug =
       data.slug && /^[a-z0-9-]+$/.test(data.slug)
@@ -530,7 +534,9 @@ export class MiniWebsitesService {
         : this.slugify(data.name);
     const payload = this.defaults({ ...data, slug: safeSlug });
     this.validate(payload);
-    await this.templateAccess.assertAllowed(businessId, payload.templateKey);
+    if (ownerKind === 'business') {
+      await this.templateAccess.assertAllowed(businessId, payload.templateKey);
+    }
     await this.assertSlugAvailable(businessId, payload.slug);
     const created = await this.database.transaction(async (client) => {
       const result = await client.query<WebsiteRow>(
@@ -573,7 +579,12 @@ export class MiniWebsitesService {
     return this.get(created.id, businessId);
   }
 
-  async update(id: string, data: SaveMiniWebsiteDto, businessId: string) {
+  async update(
+    id: string,
+    data: SaveMiniWebsiteDto,
+    businessId: string,
+    ownerKind: 'business' | 'platform' = 'business',
+  ) {
     const current = await this.get(id, businessId);
     const definedData = Object.fromEntries(
       Object.entries(data).filter(([, value]) => value !== undefined),
@@ -619,7 +630,9 @@ export class MiniWebsitesService {
       plans: data.plans ?? current.plans,
     });
     this.validate(merged, existingImages);
-    await this.templateAccess.assertAllowed(businessId, merged.templateKey);
+    if (ownerKind === 'business') {
+      await this.templateAccess.assertAllowed(businessId, merged.templateKey);
+    }
     if (merged.slug !== current.slug)
       await this.assertSlugAvailable(businessId, merged.slug, id);
     const nextVersion = Number(current.currentVersion || 1) + 1;
@@ -789,6 +802,7 @@ export class MiniWebsitesService {
            WHERE tombstone.page_type='mini_website'
              AND tombstone.public_identifier=$1
              AND lower(business.subdomain)=lower($2)
+             AND business.account_type='business'
          ) AS exists`,
         [slug, subdomain],
       );
@@ -811,6 +825,38 @@ export class MiniWebsitesService {
       // docs/tracking.md.
       analytics: await this.pageAnalytics.forSource('mini_website', website.id),
     };
+  }
+
+  async getPlatformPublic(slug: string) {
+    const row = await this.repository.findPublishedForPlatform(slug);
+    if (!row) {
+      const tombstone = await this.database.query<{ exists: boolean }>(
+        `SELECT EXISTS (
+           SELECT 1
+           FROM public_page_tombstones tombstone
+           JOIN businesses business ON business.id=tombstone.business_id
+           WHERE tombstone.page_type='mini_website'
+             AND tombstone.public_identifier=$1
+             AND business.account_type IN ('platform', 'creator')
+         ) AS exists`,
+        [slug],
+      );
+      if (tombstone.rows[0]?.exists) {
+        throw new GoneException('Mini website permanently removed');
+      }
+      throw new NotFoundException('Mini website not found');
+    }
+    const website = this.hydrate([row])[0];
+    return {
+      ...website,
+      analytics: await this.pageAnalytics.forSource('mini_website', website.id),
+    };
+  }
+
+  async getRootOwnerId(slug: string) {
+    const ownerId = await this.repository.findRootOwnerId(slug);
+    if (!ownerId) throw new NotFoundException('Mini website not found');
+    return ownerId;
   }
 
   /**
@@ -3272,6 +3318,17 @@ export class MiniWebsitesService {
     const result = await this.database.query(
       'SELECT 1 FROM mini_websites WHERE business_id=$1 AND slug=$2 AND ($3::uuid IS NULL OR id<>$3)',
       [businessId, slug, excludeId || null],
+    );
+    return result.rows.length === 0;
+  }
+
+  async isRootSlugAvailable(slug: string, excludeId?: string) {
+    const result = await this.database.query(
+      `SELECT 1 FROM root_public_slugs
+        WHERE page_type='mini_website' AND slug=$1
+          AND ($2::uuid IS NULL OR mini_website_id<>$2)
+        LIMIT 1`,
+      [slug, excludeId || null],
     );
     return result.rows.length === 0;
   }

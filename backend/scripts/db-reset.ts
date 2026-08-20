@@ -1,13 +1,12 @@
 /**
  * Database Reset Script
  * Drops and recreates the entire configured database, then applies the single
- * consolidated full_schema.sql baseline from scratch.
+ * consolidated baseline (migrations/baseline/*.sql) from scratch.
  * WARNING: This permanently deletes ALL data.
  * Usage: pnpm db:reset
  */
 
 import { Pool, PoolClient } from 'pg';
-import * as fs from 'fs';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
 import Redis from 'ioredis';
@@ -19,6 +18,12 @@ import { ensurePlatformMedia } from './ensure-platform-media';
 import { ensureAdvertisingPages } from './ensure-advertising-pages';
 import { seedPlatformAdmin } from './seed-platform-admin';
 import { assertSupportedSchema } from '../src/database/migration-compatibility';
+import {
+  applyBaseline,
+  baselineDir,
+  baselineFiles,
+  BASELINE_LEDGER_NAME,
+} from '../src/database/baseline';
 
 // Load env from root first, then backend-local overrides if present.
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -98,37 +103,29 @@ async function reset() {
     pool = new Pool({ ...connection, database: dbName });
     client = await pool.connect();
 
-    const file = 'full_schema.sql';
-    const schemaPath = path.join(migrationsDir, file);
-    if (!fs.existsSync(schemaPath)) {
-      console.error('full_schema.sql not found at:', schemaPath);
-      process.exit(1);
-    }
-
-    console.log(`  Applying: ${file}`);
-    let sql = fs.readFileSync(schemaPath, 'utf8');
-    if (sql.startsWith('\ufeff')) {
-      sql = sql.slice(1);
-    }
+    const parts = baselineFiles(migrationsDir);
+    console.log(
+      `  Applying ${parts.length} baseline part(s) from ${baselineDir(migrationsDir)}`,
+    );
 
     await client.query('BEGIN');
-    await client.query(sql);
+    await applyBaseline(client, migrationsDir);
     await client.query('INSERT INTO schema_migrations (filename) VALUES ($1)', [
-      file,
+      BASELINE_LEDGER_NAME,
     ]);
     await client.query('COMMIT');
 
-    console.log(`  OK ${file} applied`);
+    console.log('  OK baseline applied');
     await assertSupportedSchema(client);
     const ledger = await client.query<{ filename: string }>(
       'SELECT filename FROM schema_migrations ORDER BY filename',
     );
     if (
       ledger.rows.length !== 1 ||
-      ledger.rows[0]?.filename !== 'full_schema.sql'
+      ledger.rows[0]?.filename !== BASELINE_LEDGER_NAME
     ) {
       throw new Error(
-        'Reset verification failed: the migration ledger must contain only full_schema.sql.',
+        `Reset verification failed: the migration ledger must contain only ${BASELINE_LEDGER_NAME}.`,
       );
     }
     console.log('  OK Consolidated schema verified');

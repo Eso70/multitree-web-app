@@ -9,9 +9,9 @@ interface TikTokPixelBaseCodeProps {
 /**
  * Server-renders a business's pixel base code into the initial HTML.
  *
- * Rendered by exactly the two public server pages — the linktree route and
- * the mini-website route — because those are the only surfaces that may carry
- * a pixel (`pixel-placement.spec.ts` pins both sides of this). Having the
+ * Rendered by the specialized Linktree and mini-website server routes
+ * (`pixel-placement.spec.ts` pins both sides). Fixed routes use the shared
+ * client loader. Having the
  * base code in the raw HTML is what makes TikTok's "verify Pixel setup"
  * crawler find the tag: a script injected only after React hydrates is
  * invisible to a snapshot taken before that.

@@ -2,7 +2,6 @@
 
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -26,9 +25,7 @@ import {
   Route,
   Tag,
   Trash2,
-  Package,
   TrendingUp,
-  Wallet,
   User,
   type LucideIcon,
 } from "lucide-react";
@@ -39,8 +36,6 @@ import { EditorAddButton } from "@/components/shared/EditorAddButton";
 import { EditorField } from "@/components/shared/EditorField";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { IconActionButton } from "@/components/shared/IconActionButton";
-import { StatCard } from "@/components/shared/StatCard";
-import { StatCardGrid } from "@/components/shared/StatCardGrid";
 import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
 import { ManagementModal } from "@/components/shared/ManagementModal";
 import { ModalFooterActions } from "@/components/shared/ModalFooterActions";
@@ -66,6 +61,8 @@ import {
 } from "./AdvertisingTestimonialStack";
 import { RESULT_THEME, ResultCardFan, ResultFanDots } from "./AdvertisingResultsShowcaseSection";
 import { FaqCarousel } from "./AdvertisingFaqSection";
+import { AdvertisingEditorStats } from "./AdvertisingEditorStats";
+import { AdvertisingSectionVisibilityToggle } from "./AdvertisingSectionVisibilityToggle";
 import type { AdvertisingPriceRow } from "../pricing-data";
 import {
   fetchAdvertisingDraft,
@@ -270,91 +267,6 @@ async function uploadPickedImage(
  * take money: payment methods configured, sections that will be visible,
  * and the tier and result counts behind the public pitch.
  */
-function AdvertisingStats({ config }: { config: AdvertisingServiceConfig }) {
-  const stats = useMemo(() => {
-    const tiers = Object.values(config.packageTiers).flat();
-    const sections = Object.values(config.sections);
-    return {
-      packages: tiers.length,
-      providers: config.paymentProviders.length,
-      results: config.results.length,
-      visibleSections: sections.filter(Boolean).length,
-      totalSections: sections.length,
-    };
-  }, [config]);
-
-  return (
-    <StatCardGrid columns={4}>
-      <StatCard
-        icon={Wallet}
-        label="شێوازی پارەدان"
-        value={stats.providers}
-        color="green"
-      />
-      <StatCard
-        icon={Eye}
-        label="بەشە دەرکەوتووەکان"
-        value={`${stats.visibleSections} / ${stats.totalSections}`}
-        color="purple"
-      />
-      <StatCard
-        icon={Package}
-        label="پاکێجەکان"
-        value={stats.packages}
-        color="blue"
-      />
-      <StatCard
-        icon={TrendingUp}
-        label="ئەنجامەکان"
-        value={stats.results}
-        color="orange"
-      />
-    </StatCardGrid>
-  );
-}
-
-
-/** Header switch controlling whether a section is shown on the public page. */
-function SectionVisibilityToggle({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={checked ? "بەشەکە لە پەڕەی گشتی نیشان دەدرێت" : "بەشەکە لە پەڕەی گشتی شاردراوە"}
-      onClick={() => onChange(!checked)}
-      title={checked ? "شاردنەوە لە پەڕەی گشتی" : "پیشاندان لە پەڕەی گشتی"}
-      className={cn(
-        "flex h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-xs font-bold transition",
-        checked
-          ? "border-[color-mix(in_srgb,var(--theme-primary)_35%,transparent)] bg-[color-mix(in_srgb,var(--theme-primary)_8%,transparent)] text-[var(--theme-primary)]"
-          : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/[0.08]",
-      )}
-    >
-      <span
-        className={cn(
-          "relative h-5 w-9 shrink-0 rounded-full transition",
-          checked ? "bg-[var(--theme-primary)]" : "bg-slate-200 dark:bg-white/10",
-        )}
-      >
-        <span
-          className={cn(
-            "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition",
-            checked ? "left-[18px]" : "left-0.5",
-          )}
-        />
-      </span>
-      {checked ? "پیشان دەدرێت" : "شاردراوە"}
-    </button>
-  );
-}
-
 /** Video upload for the guide's code-extraction step, previewed in the same rounded card style as the /advertising/video-code page. */
 function JourneyVideoUpload({
   videoUrl,
@@ -498,9 +410,7 @@ function ResultImageUpload({
   );
 }
 
-const RECEIPT_EXAMPLE_FALLBACK = "/images/advertising/example-money-send.jpg";
-
-/** Lets a business swap the mockup receipt shown in the guide's step 4; falls back to the bundled screenshot when unset. */
+/** Lets a business set the optional mockup receipt shown in the guide's step 4. */
 function ReceiptExampleImageUpload({
   imageUrl,
   onImageUrlChange,
@@ -518,14 +428,25 @@ function ReceiptExampleImageUpload({
       <div className="w-[150px]">
         <PhoneMockup ariaLabel="پێشبینینی نموونەی وەسڵ" name="Receipt">
           <div className="relative flex h-full w-full items-center justify-center bg-[#f4efe8]">
-            <Image
-              src={imageUrl || RECEIPT_EXAMPLE_FALLBACK}
-              alt="وێنەی نموونەی وەسڵی گواستنەوەی پارە"
-              fill
-              sizes="150px"
-              className="object-contain"
-              unoptimized={Boolean(imageUrl)}
-            />
+            {imageUrl ? (
+              <Image
+                src={imageUrl}
+                alt="وێنەی نموونەی وەسڵی گواستنەوەی پارە"
+                fill
+                sizes="150px"
+                className="object-contain"
+                unoptimized
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-black/45 transition hover:bg-black/[0.03]"
+              >
+                <CloudUpload className="h-7 w-7" />
+                <span className="text-xs font-bold">وێنە هەڵبژێرە</span>
+              </button>
+            )}
           </div>
         </PhoneMockup>
       </div>
@@ -553,7 +474,7 @@ function ReceiptExampleImageUpload({
             onClick={() => onImageUrlChange(undefined)}
             className="flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-bold text-red-500 transition hover:bg-red-50 dark:border-white/10 dark:hover:bg-red-500/10"
           >
-            <Trash2 className="h-3.5 w-3.5" /> گەڕانەوە بۆ بنەڕەت
+            <Trash2 className="h-3.5 w-3.5" /> سڕینەوەی وێنە
           </button>
         )}
       </div>
@@ -1449,7 +1370,7 @@ function AdvertisingServiceEditor({
 
   return (
     <div className="space-y-5" dir="ltr">
-      <AdvertisingStats config={config} />
+      <AdvertisingEditorStats config={config} />
 
       <SegmentedTabs tabs={tabs} value={activeTab} onChange={setActiveTab} />
 
@@ -1797,7 +1718,7 @@ function AdvertisingServiceEditor({
             description="هەمان نموونەکانی پەڕەی گشتی — نموونە زیاد، دەستکاری یان بسڕەوە."
             action={
               <>
-                <SectionVisibilityToggle
+                <AdvertisingSectionVisibilityToggle
                   checked={config.sections.results}
                   onChange={(checked) => updateConfig("sections", { ...config.sections, results: checked })}
                 />
@@ -2044,7 +1965,7 @@ function AdvertisingServiceEditor({
             description="هەمان ڕاکانی پەڕەی گشتی — بۆچوون زیاد، دەستکاری یان بسڕەوە."
             action={
               <>
-                <SectionVisibilityToggle
+                <AdvertisingSectionVisibilityToggle
                   checked={config.sections.testimonials}
                   onChange={(checked) => updateConfig("sections", { ...config.sections, testimonials: checked })}
                 />
@@ -2131,7 +2052,7 @@ function AdvertisingServiceEditor({
             description="هەمان پرسیارەکانی پەڕەی گشتی — پرسیار زیاد، دەستکاری یان بسڕەوە."
             action={
               <>
-                <SectionVisibilityToggle
+                <AdvertisingSectionVisibilityToggle
                   checked={config.sections.faq}
                   onChange={(checked) => updateConfig("sections", { ...config.sections, faq: checked })}
                 />

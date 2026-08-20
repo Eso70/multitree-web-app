@@ -27,9 +27,9 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import { AuthorizationGuard } from '../auth/authorization.guard';
 import { Capability } from '../auth/capabilities';
 import { RequireCapabilities } from '../auth/require-capabilities.decorator';
-import { validateImageUpload } from '../storage/image-upload';
 import { AuditInterceptor } from '../auth/audit.interceptor';
 import { AuditEvent } from '../auth/audit-event.decorator';
+import { uploadLinktreeImage } from './linktree-image-upload';
 
 @Controller('api/linktrees')
 @UseGuards(BusinessGuard, AuthorizationGuard)
@@ -40,26 +40,6 @@ export class LinktreesController {
     private readonly linksService: LinksService,
     private readonly storageService: StorageService,
   ) {}
-
-  private getMultipartField(
-    data: Awaited<ReturnType<FastifyRequest['file']>>,
-    name: string,
-  ): string | undefined {
-    const field = data?.fields?.[name] as { value?: unknown } | undefined;
-    return typeof field?.value === 'string' ? field.value : undefined;
-  }
-
-  private cleanPathSegment(
-    value: string | undefined,
-    fallback: string,
-  ): string {
-    const cleaned = (value || fallback)
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9._-]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-    return cleaned || fallback;
-  }
 
   @Get('check-slug')
   @RequireCapabilities(Capability.BusinessLinktreesRead)
@@ -236,29 +216,12 @@ export class LinktreesController {
       return res.status(400).send({ error: 'No file provided' });
     }
 
-    const fileBuffer = await data.toBuffer();
-    const extension = validateImageUpload(fileBuffer, data.mimetype);
-    const linktreeKey = this.cleanPathSegment(
-      this.getMultipartField(data, 'linktreeKey'),
-      '_drafts',
+    const url = await uploadLinktreeImage(
+      data,
+      this.storageService,
+      business.id,
+      'businesses',
     );
-    const assetType = this.cleanPathSegment(
-      this.getMultipartField(data, 'assetType'),
-      'profile-image',
-    );
-
-    // Generate filename
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2, 9);
-    const baseName = data.filename.split('.').slice(0, -1).join('.') || 'image';
-    const sanitizedBaseName = baseName
-      .replace(/[^a-z0-9]/gi, '-')
-      .toLowerCase();
-    const filename = `${sanitizedBaseName}-${timestamp}-${random}.${extension}`;
-    const storagePath = `businesses/${business.id}/linktrees/${linktreeKey}/${assetType}/${filename}`;
-
-    const url = await this.storageService.uploadImage(fileBuffer, storagePath);
-    await this.storageService.claimBusinessAssets(business.id, url);
 
     return res.send({ url });
   }

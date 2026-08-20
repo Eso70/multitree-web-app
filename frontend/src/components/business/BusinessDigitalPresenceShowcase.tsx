@@ -18,6 +18,8 @@ import {
   BUSINESS_LANDING_SECTION_IDS,
 } from "@/components/business/business-landing-sections";
 import { BusinessSectionDecorations } from "@/components/business/BusinessSectionDecorations";
+import { PublicSectionHeading } from "@/components/public/PublicSectionHeading";
+import { PublicSection } from "@/components/public/PublicSection";
 
 export interface BusinessSmartProfileFeature {
   title: string;
@@ -88,34 +90,28 @@ export function BusinessDigitalPresenceShowcase({
   const activeInk = getMultiTreeAccentInk(activeFeature.color);
 
   return (
-    <section
+    <PublicSection
       id={BUSINESS_LANDING_SECTION_IDS.digitalPresence}
-      aria-labelledby="business-digital-presence-title"
-      className="relative scroll-mt-24 overflow-hidden bg-transparent px-5 py-24 text-[#111827] dark:text-white sm:px-8 sm:py-28 lg:py-32"
+      labelledBy="business-digital-presence-title"
+      decorations={
+        <BusinessSectionDecorations
+          colors={BUSINESS_LANDING_DECORATION_COLORS.digitalPresence}
+          labels={BUSINESS_LANDING_DECORATION_LABELS.digitalPresence}
+          variant={4}
+        />
+      }
     >
-      <BusinessSectionDecorations
-        colors={BUSINESS_LANDING_DECORATION_COLORS.digitalPresence}
-        labels={BUSINESS_LANDING_DECORATION_LABELS.digitalPresence}
-        variant={4}
-      />
       <div
         aria-hidden="true"
         className="absolute left-[-12rem] top-1/3 h-96 w-96 rounded-full opacity-[0.075] blur-[130px] dark:opacity-[0.09]"
         style={{ backgroundColor: accentColor }}
       />
 
-      <div className="relative mx-auto max-w-7xl">
-        <header className="mx-auto max-w-4xl text-center">
-          <h2
-            id="business-digital-presence-title"
-            className="break-words text-[clamp(2.35rem,5vw,4.9rem)] font-medium leading-[1.06] tracking-[-0.04em] text-balance [overflow-wrap:anywhere]"
-          >
-            {title}
-          </h2>
-          <p className="mx-auto mt-7 max-w-3xl break-words text-base leading-8 text-black/55 [overflow-wrap:anywhere] dark:text-white/55 sm:text-lg sm:leading-9">
-            {description}
-          </p>
-        </header>
+        <PublicSectionHeading
+          id="business-digital-presence-title"
+          title={title}
+          description={description}
+        />
 
         <div className="mt-16 grid items-start gap-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(22rem,.92fr)] lg:gap-14">
           <div className="relative min-h-[25rem] sm:min-h-[31rem]">
@@ -201,7 +197,6 @@ export function BusinessDigitalPresenceShowcase({
             </article>
           </div>
         </div>
-      </div>
-    </section>
+    </PublicSection>
   );
 }

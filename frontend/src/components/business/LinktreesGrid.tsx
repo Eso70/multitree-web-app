@@ -1,6 +1,12 @@
 ﻿"use client";
 
-import { memo, useCallback, useState, useMemo } from "react";
+import {
+  memo,
+  useCallback,
+  useState,
+  useMemo,
+  type ComponentType,
+} from "react";
 import Image from "next/image";
 import {
   Trash2,
@@ -10,12 +16,16 @@ import {
   Edit,
   ExternalLink,
   Link as LinkIcon,
+  MousePointerClick,
 } from "lucide-react";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { formatDate, getAbsoluteUrl } from "@/lib/utils/linktree-utils";
 import {
+  LINKTREE_TRAFFIC_LABELS,
   LinktreeMetaBadges,
   LinktreeMetaField,
+  type LinktreeMetaBadgesProps,
+  type PageListTrafficLabels,
 } from "@/components/business/LinktreeMeta";
 import { SkeletonCardGrid } from "@/components/shared/Skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -37,6 +47,13 @@ interface LinktreesGridProps {
    * and the age badge.
    */
   showLinktreeMeta?: boolean;
+  /**
+   * Enables the complete shared public-page card treatment for another page
+   * domain without pretending that its metadata belongs to a Linktree.
+   */
+  showPageMeta?: boolean;
+  MetaBadgesComponent?: ComponentType<LinktreeMetaBadgesProps>;
+  trafficLabels?: PageListTrafficLabels;
 }
 
 function getPublicIdentifier(item: Linktree): string {
@@ -55,7 +72,9 @@ const LinktreeCard = memo(function LinktreeCard({
   copiedUid,
   onCopy,
   publicPathPrefix,
-  showLinktreeMeta,
+  showPageMeta,
+  MetaBadgesComponent,
+  trafficLabels,
 }: {
   item: Linktree;
   index: number;
@@ -67,7 +86,9 @@ const LinktreeCard = memo(function LinktreeCard({
   copiedUid: string | null;
   onCopy: (uid: string, e: React.MouseEvent) => void;
   publicPathPrefix: string;
-  showLinktreeMeta: boolean;
+  showPageMeta: boolean;
+  MetaBadgesComponent: ComponentType<LinktreeMetaBadgesProps>;
+  trafficLabels: PageListTrafficLabels;
 }) {
   const publicIdentifier = getPublicIdentifier(item);
   const url = useMemo(
@@ -122,10 +143,10 @@ const LinktreeCard = memo(function LinktreeCard({
           <p className="text-xs text-gray-600 line-clamp-2 mb-1 sm:mb-1.5">
             {item.subtitle?.trim() || "—"}
           </p>
-          <LinktreeMetaBadges
+          <MetaBadgesComponent
             item={item}
-            showAgeBadge={showLinktreeMeta}
-            showTemplate={showLinktreeMeta}
+            showAgeBadge={showPageMeta}
+            showTemplate={showPageMeta}
           />
         </div>
       </div>
@@ -170,7 +191,7 @@ const LinktreeCard = memo(function LinktreeCard({
       </div>
 
       {/* Details Section */}
-      {showLinktreeMeta && (
+      {showPageMeta && (
         <div className="mb-2 grid grid-cols-2 gap-2 sm:mb-3">
           <LinktreeMetaField
             label="دروستکراوە"
@@ -180,6 +201,30 @@ const LinktreeCard = memo(function LinktreeCard({
             label="نوێکراوە"
             value={formatDate(item.updated_at)}
           />
+        </div>
+      )}
+
+      {/* Traffic Section */}
+      {showPageMeta && item.analytics && (
+        <div className="mb-2 grid grid-cols-2 gap-2 sm:mb-3">
+          <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5">
+            <Eye className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+            <span className="text-xs font-bold text-gray-700">
+              {item.analytics.unique_views.toLocaleString()}
+            </span>
+            <span className="truncate text-[10px] text-gray-500">
+              {trafficLabels.views}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5">
+            <MousePointerClick className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+            <span className="text-xs font-bold text-gray-700">
+              {item.analytics.unique_clicks.toLocaleString()}
+            </span>
+            <span className="truncate text-[10px] text-gray-500">
+              {trafficLabels.interactions}
+            </span>
+          </div>
         </div>
       )}
 
@@ -238,8 +283,12 @@ export const LinktreesGrid = memo(function LinktreesGrid({
   emptyTitle = "هیچ پەیجەک نەدۆزرایەوە",
   emptyDescription = "دەست پێ بکە بە دروستکردنی پەیج یەکەم",
   showLinktreeMeta = false,
+  showPageMeta,
+  MetaBadgesComponent = LinktreeMetaBadges,
+  trafficLabels = LINKTREE_TRAFFIC_LABELS,
 }: LinktreesGridProps) {
   const [copiedUid, setCopiedUid] = useState<string | null>(null);
+  const displaysPageMeta = showPageMeta ?? showLinktreeMeta;
 
   const handleCopyUrl = useCallback(
     async (uid: string, e: React.MouseEvent) => {
@@ -300,7 +349,9 @@ export const LinktreesGrid = memo(function LinktreesGrid({
           copiedUid={copiedUid}
           onCopy={handleCopyUrl}
           publicPathPrefix={publicPathPrefix}
-          showLinktreeMeta={showLinktreeMeta}
+          showPageMeta={displaysPageMeta}
+          MetaBadgesComponent={MetaBadgesComponent}
+          trafficLabels={trafficLabels}
         />
       ))}
     </div>

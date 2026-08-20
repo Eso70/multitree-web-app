@@ -6,7 +6,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import nodemailer, { type Transporter } from 'nodemailer';
 
-type EmailCodeAudience = 'business' | 'admin console' | 'business signup';
+type EmailCodeAudience =
+  'business' | 'admin console' | 'business signup' | 'creator account';
 
 @Injectable()
 export class MailService {
@@ -25,6 +26,10 @@ export class MailService {
 
   async sendBusinessSignupCode(email: string, code: string): Promise<void> {
     await this.sendLoginCode(email, code, 'business signup');
+  }
+
+  async sendCreatorCode(email: string, code: string): Promise<void> {
+    await this.sendLoginCode(email, code, 'creator account');
   }
 
   private async sendLoginCode(

@@ -14,6 +14,15 @@ const PLATFORM_ADMIN_PATH = normalizePrivatePath(
 // Compatibility/security tombstone: the former physical console path must
 // remain concealed rather than becoming a discoverable route.
 const LEGACY_PLATFORM_ADMIN_PATH = "/system";
+const ROOT_MARKETING_PATHS = new Set([
+  "/features",
+  "/link-in-bio",
+  "/mini-website",
+  "/templates",
+  "/pricing",
+  "/about",
+  "/contact",
+]);
 
 function normalizePrivatePath(value: string | undefined): string {
   const normalized = (value || "").trim().replace(/^\/+|\/+$/g, "");
@@ -266,6 +275,31 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // ── Route blocking: root domain (no subdomain) + /business/* → 404 ──────────
   if (!subdomain && pathname.startsWith("/business")) {
     return rewriteNotFound(request, "/__root-not-found", requestHeaders, csp);
+  }
+
+  if (
+    subdomain &&
+    (pathname === "/signup" ||
+      pathname === "/account" ||
+      pathname.startsWith("/account/") ||
+      ROOT_MARKETING_PATHS.has(pathname))
+  ) {
+    return rewriteNotFound(request, "/__public-not-found", requestHeaders, csp);
+  }
+
+  if (
+    !subdomain &&
+    (pathname === "/account" || pathname.startsWith("/account/"))
+  ) {
+    if (!request.cookies.get("creator_session")?.value) {
+      return createRedirect(request, "/login", "creator_session", csp);
+    }
+    const response = NextResponse.next({
+      request: { headers: requestHeaders },
+    });
+    response.headers.set("Cache-Control", "no-store, private");
+    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+    return withCsp(response, csp);
   }
 
   // ── Business routes on a subdomain ──────────────────────────────────────────

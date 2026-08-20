@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { BusinessSectionDecorations } from "@/components/business/BusinessSectionDecorations";
+import { PublicSectionHeading } from "@/components/public/PublicSectionHeading";
+import { PublicSection } from "@/components/public/PublicSection";
 import type { AdvertisingTestimonial } from "../types";
 import {
   TestimonialStackCard,
@@ -34,24 +36,21 @@ export function AdvertisingTestimonialsSection({ items }: { items: readonly Adve
   const activeIndex = index % total;
 
   return (
-    <section
+    <PublicSection
       id="testimonials"
-      className="relative scroll-mt-24 overflow-hidden bg-transparent px-5 py-24 sm:px-8 sm:py-28 lg:py-32"
+      contentClassName="max-w-6xl"
+      decorations={
+        <BusinessSectionDecorations
+          colors={["#f97316", "#22c55e"]}
+          labels={["ڕای کڕیار", "متمانەی ڕاستەقینە"]}
+          variant={0}
+        />
+      }
     >
-      <BusinessSectionDecorations
-        colors={["#f97316", "#22c55e"]}
-        labels={["ڕای کڕیار", "متمانەی ڕاستەقینە"]}
-        variant={0}
-      />
-      <div className="relative mx-auto max-w-6xl">
-        <div className="text-center">
-          <h2 className="break-words text-[clamp(2.35rem,5vw,4.9rem)] font-medium leading-[1.06] tracking-[-0.04em] text-balance [overflow-wrap:anywhere]">
-            ڕای ئەوانەی تاقیان کردووەتەوە
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl break-words text-sm leading-7 text-black/52 [overflow-wrap:anywhere] dark:text-white/52">
-            ئەزموونی کڕیارانمان لەگەڵ خزمەتگوزاری سپۆنسەری تیکتۆک.
-          </p>
-        </div>
+        <PublicSectionHeading
+          title="ڕای ئەوانەی تاقیان کردووەتەوە"
+          description="ئەزموونی کڕیارانمان لەگەڵ خزمەتگوزاری سپۆنسەری تیکتۆک"
+        />
 
         <TestimonialStackCard
           items={items}
@@ -70,7 +69,6 @@ export function AdvertisingTestimonialsSection({ items }: { items: readonly Adve
             className="mt-6"
           />
         )}
-      </div>
-    </section>
+    </PublicSection>
   );
 }

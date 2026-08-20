@@ -1,13 +1,25 @@
 ﻿"use client";
 
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useState, type ComponentType } from "react";
 import { SkeletonTable } from "@/components/shared/Skeleton";
 import Image from "next/image";
-import { Trash2, Eye, Copy, Check, Edit } from "lucide-react";
+import {
+  Trash2,
+  Eye,
+  Copy,
+  Check,
+  Edit,
+  MousePointerClick,
+} from "lucide-react";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { formatDate, getAbsoluteUrl } from "@/lib/utils/linktree-utils";
 import { TablePagination } from "@/components/shared/TablePagination";
-import { LinktreeMetaBadges } from "@/components/business/LinktreeMeta";
+import {
+  LINKTREE_TRAFFIC_LABELS,
+  LinktreeMetaBadges,
+  type LinktreeMetaBadgesProps,
+  type PageListTrafficLabels,
+} from "@/components/business/LinktreeMeta";
 import type { LinktreeListItem as Linktree } from "@linktree/types";
 
 const PAGE_SIZE = 10;
@@ -26,6 +38,10 @@ interface LinktreesTableProps {
    * only that projection fills in: template and the age badge.
    */
   showLinktreeMeta?: boolean;
+  /** Use the complete shared list treatment for any supported public page. */
+  showPageMeta?: boolean;
+  MetaBadgesComponent?: ComponentType<LinktreeMetaBadgesProps>;
+  trafficLabels?: PageListTrafficLabels;
 }
 
 function getPublicIdentifier(item: Linktree): string {
@@ -44,7 +60,10 @@ const TableRow = memo(function TableRow({
   formatDate,
   viewActionLabel,
   publicPathPrefix,
-  showLinktreeMeta,
+  showPageMeta,
+  showTraffic,
+  MetaBadgesComponent,
+  trafficLabels,
 }: {
   item: Linktree;
   onEdit?: (id: string) => void;
@@ -55,7 +74,10 @@ const TableRow = memo(function TableRow({
   formatDate: (dateString: string) => string;
   viewActionLabel: string;
   publicPathPrefix: string;
-  showLinktreeMeta: boolean;
+  showPageMeta: boolean;
+  showTraffic: boolean;
+  MetaBadgesComponent: ComponentType<LinktreeMetaBadgesProps>;
+  trafficLabels: PageListTrafficLabels;
 }) {
   const publicIdentifier = getPublicIdentifier(item);
   const getLinktreeUrl = useCallback(
@@ -102,10 +124,10 @@ const TableRow = memo(function TableRow({
         <div className="text-xs sm:text-sm font-medium text-gray-900 wrap-break-word">
           {item.name}
         </div>
-        <LinktreeMetaBadges
+        <MetaBadgesComponent
           item={item}
-          showAgeBadge={showLinktreeMeta}
-          showTemplate={showLinktreeMeta}
+          showAgeBadge={showPageMeta}
+          showTemplate={showPageMeta}
           className="mt-1"
         />
       </td>
@@ -117,7 +139,7 @@ const TableRow = memo(function TableRow({
           {item.description?.trim() || "—"}
         </div>
       </td>
-      {!showLinktreeMeta && (
+      {!showPageMeta && (
         <td className="px-2 sm:px-3 py-3 hidden lg:table-cell">
           <div className="text-xs text-gray-700 font-mono break-all">
             {item.seo_name || "—"}
@@ -151,6 +173,30 @@ const TableRow = memo(function TableRow({
           </button>
         </div>
       </td>
+      {showTraffic && (
+        <td className="px-2 sm:px-3 py-3 hidden sm:table-cell">
+          <div className="flex items-center gap-3">
+            <span
+              className="inline-flex items-center gap-1"
+              title={trafficLabels.views}
+            >
+              <Eye className="h-3 w-3 shrink-0 text-gray-400" />
+              <span className="text-xs font-bold text-gray-700">
+                {(item.analytics?.unique_views ?? 0).toLocaleString()}
+              </span>
+            </span>
+            <span
+              className="inline-flex items-center gap-1"
+              title={trafficLabels.interactions}
+            >
+              <MousePointerClick className="h-3 w-3 shrink-0 text-gray-400" />
+              <span className="text-xs font-bold text-gray-700">
+                {(item.analytics?.unique_clicks ?? 0).toLocaleString()}
+              </span>
+            </span>
+          </div>
+        </td>
+      )}
       <td className="px-2 sm:px-3 py-3 hidden xl:table-cell">
         <div className="text-xs text-gray-600 wrap-break-word">
           {formatDate(item.created_at)}
@@ -209,7 +255,9 @@ const MobileCard = memo(function MobileCard({
   formatDate,
   viewActionLabel,
   publicPathPrefix,
-  showLinktreeMeta,
+  showPageMeta,
+  MetaBadgesComponent,
+  trafficLabels,
 }: {
   item: Linktree;
   onEdit?: (id: string) => void;
@@ -221,7 +269,9 @@ const MobileCard = memo(function MobileCard({
   formatDate: (dateString: string) => string;
   viewActionLabel: string;
   publicPathPrefix: string;
-  showLinktreeMeta: boolean;
+  showPageMeta: boolean;
+  MetaBadgesComponent: ComponentType<LinktreeMetaBadgesProps>;
+  trafficLabels: PageListTrafficLabels;
 }) {
   const publicIdentifier = getPublicIdentifier(item);
   return (
@@ -258,10 +308,10 @@ const MobileCard = memo(function MobileCard({
             <div className="text-xs text-gray-600 wrap-break-word line-clamp-2">
               {item.subtitle || "—"}
             </div>
-            <LinktreeMetaBadges
+            <MetaBadgesComponent
               item={item}
-              showAgeBadge={showLinktreeMeta}
-              showTemplate={showLinktreeMeta}
+              showAgeBadge={showPageMeta}
+              showTemplate={showPageMeta}
               className="mt-1.5"
             />
           </div>
@@ -324,6 +374,24 @@ const MobileCard = memo(function MobileCard({
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-200 text-gray-600 bg-gray-50">
             نوێکراوە {formatDate(item.updated_at)}
           </span>
+          {showPageMeta && item.analytics && (
+            <span className="inline-flex items-center gap-2 px-2 py-1 rounded-lg border border-gray-200 bg-gray-50 text-gray-600">
+              <span
+                className="inline-flex items-center gap-1"
+                title={trafficLabels.views}
+              >
+                <Eye className="h-3.5 w-3.5 text-gray-400" />
+                {item.analytics.unique_views.toLocaleString()}
+              </span>
+              <span
+                className="inline-flex items-center gap-1"
+                title={trafficLabels.interactions}
+              >
+                <MousePointerClick className="h-3.5 w-3.5 text-gray-400" />
+                {item.analytics.unique_clicks.toLocaleString()}
+              </span>
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -340,9 +408,13 @@ export const LinktreesTable = memo(function LinktreesTable({
   viewActionLabel = "ئامار",
   emptyTitle = "هیچ داتایەک نەدۆزرایەوە",
   showLinktreeMeta = false,
+  showPageMeta,
+  MetaBadgesComponent = LinktreeMetaBadges,
+  trafficLabels = LINKTREE_TRAFFIC_LABELS,
 }: LinktreesTableProps) {
   const [copiedUid, setCopiedUid] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const displaysPageMeta = showPageMeta ?? showLinktreeMeta;
   const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const visibleData = data.slice(
@@ -350,9 +422,10 @@ export const LinktreesTable = memo(function LinktreesTable({
     currentPage * PAGE_SIZE,
   );
 
-  // The slug column is dropped for real Linktree records, so the placeholder
-  // rows have to span one column fewer.
-  const columnCount = showLinktreeMeta ? 7 : 8;
+  // The optional slug and traffic columns are table-level decisions so every
+  // body row remains aligned with the header, even when one row has no totals.
+  const showTraffic = displaysPageMeta && data.some((item) => item.analytics);
+  const columnCount = (displaysPageMeta ? 7 : 8) + (showTraffic ? 1 : 0);
 
   const formatDateString = useCallback((dateString: string) => {
     return formatDate(dateString);
@@ -419,7 +492,9 @@ export const LinktreesTable = memo(function LinktreesTable({
               formatDate={formatDateString}
               viewActionLabel={viewActionLabel}
               publicPathPrefix={publicPathPrefix}
-              showLinktreeMeta={showLinktreeMeta}
+              showPageMeta={displaysPageMeta}
+              MetaBadgesComponent={MetaBadgesComponent}
+              trafficLabels={trafficLabels}
             />
           ))
         )}
@@ -440,7 +515,7 @@ export const LinktreesTable = memo(function LinktreesTable({
                 <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide hidden md:table-cell w-32 lg:w-40">
                   ناونیشانی کورت
                 </th>
-                {!showLinktreeMeta && (
+                {!displaysPageMeta && (
                   <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide hidden lg:table-cell w-24">
                     Slug
                   </th>
@@ -448,6 +523,11 @@ export const LinktreesTable = memo(function LinktreesTable({
                 <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide w-32 sm:w-40 lg:w-48">
                   بەستەر
                 </th>
+                {showTraffic && (
+                  <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide hidden sm:table-cell w-24">
+                    {trafficLabels.column}
+                  </th>
+                )}
                 <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide hidden xl:table-cell w-28">
                   دروستکراوە
                 </th>
@@ -462,10 +542,7 @@ export const LinktreesTable = memo(function LinktreesTable({
             <tbody className="divide-y divide-slate-100 dark:divide-white/5">
               {isLoading ? (
                 <tr className="bg-white dark:bg-transparent">
-                  <td
-                    colSpan={columnCount}
-                    className="px-3 py-3"
-                  >
+                  <td colSpan={columnCount} className="px-3 py-3">
                     <SkeletonTable rows={6} />
                   </td>
                 </tr>
@@ -491,7 +568,10 @@ export const LinktreesTable = memo(function LinktreesTable({
                     formatDate={formatDateString}
                     viewActionLabel={viewActionLabel}
                     publicPathPrefix={publicPathPrefix}
-                    showLinktreeMeta={showLinktreeMeta}
+                    showPageMeta={displaysPageMeta}
+                    showTraffic={showTraffic}
+                    MetaBadgesComponent={MetaBadgesComponent}
+                    trafficLabels={trafficLabels}
                   />
                 ))
               )}

@@ -2,6 +2,7 @@ import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { GoogleBusinessAuthController } from './business-onboarding.controller';
 import type { BusinessOnboardingService } from './business-onboarding.service';
+import type { CreatorAuthService } from '../creator/creator-auth.service';
 
 /**
  * Business sign-in is Google OAuth or a tenant-bound email code; there is no
@@ -22,7 +23,9 @@ describe('Business session cookie', () => {
 
   let controller: GoogleBusinessAuthController;
   let onboarding: jest.Mocked<BusinessOnboardingService>;
+  let creatorAuth: jest.Mocked<CreatorAuthService>;
   let setCookie: jest.Mock;
+  let redirect: jest.Mock;
   let reply: FastifyReply;
 
   function request(overrides: Partial<FastifyRequest> = {}): FastifyRequest {
@@ -53,7 +56,8 @@ describe('Business session cookie', () => {
 
   beforeEach(() => {
     setCookie = jest.fn();
-    reply = { setCookie } as unknown as FastifyReply;
+    redirect = jest.fn();
+    reply = { setCookie, redirect } as unknown as FastifyReply;
     onboarding = {
       verifyBusinessEmailCode: jest.fn().mockResolvedValue({
         sessionToken: 'a2f1c7e09b4d4e6a8c1f2d5b7a9e0c31',
@@ -64,8 +68,45 @@ describe('Business session cookie', () => {
         ttlSeconds: YEAR_IN_SECONDS,
       }),
       assertRateLimit: jest.fn().mockResolvedValue(undefined),
+      finishGoogleCallback: jest.fn(),
     } as unknown as jest.Mocked<BusinessOnboardingService>;
-    controller = new GoogleBusinessAuthController(onboarding);
+    creatorAuth = {
+      isCreatorOAuthState: jest.fn().mockReturnValue(false),
+      finishGoogleCallback: jest.fn(),
+    } as unknown as jest.Mocked<CreatorAuthService>;
+    controller = new GoogleBusinessAuthController(onboarding, creatorAuth);
+  });
+
+  describe('Creator Google callback', () => {
+    it('sets only the isolated Creator cookie for Creator OAuth state', async () => {
+      creatorAuth.isCreatorOAuthState.mockReturnValue(true);
+      creatorAuth.finishGoogleCallback.mockResolvedValue({
+        sessionToken: 'creator-session-token',
+        ttlSeconds: YEAR_IN_SECONDS,
+        redirectUrl: '/account',
+      });
+
+      await controller.callback(
+        'google-code',
+        'creator.valid-state',
+        '',
+        request(),
+        reply,
+      );
+
+      expect(setCookie).toHaveBeenCalledWith(
+        'creator_session',
+        'creator-session-token',
+        expect.objectContaining({
+          httpOnly: true,
+          sameSite: 'lax',
+          path: '/',
+          maxAge: YEAR_IN_SECONDS,
+        }),
+      );
+      expect(onboarding.finishGoogleCallback).not.toHaveBeenCalled();
+      expect(redirect).toHaveBeenCalledWith('/account', 302);
+    });
   });
 
   describe('email-code sign-in', () => {

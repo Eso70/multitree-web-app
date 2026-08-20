@@ -1,5 +1,11 @@
 # Deployment
 
+Root-domain Creator signup uses the same Google OAuth configuration as the
+other authentication surfaces and requires an explicit `CREATOR_TRIAL_DAYS`
+value. See the operational checklist in
+[`creator-accounts.md`](creator-accounts.md). Missing Google or Redis settings
+fail closed rather than bypassing verification.
+
 Register exact production callback
 `https://<root-domain>/api/auth/google/callback` in Google Cloud and configure
 `APP_BASE_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and
@@ -189,7 +195,7 @@ The bundled configuration is currently specific to the production domain and sho
 
 # Deployment Procedure
 
-First compare the deployed `full_schema.sql` with the new release. If it
+First compare the deployed numbered baseline with the new release. If it
 changed, prepare and review a backup, data-transfer, and database-replacement
 procedure before deploying. Never run `db:reset` against production or any
 valuable environment. The steps below apply when the schema is unchanged or

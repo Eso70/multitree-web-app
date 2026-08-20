@@ -8,6 +8,7 @@ import { AppMotionProvider } from "@/components/motion/AppMotionProvider";
 import { APP_THEME_COOKIE } from "@/lib/app-theme";
 import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
 import "./globals.css";
+import { PublicRouteTracking } from "@/components/analytics/PublicRouteTracking";
 
 /* Embedded in the initial HTML so the browser never waits for a stylesheet or
    image request before it can render the site cursor. */
@@ -110,6 +111,7 @@ export default async function RootLayout({
             </div>
           </div>
           <AppToaster />
+          <PublicRouteTracking />
         </AppMotionProvider>
       </body>
     </html>
