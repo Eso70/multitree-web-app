@@ -11,6 +11,12 @@ export interface TemplateTheme {
   to: string;
   isSolid?: boolean;
   /**
+   * Finished CSS for an owner-chosen custom gradient, carrying the direction
+   * they picked. `from`/`via`/`to` cannot express a direction, so when this is
+   * set it wins over the template's own three-stop recipe.
+   */
+  backgroundCss?: string | null;
+  /**
    * A validated uploaded background image. When set it replaces the template's
    * gradient; the colours stay so text and accents keep deriving from them.
    */

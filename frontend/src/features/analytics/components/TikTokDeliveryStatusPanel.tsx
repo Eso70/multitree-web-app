@@ -10,6 +10,7 @@ import {
   type TikTokHealth,
 } from "@/features/analytics/api";
 import { apiRequest } from "@/lib/api/request";
+import type { TikTokConfigOwner } from "@/features/analytics/tiktok-config-workspace";
 
 /**
  * What is actually wrong with a business's TikTok connection.
@@ -88,7 +89,7 @@ export function TikTokDeliveryStatusPanel({
   healthEndpoint,
   errorsEndpoint,
 }: {
-  owner?: "business" | "platform";
+  owner?: TikTokConfigOwner;
   healthEndpoint?: string;
   errorsEndpoint?: string;
 } = {}) {
@@ -146,7 +147,9 @@ export function TikTokDeliveryStatusPanel({
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {owner === "platform"
               ? "ئەوەی TikTok وەڵامی داوەتەوە بۆ پەڕەکانی پلاتفۆرم."
-              : "ئەوەی TikTok وەڵامی داوەتەوە بۆ ئەم بزنسە."}
+              : owner === "creator"
+                ? "ئەوەی TikTok وەڵامی داوەتەوە بۆ پەیجەکەت."
+                : "ئەوەی TikTok وەڵامی داوەتەوە بۆ ئەم بزنسە."}
           </p>
         </div>
         <span className="text-xs text-slate-500 dark:text-slate-400">

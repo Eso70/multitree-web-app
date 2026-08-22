@@ -3,14 +3,11 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { Home, RefreshCw } from "lucide-react";
-import { CustomScrollbar } from "@/components/home/CustomScrollbar";
-import { PublicSiteNavbar } from "@/components/public/PublicSiteNavbar";
+import { PublicMarketingSiteShell } from "@/components/public/PublicMarketingSiteShell";
+import { PublicHeroAccentBackdrop } from "@/components/public/PublicHeroAccentBackdrop";
+import { BusinessPublicFooter } from "@/components/business/BusinessPublicFooter";
 import { HomeFooter } from "@/components/home/HomeFooter";
-import { BusinessPublicSiteShell } from "@/components/business/BusinessPublicSiteShell";
-import { BusinessHeroAccentBackdrop } from "@/components/business/BusinessHeroAccentBackdrop";
-import {
-  BUSINESS_LANDING_SECTION_HREFS,
-} from "@/components/business/business-landing-sections";
+import { BUSINESS_LANDING_SECTION_HREFS } from "@/components/business/business-landing-sections";
 import { getMultiTreeAccentInk } from "@/lib/multitree-theme";
 import { applyBusinessTabBranding } from "@/lib/utils/business-error-theme";
 import { MARKETING_NAVIGATION } from "@/features/public-site/marketing-content";
@@ -132,10 +129,20 @@ export function ErrorPagePanel(props: ErrorContentProps) {
   );
 }
 
+/**
+ * One shell for every error surface. MultiTree, platform-console, and business
+ * errors differ only in branding, navigation, and footer content; the page
+ * frame, grid backdrop, hero atmosphere, spacing, and light/dark behavior come
+ * from the same `PublicMarketingSiteShell` the public sites use. Do not
+ * reintroduce a scope-specific layout branch here — the root domain had one,
+ * and it silently drifted off the grid backdrop and the shared dark surface.
+ */
 export function ErrorPage(props: ErrorPageProps) {
   const { theme, homeHref } = props;
   const isBusiness = theme.scope === "business";
-  const businessName = theme.name || "Business";
+  const isMultiTree = theme.scope === "multitree";
+  const brandName = theme.name || (isBusiness ? "Business" : "MultiTree");
+  const footer = theme.footer;
 
   useEffect(() => {
     const root = document.documentElement;
@@ -156,98 +163,84 @@ export function ErrorPage(props: ErrorPageProps) {
     }
   }, [isBusiness, theme]);
 
-  if (isBusiness) {
-    const footer = theme.footer;
-    const phoneDigits = (footer?.phone || "").replace(/\D/g, "");
-    const whatsappHref =
-      phoneDigits.length >= 8 ? `https://wa.me/${phoneDigits}` : null;
-    const navigationItems = [
-      {
-        label: "پەڕەکان",
-        href: `${homeHref}${BUSINESS_LANDING_SECTION_HREFS.workspace}`,
-      },
-      {
-        label: "دەربارەی ئێمە",
-        href: `${homeHref}${BUSINESS_LANDING_SECTION_HREFS.about}`,
-      },
-      {
-        label: "خزمەتگوزارییەکان",
-        href: `${homeHref}${BUSINESS_LANDING_SECTION_HREFS.digitalPresence}`,
-      },
-      {
-        label: "دیزاینەکان",
-        href: `${homeHref}${BUSINESS_LANDING_SECTION_HREFS.mobileShowcase}`,
-      },
-      ...(footer?.advertisingEnabled
-        ? [{ label: "ڕیکلام", href: "/advertising" }]
-        : []),
-    ];
+  const phoneDigits = (footer?.phone || "").replace(/\D/g, "");
+  const whatsappHref =
+    phoneDigits.length >= 8 ? `https://wa.me/${phoneDigits}` : null;
 
-    return (
-      <BusinessPublicSiteShell
-        businessName={businessName}
-        logo={theme.logo}
-        accentColor={theme.accentColor}
-        homeHref={homeHref}
-        navigationItems={navigationItems}
-        action={
-          footer?.whatsappEnabled && whatsappHref
-            ? { label: "پەیوەندی", href: whatsappHref, external: true }
-            : null
-        }
-        emphasizeFirstNavItem={false}
-        footer={{
-          logo: theme.logo,
-          description:
-            footer?.description ||
-            `${businessName}'s official public website.`,
-          phone: footer?.phone ?? null,
-          whatsappEnabled: footer?.whatsappEnabled ?? null,
-          advertisingEnabled: footer?.advertisingEnabled ?? false,
-          brandingRemoved: footer?.brandingRemoved ?? false,
-          linktrees: footer?.linktrees ?? [],
-          miniWebsites: footer?.miniWebsites ?? [],
-          homeHref,
-        }}
-      >
-        <section className="relative flex min-h-[100svh] items-center justify-center overflow-hidden px-4 pb-16 pt-28">
-          <BusinessHeroAccentBackdrop accentColor={theme.accentColor} />
-          <div className="relative z-10">
-            <ErrorContent {...props} />
-          </div>
-        </section>
-      </BusinessPublicSiteShell>
-    );
-  }
+  const navigationItems = isBusiness
+    ? [
+        {
+          label: "پەڕەکان",
+          href: `${homeHref}${BUSINESS_LANDING_SECTION_HREFS.workspace}`,
+        },
+        {
+          label: "دەربارەی ئێمە",
+          href: `${homeHref}${BUSINESS_LANDING_SECTION_HREFS.about}`,
+        },
+        {
+          label: "خزمەتگوزارییەکان",
+          href: `${homeHref}${BUSINESS_LANDING_SECTION_HREFS.digitalPresence}`,
+        },
+        {
+          label: "دیزاینەکان",
+          href: `${homeHref}${BUSINESS_LANDING_SECTION_HREFS.mobileShowcase}`,
+        },
+        ...(footer?.advertisingEnabled
+          ? [{ label: "ڕیکلام", href: "/advertising" }]
+          : []),
+      ]
+    : MARKETING_NAVIGATION;
+
+  // Only the root domain offers account actions. A business subdomain shows its
+  // own contact action, and the platform console must not advertise signup.
+  const primaryAction = isBusiness
+    ? footer?.whatsappEnabled && whatsappHref
+      ? { label: "پەیوەندی", href: whatsappHref, external: true }
+      : null
+    : isMultiTree
+      ? { label: "هەژمار دروست بکە", href: "/signup" }
+      : null;
 
   return (
-    <main
-      dir="ltr"
-      className="flex min-h-screen flex-col overflow-x-clip bg-[#f8f9fa] text-[#111827] transition-colors duration-300 dark:bg-[#0f172a] dark:text-slate-100"
+    <PublicMarketingSiteShell
+      accentColor={theme.accentColor}
+      brandName={brandName}
+      logo={theme.logo}
+      homeHref={homeHref}
+      navigationItems={navigationItems}
+      primaryAction={primaryAction}
+      secondaryAction={
+        isMultiTree ? { label: "چوونەژوورەوە", href: "/login" } : null
+      }
+      emphasizeFirstNavItem={false}
+      footer={
+        isMultiTree ? (
+          <HomeFooter />
+        ) : (
+          <BusinessPublicFooter
+            businessName={brandName}
+            accentColor={theme.accentColor}
+            logo={theme.logo}
+            description={
+              footer?.description || `${brandName}'s official public website.`
+            }
+            phone={footer?.phone ?? null}
+            whatsappEnabled={footer?.whatsappEnabled ?? null}
+            advertisingEnabled={footer?.advertisingEnabled ?? false}
+            brandingRemoved={footer?.brandingRemoved ?? false}
+            linktrees={footer?.linktrees ?? []}
+            miniWebsites={footer?.miniWebsites ?? []}
+            homeHref={homeHref}
+          />
+        )
+      }
     >
-      <PublicSiteNavbar
-        appearance="business"
-        homeHref={homeHref}
-        navigationItems={MARKETING_NAVIGATION}
-        action={{ label: "هەژمار دروست بکە", href: "/signup" }}
-        secondaryAction={{ label: "چوونەژوورەوە", href: "/login" }}
-        emphasizeFirstNavItem={false}
-      />
-      <CustomScrollbar />
-
-      <section className="relative flex min-h-[100svh] flex-1 items-center justify-center overflow-hidden px-4 pb-16 pt-28">
-        <div
-          className="pointer-events-none absolute left-1/2 top-0 h-full w-[120%] -translate-x-1/2"
-          style={{
-            background: `radial-gradient(circle at top, color-mix(in srgb, ${theme.accentColor} 13%, transparent) 0%, transparent 60%)`,
-          }}
-        />
+      <section className="relative flex min-h-[100svh] items-center justify-center overflow-hidden px-4 pb-16 pt-28">
+        <PublicHeroAccentBackdrop accentColor={theme.accentColor} />
         <div className="relative z-10">
           <ErrorContent {...props} />
         </div>
       </section>
-
-      <HomeFooter />
-    </main>
+    </PublicMarketingSiteShell>
   );
 }

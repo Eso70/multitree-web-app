@@ -25,13 +25,18 @@ import { MotionSpinner } from "@/components/motion/MotionPrimitives";
 import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
 import { DashboardSurface } from "@/components/shared/DashboardSurface";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { SkeletonCardGrid, SkeletonTable } from "@/components/shared/Skeleton";
+import {
+  SkeletonCardGrid,
+  SkeletonModal,
+  SkeletonTable,
+} from "@/components/shared/Skeleton";
 import { StatCard } from "@/components/shared/StatCard";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
 import { ThemeProvider } from "@/lib/contexts/ThemeProvider";
 import { apiRequest } from "@/lib/api/request";
 import { buildPlatformLinktreePayload } from "@/features/platform-admin/api/platform-linktrees";
 import { ClearAnalyticsButton } from "@/components/shared/ClearAnalyticsButton";
+import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
 
 const LinktreesGrid = dynamic(
   () =>
@@ -56,7 +61,7 @@ const LinktreeEditorModal = dynamic(
         default: module.ReusableLinktreeEditorModal,
       }),
     ),
-  { ssr: false, loading: () => null },
+  { ssr: false, loading: () => <SkeletonModal /> },
 );
 
 const BusinessPageAnalyticsModal = dynamic(
@@ -64,7 +69,7 @@ const BusinessPageAnalyticsModal = dynamic(
     import("@/components/business/BusinessPageAnalyticsModal").then(
       (module) => ({ default: module.BusinessPageAnalyticsModal }),
     ),
-  { ssr: false, loading: () => null },
+  { ssr: false, loading: () => <SkeletonModal wide /> },
 );
 
 type PlatformLinktreeContext = {
@@ -83,6 +88,8 @@ export interface RootLinktreesPageProps {
   analyticsDataSource?: "platform-linktree" | "creator-linktree";
   ownerLabel?: string;
   maxPages?: number;
+  canDelete?: boolean;
+  onCreated?: () => void;
 }
 
 export function PlatformLinktreesPage() {
@@ -94,6 +101,8 @@ export function RootLinktreesPage({
   analyticsDataSource = "platform-linktree",
   ownerLabel = "پلاتفۆرم",
   maxPages,
+  canDelete = true,
+  onCreated,
 }: RootLinktreesPageProps) {
   const apiEndpoints = useMemo(
     () => ({
@@ -137,7 +146,7 @@ export function RootLinktreesPage({
         toast.error(
           error instanceof Error
             ? error.message
-            : "بارکردنی پەڕەکانی لینک‌تری سەرکەوتوو نەبوو",
+            : "بارکردنی پەڕەکانی لینکتری سەرکەوتوو نەبوو",
         );
       } finally {
         setLoading(false);
@@ -192,6 +201,7 @@ export function RootLinktreesPage({
     () => items.find((item) => item.id === analyticsPageId) ?? null,
     [analyticsPageId, items],
   );
+  const pageLimitReached = maxPages !== undefined && items.length >= maxPages;
 
   const openClearAllAnalytics = useCallback(() => {
     setClearAllAnalyticsOpen(true);
@@ -209,7 +219,7 @@ export function RootLinktreesPage({
         method: "DELETE",
       });
       await load(true);
-      toast.success("هەموو ئامارەکانی لینک‌تری پاککرانەوە");
+      toast.success("هەموو ئامارەکانی لینکتری پاککرانەوە");
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -234,7 +244,7 @@ export function RootLinktreesPage({
         toast.error(
           error instanceof Error
             ? error.message
-            : "بارکردنی پەڕەی لینک‌تری سەرکەوتوو نەبوو",
+            : "بارکردنی پەڕەی لینکتری سەرکەوتوو نەبوو",
         );
       } finally {
         setLoadingEdit(false);
@@ -253,19 +263,20 @@ export function RootLinktreesPage({
         setEditorOpen(false);
         setEditData(null);
         toast.success(
-          editId ? "پەڕەی لینک‌تری نوێ کرایەوە" : "پەڕەی لینک‌تری دروست کرا",
+          editId ? "پەڕەی لینکتری نوێ کرایەوە" : "پەڕەی لینکتری دروست کرا",
         );
+        if (!editId) onCreated?.();
         await load(true);
       } catch (error) {
         toast.error(
           error instanceof Error
             ? error.message
-            : "پاشەکەوتکردنی پەڕەی لینک‌تری سەرکەوتوو نەبوو",
+            : "پاشەکەوتکردنی پەڕەی لینکتری سەرکەوتوو نەبوو",
         );
         throw error;
       }
     },
-    [apiBase, load],
+    [apiBase, load, onCreated],
   );
 
   const content =
@@ -274,8 +285,10 @@ export function RootLinktreesPage({
         data={filtered}
         isLoading={loading}
         onEdit={(id) => void openEdit(id)}
-        onDelete={(id) =>
-          setDeleting(items.find((item) => item.id === id) || null)
+        onDelete={
+          canDelete
+            ? (id) => setDeleting(items.find((item) => item.id === id) || null)
+            : undefined
         }
         onViewAnalytics={(id) => setAnalyticsPageId(id)}
         viewActionLabel="ئامار"
@@ -284,12 +297,12 @@ export function RootLinktreesPage({
         emptyTitle={
           query.trim()
             ? "هیچ ئەنجامێک بۆ گەڕانەکەت نەدۆزرایەوە"
-            : `هێشتا هیچ پەڕەیەکی لینک‌تریی ${ownerLabel} نییە`
+            : `هێشتا هیچ پەڕەیەکی لینکتریی ${ownerLabel} نییە`
         }
         emptyDescription={
           query.trim()
             ? "وشەیەکی دیکە بنووسە یان گەڕانەکە پاک بکەرەوە."
-            : "یەکەم پەڕەی لینک‌تری لە دۆمەینی سەرەکی دروست بکە."
+            : "یەکەم پەڕەی لینکتری لە دۆمەینی سەرەکی دروست بکە."
         }
       />
     ) : (
@@ -297,8 +310,10 @@ export function RootLinktreesPage({
         data={filtered}
         isLoading={loading}
         onEdit={(id) => void openEdit(id)}
-        onDelete={(id) =>
-          setDeleting(items.find((item) => item.id === id) || null)
+        onDelete={
+          canDelete
+            ? (id) => setDeleting(items.find((item) => item.id === id) || null)
+            : undefined
         }
         onViewAnalytics={(id) => setAnalyticsPageId(id)}
         viewActionLabel="ئامار"
@@ -307,7 +322,7 @@ export function RootLinktreesPage({
         emptyTitle={
           query.trim()
             ? "هیچ ئەنجامێک بۆ گەڕانەکەت نەدۆزرایەوە"
-            : "هێشتا هیچ پەڕەیەکی لینک‌تریی پلاتفۆرم نییە"
+            : "هێشتا هیچ پەڕەیەکی لینکتریی پلاتفۆرم نییە"
         }
       />
     );
@@ -318,7 +333,7 @@ export function RootLinktreesPage({
         <StatCard
           loading={loading}
           icon={FileText}
-          label="کۆی پەڕەکانی لینک‌تری"
+          label="کۆی پەڕەکانی لینکتری"
           value={items.length}
           color="blue"
         />
@@ -361,7 +376,7 @@ export function RootLinktreesPage({
 
       <DashboardSurface as="div" className="space-y-6">
         <PageHeader
-          title="پەیجەکان"
+          title={DASHBOARD_PAGE_LABELS.linktrees}
           description={`پەڕە گشتییەکانی ${ownerLabel} دروست و بەڕێوە ببە لە sponsor.krd/linktree/name.`}
           icon={FileText}
           action={
@@ -433,12 +448,18 @@ export function RootLinktreesPage({
 
               <button
                 type="button"
+                disabled={pageLimitReached}
                 onClick={() => {
+                  if (pageLimitReached) return;
                   setEditData(null);
                   setEditorOpen(true);
                 }}
-                title="دروستکردنی پەیجی نوێ"
-                className="group flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95"
+                title={
+                  pageLimitReached
+                    ? "سنووری دروستکردنی پەڕە پڕ بووە"
+                    : "دروستکردنی پەیجی نوێ"
+                }
+                className="group flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Plus className="h-4 w-4 transition-transform group-hover:scale-110" />
                 <span>پەیجی نوێ</span>
@@ -469,17 +490,19 @@ export function RootLinktreesPage({
         />
       ) : null}
 
-      <BusinessPageAnalyticsModal
-        isOpen={Boolean(analyticsPage)}
-        onClose={() => setAnalyticsPageId(null)}
-        pageId={analyticsPage?.id ?? ""}
-        pageName={analyticsPage?.name ?? ""}
-        pageKind="linktree"
-        canClearAnalytics
-        summaryOnly
-        dataSource={analyticsDataSource}
-        onAnalyticsCleared={load}
-      />
+      {analyticsPage ? (
+        <BusinessPageAnalyticsModal
+          isOpen
+          onClose={() => setAnalyticsPageId(null)}
+          pageId={analyticsPage.id}
+          pageName={analyticsPage.name}
+          pageKind="linktree"
+          canClearAnalytics
+          summaryOnly={analyticsDataSource === "platform-linktree"}
+          dataSource={analyticsDataSource}
+          onAnalyticsCleared={load}
+        />
+      ) : null}
 
       <ConfirmDeleteModal
         isOpen={clearAllAnalyticsOpen}
@@ -493,16 +516,16 @@ export function RootLinktreesPage({
         message={
           <p>
             دڵنیایت لە پاککردنەوەی هەموو داتاکانی بینین و کلیکی پەڕەکانی
-            لینک‌تری پلاتفۆرم؟ ئەم کردارە ناگەڕێتەوە.
+            لینکتری پلاتفۆرم؟ ئەم کردارە ناگەڕێتەوە.
           </p>
         }
       />
 
       <ConfirmDeleteModal
-        isOpen={Boolean(deleting)}
+        isOpen={canDelete && Boolean(deleting)}
         onClose={() => setDeleting(null)}
         isDeleting={isDeleting}
-        title="سڕینەوەی پەڕەی لینک‌تری"
+        title="سڕینەوەی پەڕەی لینکتری"
         message={`دڵنیایت لە سڕینەوەی «${deleting?.name || "ئەم پەڕەیە"}»؟ بەستەرە گشتییەکەی بۆ هەمیشە نامێنێت.`}
         onConfirm={async () => {
           if (!deleting) return;
@@ -511,13 +534,13 @@ export function RootLinktreesPage({
             await apiRequest(`${apiBase}/${deleting.id}`, {
               method: "DELETE",
             });
-            toast.success("پەڕەی لینک‌تری سڕایەوە");
+            toast.success("پەڕەی لینکتری سڕایەوە");
             await load(true);
           } catch (error) {
             toast.error(
               error instanceof Error
                 ? error.message
-                : "سڕینەوەی پەڕەی لینک‌تری سەرکەوتوو نەبوو",
+                : "سڕینەوەی پەڕەی لینکتری سەرکەوتوو نەبوو",
             );
             throw error;
           } finally {

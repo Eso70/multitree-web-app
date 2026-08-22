@@ -12,11 +12,16 @@ import {
   Query,
   Req,
   Res,
+  Put,
   UnauthorizedException,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
 import { Subdomain } from '../auth/subdomain.decorator';
+import { AuditEvent } from '../auth/audit-event.decorator';
+import { AuditInterceptor } from '../auth/audit.interceptor';
+import { UpdateTikTokPixelConfigsDto } from '../auth/dto/update-tiktok-pixel-config.dto';
 import { CreateLinktreeDto } from '../linktrees/dto/create-linktree.dto';
 import { uploadLinktreeImage } from '../linktrees/linktree-image-upload';
 import { SaveMiniWebsiteDto } from '../mini-websites/dto/mini-website.dto';
@@ -31,6 +36,7 @@ import { CreatorGuard, type CreatorRequest } from './creator.guard';
 
 @Controller('api/creator')
 @UseGuards(CreatorGuard)
+@UseInterceptors(AuditInterceptor)
 export class CreatorContentController {
   constructor(
     private readonly content: CreatorContentService,
@@ -41,6 +47,36 @@ export class CreatorContentController {
   context(@Req() request: CreatorRequest, @Subdomain() subdomain: string) {
     this.assertRoot(subdomain);
     return this.content.context(this.businessId(request));
+  }
+
+  @Get('settings/tiktok')
+  getTikTokSettings(@Req() request: CreatorRequest) {
+    return this.content.getTikTokSettings(this.businessId(request));
+  }
+
+  @Put('settings/tiktok')
+  @AuditEvent('creator.settings.tiktok.update', {
+    resourceType: 'creator-settings',
+  })
+  updateTikTokSettings(
+    @Req() request: CreatorRequest,
+    @Body() body: UpdateTikTokPixelConfigsDto,
+  ) {
+    this.assertWritable(request);
+    return this.content.updateTikTokSettings(
+      this.businessId(request),
+      body.tiktok_configs,
+    );
+  }
+
+  @Get('settings/tiktok/health')
+  getTikTokHealth(@Req() request: CreatorRequest) {
+    return this.content.getTikTokHealth(this.businessId(request));
+  }
+
+  @Get('settings/tiktok/errors')
+  getTikTokErrors(@Req() request: CreatorRequest) {
+    return this.content.getTikTokErrors(this.businessId(request));
   }
 
   @Get('linktrees/check-slug')
@@ -112,6 +148,14 @@ export class CreatorContentController {
     );
   }
 
+  @Get('linktrees/:id/analytics/actions')
+  linktreeAnalyticsActions(
+    @Req() request: CreatorRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.content.pageActions(this.businessId(request), 'linktree', id);
+  }
+
   @Delete('linktrees/:id/analytics')
   async clearLinktreeAnalytics(
     @Req() request: CreatorRequest,
@@ -122,12 +166,8 @@ export class CreatorContentController {
   }
 
   @Delete('linktrees/:id')
-  async deleteLinktree(
-    @Req() request: CreatorRequest,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
-    await this.content.deleteLinktree(id, this.businessId(request));
-    return { success: true };
+  deleteLinktree(@Param('id', ParseUUIDPipe) _id: string) {
+    return this.content.denyPageDeletion();
   }
 
   @Post('linktrees/upload')
@@ -207,12 +247,8 @@ export class CreatorContentController {
   }
 
   @Delete('mini-websites/:id')
-  async deleteMiniWebsite(
-    @Req() request: CreatorRequest,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
-    await this.content.deleteMiniWebsite(id, this.businessId(request));
-    return { success: true };
+  deleteMiniWebsite(@Param('id', ParseUUIDPipe) _id: string) {
+    return this.content.denyPageDeletion();
   }
 
   @Get('mini-websites/:id/analytics')
@@ -221,6 +257,18 @@ export class CreatorContentController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.content.analyticsSummary(
+      this.businessId(request),
+      'mini_website',
+      id,
+    );
+  }
+
+  @Get('mini-websites/:id/analytics/actions')
+  miniWebsiteAnalyticsActions(
+    @Req() request: CreatorRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.content.pageActions(
       this.businessId(request),
       'mini_website',
       id,

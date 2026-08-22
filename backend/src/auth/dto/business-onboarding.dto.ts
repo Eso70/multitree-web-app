@@ -9,10 +9,10 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+import { WEBSITE_COLOR_PATTERN } from '../../common/website-color';
 
 const UPLOADED_IMAGE = /^\/images\/upload\//;
-const WEBSITE_COLOR =
-  /^(#[0-9a-fA-F]{6}|gradient:(to-r|to-l|to-b|to-t|to-br|to-bl|to-tr|to-tl|radial):#[0-9a-fA-F]{3,6}:#[0-9a-fA-F]{3,6})$/;
+const WEBSITE_COLOR = WEBSITE_COLOR_PATTERN;
 
 export class UpdateBusinessOnboardingDto {
   @IsInt()

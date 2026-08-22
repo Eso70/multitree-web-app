@@ -2533,58 +2533,18 @@ body * {
   max-width: 100%;
 }
 
-/* Every shared phone renders a real logical mobile viewport, then scales the
-   whole surface into its hardware screen. This keeps responsive templates
-   independent from the decorative mockup size and strictly clipped. */
+/* Every shared phone renders a real nested viewport (an iframe) and scales it
+   into the hardware screen, so a previewed page resolves its own media queries
+   and viewport units exactly as the device would. The frame only has to give
+   that viewport a container to measure itself against, and clip it. */
 .phone-mockup-screen {
   container-type: inline-size;
   contain: strict;
 }
 
-.phone-mockup-canvas {
-  width: 390px;
-  height: 858px;
-  overflow: hidden;
-  zoom: calc(100cqw / 390px);
-}
-
-.phone-mockup-canvas-scrollable {
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-color: var(--theme-primary, #b6f20d) transparent;
-  scrollbar-width: thin;
-  touch-action: pan-y;
-}
-
-.phone-mockup-canvas-scrollable::-webkit-scrollbar {
-  width: 5px;
-}
-
-.phone-mockup-canvas-scrollable::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: var(--theme-primary, #b6f20d);
-}
-
-/* Dashboard previews live inside a scaled phone, not a real 390px browser
-   viewport. Prevent desktop media-query grids from squeezing the logical
-   mobile canvas into multiple columns when the dashboard itself is wide. */
-.phone-mockup-canvas-scrollable
-  .mini-website-ltr
-  :where(
-    [class*="sm:grid-cols-"],
-    [class*="md:grid-cols-"],
-    [class*="lg:grid-cols-"],
-    [class*="xl:grid-cols-"]
-  ) {
-  grid-template-columns: minmax(0, 1fr) !important;
-}
-
-.phone-mockup-canvas .public-template-shell {
-  min-height: 858px !important;
-  padding-bottom: 50px !important;
-}
-
+/* Inside the frame's document. The mini website draws desktop card chrome —
+   a max width, a border, a radius and a shadow — that a real phone would not
+   show at this width, and that would read here as a card inside a phone. */
 .phone-mockup-canvas .mini-website-ltr {
   width: 100% !important;
   max-width: none !important;
@@ -2593,52 +2553,9 @@ body * {
   box-shadow: none !important;
 }
 
-.phone-mockup-canvas .public-template-shell h1 {
-  font-size: 1.2rem !important;
-  line-height: 1.55rem !important;
-}
-
-.phone-mockup-canvas
-  .public-template-shell
-  :is(img.rounded-full, .rounded-full:has(> img), [data-template-avatar]) {
-  width: 5.5rem !important;
-  height: 5.5rem !important;
-  min-width: 5.5rem !important;
-  min-height: 5.5rem !important;
-  max-width: 5.5rem !important;
-  max-height: 5.5rem !important;
-  flex-basis: 5.5rem;
-}
-
-.phone-mockup-canvas .public-template-shell :is(button.w-full, button.block) {
-  min-height: 3rem;
-  padding: 0.5rem 1rem !important;
-  font-size: 0.875rem !important;
-  line-height: 1.25rem !important;
-}
-
-.phone-mockup-canvas
-  .public-template-shell
-  :is(button.w-full, button.block)
-  svg {
-  width: 1.15rem !important;
-  height: 1.15rem !important;
-}
-
-.phone-mockup-canvas .public-template-shell footer {
-  padding-top: 0.65rem !important;
-  padding-bottom: 0.65rem !important;
-}
-
-.phone-mockup-canvas .public-template-shell footer p,
-.phone-mockup-canvas .public-template-shell footer button {
-  font-size: 0.7rem !important;
-  line-height: 1rem !important;
-}
-
-.phone-mockup-canvas .public-template-shell footer button {
-  min-height: 0;
-  padding: 0.4rem 1rem !important;
+.phone-mockup-canvas-scrollable {
+  scrollbar-color: var(--theme-primary, #b6f20d) transparent;
+  scrollbar-width: thin;
 }
 
 [data-create-template] > span {

@@ -237,7 +237,7 @@ describe('MiniWebsiteLeadsService', () => {
       websites(),
       analytics as unknown as UnifiedAnalyticsService,
     );
-    return { service, analytics };
+    return { service, analytics, database };
   }
 
   it('sends the submission through the shared analytics ingest', async () => {
@@ -338,5 +338,59 @@ describe('MiniWebsiteLeadsService', () => {
         CONTEXT,
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  /**
+   * A root-domain page has two possible owners — the platform's own workspace
+   * and every Creator — and both public read paths say so. The submission read
+   * named only the platform, so a Creator's page rendered a form that answered
+   * every visitor with a 404 and lost the lead.
+   */
+  it('accepts the Creator that owns a root-domain page, not only the platform', async () => {
+    const { service, analytics, database } = build();
+
+    const result = await service.submitPlatform(
+      'creator-business-1',
+      'page',
+      {
+        visitorId: 'visitor-0001',
+        sessionId: 'session-0001',
+        answers: { phone: '07502485829' },
+        consent: true,
+      },
+      CONTEXT,
+    );
+
+    expect(result.submitted).toBe(true);
+    expect(analytics.ingest).toHaveBeenCalledTimes(1);
+    const [sql, values] = database.query.mock.calls[0] as unknown as [
+      string,
+      unknown[],
+    ];
+    expect(sql).toContain("business.account_type IN ('platform','creator')");
+    expect(values).toEqual(['', 'page', 'creator-business-1']);
+  });
+
+  it('keeps the subdomain branch to ordinary business tenants', async () => {
+    const { service, database } = build();
+
+    await service.submit(
+      'acme',
+      'page',
+      {
+        visitorId: 'visitor-0001',
+        sessionId: 'session-0001',
+        answers: { phone: '07502485829' },
+        consent: true,
+      },
+      CONTEXT,
+    );
+
+    const [sql, values] = database.query.mock.calls[0] as unknown as [
+      string,
+      unknown[],
+    ];
+    expect(sql).toContain("business.account_type='business'");
+    expect(values).toEqual(['acme', 'page', null]);
   });
 });

@@ -29,6 +29,7 @@ import {
   TemplatePreviewSkeleton,
 } from "./TemplatePhonePreview";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
+import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
 
 const SAMPLE_LINKS = createBusinessContactPreviewLinks();
 
@@ -84,9 +85,19 @@ const LinktreeTemplatePreview = memo(function LinktreeTemplatePreview({
   );
 });
 
-export function TemplatesPage({ canCreate = true }: { canCreate?: boolean }) {
-  const { isLoading, isTemplateAllowed, refresh } =
-    useTemplateAccess(!canCreate);
+export interface TemplatesPageProps {
+  canCreate?: boolean;
+  accessMode?: "all" | "entitlement";
+}
+
+export function TemplatesPage({
+  canCreate = true,
+  accessMode = canCreate ? "all" : "entitlement",
+}: TemplatesPageProps) {
+  const enforceTemplateAccess = accessMode === "entitlement";
+  const { isLoading, isTemplateAllowed, refresh } = useTemplateAccess(
+    enforceTemplateAccess,
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   useRegisterBusinessDashboardRefresh("templates", () =>
@@ -170,7 +181,7 @@ export function TemplatesPage({ canCreate = true }: { canCreate?: boolean }) {
         className="min-w-0 space-y-4 overflow-hidden sm:space-y-6"
       >
         <PageHeader
-          title="قالبەکان"
+          title={DASHBOARD_PAGE_LABELS.templates}
           description="قالبەکانی لینک تری و مینی وێبسایت ببینە و دیزاینەکان پێشبینی بکە."
           icon={LayoutTemplate}
           action={
@@ -253,7 +264,9 @@ export function TemplatesPage({ canCreate = true }: { canCreate?: boolean }) {
                   <LinktreeTemplatePreview
                     templateId={template.id as TemplateKey}
                     templateName={template.name}
-                    locked={!canCreate && !isTemplateAllowed(template.id)}
+                    locked={
+                      enforceTemplateAccess && !isTemplateAllowed(template.id)
+                    }
                   />
                 </article>
               ))}

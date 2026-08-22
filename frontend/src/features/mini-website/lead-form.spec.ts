@@ -7,7 +7,10 @@ import {
   miniWebsitePlanFeatureRows,
 } from "@linktree/types";
 import { ensureEnabledSectionDefaults } from "./section-defaults";
-import { parseLeadFieldOptions } from "./lead-form-options";
+import {
+  claimLeadFieldMapping,
+  parseLeadFieldOptions,
+} from "./lead-form-options";
 import { createMiniWebsiteDraft } from "./types";
 import { validateMiniWebsiteStep } from "./validation";
 import type { MiniWebsiteDraft, MiniWebsiteLeadForm } from "./types";
@@ -254,5 +257,47 @@ describe("pricing section", () => {
       "socialLinks",
     );
     expect(errors["plan.1"]).toBeTruthy();
+  });
+});
+
+/**
+ * The server gives each CRM slot to one question and demotes every later claim,
+ * so the editor moves the claim instead of letting two questions hold it and
+ * saying nothing.
+ */
+describe("claimLeadFieldMapping", () => {
+  const fields = [
+    { ...createMiniWebsiteLeadField("email"), id: "a", mapping: "email" },
+    { ...createMiniWebsiteLeadField("phone"), id: "b", mapping: "phone" },
+    { ...createMiniWebsiteLeadField("email"), id: "c", mapping: "none" },
+  ] as MiniWebsiteLeadForm["fields"];
+
+  it("takes a slot off the question that was holding it", () => {
+    const next = claimLeadFieldMapping(fields, 2, "email");
+    expect(next.map((field) => field.mapping)).toEqual([
+      "none",
+      "phone",
+      "email",
+    ]);
+  });
+
+  it("leaves the other questions alone", () => {
+    const next = claimLeadFieldMapping(fields, 2, "email");
+    expect(next[1]).toBe(fields[1]);
+  });
+
+  it("lets any number of questions hold no slot at all", () => {
+    const next = claimLeadFieldMapping(fields, 0, "none");
+    expect(next.map((field) => field.mapping)).toEqual([
+      "none",
+      "phone",
+      "none",
+    ]);
+  });
+
+  it("is a no-op when the question already holds the slot", () => {
+    expect(
+      claimLeadFieldMapping(fields, 0, "email").map((field) => field.mapping),
+    ).toEqual(["email", "phone", "none"]);
   });
 });

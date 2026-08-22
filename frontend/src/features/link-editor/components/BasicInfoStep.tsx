@@ -273,9 +273,9 @@ export const BasicInfoStep = memo(function BasicInfoStep({
           </EditorField>
         )}
 
-        {/* Slug and Template Style - Side by Side */}
+        {/* Slug, template style, and background pattern - one row of three */}
         {!onUploadClick && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {/* Slug */}
             <EditorField label="Slug">
               <input

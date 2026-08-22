@@ -211,10 +211,19 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   ): Promise<boolean> {
     if (!this.isAvailable()) return false;
     try {
+      // Seed the window before counting, rather than counting and then
+      // attaching a TTL to the first hit. `INCR` followed by a conditional
+      // `EXPIRE` leaves a gap: a process that stops between the two — a crash,
+      // a deploy, a container eviction — leaves the counter behind with no
+      // expiry at all, and Redis never reclaims it. The identity behind that
+      // key is then rate limited permanently, which on the login limiter means
+      // an account locked out until someone deletes the key by hand.
+      //
+      // `SET ... NX EX` is a no-op when the window is already open, so it never
+      // extends one, and both orderings survive an interruption: a seeded key
+      // that never got incremented simply expires on schedule.
+      await this.redis.set(key, '0', 'EX', windowSeconds, 'NX');
       const current = await this.redis.incr(key);
-      if (current === 1) {
-        await this.redis.expire(key, windowSeconds);
-      }
       return current > limit;
     } catch (error) {
       this.logger.warn(`⚠️ Redis rate limit error for key "${key}":`, error);

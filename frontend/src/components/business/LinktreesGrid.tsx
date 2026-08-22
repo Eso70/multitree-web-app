@@ -29,6 +29,10 @@ import {
 } from "@/components/business/LinktreeMeta";
 import { SkeletonCardGrid } from "@/components/shared/Skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import {
+  useManagementPagination,
+  type ManagementTablePagination,
+} from "@/components/shared/ManagementTable";
 import type { LinktreeListItem as Linktree } from "@linktree/types";
 
 interface LinktreesGridProps {
@@ -54,6 +58,7 @@ interface LinktreesGridProps {
   showPageMeta?: boolean;
   MetaBadgesComponent?: ComponentType<LinktreeMetaBadgesProps>;
   trafficLabels?: PageListTrafficLabels;
+  pagination?: ManagementTablePagination;
 }
 
 function getPublicIdentifier(item: Linktree): string {
@@ -286,9 +291,13 @@ export const LinktreesGrid = memo(function LinktreesGrid({
   showPageMeta,
   MetaBadgesComponent = LinktreeMetaBadges,
   trafficLabels = LINKTREE_TRAFFIC_LABELS,
+  pagination = { mode: "client" },
 }: LinktreesGridProps) {
   const [copiedUid, setCopiedUid] = useState<string | null>(null);
   const displaysPageMeta = showPageMeta ?? showLinktreeMeta;
+  // Paged on the same terms as the table, so the view toggle no longer changes
+  // how many records the reader is looking at.
+  const { visibleData, footer } = useManagementPagination(data, pagination);
 
   const handleCopyUrl = useCallback(
     async (uid: string, e: React.MouseEvent) => {
@@ -332,28 +341,28 @@ export const LinktreesGrid = memo(function LinktreesGrid({
   }
 
   return (
-    <div
-      className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-0"
-      dir="ltr"
-    >
-      {data.map((item, index) => (
-        <LinktreeCard
-          key={item.id}
-          item={item}
-          index={index}
-          total={data.length}
-          onEdit={onEdit}
-          onDelete={handleDelete}
-          onViewAnalytics={onViewAnalytics}
-          viewActionLabel={viewActionLabel}
-          copiedUid={copiedUid}
-          onCopy={handleCopyUrl}
-          publicPathPrefix={publicPathPrefix}
-          showPageMeta={displaysPageMeta}
-          MetaBadgesComponent={MetaBadgesComponent}
-          trafficLabels={trafficLabels}
-        />
-      ))}
+    <div dir="ltr">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-0">
+        {visibleData.map((item, index) => (
+          <LinktreeCard
+            key={item.id}
+            item={item}
+            index={index}
+            total={visibleData.length}
+            onEdit={onEdit}
+            onDelete={handleDelete}
+            onViewAnalytics={onViewAnalytics}
+            viewActionLabel={viewActionLabel}
+            copiedUid={copiedUid}
+            onCopy={handleCopyUrl}
+            publicPathPrefix={publicPathPrefix}
+            showPageMeta={displaysPageMeta}
+            MetaBadgesComponent={MetaBadgesComponent}
+            trafficLabels={trafficLabels}
+          />
+        ))}
+      </div>
+      {footer}
     </div>
   );
 });

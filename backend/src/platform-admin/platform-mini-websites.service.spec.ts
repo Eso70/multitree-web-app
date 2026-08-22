@@ -1,3 +1,4 @@
+import { ConflictException } from '@nestjs/common';
 import { UnifiedAnalyticsService } from '../analytics/unified-analytics.service';
 import { MiniWebsitesService } from '../mini-websites/mini-websites.service';
 import { PlatformContentWorkspaceService } from '../platform-workspace/platform-content-workspace.service';
@@ -42,6 +43,35 @@ describe('PlatformMiniWebsitesService', () => {
   it('keeps reads scoped to the internal platform owner', async () => {
     await service.get('page-id');
     expect(miniWebsites.get).toHaveBeenCalledWith('page-id', ownerId);
+  });
+
+  /**
+   * A root slug is shared with every Creator, so the console's availability
+   * check can go stale between the answer and the save. The database primary
+   * key is the arbiter, and a lost race is a conflict, not a server error.
+   */
+  it.each([
+    ['create', () => service.create({ name: 'Campaign', slug: 'taken' })],
+    ['update', () => service.update('page-id', { name: 'C', slug: 'taken' })],
+  ])(
+    'reports a lost root-slug race on %s as a conflict',
+    async (method, call) => {
+      (
+        miniWebsites[method as 'create' | 'update'] as jest.Mock
+      ).mockRejectedValue({
+        code: '23505',
+        constraint: 'root_public_slugs_pkey',
+      });
+
+      await expect(call()).rejects.toBeInstanceOf(ConflictException);
+    },
+  );
+
+  it('does not disguise an unrelated failure as a slug conflict', async () => {
+    const failure = new Error('connection terminated');
+    (miniWebsites.create as jest.Mock).mockRejectedValue(failure);
+
+    await expect(service.create({ name: 'Campaign' })).rejects.toBe(failure);
   });
 
   it('clears all and only platform mini-website analytics', async () => {

@@ -273,29 +273,25 @@ export const LinktreePage = memo(function LinktreePage({
     if (backgroundImage) {
       return backgroundImageCss(backgroundImage);
     }
-    const rawBackgroundColor = linktree.background_color || "";
-    const gradientMatch = rawBackgroundColor.match(/^gradient:([\w-]+):(#[0-9a-fA-F]{3,6}):(#[0-9a-fA-F]{3,6})$/);
-    if (gradientMatch) {
-      const [, direction, from, to] = gradientMatch;
-      const cssDirectionMap: Record<string, string> = {
-        "to-r": "to right",
-        "to-l": "to left",
-        "to-b": "to bottom",
-        "to-t": "to top",
-        "to-br": "to bottom right",
-        "to-bl": "to bottom left",
-        "to-tr": "to top right",
-        "to-tl": "to top left",
-      };
-      return direction === "radial"
-        ? `radial-gradient(circle, ${from}, ${to})`
-        : `linear-gradient(${cssDirectionMap[direction] ?? "to bottom right"}, ${from}, ${to})`;
+    // A custom gradient already arrives resolved on the theme, direction and
+    // all. Re-reading `background_color` here meant a second parser of the same
+    // string, and the two disagreed about which hex lengths and directions
+    // count.
+    if (theme.backgroundCss) {
+      return theme.backgroundCss;
     }
     if (theme.isSolid) {
       return theme.from;
     }
     return `linear-gradient(to bottom right, ${theme.from}, ${theme.via}, ${theme.to})`;
-  }, [backgroundImage, linktree.background_color, theme.from, theme.via, theme.to, theme.isSolid]);
+  }, [
+    backgroundImage,
+    theme.backgroundCss,
+    theme.from,
+    theme.via,
+    theme.to,
+    theme.isSolid,
+  ]);
 
   // Apply background color to body/page (client-side only to prevent hydration mismatch)
   // Optimized: Combined DOM updates and reduced re-renders

@@ -72,6 +72,10 @@ describe('TikTok forwarding scope', () => {
     join(__dirname, 'unified-analytics.service.ts'),
     'utf8',
   );
+  const eligibility = readFileSync(
+    join(__dirname, 'tiktok-owner-eligibility.ts'),
+    'utf8',
+  );
 
   it('forwards every registered public marketing page type', () => {
     const declaration = source.match(
@@ -94,6 +98,14 @@ describe('TikTok forwarding scope', () => {
       /INSERT INTO marketing_event_outbox[\s\S]*?ON CONFLICT/,
     );
 
-    expect(insert?.[0]).toContain('entitledSql');
+    expect(insert?.[0]).toContain('TIKTOK_OWNER_ELIGIBLE_SQL');
+    expect(eligibility).toContain('entitledSql(ENTITLEMENT.tiktok)');
+  });
+
+  it('allows active paid or live Creator pages through the shared owner gate', () => {
+    expect(eligibility).toContain("business.account_type = 'creator'");
+    expect(eligibility).toContain("creator.status = 'active'");
+    expect(eligibility).toContain('creator.paid_started_at IS NOT NULL');
+    expect(eligibility).toContain('creator.grace_ends_at > NOW()');
   });
 });

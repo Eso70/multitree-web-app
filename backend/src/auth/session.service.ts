@@ -397,6 +397,24 @@ export class SessionService {
   }
 
   async getBusinessLoginSecurity(businessId: string, currentToken = '') {
+    return this.getLoginSecurity(businessId, currentToken, 'business', [
+      'business.login',
+    ]);
+  }
+
+  async getCreatorLoginSecurity(businessId: string, currentToken = '') {
+    return this.getLoginSecurity(businessId, currentToken, 'creator', [
+      'creator.login',
+      'creator.account.create',
+    ]);
+  }
+
+  private async getLoginSecurity(
+    businessId: string,
+    currentToken: string,
+    actorType: 'business' | 'creator',
+    eventTypes: string[],
+  ) {
     const currentHash = currentToken
       ? this.businessTokenHash(currentToken)
       : '';
@@ -418,12 +436,12 @@ export class SessionService {
         `SELECT id::text, outcome, host(ip_address) AS ip_address,
                 user_agent, created_at
          FROM security_audit_events
-         WHERE actor_type = 'business'
+         WHERE actor_type = $2
            AND actor_id = $1
-           AND event_type = 'business.login'
+           AND event_type = ANY($3::text[])
          ORDER BY created_at DESC
          LIMIT 10`,
-        [businessId],
+        [businessId, actorType, eventTypes],
       ),
     ]);
     return { sessions: sessions.rows, recent_activity: activity.rows };

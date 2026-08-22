@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { GOOGLE_AVATAR_PATTERNS } from "./src/lib/utils/remote-avatar";
 
 const parseOrigins = (
   origins: string | undefined,
@@ -82,6 +83,11 @@ const nextConfig: NextConfig = {
         hostname: "picsum.photos",
         pathname: "/**",
       },
+      // Google OpenID Connect profile pictures. Restricted to the avatar
+      // paths Google returns rather than proxying the host broadly, and shared
+      // with the runtime guard so a URL this loader would throw on is never
+      // handed to it.
+      ...GOOGLE_AVATAR_PATTERNS.map((pattern) => ({ ...pattern })),
     ],
   },
 

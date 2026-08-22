@@ -21,6 +21,10 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SkeletonDashboardPage } from "@/components/shared/Skeleton";
 import { TikTokDeliveryStatusPanel } from "@/features/analytics/components/TikTokDeliveryStatusPanel";
+import {
+  TIKTOK_CONFIG_WORKSPACES,
+  type TikTokConfigOwner,
+} from "@/features/analytics/tiktok-config-workspace";
 
 interface PixelConfig {
   id?: string;
@@ -52,8 +56,9 @@ function normalizeConfigs(value: unknown): PixelConfig[] {
 export function BusinessTikTokPixelConfigPage({
   owner = "business",
 }: {
-  owner?: "business" | "platform";
+  owner?: TikTokConfigOwner;
 } = {}) {
+  const workspace = TIKTOK_CONFIG_WORKSPACES[owner];
   const [configs, setConfigs] = useState<PixelConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -61,7 +66,7 @@ export function BusinessTikTokPixelConfigPage({
   const [access, setAccess] = useState<EffectiveAccessManifest | null>(null);
 
   const pixelLimit = useMemo(() => {
-    if (owner === "platform") return 3;
+    if (workspace.pixelLimit !== null) return workspace.pixelLimit;
     const raw = access?.entitlements["limit.tiktok_pixels"];
     if (typeof raw === "number") return raw;
     if (typeof raw === "string" && raw.trim()) {
@@ -69,7 +74,7 @@ export function BusinessTikTokPixelConfigPage({
       return Number.isFinite(parsed) ? parsed : 0;
     }
     return 0;
-  }, [access, owner]);
+  }, [access, workspace.pixelLimit]);
 
   const canAdd = pixelLimit === -1 || configs.length < pixelLimit;
   const hasInvalidRows = configs.some((config) => !config.pixel_id.trim());
@@ -77,23 +82,19 @@ export function BusinessTikTokPixelConfigPage({
   const loadConfig = useCallback(
     async (rethrow = false) => {
       try {
-        const settingsEndpoint =
-          owner === "platform"
-            ? "/api/platform/settings/tiktok"
-            : "/api/auth/settings";
         const [settingsResponse, accessResponse] = await Promise.all([
-          fetch(settingsEndpoint, {
+          fetch(workspace.settingsEndpoint, {
             credentials: "include",
             cache: "no-store",
           }),
-          owner === "platform"
-            ? Promise.resolve(
-                new Response(JSON.stringify({ data: null }), { status: 200 }),
-              )
-            : fetch("/api/auth/effective-access", {
+          workspace.accessEndpoint
+            ? fetch(workspace.accessEndpoint, {
                 credentials: "include",
                 cache: "no-store",
-              }),
+              })
+            : Promise.resolve(
+                new Response(JSON.stringify({ data: null }), { status: 200 }),
+              ),
         ]);
         if (!settingsResponse.ok || !accessResponse.ok) {
           throw new Error("بارکردنی ڕێکخستنەکان سەرکەوتوو نەبوو");
@@ -103,13 +104,13 @@ export function BusinessTikTokPixelConfigPage({
           accessResponse.json(),
         ]);
         setConfigs(normalizeConfigs(settingsPayload.data?.tiktok_configs));
-        setAccess(owner === "platform" ? null : accessPayload.data || null);
+        setAccess(workspace.accessEndpoint ? accessPayload.data || null : null);
       } catch (error) {
         if (rethrow) throw error;
         toast.error("بارکردنی ڕێکخستنەکانی TikTok سەرکەوتوو نەبوو");
       }
     },
-    [owner],
+    [workspace],
   );
 
   useEffect(() => {
@@ -144,26 +145,21 @@ export function BusinessTikTokPixelConfigPage({
     }
     setSaving(true);
     try {
-      const response = await fetch(
-        owner === "platform"
-          ? "/api/platform/settings/tiktok"
-          : "/api/auth/settings",
-        {
-          method: owner === "platform" ? "PUT" : "PATCH",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...(owner === "business" ? { section: "integrations" } : {}),
-            tiktok_configs: configs.map((config) => ({
-              id: config.id,
-              pixel_id: config.pixel_id.trim(),
-              events_token: config.events_token.trim(),
-              keep_events_token:
-                config.keep_events_token && !config.events_token.trim(),
-            })),
-          }),
-        },
-      );
+      const response = await fetch(workspace.settingsEndpoint, {
+        method: workspace.saveMethod,
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...(owner === "business" ? { section: "integrations" } : {}),
+          tiktok_configs: configs.map((config) => ({
+            id: config.id,
+            pixel_id: config.pixel_id.trim(),
+            events_token: config.events_token.trim(),
+            keep_events_token:
+              config.keep_events_token && !config.events_token.trim(),
+          })),
+        }),
+      });
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
         throw new Error(
@@ -202,11 +198,7 @@ export function BusinessTikTokPixelConfigPage({
       <PageHeader
         icon={KeyRound}
         title="پەیوەستکردنی TikTok"
-        description={
-          owner === "platform"
-            ? "Pixel و Events APIی تایبەت بە پەڕە گشتییەکانی MultiTree. هیچ کاتێک بۆ پەڕەی بزنسەکان بەکار نایەت."
-            : "Pixel ID بۆ شوێنکەوتنی وێبگەڕ پێویستە. Events API token ئارەزوومەندانەیەە و تەنها کاتێک بەکار دەکەوێت کە دابنرێت."
-        }
+        description={workspace.description}
       />
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5 dark:border-white/5">
@@ -384,16 +376,8 @@ export function BusinessTikTokPixelConfigPage({
 
       <TikTokDeliveryStatusPanel
         owner={owner}
-        healthEndpoint={
-          owner === "platform"
-            ? "/api/platform/settings/tiktok/health"
-            : undefined
-        }
-        errorsEndpoint={
-          owner === "platform"
-            ? "/api/platform/settings/tiktok/errors"
-            : undefined
-        }
+        healthEndpoint={workspace.healthEndpoint}
+        errorsEndpoint={workspace.errorsEndpoint}
       />
 
       <div className="mt-5 flex justify-end border-t border-slate-100 pt-5 dark:border-white/5">

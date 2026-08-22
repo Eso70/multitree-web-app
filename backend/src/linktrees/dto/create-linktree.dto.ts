@@ -4,8 +4,14 @@ import {
   IsBoolean,
   IsObject,
   IsArray,
+  Matches,
+  MaxLength,
   MinLength,
 } from 'class-validator';
+import {
+  WEBSITE_COLOR_MAX_LENGTH,
+  WEBSITE_COLOR_PATTERN,
+} from '../../common/website-color';
 
 /**
  * Per-link extras a client may send alongside `links`.
@@ -49,6 +55,8 @@ export class CreateLinktreeDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(WEBSITE_COLOR_MAX_LENGTH)
+  @Matches(WEBSITE_COLOR_PATTERN)
   background_color?: string;
 
   @IsObject()

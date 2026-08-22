@@ -86,7 +86,8 @@ export class AuditInterceptor implements NestInterceptor {
       actorType: user?.role || 'anonymous',
       actorId: user?.id || null,
       actorLabel: user?.name || user?.username || null,
-      businessId: user?.role === 'business' ? user.id : null,
+      businessId:
+        user?.role === 'business' || user?.role === 'creator' ? user.id : null,
       eventType: definition.eventType,
       outcome,
       resourceType: definition.resourceType || null,

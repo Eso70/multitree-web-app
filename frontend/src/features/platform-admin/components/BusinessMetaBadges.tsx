@@ -88,7 +88,7 @@ export const BusinessMetaBadges = memo(function BusinessMetaBadges({
       />
       <BusinessPill
         label={`${pageAllowance} پەڕە`}
-        title="زۆرترین ژمارەی پەڕەی لینک‌تری کە پلانەکە ڕێگەی پێدەدات"
+        title="زۆرترین ژمارەی پەڕەی لینکتری کە پلانەکە ڕێگەی پێدەدات"
         className="border-slate-200 bg-slate-50 text-slate-600 dark:border-white/15 dark:bg-white/10 dark:text-slate-300"
         icon={<Layers className="h-3 w-3" />}
       />

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -44,5 +45,15 @@ export class CreatorAdministrationController {
     @Body() data: ManageCreatorDto,
   ) {
     return { success: true, data: await this.creators.manage(id, data) };
+  }
+
+  @Delete(':id/page')
+  @RequireCapabilities(Capability.PlatformCreatorsManage)
+  @AuditEvent('platform.creator.page.delete', {
+    resourceType: 'creator-account',
+    resourceIdParam: 'id',
+  })
+  async deletePage(@Param('id', ParseUUIDPipe) id: string) {
+    return { success: true, data: await this.creators.deletePage(id) };
   }
 }

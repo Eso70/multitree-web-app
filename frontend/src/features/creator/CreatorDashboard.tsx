@@ -1,167 +1,311 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { IdCard, Link2, LogOut, ShieldCheck } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import {
-  SkeletonCardGrid,
-  SkeletonStatCards,
+  FileText,
+  IdCard,
+  LayoutTemplate,
+  LogOut,
+  Settings,
+} from "lucide-react";
+import { DashboardHeader } from "@/components/shared/DashboardHeader";
+import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
+import {
+  DashboardSidebar,
+  type DashboardSidebarItem,
+} from "@/components/shared/DashboardSidebar";
+import {
+  SkeletonDashboardPage,
+  SkeletonDashboardShell,
+  SkeletonManagementPage,
+  SkeletonTemplatePage,
 } from "@/components/shared/Skeleton";
-import { DashboardSurface } from "@/components/shared/DashboardSurface";
-import { RootLinktreesPage } from "@/features/platform-admin/components/PlatformLinktreesPage";
-import { MiniWebsitesPage } from "@/features/mini-website/MiniWebsitesPage";
 import { CREATOR_MINI_WEBSITE_WORKSPACE } from "@/features/mini-website/workspace-config";
 import { apiRequest } from "@/lib/api/request";
+import { persistAppTheme, readAppTheme, type AppTheme } from "@/lib/app-theme";
 import { ThemeProvider } from "@/lib/contexts/ThemeProvider";
+import { CreatorPageTypeLocked } from "./CreatorPageTypeLocked";
+import { CreatorSidebarFooter } from "./CreatorSidebarFooter";
+import type { CreatorContext } from "./creator-dashboard.types";
 
-type CreatorContext = {
-  account: {
-    display_name: string;
-    email: string;
-    page_type: "linktree" | "mini_website" | null;
-    billingStatus:
-      "not_started" | "trialing" | "grace_period" | "expired" | "active";
-    remainingTrialDays: number;
-    trial_days: number;
-  };
-  branding: {
-    logo: string | null;
-    avatar: string | null;
-    accentColor: string | null;
-  };
+const RootLinktreesPage = dynamic(
+  () =>
+    import("@/features/platform-admin/components/PlatformLinktreesPage").then(
+      (module) => ({ default: module.RootLinktreesPage }),
+    ),
+  { ssr: false, loading: () => <SkeletonManagementPage /> },
+);
+
+const MiniWebsitesPage = dynamic(
+  () =>
+    import("@/features/mini-website/MiniWebsitesPage").then((module) => ({
+      default: module.MiniWebsitesPage,
+    })),
+  { ssr: false, loading: () => <SkeletonManagementPage /> },
+);
+
+const TemplatesPage = dynamic(
+  () =>
+    import("@/features/templates/components/TemplatesPage").then((module) => ({
+      default: module.TemplatesPage,
+    })),
+  { ssr: false, loading: () => <SkeletonTemplatePage /> },
+);
+
+const CreatorAccountSettingsPage = dynamic(
+  () =>
+    import("./CreatorAccountSettingsPage").then((module) => ({
+      default: module.CreatorAccountSettingsPage,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <SkeletonDashboardPage body="form" statCount={4} tabCount={3} />
+    ),
+  },
+);
+
+type CreatorDashboardPage =
+  "home" | "linktree" | "mini_website" | "templates" | "settings";
+
+const PAGE_TITLES: Record<CreatorDashboardPage, string> = {
+  home: DASHBOARD_PAGE_LABELS.linktrees,
+  linktree: DASHBOARD_PAGE_LABELS.linktrees,
+  mini_website: DASHBOARD_PAGE_LABELS.miniWebsite,
+  templates: DASHBOARD_PAGE_LABELS.templates,
+  settings: DASHBOARD_PAGE_LABELS.settings,
 };
+
+function activeDashboardPage(pathname: string): CreatorDashboardPage {
+  if (pathname.endsWith("/settings")) return "settings";
+  if (pathname.endsWith("/linktree")) return "linktree";
+  if (pathname.endsWith("/mini-website")) return "mini_website";
+  if (pathname.endsWith("/templates")) return "templates";
+  return "home";
+}
 
 export function CreatorDashboard() {
   const router = useRouter();
+  const pathname = usePathname();
+  const activePage = activeDashboardPage(pathname);
   const [context, setContext] = useState<CreatorContext | null>(null);
-  const [choice, setChoice] = useState<"linktree" | "mini_website" | null>(
-    null,
+  const [committedPageType, setCommittedPageType] = useState<
+    "linktree" | "mini_website" | null
+  >(null);
+  const [theme, setTheme] = useState<AppTheme>(() => readAppTheme());
+  const [mounted, setMounted] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const load = useCallback(
+    async (quiet = false) => {
+      if (quiet) setRefreshing(true);
+      try {
+        setContext(await apiRequest<CreatorContext>("/api/creator/context"));
+      } catch {
+        router.replace("/login");
+      } finally {
+        if (quiet) setRefreshing(false);
+      }
+    },
+    [router],
   );
 
-  const load = useCallback(async () => {
-    try {
-      setContext(await apiRequest<CreatorContext>("/api/creator/context"));
-    } catch {
-      router.replace("/login");
-    }
-  }, [router]);
-
   useEffect(() => {
-    const timeout = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timeout);
+    const frame = window.requestAnimationFrame(() => {
+      const currentTheme = readAppTheme();
+      persistAppTheme(currentTheme);
+      setTheme(currentTheme);
+      setMounted(true);
+      void load();
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [load]);
 
-  if (!context) {
-    return (
-      <main className="mx-auto max-w-7xl space-y-8 px-4 py-10">
-        <SkeletonStatCards count={3} />
-        <DashboardSurface>
-          <SkeletonCardGrid count={4} />
-        </DashboardSurface>
-      </main>
+  useEffect(() => {
+    if (pathname !== "/account" || !context) return;
+    router.replace(
+      context.account.page_type === "mini_website"
+        ? "/account/mini-website"
+        : "/account/linktree",
     );
-  }
+  }, [context, pathname, router]);
 
-  const pageType = context.account.page_type || choice;
-  const billingCopy =
-    context.account.billingStatus === "not_started"
-      ? `تاقیکردنەوەی ${context.account.trial_days} ڕۆژەکەت کاتێک دەست پێدەکات کە پەڕەکەت دروست بکەیت.`
-      : context.account.billingStatus === "trialing"
-        ? `${context.account.remainingTrialDays} ڕۆژ لە تاقیکردنەوەکەت ماوە.`
-        : context.account.billingStatus === "grace_period"
-          ? "ماوەی تاقیکردنەوە تەواو بووە؛ پەڕەکەت بەم زووانە داخراو دەبێت."
-          : context.account.billingStatus === "active"
-            ? "هەژمارەکەت چالاکە."
-            : "پەڕەکەت خوێندنەوە تەنهاست تا بەشدارییەکەت چالاک بکرێت.";
+  const logout = useCallback(async () => {
+    await apiRequest("/api/creator/auth/logout", { method: "POST" });
+    router.replace("/login");
+  }, [router]);
+
+  const ownedPageType = context?.account.page_type || committedPageType;
+
+  const sidebarItems = useMemo<DashboardSidebarItem[]>(
+    () => [
+      {
+        id: "linktree",
+        label: DASHBOARD_PAGE_LABELS.linktrees,
+        icon: <FileText className="h-4 w-4" />,
+        active: activePage === "linktree",
+        disabled: ownedPageType === "mini_website",
+        disabledReason: "هەژمارەکەت پێشتر مینی وێبسایتێکی هەیە",
+        onClick: () => router.push("/account/linktree"),
+      },
+      {
+        id: "mini-website",
+        label: DASHBOARD_PAGE_LABELS.miniWebsite,
+        icon: <IdCard className="h-4 w-4" />,
+        active: activePage === "mini_website",
+        disabled: ownedPageType === "linktree",
+        disabledReason: "هەژمارەکەت پێشتر لینکترییەکی هەیە",
+        onClick: () => router.push("/account/mini-website"),
+      },
+      {
+        id: "templates",
+        label: DASHBOARD_PAGE_LABELS.templates,
+        icon: <LayoutTemplate className="h-4 w-4" />,
+        active: activePage === "templates",
+        onClick: () => router.push("/account/templates"),
+      },
+      {
+        id: "settings",
+        label: DASHBOARD_PAGE_LABELS.settings,
+        icon: <Settings className="h-4 w-4" />,
+        active: activePage === "settings",
+        onClick: () => router.push("/account/settings"),
+      },
+    ],
+    [activePage, ownedPageType, router],
+  );
+
+  if (!context) return <SkeletonDashboardShell />;
+
+  const pageType = ownedPageType;
 
   return (
     <ThemeProvider websiteColor={context.branding.accentColor}>
-      <div className="min-h-screen bg-slate-50 dark:bg-[#0d1117]" dir="rtl">
-        <header className="border-b border-slate-200 bg-white dark:border-white/10 dark:bg-[#161b22]">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-            <div>
-              <p className="text-lg font-black text-slate-900 dark:text-white">
-                MultiTree Creator
-              </p>
-              <p className="text-xs text-slate-500">{context.account.email}</p>
-            </div>
-            <button
-              onClick={async () => {
-                await apiRequest("/api/creator/auth/logout", {
-                  method: "POST",
-                });
-                router.replace("/login");
-              }}
-              className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm font-bold text-slate-600 dark:border-white/10 dark:text-slate-300"
-            >
-              <LogOut className="h-4 w-4" />
-              چوونەدەرەوە
-            </button>
-          </div>
-        </header>
-        <main className="mx-auto max-w-7xl px-4 py-7 sm:px-6">
-          <div className="mb-7 flex items-start gap-3 rounded-2xl border border-lime-300/60 bg-lime-50 p-4 text-sm text-slate-700 dark:border-lime-300/20 dark:bg-lime-300/5 dark:text-slate-200">
-            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-            <div>
-              <p className="font-black">{context.account.display_name}</p>
-              <p className="mt-1">{billingCopy}</p>
-            </div>
-          </div>
+      <div
+        className="relative flex h-screen flex-col overflow-hidden bg-slate-50 text-slate-800 dark:bg-[#161B22] dark:text-gray-100 md:flex-row"
+        dir="ltr"
+        data-multitree-theme
+      >
+        <DashboardSidebar
+          brandName="MultiTree"
+          brandSubtitle="داشبۆردی بەکارهێنەر"
+          brandImage="/images/Logo.jpg"
+          brandImageAlt="MultiTree"
+          items={sidebarItems}
+          collapsed={isSidebarCollapsed}
+          mobileOpen={isMobileSidebarOpen}
+          onCloseMobile={() => setIsMobileSidebarOpen(false)}
+          footer={
+            <CreatorSidebarFooter
+              collapsed={isSidebarCollapsed}
+              billingStatus={context.account.billingStatus}
+            />
+          }
+          accent="var(--multitree-accent)"
+        />
 
-          {!pageType ? (
-            <DashboardSurface className="mx-auto max-w-3xl text-center">
-              <h1 className="text-2xl font-black text-slate-900 dark:text-white">
-                یەک جۆری پەڕە هەڵبژێرە
-              </h1>
-              <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
-                هەر هەژمارێک دەتوانێت تەنها یەک لینک‌تری یان یەک مینی وێبسایت
-                دروست بکات.
-              </p>
-              <div className="mt-7 grid gap-4 sm:grid-cols-2">
-                <button
-                  onClick={() => setChoice("linktree")}
-                  className="rounded-2xl border border-slate-200 p-6 text-right transition hover:border-lime-400 hover:bg-lime-50 dark:border-white/10 dark:hover:bg-lime-300/5"
-                >
-                  <Link2 className="mb-4 h-7 w-7 text-blue-600" />
-                  <span className="block text-lg font-black dark:text-white">
-                    لینک‌تری
-                  </span>
-                  <span className="mt-1 block text-sm text-slate-500">
-                    پەڕەیەکی سادە بۆ بەستەرەکان و ڕیکلام.
-                  </span>
-                </button>
-                <button
-                  onClick={() => setChoice("mini_website")}
-                  className="rounded-2xl border border-slate-200 p-6 text-right transition hover:border-lime-400 hover:bg-lime-50 dark:border-white/10 dark:hover:bg-lime-300/5"
-                >
-                  <IdCard className="mb-4 h-7 w-7 text-violet-600" />
-                  <span className="block text-lg font-black dark:text-white">
-                    مینی وێبسایت
-                  </span>
-                  <span className="mt-1 block text-sm text-slate-500">
-                    پەڕەی تەواوتر بۆ ناساندن و خزمەتگوزارییەکان.
-                  </span>
-                </button>
-              </div>
-            </DashboardSurface>
-          ) : pageType === "linktree" ? (
-            <RootLinktreesPage
-              apiBase="/api/creator/linktrees"
-              analyticsDataSource="creator-linktree"
-              ownerLabel="Creator"
-              maxPages={1}
-            />
-          ) : (
-            <MiniWebsitesPage
-              businessLogo={context.branding.logo}
-              businessDefaultAvatar={context.branding.avatar}
-              websiteColor={context.branding.accentColor}
-              workspaceConfig={CREATOR_MINI_WEBSITE_WORKSPACE}
-              maxPages={1}
-            />
-          )}
-        </main>
+        <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
+          <DashboardHeader
+            title={PAGE_TITLES[activePage]}
+            theme={theme}
+            mounted={mounted}
+            refreshing={refreshing}
+            onToggleSidebar={() => {
+              if (window.matchMedia("(max-width: 767px)").matches) {
+                setIsMobileSidebarOpen((open) => !open);
+              } else {
+                setIsSidebarCollapsed((collapsed) => !collapsed);
+              }
+            }}
+            onToggleTheme={() => {
+              const next = theme === "light" ? "dark" : "light";
+              persistAppTheme(next);
+              setTheme(next);
+            }}
+            onRefresh={() => load(true)}
+            notifications={null}
+            profile={{
+              name: context.account.display_name,
+              email: context.account.email,
+              badge: billingBadge(context.account.billingStatus),
+              avatarSrc: context.account.avatar_url || context.branding.avatar,
+              items: [
+                {
+                  id: "settings",
+                  label: DASHBOARD_PAGE_LABELS.settings,
+                  icon: <Settings className="h-4 w-4" />,
+                  onClick: () => router.push("/account/settings"),
+                },
+                {
+                  id: "divider",
+                  label: "",
+                  icon: null,
+                  divider: true,
+                  onClick: () => undefined,
+                },
+                {
+                  id: "logout",
+                  label: "چوونەدەرەوە",
+                  icon: <LogOut className="h-4 w-4" />,
+                  danger: true,
+                  onClick: () => void logout(),
+                },
+              ],
+            }}
+            onProfileItemClick={() => setIsMobileSidebarOpen(false)}
+          />
+
+          <main className="relative w-full flex-1 overflow-y-auto" dir="ltr">
+            <div className="relative z-10 mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10 lg:py-10">
+              {activePage === "templates" ? (
+                <TemplatesPage canCreate={false} accessMode="all" />
+              ) : activePage === "settings" ? (
+                <CreatorAccountSettingsPage account={context.account} />
+              ) : activePage === "home" ? (
+                <SkeletonManagementPage />
+              ) : activePage === "linktree" && pageType === "mini_website" ? (
+                <CreatorPageTypeLocked ownedPageType="mini_website" />
+              ) : activePage === "mini_website" && pageType === "linktree" ? (
+                <CreatorPageTypeLocked ownedPageType="linktree" />
+              ) : activePage === "linktree" ? (
+                <RootLinktreesPage
+                  apiBase="/api/creator/linktrees"
+                  analyticsDataSource="creator-linktree"
+                  ownerLabel="تۆ"
+                  maxPages={1}
+                  canDelete={false}
+                  onCreated={() => setCommittedPageType("linktree")}
+                />
+              ) : (
+                <MiniWebsitesPage
+                  businessLogo={context.branding.logo}
+                  businessDefaultAvatar={context.branding.avatar}
+                  websiteColor={context.branding.accentColor}
+                  workspaceConfig={CREATOR_MINI_WEBSITE_WORKSPACE}
+                  maxPages={1}
+                  canDelete={false}
+                  onCreated={() => setCommittedPageType("mini_website")}
+                />
+              )}
+            </div>
+          </main>
+        </div>
       </div>
     </ThemeProvider>
   );
+}
+
+function billingBadge(status: CreatorContext["account"]["billingStatus"]) {
+  const labels = {
+    not_started: "نوێ",
+    trialing: "تاقیکردنەوە",
+    grace_period: "ماوەی زیادە",
+    expired: "بەسەرچووە",
+    active: "چالاک",
+  } as const;
+  return labels[status];
 }

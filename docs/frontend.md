@@ -1,5 +1,24 @@
 # Frontend
 
+## Creator content workspaces
+
+Creator Linktree and mini-website routes render the same shared page lists,
+grid/table views, editors, analytics modal, statistics, loading skeletons, and
+empty states as Business and Platform. Workspace differences are supplied only
+through typed endpoints and capability props. A Creator configuration limits
+the workspace to one page, hides page deletion, and disables the opposite page
+type after creation; it must never fork or copy the shared presentation.
+Shared Business, Platform, and Creator navigation names come from
+`components/shared/dashboard-page-labels.ts`; do not introduce surface-local
+copies for names that describe the same workspace.
+`/account/templates` renders the same `TemplatesPage` used by Business and
+Platform. Creator users receive its view-only configuration with the full
+template catalogue; template creation controls remain platform-only.
+Creator `/account/settings` follows the Business settings composition and
+keeps account information first. Its TikTok tab renders the same
+`BusinessTikTokPixelConfigPage` used by Business and Platform through the typed
+`creator` workspace configuration; it does not duplicate the Pixel form.
+
 ## Public marketing tracking
 
 `components/analytics/PublicRouteTracking.tsx` is the central positive
@@ -95,6 +114,26 @@ navigation. Business and platform adapters provide only their authenticated
 endpoint and safe action-route resolver. Platform pending-approval cards are a
 permission-specific extension inside the same dropdown and are never exposed
 to business users.
+
+The Creator `/account` workspace is a third thin configuration of the same
+dashboard chrome. It supplies only Creator navigation, billing badge, account
+identity, logout action, and page-workspace configuration; the shared sidebar,
+header, profile menu, theme controls, refresh behavior, loading shell, content
+container, Linktree UI, and mini-website UI remain the same implementations.
+Every `/account` route uses the shared dashboard route skeleton. Heavy Creator
+Linktree, mini-website, template, and settings bundles use the same management,
+template, and form skeletons as their Business equivalents, including the
+shared editor and analytics modal fallbacks.
+Dialog bundles are mounted only while their dialog is open. Their full-screen
+skeletons must never be mounted behind a closed dialog because that would cover
+the dashboard during a direct-page refresh.
+Its `/account/settings` route uses shared dashboard surfaces, statistic cards,
+tabs, and session management to show the allowlisted Google account view and
+security activity. It does not render or receive provider subjects, OAuth
+tokens, HMAC claims, internal owner ids, or risk data.
+Google profile images continue through `next/image`; the optimizer allowlist is
+restricted to HTTPS `lh3.googleusercontent.com` OpenID avatar paths (`/a/**`
+and `/a-/**`) rather than permitting arbitrary remote Google content.
 
 Large pages and templates compose focused modules rather than owning every
 data lifecycle and renderer inline. The liquid-glass mini-website template uses
@@ -453,6 +492,23 @@ future segments remain visible at reduced opacity.
 - Linktrees support branding, an avatar, a subtitle tagline under the name, a
   longer description helper text, configurable footer, WhatsApp questions,
   ordered links, TikTok tracking, and 12 selectable templates.
+- A custom colour is stored as `gradient:<direction>:<from>:<to>` and rendered
+  only through `parseWebsiteColor`, which owns the nine-direction table and
+  emits explicit `0%`/`100%` stops so the two colours split the surface evenly.
+  Surfaces must not keep a local direction map: one in `BackgroundColorPicker`
+  covered four of the nine and emitted invalid CSS for the rest. A template's
+  own `from`/`via`/`to` recipe cannot express a direction, so
+  `getBackgroundGradient` also returns the parsed `backgroundCss` and
+  `templateBackgroundStyle` prefers it — without that, every custom gradient
+  rendered as the template's hardcoded diagonal and changing the direction
+  repainted nothing.
+- The hex field in `ColorGradientModal` holds an uncommitted draft string and
+  commits to the colour only once the draft is a whole hex. Parsing every
+  keystroke instead made the field unusable: `#`, `#0`, and `#00` all fail to
+  parse, so each one reverted to the previous colour and a colour could only be
+  replaced by pasting it complete. Any control that sets a whole colour —
+  presets, sliders, eyedropper, switching between the two gradient stops —
+  clears the draft, and blurring restores the committed value.
 - A linktree background is either a colour or an uploaded image. The image tile
   sits beside the custom-colour swatch in `BackgroundColorPicker`, and the two
   are exclusive: uploading replaces the colour surface, and picking any colour
@@ -595,9 +651,20 @@ future segments remain visible at reduced opacity.
     `components/error-pages/ErrorPage.tsx` component. Page-level 403, 404, 410,
     500, 502, 503, and 504 states replace the homepage content while retaining the
     real public navbar and footer. The error-content region fills the small viewport,
-    keeping the footer below the initial fold until the visitor scrolls. Root
-    pages pass the MultiTree theme, while business pages pass the current
-    business color, favicon, logo, and name. Every error-page home action points
+    keeping the footer below the initial fold until the visitor scrolls. All
+    three scopes — MultiTree root, business subdomain, and platform console —
+    render through one `PublicMarketingSiteShell`, so the page frame, the
+    32-pixel grid backdrop, the hero accent atmosphere, spacing, typography,
+    buttons, and light/dark surfaces are identical everywhere. Scope differences
+    are branding only, supplied through the typed `ErrorPageTheme` adapter:
+    business pages pass the current business color, favicon, logo, and name;
+    root and console pages pass MultiTree's own accent and logo. Navigation and
+    footer content follow the same adapter — business errors keep the tenant
+    navigation and footer, root errors keep the MultiTree marketing footer with
+    signup and login actions, and console errors keep MultiTree branding without
+    account actions. `ErrorPage.tsx` must not grow a second layout branch per
+    scope. The platform route-level 403, 404, 500, 502, 503, and 504 states all use
+    this shared presentation. Every error-page home action points
     to `/` on the current host; error pages never link to a dashboard or login.
     Authorization failures use 403 only when the authenticated user may safely
     know the page exists. Concealed private routes and cross-tenant resources
@@ -629,8 +696,10 @@ future segments remain visible at reduced opacity.
     the backend remains authoritative and validates the actual file signature.
     Next.js `error.tsx`, `global-error.tsx`, and `not-found.tsx` files remain
     thin required route boundaries with no visual implementation. Platform
-    administration intentionally has no local error boundary and inherits the
-    root pages.
+    administration owns `error.tsx` and `not-found.tsx` under its console
+    segment so a console failure keeps platform branding instead of falling
+    through to the root marketing pages; both delegate to the same shared
+    component.
 
 ## Business dashboard
 

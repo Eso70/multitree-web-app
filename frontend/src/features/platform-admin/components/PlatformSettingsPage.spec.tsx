@@ -210,7 +210,7 @@ describe("PlatformSettingsPage General tab", () => {
     expect(
       screen.queryByRole("tab", { name: "TikTok Tracking" }),
     ).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("tab", { name: "شوێنکەوتنی TikTok" }));
+    fireEvent.click(screen.getByRole("tab", { name: "ڕێکخستنەکانی تیکتۆک" }));
 
     expect(
       await screen.findByRole("heading", { name: "پەیوەستکردنی TikTok" }),

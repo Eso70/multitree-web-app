@@ -22,6 +22,7 @@ import { toText } from '../common/coerce';
 import type { LinkRow } from '../links/link.types';
 import { RedisService } from '../redis/redis.service';
 import { StorageService } from '../storage/storage.service';
+import { normalizeBusinessSubdomain } from '../common/business-subdomain';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { createHash, randomUUID } from 'crypto';
 import { SecretCryptoService } from '../auth/secret-crypto.service';
@@ -220,10 +221,6 @@ export class BusinessAdministrationService {
 
   private normalizeUsername(username: string) {
     return username.trim().toLowerCase();
-  }
-
-  private normalizeSubdomain(subdomain: string) {
-    return subdomain.trim().toLowerCase();
   }
 
   private normalizeRequiredText(value: string | undefined, fallback: string) {
@@ -666,10 +663,18 @@ export class BusinessAdministrationService {
         throw new ConflictException('Username is already in use');
     }
 
-    const subdomain =
-      data.subdomain !== undefined
-        ? this.normalizeSubdomain(data.subdomain)
-        : current.subdomain;
+    // The rule is applied only to a value that is actually changing. Signup
+    // provisioning is the other writer of this column and has always applied
+    // it, but a row that predates the shared rule — or one seeded around it —
+    // must not lock an administrator out of editing the business's other
+    // fields.
+    let subdomain = current.subdomain;
+    if (data.subdomain !== undefined) {
+      subdomain =
+        data.subdomain.trim().toLowerCase() === current.subdomain
+          ? current.subdomain
+          : normalizeBusinessSubdomain(data.subdomain);
+    }
     if (subdomain && subdomain !== current.subdomain) {
       const check = await this.databaseService.query<ExistsProbeRow>(
         'SELECT 1 FROM businesses WHERE subdomain = $1 AND id != $2',
@@ -1202,7 +1207,7 @@ export class BusinessAdministrationService {
         await client.query(
           `INSERT INTO linktrees (id, business_id, name, subtitle, description, seo_name, uid, image, background_color, footer_text,
              footer_phone, footer_hidden, template_key, template_config, whatsapp_modal_enabled, status, is_default, created_at, updated_at)
-           VALUES ($1,$2,$3,$4,$19,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15,false,$16,$17)
+           VALUES ($1,$2,$3,$4,$18,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15,false,$16,$17)
            ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, subtitle=EXCLUDED.subtitle, description=EXCLUDED.description, seo_name=EXCLUDED.seo_name,
              uid=EXCLUDED.uid, image=EXCLUDED.image, background_color=EXCLUDED.background_color,
              footer_text=EXCLUDED.footer_text, footer_phone=EXCLUDED.footer_phone, footer_hidden=EXCLUDED.footer_hidden,

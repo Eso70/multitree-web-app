@@ -4,7 +4,7 @@ import type {
   PublicPageTikTokEvent,
 } from '@linktree/types';
 import { DatabaseService } from '../database/database.service';
-import { ENTITLEMENT, entitledSql } from '../billing/entitlement-sql';
+import { TIKTOK_OWNER_ELIGIBLE_SQL } from './tiktok-owner-eligibility';
 
 /**
  * The tracking block a public page is served with.
@@ -36,13 +36,7 @@ export class PublicPageAnalyticsService {
          JOIN public.businesses business ON business.id = pixel.business_id
         WHERE pixel.business_id = $1
           AND pixel.status = 'active'
-          AND (
-            business.account_type = 'platform'
-            OR (
-              business.account_type = 'business'
-              AND ${entitledSql(ENTITLEMENT.tiktok)}
-            )
-          )
+          AND ${TIKTOK_OWNER_ELIGIBLE_SQL}
         ORDER BY pixel.display_order, pixel.created_at`,
       [businessId],
     );

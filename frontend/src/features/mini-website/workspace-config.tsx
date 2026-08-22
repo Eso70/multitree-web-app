@@ -18,6 +18,14 @@ export interface MiniWebsiteWorkspaceConfig {
   api: MiniWebsiteApiEndpoints;
   publicPathPrefix: string;
   analyticsDataSource: PageAnalyticsDataSource;
+  /**
+   * Whether the analytics modal shows the full page report — the business stat
+   * cards, the conversion tiles and the per-button list — or only the
+   * all-time summary. A workspace that owns the page it is inspecting gets the
+   * full report; platform administration reviews other tenants' pages and gets
+   * the summary.
+   */
+  detailedAnalytics: boolean;
   allowAllTemplates: boolean;
 }
 
@@ -33,6 +41,7 @@ export const BUSINESS_MINI_WEBSITE_WORKSPACE: MiniWebsiteWorkspaceConfig = {
   },
   publicPathPrefix: "/bio",
   analyticsDataSource: "business",
+  detailedAnalytics: true,
   allowAllTemplates: false,
 };
 
@@ -50,6 +59,7 @@ export const PLATFORM_MINI_WEBSITE_WORKSPACE: MiniWebsiteWorkspaceConfig = {
   },
   publicPathPrefix: "/bio",
   analyticsDataSource: "platform-mini-website",
+  detailedAnalytics: false,
   allowAllTemplates: true,
 };
 
@@ -67,6 +77,7 @@ export const CREATOR_MINI_WEBSITE_WORKSPACE: MiniWebsiteWorkspaceConfig = {
   },
   publicPathPrefix: "/bio",
   analyticsDataSource: "creator-mini-website",
+  detailedAnalytics: true,
   allowAllTemplates: true,
 };
 

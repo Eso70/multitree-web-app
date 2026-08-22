@@ -3,6 +3,22 @@
 Creator signup security, identity claims, rate limits, and session isolation
 are defined in [`creator-accounts.md`](creator-accounts.md). A verified Google
 identity proves control of that Google account; it is not legal identity proof.
+Creator dashboards receive only an allowlisted identity projection. Platform
+Creator management may use verified email, display name, avatar, authentication
+timestamps, account timestamps, and active-session counts for support and
+security operations. Google provider subjects, OAuth tokens, trial/device/IP
+HMACs, and internal risk levels are never exposed to Creator or platform UI.
+
+The one-page Creator restriction is enforced by the server-side reservation
+and attachment transaction, not by disabled navigation alone. Creator sessions
+cannot delete either page type. Platform deletion requires the dedicated
+Creator-management capability and produces an audit event; durable trial claim
+records remain intact so deletion cannot be used to obtain another trial.
+Creator TikTok configuration never accepts an owner identifier. The Creator
+guard supplies the internal workspace id, update requests pass the shared DTO
+and encrypted secret service, and audit records stay associated with that
+Creator workspace. API responses expose neither the Events API token nor the
+Google or anti-abuse identity claims.
 
 ## Marketing tracking ownership and consent
 
@@ -347,6 +363,15 @@ alone is a complete answer, and unusual non-browser clients replaying a stolen
 cookie are only covered by the `SameSite` cookie policy and standard session
 theft mitigations, not this header check.
 
+"Cookie-authenticated" is decided by a list of session cookie names kept in
+`backend/src/common/request-origin.ts` and mirrored in the proxy's
+`lib/security/request-origin.ts`: `business_session`,
+`platform_admin_session`, and `creator_session`. A session type missing from
+that list is not recognised as authenticated, so the check is **skipped rather
+than failed** and that surface silently loses this defence — which is what
+happened to Creator writes until `creator_session` was added. Add the cookie to
+both lists when a new session type is introduced.
+
 ## Rate limiting
 
 - Login: see [Authentication](#authentication).
@@ -377,6 +402,18 @@ Link synchronization is capped at 500 items per array. Each nested link has
 bounded text fields and an absolute HTTP(S) URL, and batch deletion identifiers
 must be UUIDs. These checks apply consistently to business and developer API
 routes, including the legacy-compatible batch payload shape.
+
+Every stored page colour — linktree background, mini-website accent, banner
+colour, onboarding and platform branding — is validated against the single
+`common/website-color.ts` pattern: `#rgb`, `#rrggbb`, or
+`gradient:<direction>:<hex>:<hex>`, bounded in length. These values are
+rendered as inline CSS backgrounds, so an unconstrained string would reach a
+`style` attribute on a public page. The rule lives in one constant because six
+hand-written copies had drifted: the linktree background accepted any string at
+all, two accepted four- and five-digit hex that no browser draws, and one
+rejected `#rgb` outright. The colour picker now commits the six-digit form, so
+shorthand stays accepted for stored values resubmitted on edit rather than for
+anything the UI writes today.
 
 Platform administration list responses follow least-privilege projections.
 In particular, `GET /api/platform/businesses` excludes decrypted TikTok event
@@ -466,10 +503,16 @@ Webhook delivery (`api-platform`) validates a destination URL before every
 attempt, not just at creation: it must be `https:`, may not contain
 credentials or a custom port, and its resolved hostname/IP (checked at
 delivery time, including DNS resolution) must not be `localhost` or a
-private/loopback/link-local address, covering both IPv4 and IPv6 ranges.
-Redirects are disabled on the delivery request (`redirect: 'error'`) so a
-target cannot pass validation and then redirect the request into an internal
-network afterward. Delivery has a 10-second timeout.
+private/loopback/link-local address, covering both IPv4 and IPv6 ranges,
+carrier-grade NAT (`100.64.0.0/10`), and the IPv6 forms that carry an IPv4
+address inside them. That last case matters because the owner of a hostname
+controls its zone: an `AAAA` record of `::ffff:127.0.0.1` — or the same
+address written as `::ffff:7f00:1` — is classified as IPv6 by `net.isIP`, so a
+prefix-only check read it as public while a socket opened to it landed on
+loopback. Those forms are unwrapped to their IPv4 address and checked against
+the IPv4 rules. Redirects are disabled on the delivery request
+(`redirect: 'error'`) so a target cannot pass validation and then redirect the
+request into an internal network afterward. Delivery has a 10-second timeout.
 
 Deliveries are signed with HMAC-SHA256 over `${unixTimestamp}.${jsonBody}`,
 sent as `x-multitree-signature: v1=<hex>`. Failed deliveries retry up to 6

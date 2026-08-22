@@ -2,7 +2,12 @@
 
 import { memo, useState } from "react";
 import Image from "next/image";
-import { Edit, Trash2, Eye, Globe, ShieldCheck, LogIn } from "lucide-react";
+import { Edit, Trash2, Eye, Globe, ShieldCheck, LogIn, Users } from "lucide-react";
+import { EmptyState } from "@/components/shared/EmptyState";
+import {
+  useManagementPagination,
+  type ManagementTablePagination,
+} from "@/components/shared/ManagementTable";
 import { formatDate, getRootDomain } from "@/lib/utils/linktree-utils";
 import type { PlatformBusiness as Business } from "@linktree/types";
 import {
@@ -12,6 +17,7 @@ import {
 
 interface BusinessesGridProps {
   data?: Business[];
+  pagination?: ManagementTablePagination;
   onEdit?: (business: Business) => void;
   onDelete?: (id: string, name: string) => void;
   onViewAnalytics?: (business: Business) => void;
@@ -148,34 +154,40 @@ export const BusinessesGrid = memo(function BusinessesGrid({
   onViewAnalytics,
   onManageSessions,
   onOpenDashboard,
+  pagination,
 }: BusinessesGridProps) {
+  // Paged on the same terms as the table, so the view toggle no longer changes
+  // how many records the reader is looking at.
+  const { visibleData, footer } = useManagementPagination(data, pagination);
+
   if (data.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[250px] text-center p-8">
-        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-50 border-2 border-gray-200 flex items-center justify-center mb-4">
-          <svg className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" /></svg>
-        </div>
-        <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">هیچ بزنسێک نەدۆزرایەوە</h3>
-        <p className="text-gray-500 text-sm">دەست پێ بکە بە دروستکردنی بزنسی یەکەم</p>
-      </div>
+      <EmptyState
+        icon={Users}
+        title="هیچ بزنسێک نەدۆزرایەوە"
+        description="دەست پێ بکە بە دروستکردنی بزنسی یەکەم"
+      />
     );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-0" dir="ltr">
-      {data.map((item, index) => (
-        <BusinessCard
-          key={item.id}
-          item={item}
-          index={index}
-          total={data.length}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onViewAnalytics={onViewAnalytics}
-          onManageSessions={onManageSessions}
-          onOpenDashboard={onOpenDashboard}
-        />
-      ))}
+    <div dir="ltr">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
+        {visibleData.map((item, index) => (
+          <BusinessCard
+            key={item.id}
+            item={item}
+            index={index}
+            total={visibleData.length}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onViewAnalytics={onViewAnalytics}
+            onManageSessions={onManageSessions}
+            onOpenDashboard={onOpenDashboard}
+          />
+        ))}
+      </div>
+      {footer}
     </div>
   );
 });

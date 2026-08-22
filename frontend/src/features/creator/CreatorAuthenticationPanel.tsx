@@ -13,7 +13,7 @@ export function CreatorAuthenticationPanel({ mode }: { mode: CreatorAuthMode }) 
       }
       description={
         mode === "signup"
-          ? "بە هەژماری Google خۆت خۆتۆمار بکە و پەڕەی تایبەت بە خۆت دروست بکە"
+          ? "بە هەژماری گوگڵ خۆت خۆتۆمار بکە و پەڕەی تایبەت بە خۆت دروست بکە"
           : "بە هەمان هەژماری Google کە پێشتر بەکارت هێناوە بچۆ ژوورەوە"
       }
     >
@@ -21,7 +21,7 @@ export function CreatorAuthenticationPanel({ mode }: { mode: CreatorAuthMode }) 
         href={`/api/creator/auth/google/start?intent=${mode}`}
         label={
           mode === "signup"
-            ? "بە Google هەژمار دروست بکە"
+            ? "بە گوگڵ هەژمار دروست بکە"
             : "بە Google بچۆ ژوورەوە"
         }
       />

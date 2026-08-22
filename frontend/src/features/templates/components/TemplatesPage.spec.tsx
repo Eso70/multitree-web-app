@@ -89,13 +89,25 @@ describe("TemplatesPage", () => {
   it.each([
     { canCreate: false, surface: "business" },
     { canCreate: true, surface: "platform admin" },
-  ])("offers no template category tabs in the $surface page", ({ canCreate }) => {
-    render(<TemplatesPage canCreate={canCreate} />);
+  ])(
+    "offers no template category tabs in the $surface page",
+    ({ canCreate }) => {
+      render(<TemplatesPage canCreate={canCreate} />);
 
-    expect(screen.queryAllByRole("tab")).toHaveLength(0);
+      expect(screen.queryAllByRole("tab")).toHaveLength(0);
+      expect(
+        screen.queryByText("قالبەکانی مینی وێبسایت"),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText("Liquid Glass")).not.toBeInTheDocument();
+    },
+  );
+
+  it("supports the shared Creator view-only catalogue without business entitlement loading", () => {
+    render(<TemplatesPage canCreate={false} accessMode="all" />);
+
+    expect(mockUseTemplateAccess).toHaveBeenCalledWith(false);
     expect(
-      screen.queryByText("قالبەکانی مینی وێبسایت"),
+      screen.queryByRole("button", { name: /زیادکردنی قالب/ }),
     ).not.toBeInTheDocument();
-    expect(screen.queryByText("Liquid Glass")).not.toBeInTheDocument();
   });
 });

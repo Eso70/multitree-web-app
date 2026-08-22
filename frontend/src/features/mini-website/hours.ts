@@ -49,18 +49,36 @@ export function formatTime(minutes: number): string {
 }
 
 /**
+ * `HH:MM`, zero-padded, or the fallback when the value is unusable.
+ *
+ * The padding is not cosmetic. The server pads too, so returning `9:00`
+ * unchanged here means the editor shows one string and the next read shows
+ * another for a time nobody edited.
+ */
+function normalizeTime(value: string, fallback: string): string {
+  const minutes = parseTime(value);
+  return minutes === null ? fallback : formatTime(minutes);
+}
+
+/**
  * Fills in whatever a record is missing, so a location saved before this section
  * existed — or one that lost a day somehow — still renders a full week.
  *
- * Matches the server: no week at all falls back to the usual one, but a week
- * that omits a day marks that day closed rather than inventing hours for it.
+ * Matches the server: no week at all falls back to the usual one, a week that
+ * omits a day marks that day closed rather than inventing hours for it, a time
+ * is padded to `HH:MM`, and where a day is listed twice the first entry wins.
+ * The server is what actually stores the week, so where the two could disagree
+ * this follows it rather than the other way round.
  */
 export function normalizeWeek(value: unknown): MiniWebsiteWeekHours {
   const entries = Array.isArray(value) ? value : [];
   const byDay = new Map<string, MiniWebsiteDayHours>();
   for (const entry of entries) {
     const day = String((entry as MiniWebsiteDayHours)?.day || "");
-    if (MINI_WEBSITE_DAY_KEYS.includes(day as MiniWebsiteDayKey))
+    if (
+      MINI_WEBSITE_DAY_KEYS.includes(day as MiniWebsiteDayKey) &&
+      !byDay.has(day)
+    )
       byDay.set(day, entry as MiniWebsiteDayHours);
   }
   const fallback = createMiniWebsiteWeekHours();
@@ -70,11 +88,12 @@ export function normalizeWeek(value: unknown): MiniWebsiteWeekHours {
       return byDay.size
         ? { ...fallback[index], closed: true }
         : fallback[index];
-    const open =
-      parseTime(source.open) === null ? fallback[index].open : source.open;
-    const close =
-      parseTime(source.close) === null ? fallback[index].close : source.close;
-    return { day, closed: source.closed === true, open, close };
+    return {
+      day,
+      closed: source.closed === true,
+      open: normalizeTime(source.open, fallback[index].open),
+      close: normalizeTime(source.close, fallback[index].close),
+    };
   });
 }
 

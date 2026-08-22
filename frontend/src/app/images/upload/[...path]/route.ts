@@ -44,6 +44,21 @@ export async function GET(
   }
 }
 
+/**
+ * The declared type for a stored upload.
+ *
+ * Deliberately without `image/svg+xml`. An SVG is a script host: served under
+ * that type from this origin it executes as same-origin content, and
+ * `nosniff` does not help because the type is declared rather than sniffed.
+ * The uploader refuses SVG for exactly that reason — `validateImageUpload`
+ * accepts JPEG, PNG and ICO only, and checks magic bytes rather than trusting
+ * the sent mimetype — so this half must not offer a type the other half will
+ * not produce. Anything unrecognised falls through to a non-renderable type,
+ * which `nosniff` then keeps inert.
+ *
+ * The raster types beyond the current three are kept for files stored before
+ * the upload rules narrowed; none of them can carry script.
+ */
 function getContentType(extension: string): string {
   const contentTypes: Record<string, string> = {
     jpg: "image/jpeg",
@@ -51,10 +66,11 @@ function getContentType(extension: string): string {
     png: "image/png",
     gif: "image/gif",
     webp: "image/webp",
-    svg: "image/svg+xml",
     ico: "image/x-icon",
     bmp: "image/bmp",
   };
 
   return contentTypes[extension] || "application/octet-stream";
 }
+
+export const __testing = { getContentType };

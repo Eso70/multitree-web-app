@@ -1,5 +1,6 @@
 import type {
   MiniWebsiteActionType,
+  MiniWebsiteLeadField,
   MiniWebsiteLeadFieldMapping,
   MiniWebsiteLeadFieldType,
 } from "@linktree/types";
@@ -38,6 +39,32 @@ export function parseLeadFieldOptions(value: string, max: number): string[] {
         .filter(Boolean),
     ),
   ).slice(0, max);
+}
+
+/**
+ * Gives a CRM slot to one question by taking it off whichever other question
+ * was holding it.
+ *
+ * A mapping decides which encrypted contact column an answer lands in, so the
+ * server gives each one to a single question and demotes every later claim.
+ * The editor used to allow two questions to claim the same slot and said
+ * nothing, so a business could save a form it believed collected an email
+ * address twice and silently get one. Moving the claim here means there is
+ * never a duplicate for the server to demote.
+ *
+ * `none` is not a slot, so any number of questions may hold it.
+ */
+export function claimLeadFieldMapping(
+  fields: readonly MiniWebsiteLeadField[],
+  index: number,
+  mapping: MiniWebsiteLeadFieldMapping,
+): MiniWebsiteLeadField[] {
+  return fields.map((field, position) => {
+    if (position === index) return { ...field, mapping };
+    return mapping !== "none" && field.mapping === mapping
+      ? { ...field, mapping: "none" as const }
+      : field;
+  });
 }
 
 export const ACTION_TYPE_LABELS: Record<MiniWebsiteActionType, string> = {

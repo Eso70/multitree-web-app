@@ -18,6 +18,10 @@ export interface TikTokPixelConfigView {
   status: 'active' | 'inactive';
 }
 
+export interface TikTokPixelReplaceOptions {
+  maxGroups?: 1 | 2 | 3;
+}
+
 /**
  * Owner-neutral persistence for TikTok Pixel groups.
  *
@@ -32,13 +36,16 @@ export class TikTokPixelConfigService {
     private readonly secrets: SecretCryptoService,
   ) {}
 
-  normalize(value: unknown): TikTokPixelConfigInput[] {
+  normalize(
+    value: unknown,
+    maxGroups: 1 | 2 | 3 = 3,
+  ): TikTokPixelConfigInput[] {
     if (!Array.isArray(value)) {
       throw new BadRequestException('TikTok configurations must be an array');
     }
-    if (value.length > 3) {
+    if (value.length > maxGroups) {
       throw new BadRequestException(
-        'At most three TikTok Pixel groups are allowed',
+        `At most ${maxGroups} TikTok Pixel group${maxGroups === 1 ? '' : 's'} ${maxGroups === 1 ? 'is' : 'are'} allowed`,
       );
     }
 
@@ -104,8 +111,9 @@ export class TikTokPixelConfigService {
   async replace(
     ownerId: string,
     value: unknown,
+    options: TikTokPixelReplaceOptions = {},
   ): Promise<TikTokPixelConfigView[]> {
-    const configs = this.normalize(value);
+    const configs = this.normalize(value, options.maxGroups);
     await this.database.transaction((client) =>
       this.replaceWithClient(client, ownerId, configs),
     );

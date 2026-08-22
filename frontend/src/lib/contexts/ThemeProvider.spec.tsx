@@ -28,8 +28,9 @@ describe('ThemeProvider', () => {
       );
 
       expect(document.documentElement.style.getPropertyValue('--theme-primary')).toBe('#ff0000');
+      // Explicit 0%/100% stops keep the two colours at an even 50/50 split.
       expect(document.documentElement.style.getPropertyValue('--theme-css')).toBe(
-        'linear-gradient(to right, #ff0000, #0066ff)',
+        'linear-gradient(to right, #ff0000 0%, #0066ff 100%)',
       );
       expect(document.documentElement.style.getPropertyValue('--theme-type')).toBe('gradient');
     });

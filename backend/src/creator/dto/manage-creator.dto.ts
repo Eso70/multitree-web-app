@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { IsString, MaxLength } from 'class-validator';
 
@@ -20,12 +21,16 @@ export class ManageCreatorDto {
 }
 
 export class ListCreatorsDto {
+  // Query parameters arrive as strings and the global ValidationPipe does not
+  // enable implicit conversion, so `@IsInt()` alone rejects `?page=2`.
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number = 1;
 
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)

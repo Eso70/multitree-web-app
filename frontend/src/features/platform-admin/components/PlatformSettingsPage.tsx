@@ -46,6 +46,7 @@ import { StatCardGrid } from "@/components/shared/StatCardGrid";
 import { MULTITREE_LOGO, MULTITREE_LOGO_MARK } from "@/lib/brand/brand-assets";
 import { BusinessTikTokPixelConfigPage } from "@/features/analytics/components/BusinessTikTokPixelConfigPage";
 import { ThemeProvider } from "@/lib/contexts/ThemeProvider";
+import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
 
 type Tab = "general" | "security" | "retention" | "media" | "tiktok";
 
@@ -127,7 +128,11 @@ const tabs = [
   { id: "security" as const, label: "چوونەژوورەوە و دانیشتنەکان", icon: Lock },
   { id: "retention" as const, label: "داتا و ماوەی هەڵگرتن", icon: Database },
   { id: "media" as const, label: "میدیا و بارکردن", icon: ImageIcon },
-  { id: "tiktok" as const, label: "شوێنکەوتنی TikTok", icon: Radio },
+  {
+    id: "tiktok" as const,
+    label: DASHBOARD_PAGE_LABELS.tiktokSettings,
+    icon: Radio,
+  },
 ];
 
 export function PlatformSettingsPage() {
@@ -588,7 +593,7 @@ export function PlatformSettingsPage() {
       icon: ImageIcon,
     },
     tiktok: {
-      title: "شوێنکەوتنی TikTok",
+      title: DASHBOARD_PAGE_LABELS.tiktokSettings,
       description:
         "Pixel و Events API بۆ پەڕە گشتییەکانی خاوەندارێتی MultiTree بەڕێوەببە.",
       icon: Radio,

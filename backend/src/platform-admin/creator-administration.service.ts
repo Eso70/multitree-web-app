@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { SessionService } from '../auth/session.service';
 import { DatabaseService } from '../database/database.service';
+import { LinktreesService } from '../linktrees/linktrees.service';
+import { MiniWebsitesService } from '../mini-websites/mini-websites.service';
 import {
   ListCreatorsDto,
   ManageCreatorDto,
@@ -15,6 +17,8 @@ export class CreatorAdministrationService {
   constructor(
     private readonly database: DatabaseService,
     private readonly sessions: SessionService,
+    private readonly linktrees: LinktreesService,
+    private readonly miniWebsites: MiniWebsitesService,
   ) {}
 
   async list(query: ListCreatorsDto) {
@@ -31,11 +35,18 @@ export class CreatorAdministrationService {
       this.database.query(
         `SELECT creator.id, creator.business_id, creator.status,
                 creator.phone_last_four, creator.phone_verified_at,
-                creator.page_type, creator.trial_started_at,
+                creator.page_type, creator.trial_days,
+                creator.trial_started_at,
                 creator.trial_ends_at, creator.grace_ends_at,
                 creator.paid_started_at, creator.risk_level,
                 creator.last_login_at, creator.created_at,
                 user_account.email, user_account.display_name,
+                user_account.avatar_url,
+                COALESCE(google_identity.email_verified, false) AS google_email_verified,
+                google_identity.last_authenticated_at AS google_last_authenticated_at,
+                (SELECT COUNT(*)::int FROM business_sessions session
+                  WHERE session.business_id = creator.business_id
+                    AND session.session_expires_at > NOW()) AS active_session_count,
                 COALESCE(linktree.seo_name, website.slug) AS page_slug,
                 CASE
                   WHEN creator.paid_started_at IS NOT NULL THEN 'active'
@@ -46,6 +57,9 @@ export class CreatorAdministrationService {
                 END AS billing_status
            FROM creator_accounts creator
            JOIN users user_account ON user_account.id=creator.user_id
+           LEFT JOIN user_identities google_identity
+             ON google_identity.user_id = user_account.id
+            AND google_identity.provider = 'google'
            LEFT JOIN linktrees linktree ON linktree.id=creator.linktree_id
            LEFT JOIN mini_websites website ON website.id=creator.mini_website_id
            ${where}
@@ -150,5 +164,56 @@ export class CreatorAdministrationService {
     return this.database
       .query('SELECT * FROM creator_accounts WHERE id=$1', [id])
       .then((result) => result.rows[0]);
+  }
+
+  async deletePage(id: string) {
+    const account = await this.database.query<{
+      business_id: string;
+      page_type: 'linktree' | 'mini_website' | null;
+      linktree_id: string | null;
+      mini_website_id: string | null;
+    }>(
+      `SELECT business_id, page_type, linktree_id, mini_website_id
+         FROM creator_accounts
+        WHERE id=$1`,
+      [id],
+    );
+    const current = account.rows[0];
+    if (!current) throw new NotFoundException('Creator account not found');
+    if (!current.page_type) {
+      throw new BadRequestException('Creator does not have a page');
+    }
+
+    if (current.page_type === 'linktree') {
+      if (!current.linktree_id) {
+        throw new BadRequestException('Creator linktree is not attached');
+      }
+      await this.linktrees.deleteLinktree(
+        current.linktree_id,
+        current.business_id,
+        'platform',
+      );
+    } else {
+      if (!current.mini_website_id) {
+        throw new BadRequestException('Creator mini website is not attached');
+      }
+      await this.miniWebsites.remove(
+        current.mini_website_id,
+        current.business_id,
+      );
+    }
+
+    await this.database.query(
+      `UPDATE creator_accounts
+          SET page_type=NULL,
+              linktree_id=NULL,
+              mini_website_id=NULL,
+              page_reservation_token=NULL,
+              page_reservation_expires_at=NULL
+        WHERE id=$1`,
+      [id],
+    );
+
+    return { pageType: current.page_type };
   }
 }

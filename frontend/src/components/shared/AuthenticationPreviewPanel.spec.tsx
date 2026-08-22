@@ -26,11 +26,11 @@ describe("AuthenticationPreviewPanel", () => {
     render(
       <AuthenticationPreviewPanel
         description="Creator description"
-        title="پانێڵی Creator"
+        title="پانێڵی بەکارهێنەر"
       />,
     );
     expect(
-      screen.getByRole("heading", { name: "پانێڵی Creator" }),
+      screen.getByRole("heading", { name: "پانێڵی بەکارهێنەر" }),
     ).toBeInTheDocument();
   });
 });

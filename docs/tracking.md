@@ -17,6 +17,7 @@ merely being unauthenticated.
 | -------- | -------------------------------------------------------------------------------------------------------- |
 | Business | subdomain `/`, `/linktree/:uid`, `/bio/:slug`, `/advertising`, `/advertising/video-code`                 |
 | Platform | root `/`, `/join`, `/join/application`, platform-owned `/linktree/:uid`, and platform-owned `/bio/:slug` |
+| Creator  | root Creator-owned `/linktree/:uid` and `/bio/:slug` while the paid, trial, or grace access is live      |
 
 Authentication, callbacks, dashboards, platform administration, legal pages,
 errors, previews, API routes, and static assets are excluded. Adding another
@@ -49,6 +50,9 @@ Three things enforce it, so a mistake fails loudly rather than quietly shipping:
 
 Platform pixels are never inherited by or combined with customer pixels. Page
 ownership selects exactly one destination group.
+Creator owners use that same owner-scoped destination lookup. Browser Pixel
+reads and Events API outbox writes share one SQL eligibility predicate, so an
+active Creator page cannot send only one half of a deduplicated event.
 
 ### Automatic delivery
 

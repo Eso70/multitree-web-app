@@ -24,6 +24,15 @@ describe('TikTokPixelConfigService', () => {
     ).toThrow('TikTok Pixel IDs must be unique');
   });
 
+  it('supports a stricter one-group policy for Creator workspaces', () => {
+    expect(() =>
+      service.normalize(
+        [{ pixel_id: 'PIXEL_001' }, { pixel_id: 'PIXEL_002' }],
+        1,
+      ),
+    ).toThrow('At most 1 TikTok Pixel group is allowed');
+  });
+
   it('never returns an Events API token from the list projection', async () => {
     (database.query as jest.Mock).mockResolvedValue({
       rows: [

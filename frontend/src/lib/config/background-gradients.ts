@@ -4,11 +4,23 @@
  * Ensures consistent color mapping everywhere
  */
 
+import { parseWebsiteGradient } from "@/lib/utils/parse-website-color";
+
 export interface BackgroundGradient {
   from: string;
   via: string;
   to: string;
   isSolid?: boolean;
+  /**
+   * The finished CSS for a custom `gradient:direction:from:to` value.
+   *
+   * `from`/`via`/`to` alone cannot carry the chosen direction, and every
+   * template composes its own `linear-gradient(to bottom right, …)` from them —
+   * so without this the owner's direction was discarded and every custom
+   * gradient rendered diagonally. Only set for custom gradients; the named
+   * presets below stay three-stop recipes.
+   */
+  backgroundCss?: string;
 }
 
 /**
@@ -109,10 +121,17 @@ export const DEFAULT_BACKGROUND_COLOR = "#000000";
 export function getBackgroundGradient(hexColor?: string | null): BackgroundGradient {
   const color = hexColor || DEFAULT_BACKGROUND_COLOR;
 
-  const gradientMatch = color.match(/^gradient:([\w-]+):(#[0-9a-fA-F]{3,6}):(#[0-9a-fA-F]{3,6})$/);
-  if (gradientMatch) {
-    const [, , from, to] = gradientMatch;
-    return { from, via: from, to };
+  // `parseWebsiteGradient` owns the format, including the direction table and
+  // which hex lengths count. A value it rejects falls through to the preset
+  // table and the solid check below rather than being half-read here.
+  const customGradient = parseWebsiteGradient(color);
+  if (customGradient) {
+    return {
+      from: customGradient.from,
+      via: customGradient.from,
+      to: customGradient.to,
+      backgroundCss: customGradient.css,
+    };
   }
   
   // Return predefined gradient if it exists

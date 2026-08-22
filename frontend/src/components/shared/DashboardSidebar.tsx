@@ -10,6 +10,8 @@ export interface DashboardSidebarItem {
   icon: ReactNode;
   active?: boolean;
   hidden?: boolean;
+  disabled?: boolean;
+  disabledReason?: string;
   onClick: () => void;
 }
 
@@ -99,11 +101,12 @@ export function DashboardSidebar({
               <button
                 key={item.id}
                 type="button"
+                disabled={item.disabled}
                 onClick={() => {
                   item.onClick();
                   onCloseMobile();
                 }}
-                className={`flex cursor-pointer items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                className={`flex cursor-pointer items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
                   collapsed ? "md:justify-center md:gap-0 md:px-0" : "gap-3"
                 } ${
                   item.active
@@ -118,7 +121,10 @@ export function DashboardSidebar({
                       }
                     : undefined
                 }
-                title={item.label}
+                title={
+                  item.disabled ? item.disabledReason || item.label : item.label
+                }
+                aria-disabled={item.disabled || undefined}
                 aria-current={item.active ? "page" : undefined}
               >
                 <span className="shrink-0" aria-hidden="true">

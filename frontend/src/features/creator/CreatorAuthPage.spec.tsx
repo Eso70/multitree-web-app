@@ -18,10 +18,10 @@ describe("CreatorAuthPage", () => {
       screen.getByRole("heading", { name: "هەژماری خۆت دروست بکە" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("ناسنامەی دیجیتاڵیت بە پاراستن دروست بکە"),
+      screen.getByText("بچۆ ژوورەوە بۆ دروستکردن و بەڕێوەبردنی پەڕەکانت"),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "پانێڵی Creator" }),
+      screen.getByRole("heading", { name: "پانێڵی بەکارهێنەر" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Change theme" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Back" })).toHaveAttribute("href", "/");
@@ -30,7 +30,7 @@ describe("CreatorAuthPage", () => {
       "/login",
     );
     expect(
-      screen.getByRole("link", { name: "بە Google هەژمار دروست بکە" }),
+      screen.getByRole("link", { name: "بە گوگڵ هەژمار دروست بکە" }),
     ).toHaveAttribute(
       "href",
       "/api/creator/auth/google/start?intent=signup",

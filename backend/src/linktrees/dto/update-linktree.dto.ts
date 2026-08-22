@@ -3,8 +3,14 @@ import {
   IsOptional,
   IsBoolean,
   IsObject,
+  Matches,
+  MaxLength,
   MinLength,
 } from 'class-validator';
+import {
+  WEBSITE_COLOR_MAX_LENGTH,
+  WEBSITE_COLOR_PATTERN,
+} from '../../common/website-color';
 
 export class UpdateLinktreeDto {
   @IsString()
@@ -36,6 +42,8 @@ export class UpdateLinktreeDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(WEBSITE_COLOR_MAX_LENGTH)
+  @Matches(WEBSITE_COLOR_PATTERN)
   background_color?: string;
 
   @IsObject()

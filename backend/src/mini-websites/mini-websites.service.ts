@@ -56,6 +56,7 @@ import type {
 } from '@linktree/types';
 import type { PoolClient } from 'pg';
 import { DatabaseService } from '../database/database.service';
+import { isWebsiteColor } from '../common/website-color';
 import { StorageService } from '../storage/storage.service';
 import { PublicPageAnalyticsService } from '../analytics/public-page-analytics.service';
 import { toRecord, toRecordArray, toText } from '../common/coerce';
@@ -3037,12 +3038,7 @@ export class MiniWebsitesService {
         throw new BadRequestException('Banner image is required');
       if (
         type === 'color' &&
-        !(
-          /^#[0-9a-f]{6}$/i.test(data.content?.heroBackgroundColor || '') ||
-          /^gradient:(to-r|to-l|to-b|to-t|to-br|to-bl|to-tr|to-tl|radial):#[0-9a-f]{6}:#[0-9a-f]{6}$/i.test(
-            data.content?.heroBackgroundColor || '',
-          )
-        )
+        !isWebsiteColor(data.content?.heroBackgroundColor || '')
       )
         throw new BadRequestException('Valid banner color is required');
       if (type === 'video' && !this.isHttpUrl(data.content?.heroYoutubeUrl))

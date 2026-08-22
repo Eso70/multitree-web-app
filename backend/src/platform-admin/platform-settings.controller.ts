@@ -22,6 +22,7 @@ import type { SessionUser } from '../auth/session.service';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import * as crypto from 'crypto';
 import { AuthorizationGuard } from '../auth/authorization.guard';
+import { UpdateTikTokPixelConfigsDto } from '../auth/dto/update-tiktok-pixel-config.dto';
 import { Capability } from '../auth/capabilities';
 import { RequireCapabilities } from '../auth/require-capabilities.decorator';
 import { AuditInterceptor } from '../auth/audit.interceptor';
@@ -35,7 +36,6 @@ import {
   UpdateMediaSettingsDto,
   UpdatePlatformBrandingDto,
   UpdatePlatformProfileDto,
-  UpdatePlatformTikTokDto,
 } from './dto/platform-settings.dto';
 import { DataRetentionService } from './data-retention.service';
 
@@ -63,7 +63,7 @@ export class PlatformSettingsController {
   @AuditEvent('platform.settings.tiktok.update', {
     resourceType: 'platform-settings',
   })
-  async updateTikTokSettings(@Body() body: UpdatePlatformTikTokDto) {
+  async updateTikTokSettings(@Body() body: UpdateTikTokPixelConfigsDto) {
     return {
       success: true,
       data: await this.platformSettingsService.updateTikTokSettings(

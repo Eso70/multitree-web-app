@@ -8,12 +8,12 @@ import { createHash, createHmac } from 'crypto';
 import type { PoolClient } from 'pg';
 import { SecretCryptoService } from '../auth/secret-crypto.service';
 import { DatabaseService } from '../database/database.service';
-import { ENTITLEMENT, entitledSql } from '../billing/entitlement-sql';
 import type {
   AnalyticsEventName,
   TrackAnalyticsEventDto,
 } from './dto/analytics-event.dto';
 import type { CrmLeadStatus } from './dto/analytics-crm.dto';
+import { TIKTOK_OWNER_ELIGIBLE_SQL } from './tiktok-owner-eligibility';
 
 export interface AnalyticsRequestContext {
   ip: string;
@@ -769,13 +769,7 @@ export class UnifiedAnalyticsService {
              -- sending server events for a pixel its pages no longer load,
              -- which is a server-only stream with nothing to deduplicate
              -- against.
-             AND (
-               business.account_type = 'platform'
-               OR (
-                 business.account_type = 'business'
-                 AND ${entitledSql(ENTITLEMENT.tiktok)}
-               )
-             )
+             AND ${TIKTOK_OWNER_ELIGIBLE_SQL}
            ON CONFLICT (analytics_event_id, destination_id) DO NOTHING`,
           [
             databaseEventId,

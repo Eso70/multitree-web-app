@@ -28,6 +28,10 @@ function backgroundImageScrim(theme: TemplateTheme): string {
  * gradient recipe and passes it here. An uploaded background image wins over
  * that recipe; a solid colour wins over it too, which is what each template
  * already did before the image option existed.
+ *
+ * A custom gradient the owner built in the colour picker also wins, because it
+ * carries a direction the template's own recipe cannot express — every recipe
+ * is hardcoded `to bottom right`.
  */
 export function templateBackgroundStyle(
   theme: TemplateTheme,
@@ -39,5 +43,9 @@ export function templateBackgroundStyle(
     };
   }
 
-  return { background: theme.isSolid ? theme.from : gradient };
+  if (theme.isSolid) {
+    return { background: theme.from };
+  }
+
+  return { background: theme.backgroundCss || gradient };
 }

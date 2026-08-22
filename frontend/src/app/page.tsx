@@ -16,7 +16,6 @@ import {
 import {
   BUSINESS_FAVICON_PLACEHOLDER,
   BUSINESS_LOGO_PLACEHOLDER,
-  DEFAULT_AVATAR,
   MULTITREE_LOGO_MARK,
 } from "@/lib/brand/brand-assets";
 
@@ -133,25 +132,24 @@ export async function generateMetadata() {
         const json = await res.json();
         const business = json?.data;
         if (business) {
-          const icons: Record<
-            string,
-            string | { url: string; sizes?: string; type?: string }[]
-          > = {};
-          const iconEntries: { url: string; sizes?: string; type?: string }[] =
-            [];
-          iconEntries.push({
-            url: business.favicon || BUSINESS_FAVICON_PLACEHOLDER,
-          });
-          iconEntries.push({
-            url: business.logo || BUSINESS_LOGO_PLACEHOLDER,
-            sizes: "32x32",
-          });
-          iconEntries.push({
-            url: business.default_avatar || DEFAULT_AVATAR,
-            sizes: "180x180",
-          });
-          icons.icon = iconEntries;
-          icons.apple = business.logo || BUSINESS_LOGO_PLACEHOLDER;
+          // The tab icon is the business's favicon, and only that. Listing the
+          // logo and the default avatar alongside it as larger `sizes` handed
+          // the browser a bigger candidate to prefer, so the tab showed the
+          // default avatar and the favicon the business had uploaded never
+          // appeared. The larger art belongs on the apple touch icon, which is
+          // a separate slot rather than a competing candidate.
+          const icons = {
+            icon: [
+              {
+                url:
+                  business.favicon ||
+                  business.logo ||
+                  BUSINESS_FAVICON_PLACEHOLDER,
+              },
+            ],
+            apple:
+              business.logo || business.default_avatar || BUSINESS_LOGO_PLACEHOLDER,
+          };
           return {
             title: businessTabTitle(business.name, "Home"),
             description: `Explore ${business.name}'s official public pages and contact information.`,

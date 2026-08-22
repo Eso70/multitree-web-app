@@ -47,18 +47,21 @@ import {
 } from "@/lib/multitree-theme";
 import { applyCursorColor } from "@/lib/utils/cursor-theme";
 import { persistAppTheme } from "@/lib/app-theme";
-import { ErrorPage } from "@/components/error-pages/ErrorPage";
-import { MULTITREE_ERROR_THEME } from "@/components/error-pages/error-theme";
-import { ERROR_PAGE_COPY } from "@/components/error-pages/copy";
+import { PlatformAdminErrorPage } from "@/features/platform-admin/components/PlatformAdminErrorPage";
 import {
   DashboardSidebar,
   type DashboardSidebarItem,
 } from "@/components/shared/DashboardSidebar";
 import { DashboardHeader } from "@/components/shared/DashboardHeader";
+import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
 import { apiRequest } from "@/lib/api/request";
 import { PlatformLinktreesPage } from "@/features/platform-admin/components/PlatformLinktreesPage";
 import { PlatformMiniWebsitesPage } from "@/features/platform-admin/components/PlatformMiniWebsitesPage";
 import { CreatorUsersPage } from "@/features/platform-admin/components/CreatorUsersPage";
+import {
+  getPlatformPage,
+  type PlatformPage,
+} from "@/features/platform-admin/platform-pages";
 
 const BusinessAnalyticsModal = dynamic(
   () =>
@@ -69,35 +72,6 @@ const BusinessAnalyticsModal = dynamic(
 );
 
 type PlatformTheme = "light" | "dark";
-type PlatformPage =
-  | "businesses"
-  | "linktrees"
-  | "mini-websites"
-  | "users"
-  | "templates"
-  | "blocklists"
-  | "access-control"
-  | "activity"
-  | "communication-center"
-  | "api"
-  | "settings"
-  | "billing";
-function getPlatformPage(pathname: string): PlatformPage {
-  const segment = pathname.split("/").filter(Boolean)[1];
-  return segment === "templates" ||
-    segment === "linktrees" ||
-    segment === "mini-websites" ||
-    segment === "users" ||
-    segment === "blocklists" ||
-    segment === "access-control" ||
-    segment === "activity" ||
-    segment === "communication-center" ||
-    segment === "api" ||
-    segment === "settings" ||
-    segment === "billing"
-    ? segment
-    : "businesses";
-}
 
 export function PlatformAdminDashboard() {
   const notificationsRef = useRef<ApprovalNotificationsHandle>(null);
@@ -105,6 +79,9 @@ export function PlatformAdminDashboard() {
     name: "MultiTree",
     logo: null as string | null,
     avatar: null as string | null,
+    accentColor: MULTITREE_ACCENT_COLOR,
+    accentBackground: MULTITREE_ACCENT_COLOR,
+    accentInk: getMultiTreeAccentInk(MULTITREE_ACCENT_COLOR),
   });
   const [administrator, setAdministrator] = useState({
     name: "Platform Admin",
@@ -196,6 +173,9 @@ export function PlatformAdminDashboard() {
         name: typeof settings.name === "string" ? settings.name : "MultiTree",
         logo: typeof settings.logo === "string" ? settings.logo : null,
         avatar: typeof settings.avatar === "string" ? settings.avatar : null,
+        accentColor: accent.primary,
+        accentBackground: accent.css,
+        accentInk: getMultiTreeAccentInk(accent.primary),
       });
 
       if (typeof settings.favicon === "string" && settings.favicon) {
@@ -315,7 +295,7 @@ export function PlatformAdminDashboard() {
       },
       {
         id: "linktrees",
-        label: "پەیجەکان",
+        label: DASHBOARD_PAGE_LABELS.linktrees,
         icon: <Link2 className="h-4 w-4" />,
         active: activePage === "linktrees",
         hidden: permissionsLoaded && !canPage("linktrees"),
@@ -331,7 +311,7 @@ export function PlatformAdminDashboard() {
       },
       {
         id: "templates",
-        label: "قاڵبەکان",
+        label: DASHBOARD_PAGE_LABELS.templates,
         icon: <LayoutTemplate className="h-4 w-4" />,
         active: activePage === "templates",
         hidden: permissionsLoaded && !canPage("templates"),
@@ -385,7 +365,7 @@ export function PlatformAdminDashboard() {
       },
       {
         id: "settings",
-        label: "ڕێکخستنەکان",
+        label: DASHBOARD_PAGE_LABELS.settings,
         icon: <Settings className="h-4 w-4" />,
         active: activePage === "settings",
         hidden: permissionsLoaded && !canPage("settings"),
@@ -397,17 +377,17 @@ export function PlatformAdminDashboard() {
 
   const pageTitle: Record<PlatformPage, string> = {
     businesses: "بەڕێوەبردنی بزنسەکان",
-    linktrees: "پەیجەکان",
+    linktrees: DASHBOARD_PAGE_LABELS.linktrees,
     "mini-websites": "مینی وێبسایتەکان",
     users: "بەکارهێنەرەکان",
-    templates: "قاڵبەکان",
+    templates: DASHBOARD_PAGE_LABELS.templates,
     blocklists: "ڕێساکانی دەستگەیشتن",
     "access-control": "کۆنترۆڵی دەستگەیشتن",
     billing: "پارەدان و بەشدارییەکان",
     activity: "تۆماری چالاکییەکان",
     "communication-center": "ناوەندی پەیوەندی",
     api: "بەڕێوەبردنی API",
-    settings: "ڕێکخستنەکان",
+    settings: DASHBOARD_PAGE_LABELS.settings,
   };
 
   const handleDelete = useCallback(
@@ -493,10 +473,9 @@ export function PlatformAdminDashboard() {
 
   if (badGateway) {
     return (
-      <ErrorPage
-        {...ERROR_PAGE_COPY.badGateway}
-        theme={MULTITREE_ERROR_THEME}
-        homeHref="/"
+      <PlatformAdminErrorPage
+        kind="badGateway"
+        branding={platformBranding}
         onReset={() => void fetchBusinesses()}
       />
     );
@@ -504,10 +483,9 @@ export function PlatformAdminDashboard() {
 
   if (serviceUnavailable) {
     return (
-      <ErrorPage
-        {...ERROR_PAGE_COPY.serviceUnavailable}
-        theme={MULTITREE_ERROR_THEME}
-        homeHref="/"
+      <PlatformAdminErrorPage
+        kind="serviceUnavailable"
+        branding={platformBranding}
         onReset={() => void fetchBusinesses()}
       />
     );
@@ -515,10 +493,9 @@ export function PlatformAdminDashboard() {
 
   if (gatewayTimeout) {
     return (
-      <ErrorPage
-        {...ERROR_PAGE_COPY.gatewayTimeout}
-        theme={MULTITREE_ERROR_THEME}
-        homeHref="/"
+      <PlatformAdminErrorPage
+        kind="gatewayTimeout"
+        branding={platformBranding}
         onReset={() => void fetchBusinesses()}
       />
     );
@@ -526,11 +503,7 @@ export function PlatformAdminDashboard() {
 
   if (permissionsLoaded && !activePageAllowed) {
     return (
-      <ErrorPage
-        {...ERROR_PAGE_COPY.forbidden}
-        theme={MULTITREE_ERROR_THEME}
-        homeHref="/"
-      />
+      <PlatformAdminErrorPage kind="forbidden" branding={platformBranding} />
     );
   }
 
@@ -603,7 +576,7 @@ export function PlatformAdminDashboard() {
             items: [
               {
                 id: "settings",
-                label: "ڕێکخستنەکان",
+                label: DASHBOARD_PAGE_LABELS.settings,
                 icon: <Settings className="h-4 w-4" />,
                 onClick: () => router.push(`${consoleBasePath}/settings`),
               },

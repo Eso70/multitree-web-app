@@ -67,4 +67,44 @@ describe('AuditInterceptor', () => {
       'must-not-be-audited',
     );
   });
+
+  it('keeps Creator mutations associated with their isolated workspace', async () => {
+    const reflector = {
+      getAllAndOverride: jest.fn().mockReturnValue({
+        eventType: 'creator.settings.tiktok.update',
+        resourceType: 'creator-settings',
+      }),
+    } as unknown as Reflector;
+    const audit = {
+      record: jest.fn().mockResolvedValue(undefined),
+    } as unknown as SecurityAuditService;
+    const interceptor = new AuditInterceptor(reflector, audit);
+    const creatorId = '11111111-1111-1111-1111-111111111111';
+    const context = {
+      getHandler: jest.fn(),
+      getClass: jest.fn(),
+      switchToHttp: () => ({
+        getRequest: () => ({
+          method: 'PUT',
+          url: '/api/creator/settings/tiktok',
+          headers: {},
+          params: {},
+          body: { tiktok_configs: [] },
+          user: { id: creatorId, role: 'creator', name: 'Creator' },
+        }),
+      }),
+    } as unknown as ExecutionContext;
+
+    await lastValueFrom(
+      interceptor.intercept(context, { handle: () => of({}) } as CallHandler),
+    );
+
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorType: 'creator',
+        businessId: creatorId,
+        eventType: 'creator.settings.tiktok.update',
+      }),
+    );
+  });
 });

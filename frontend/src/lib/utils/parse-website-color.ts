@@ -38,6 +38,33 @@ const SOLID_COLOR_PATTERN = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 const GRADIENT_COLOR_PATTERN =
   /^gradient:(to-r|to-l|to-b|to-t|to-br|to-bl|to-tr|to-tl|radial):(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}):(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6})$/;
 
+export interface WebsiteGradient {
+  /** Finished CSS, carrying the direction the owner chose. */
+  css: string;
+  from: string;
+  to: string;
+}
+
+/**
+ * The two stops and finished CSS of a `gradient:direction:from:to` value.
+ *
+ * The single reader of that format. Surfaces that need the stops as well as the
+ * CSS — the linktree background recipe, for one — used to carry their own
+ * looser regex, which accepted 4- and 5-digit hex this parser rejects and fell
+ * back to a different direction for an unrecognised one. Two answers for one
+ * stored string is one too many; ask here instead.
+ */
+export function parseWebsiteGradient(
+  value: string | null | undefined,
+): WebsiteGradient | null {
+  const parsed = parseWebsiteColor(value);
+  if (parsed.type !== 'gradient') return null;
+  const match = parsed.raw.match(GRADIENT_COLOR_PATTERN);
+  if (!match) return null;
+  const [, , from, to] = match;
+  return { css: parsed.css, from, to };
+}
+
 export function isWebsiteColor(value: string | null | undefined): boolean {
   const trimmed = value?.trim() || '';
   return (
@@ -68,11 +95,15 @@ export function parseWebsiteColor(value: string | null | undefined): ParsedColor
   if (gradientMatch) {
     const [, rawDirection, from, to] = gradientMatch;
     const direction = rawDirection as WebsiteGradientDirection;
+    // Explicit 0%/100% stops: both colours get exactly half the surface, with
+    // the blend centred. Written out rather than left to the CSS default so a
+    // later edit cannot quietly reintroduce a third stop and push the midpoint
+    // off centre, which is what made one colour dominate before.
     return {
       type: 'gradient',
       css: direction === 'radial'
-        ? `radial-gradient(circle, ${from}, ${to})`
-        : `linear-gradient(${WEBSITE_GRADIENT_DIRECTION_CSS[direction]}, ${from}, ${to})`,
+        ? `radial-gradient(circle, ${from} 0%, ${to} 100%)`
+        : `linear-gradient(${WEBSITE_GRADIENT_DIRECTION_CSS[direction]}, ${from} 0%, ${to} 100%)`,
       primary: from,
       raw: trimmed,
     };

@@ -7,10 +7,10 @@ import type { CreatorAuthMode } from "@/features/creator/creator-auth.types";
 export function CreatorAuthPage({ mode }: { mode: CreatorAuthMode }) {
   return (
     <AuthenticationShell
-      previewTitle="پانێڵی Creator"
+      previewTitle="پانێڵی بەکارهێنەر"
       brandDescription={
         mode === "signup"
-          ? "ناسنامەی دیجیتاڵیت بە پاراستن دروست بکە"
+          ? "بچۆ ژوورەوە بۆ دروستکردن و بەڕێوەبردنی پەڕەکانت"
           : "بگەڕێوە بۆ بەڕێوەبردنی پەڕەکەت"
       }
     >

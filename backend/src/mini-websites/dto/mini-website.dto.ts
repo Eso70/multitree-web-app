@@ -11,6 +11,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+import { WEBSITE_COLOR_PATTERN } from '../../common/website-color';
 import {
   MINI_WEBSITE_MAX_PLANS,
   MINI_WEBSITE_MAX_PAYMENT_METHODS,
@@ -51,9 +52,7 @@ export class SaveMiniWebsiteDto {
   professionTemplate?: string;
   @IsOptional()
   @IsString()
-  @Matches(
-    /^(?:#[0-9a-fA-F]{6}|gradient:(?:to-r|to-l|to-b|to-t|to-br|to-bl|to-tr|to-tl|radial):#[0-9a-fA-F]{6}:#[0-9a-fA-F]{6})$/,
-  )
+  @Matches(WEBSITE_COLOR_PATTERN)
   accentColor?: string;
   @IsOptional()
   @IsIn(['draft', 'published', 'paused', 'archived'])

@@ -3,7 +3,7 @@ import type { PlatformBusiness as Business } from "@linktree/types";
 import { BusinessesGrid } from "@/features/platform-admin/components/BusinessesGrid";
 import { BusinessesTable } from "@/features/platform-admin/components/BusinessesTable";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { TablePagination } from "@/components/shared/TablePagination";
+import type { ManagementTablePagination } from "@/components/shared/ManagementTable";
 import type { BusinessPagination } from "@/features/platform-admin/hooks/useBusinesses";
 
 interface PlatformBusinessDirectoryContentProps {
@@ -33,6 +33,17 @@ export function PlatformBusinessDirectoryContent({
   onManageSessions,
   onOpenDashboard,
 }: PlatformBusinessDirectoryContentProps) {
+  // The server pages this list, so both views take the same page number rather
+  // than each drawing its own footer.
+  const listPagination: ManagementTablePagination = {
+    mode: "server",
+    page,
+    pageSize: pagination.limit,
+    totalItems: pagination.total,
+    totalPages: pagination.totalPages,
+    onPageChange: onPageChange,
+  };
+
   return (
     <div>
       {businesses.length === 0 ? (
@@ -49,6 +60,7 @@ export function PlatformBusinessDirectoryContent({
         />
       ) : viewMode === "grid" ? (
         <BusinessesGrid
+          pagination={listPagination}
           data={filteredBusinesses}
           onEdit={onEdit}
           onDelete={onDelete}
@@ -58,6 +70,7 @@ export function PlatformBusinessDirectoryContent({
         />
       ) : (
         <BusinessesTable
+          pagination={listPagination}
           data={filteredBusinesses}
           onEdit={onEdit}
           onDelete={onDelete}
@@ -66,13 +79,6 @@ export function PlatformBusinessDirectoryContent({
           onOpenDashboard={onOpenDashboard}
         />
       )}
-      <TablePagination
-        page={page}
-        pageSize={pagination.limit}
-        totalItems={pagination.total}
-        totalPages={pagination.totalPages}
-        onPageChange={onPageChange}
-      />
     </div>
   );
 }

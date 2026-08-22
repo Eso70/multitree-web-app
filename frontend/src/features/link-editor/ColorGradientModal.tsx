@@ -48,6 +48,10 @@ const QUICK_COLORS = [
   "#d97706",
 ];
 
+function isHex(value: string) {
+  return /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value.trim());
+}
+
 function normalizeHex(value: string, fallback = "#000000") {
   const trimmed = value.trim();
   if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed.toLowerCase();
@@ -199,6 +203,16 @@ export function ColorGradientModal({
   const [isPickingColor, setIsPickingColor] = useState(false);
   const [pickerMessage, setPickerMessage] = useState<string | null>(null);
   const [pickedColors, setPickedColors] = useState<string[]>([]);
+  /**
+   * What the hex field currently shows while it is being typed into.
+   *
+   * The committed colour is always a complete hex, but the strings on the way
+   * there ("#", "#00", "") are not. Committing on every keystroke meant each one
+   * failed to parse and snapped the field back to the old colour, so the value
+   * could only ever be replaced in a single paste — typing a new colour was
+   * impossible. `null` means "show the committed colour".
+   */
+  const [hexDraft, setHexDraft] = useState<string | null>(null);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setMounted(true));
@@ -216,6 +230,7 @@ export function ColorGradientModal({
       setActiveColor("from");
       setInputMode("hex");
       setPickerMessage(null);
+      setHexDraft(null);
     });
     return () => cancelAnimationFrame(frame);
   }, [isOpen, value, solidFallback, gradientFallback, allowGradient]);
@@ -237,6 +252,12 @@ export function ColorGradientModal({
     }
   };
 
+  /** Switch which colour the fields edit, discarding a half-typed hex. */
+  const selectActiveColor = (next: ActiveColor) => {
+    setHexDraft(null);
+    setActiveColor(next);
+  };
+
   const pickScreenColor = async () => {
     setPickerMessage(null);
 
@@ -249,6 +270,7 @@ export function ColorGradientModal({
     try {
       const result = await new window.EyeDropper().open();
       const pickedColor = normalizeHex(result.sRGBHex, activeValue);
+      setHexDraft(null);
       setActiveValue(pickedColor);
       setPickedColors((previous) => [
         pickedColor,
@@ -291,10 +313,10 @@ export function ColorGradientModal({
       />
 
       <div
-        className={`modal-ltr fixed z-[201] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] sm:w-[85vw] md:w-[75vw] max-w-md max-h-[85vh] overflow-hidden rounded-2xl bg-white border border-gray-100/50 shadow-2xl    duration-300 transition-opacity ${isPickingColor ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+        className={`modal-ltr fixed z-[201] top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col w-[95vw] sm:w-[85vw] md:w-[75vw] max-w-md max-h-[92svh] sm:max-h-[85vh] overflow-hidden rounded-2xl bg-white border border-gray-100/50 shadow-2xl    duration-300 transition-opacity ${isPickingColor ? "opacity-0 pointer-events-none" : "opacity-100"}`}
         dir="ltr"
       >
-        <div className="border-b border-gray-100/50">
+        <div className="shrink-0 border-b border-gray-100/50">
           <div className="flex items-center justify-between p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <div
@@ -326,16 +348,18 @@ export function ColorGradientModal({
           </div>
         </div>
 
-        <div className="overflow-y-auto p-3 sm:p-4 space-y-4" style={{ maxHeight: "calc(85vh - 130px)", scrollbarWidth: "thin", scrollbarColor: "rgba(156,163,175,0.5) transparent" }}>
+        {/* Flexes between the header and footer instead of subtracting a fixed
+            130px, which overflowed once mobile browser chrome ate the viewport. */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-4" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(156,163,175,0.5) transparent" }}>
           {allowGradient && <div className="flex rounded-xl border border-gray-200 overflow-hidden">
             <button
               type="button"
               onClick={() => {
                 setIsGradient(false);
                 setTo(from);
-                setActiveColor("from");
+                selectActiveColor("from");
               }}
-              className={`flex-1 py-2 text-xs font-medium transition-all ${!isGradient ? "shadow-sm" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+              className={`flex-1 py-3 sm:py-2 text-xs font-medium transition-all ${!isGradient ? "shadow-sm" : "bg-white text-gray-600 hover:bg-gray-50"}`}
               style={!isGradient ? themedButtonStyle : undefined}
             >
               ڕەنگی تاک
@@ -346,7 +370,7 @@ export function ColorGradientModal({
                 setIsGradient(true);
                 if (from === to) setTo(gradientFallback);
               }}
-              className={`flex-1 py-2 text-xs font-medium transition-all ${isGradient ? "shadow-sm" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+              className={`flex-1 py-3 sm:py-2 text-xs font-medium transition-all ${isGradient ? "shadow-sm" : "bg-white text-gray-600 hover:bg-gray-50"}`}
               style={isGradient ? themedButtonStyle : undefined}
             >
               گرادیێنت
@@ -354,7 +378,7 @@ export function ColorGradientModal({
           </div>}
 
           <div
-            className="h-14 w-full rounded-xl border border-gray-200 shadow-inner"
+            className="h-16 sm:h-14 w-full rounded-xl border border-gray-200 shadow-inner"
             style={getPreviewStyle(from, isGradient ? to : from, direction)}
           />
 
@@ -367,8 +391,8 @@ export function ColorGradientModal({
                 <button
                   key={id}
                   type="button"
-                  onClick={() => setActiveColor(id)}
-                  className={`flex-1 py-1.5 rounded-md text-[11px] font-semibold transition-all ${activeColor === id ? "shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                  onClick={() => selectActiveColor(id)}
+                  className={`flex-1 py-2.5 sm:py-1.5 rounded-md text-xs sm:text-[11px] font-semibold transition-all ${activeColor === id ? "shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                   style={activeColor === id ? themedButtonStyle : undefined}
                 >
                   {label}
@@ -383,7 +407,7 @@ export function ColorGradientModal({
                 key={mode}
                 type="button"
                 onClick={() => setInputMode(mode)}
-                className={`flex-1 py-1.5 rounded-md text-[10px] font-semibold uppercase transition-all ${inputMode === mode ? "shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                className={`flex-1 py-2.5 sm:py-1.5 rounded-md text-xs sm:text-[10px] font-semibold uppercase transition-all ${inputMode === mode ? "shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                 style={inputMode === mode ? themedButtonStyle : undefined}
               >
                 {mode}
@@ -403,11 +427,28 @@ export function ColorGradientModal({
               />
               <input
                 type="text"
-                value={activeValue}
-                onChange={(event) => setActiveValue(event.target.value)}
+                value={hexDraft ?? activeValue}
+                onChange={(event) => {
+                  const raw = event.target.value;
+                  setHexDraft(raw);
+                  // Commit as soon as the draft is a whole colour, so the
+                  // preview tracks typing without the field ever fighting it.
+                  // Expanded to six digits on the way in: `#abc` is a colour a
+                  // person may reasonably type, but the mini-website and
+                  // onboarding validators accept `#rrggbb` only, so committing
+                  // it verbatim saved a value the API answered with a 400.
+                  // Every other source here — presets, RGB/HSL, the eyedropper,
+                  // the stored value — is already six digits.
+                  if (isHex(raw)) setActiveValue(normalizeHex(raw, activeValue));
+                }}
+                onBlur={() => setHexDraft(null)}
                 className="flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-2 py-2 font-mono text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
                 placeholder="#000000"
                 inputMode="text"
+                maxLength={7}
+                spellCheck={false}
+                autoCapitalize="none"
+                autoCorrect="off"
               />
               <button
                 type="button"
@@ -427,7 +468,7 @@ export function ColorGradientModal({
             {inputMode === "rgb" && (
               <div className="space-y-2">
                 {(["r", "g", "b"] as const).map((channel) => (
-                  <div key={channel} className="grid grid-cols-[28px_1fr_58px] items-center gap-2">
+                  <div key={channel} className="grid grid-cols-[24px_1fr_64px] sm:grid-cols-[28px_1fr_58px] items-center gap-2 sm:gap-2">
                     <span className="text-[10px] font-semibold uppercase text-gray-500">{channel}</span>
                     <input
                       type="range"
@@ -436,9 +477,10 @@ export function ColorGradientModal({
                       value={rgb[channel]}
                       onChange={(event) => {
                         const next = { ...rgb, [channel]: Number(event.target.value) };
+                        setHexDraft(null);
                         setActiveValue(rgbToHex(next.r, next.g, next.b));
                       }}
-                      className="accent-[var(--theme-primary,#64748b)]"
+                      className="h-6 sm:h-4 w-full accent-[var(--theme-primary,#64748b)]"
                     />
                     <input
                       type="number"
@@ -447,9 +489,10 @@ export function ColorGradientModal({
                       value={rgb[channel]}
                       onChange={(event) => {
                         const next = { ...rgb, [channel]: Number(event.target.value) };
+                        setHexDraft(null);
                         setActiveValue(rgbToHex(next.r, next.g, next.b));
                       }}
-                      className="w-full rounded-lg border border-gray-200 px-1.5 py-1 text-center text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                      className="w-full rounded-lg border border-gray-200 px-1.5 py-2 sm:py-1 text-center text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                     />
                   </div>
                 ))}
@@ -463,7 +506,7 @@ export function ColorGradientModal({
                   ["s", "S", 100],
                   ["l", "L", 100],
                 ] as const).map(([key, label, max]) => (
-                  <div key={key} className="grid grid-cols-[28px_1fr_58px] items-center gap-2">
+                  <div key={key} className="grid grid-cols-[24px_1fr_64px] sm:grid-cols-[28px_1fr_58px] items-center gap-2 sm:gap-2">
                     <span className="text-[10px] font-semibold uppercase text-gray-500">{label}</span>
                     <input
                       type="range"
@@ -472,9 +515,10 @@ export function ColorGradientModal({
                       value={hsl[key]}
                       onChange={(event) => {
                         const next = { ...hsl, [key]: Number(event.target.value) };
+                        setHexDraft(null);
                         setActiveValue(hslToHex(next.h, next.s, next.l));
                       }}
-                      className="accent-[var(--theme-primary,#64748b)]"
+                      className="h-6 sm:h-4 w-full accent-[var(--theme-primary,#64748b)]"
                     />
                     <input
                       type="number"
@@ -483,9 +527,10 @@ export function ColorGradientModal({
                       value={hsl[key]}
                       onChange={(event) => {
                         const next = { ...hsl, [key]: Number(event.target.value) };
+                        setHexDraft(null);
                         setActiveValue(hslToHex(next.h, next.s, next.l));
                       }}
-                      className="w-full rounded-lg border border-gray-200 px-1.5 py-1 text-center text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                      className="w-full rounded-lg border border-gray-200 px-1.5 py-2 sm:py-1 text-center text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                     />
                   </div>
                 ))}
@@ -496,7 +541,7 @@ export function ColorGradientModal({
           {isGradient && (
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-600">ئاراستەی گرادیێنت</label>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                 {[
                   { id: "to-r", label: "→", title: "چەپ بۆ ڕاست" },
                   { id: "to-l", label: "←", title: "ڕاست بۆ چەپ" },
@@ -515,7 +560,7 @@ export function ColorGradientModal({
                     onClick={() =>
                       setDirection(item.id as WebsiteGradientDirection)
                     }
-                    className={`h-9 w-full rounded-xl text-sm font-medium border transition-all ${direction === item.id ? "border-transparent shadow-sm" : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"}`}
+                    className={`h-11 sm:h-9 w-full rounded-xl text-base sm:text-sm font-medium border transition-all ${direction === item.id ? "border-transparent shadow-sm" : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"}`}
                     style={direction === item.id ? { ...themedButtonStyle, borderColor: "var(--theme-primary, var(--multitree-accent))" } : undefined}
                   >
                     {item.label}
@@ -532,8 +577,11 @@ export function ColorGradientModal({
                 <button
                   key={color}
                   type="button"
-                  onClick={() => setActiveValue(color)}
-                  className={`h-7 w-7 rounded-lg border transition-all ${activeValue === color ? "border-gray-900 scale-110 ring-1 ring-gray-900/30" : "border-gray-200 hover:scale-105"}`}
+                  onClick={() => {
+                    setHexDraft(null);
+                    setActiveValue(color);
+                  }}
+                  className={`h-9 w-9 sm:h-7 sm:w-7 rounded-lg border transition-all ${activeValue === color ? "border-gray-900 scale-110 ring-1 ring-gray-900/30" : "border-gray-200 hover:scale-105"}`}
                   style={{ backgroundColor: color }}
                 />
               ))}
@@ -548,8 +596,11 @@ export function ColorGradientModal({
                   <button
                     key={color}
                     type="button"
-                    onClick={() => setActiveValue(color)}
-                    className={`h-7 w-7 rounded-lg border transition-all ${activeValue === color ? "border-gray-900 scale-110 ring-1 ring-gray-900/30" : "border-gray-200 hover:scale-105"}`}
+                    onClick={() => {
+                    setHexDraft(null);
+                    setActiveValue(color);
+                  }}
+                    className={`h-9 w-9 sm:h-7 sm:w-7 rounded-lg border transition-all ${activeValue === color ? "border-gray-900 scale-110 ring-1 ring-gray-900/30" : "border-gray-200 hover:scale-105"}`}
                     style={{ backgroundColor: color }}
                     title={color}
                   />
@@ -559,11 +610,11 @@ export function ColorGradientModal({
           )}
         </div>
 
-        <div className="border-t border-gray-100/50 p-3 sm:p-4">
+        <div className="shrink-0 border-t border-gray-100/50 p-3 sm:p-4">
           <button
             type="button"
             onClick={applyColor}
-            className="w-full rounded-xl py-2.5 text-sm font-semibold shadow-lg hover:shadow-xl hover:opacity-90 transition-all duration-300"
+            className="w-full rounded-xl py-3.5 sm:py-2.5 text-sm font-semibold shadow-lg hover:shadow-xl hover:opacity-90 transition-all duration-300"
             style={themedButtonStyle}
           >
             جێبەجێکردن

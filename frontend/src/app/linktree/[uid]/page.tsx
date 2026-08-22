@@ -22,7 +22,6 @@ import { TikTokPixelBaseCode } from "@/components/analytics/TikTokPixelBaseCode"
 import {
   BUSINESS_FAVICON_PLACEHOLDER,
   BUSINESS_LOGO_PLACEHOLDER,
-  DEFAULT_AVATAR,
 } from "@/lib/brand/brand-assets";
 import { resolveLinktreeHost } from "@/lib/public/linktree-host";
 
@@ -216,18 +215,18 @@ export async function generateMetadata({ params }: PageProps) {
 
   const { linktree } = result;
 
-  const iconEntries: { url: string; sizes?: string; type?: string }[] = [];
-  iconEntries.push({
-    url: linktree.business_favicon || BUSINESS_FAVICON_PLACEHOLDER,
-  });
-  iconEntries.push({
-    url: linktree.business_logo || BUSINESS_LOGO_PLACEHOLDER,
-    sizes: "32x32",
-  });
-  iconEntries.push({
-    url: linktree.business_default_avatar || DEFAULT_AVATAR,
-    sizes: "180x180",
-  });
+  // Only the business's own favicon is offered as a tab icon: a larger
+  // `sizes` entry beside it (the logo, the default avatar) is a candidate the
+  // browser prefers, which is how the default avatar ended up in the tab
+  // instead of the favicon the business uploaded.
+  const iconEntries = [
+    {
+      url:
+        linktree.business_favicon ||
+        linktree.business_logo ||
+        BUSINESS_FAVICON_PLACEHOLDER,
+    },
+  ];
 
   return {
     title: shortTabTitle(linktree.name),
@@ -237,7 +236,10 @@ export async function generateMetadata({ params }: PageProps) {
       "بۆ پەیوەندی کردن, کلیک لەم لینکانەی خوارەوە بکە",
     icons: {
       icon: iconEntries,
-      apple: linktree.business_logo || BUSINESS_LOGO_PLACEHOLDER,
+      apple:
+        linktree.business_logo ||
+        linktree.business_default_avatar ||
+        BUSINESS_LOGO_PLACEHOLDER,
     },
     themeColor: linktree.business_website_color || MULTITREE_ACCENT_COLOR,
     openGraph: {

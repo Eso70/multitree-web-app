@@ -20,6 +20,7 @@ import { StatCard } from "@/components/shared/StatCard";
 import { SkeletonDashboardPage } from "@/components/shared/Skeleton";
 import { BusinessAnalyticsPage } from "./BusinessAnalyticsPage";
 import { BusinessTikTokPixelConfigPage } from "./BusinessTikTokPixelConfigPage";
+import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
 import { useRegisterBusinessDashboardRefresh } from "@/features/business/dashboard-refresh";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
 
@@ -58,18 +59,14 @@ function configCounts(settings: unknown): {
     settings && typeof settings === "object"
       ? (settings as Record<string, unknown>)
       : {};
-  const configs = Array.isArray(data.tiktok_configs)
-    ? data.tiktok_configs
-    : [];
+  const configs = Array.isArray(data.tiktok_configs) ? data.tiktok_configs : [];
   return {
     configuredPixels: configs.filter(
       (item) =>
         item &&
         typeof item === "object" &&
         typeof (item as Record<string, unknown>).pixel_id === "string" &&
-        Boolean(
-          ((item as Record<string, unknown>).pixel_id as string).trim(),
-        ),
+        Boolean(((item as Record<string, unknown>).pixel_id as string).trim()),
     ).length,
     apiConnections: configs.filter(
       (item) =>
@@ -77,7 +74,7 @@ function configCounts(settings: unknown): {
         typeof item === "object" &&
         Boolean(
           (item as Record<string, unknown>).has_events_token ||
-            (item as Record<string, unknown>).token_last_four,
+          (item as Record<string, unknown>).token_last_four,
         ),
     ).length,
   };
@@ -192,8 +189,7 @@ export function BusinessTikTokConfigPage() {
     <span
       className="flex h-7 w-7 items-center justify-center rounded-lg"
       style={{
-        background:
-          "color-mix(in srgb, var(--theme-primary) 12%, transparent)",
+        background: "color-mix(in srgb, var(--theme-primary) 12%, transparent)",
         color: "var(--theme-primary)",
       }}
       title="لە پلانی بەرزتردا بەردەستە"
@@ -237,9 +233,7 @@ export function BusinessTikTokConfigPage() {
         <StatCard
           icon={Activity}
           label="ڕێژەی سەرکەوتن"
-          value={
-            deliveryAllowed ? `${summary.deliveryRate.toFixed(1)}٪` : "—"
-          }
+          value={deliveryAllowed ? `${summary.deliveryRate.toFixed(1)}٪` : "—"}
           subtitle={deliveryAllowed ? undefined : "لە پلانی بەرزتردا بەردەستە"}
           color="amber"
           action={deliveryAllowed ? undefined : lockedAction}
@@ -259,7 +253,7 @@ export function BusinessTikTokConfigPage() {
           locked
           className="min-h-[520px]"
           contentClassName="min-h-[520px]"
-          title="ڕێکخستنەکانی تیکتۆک قوفڵە"
+          title={`${DASHBOARD_PAGE_LABELS.tiktokSettings} قوفڵە`}
           description="ڕێکخستنی Pixel و Events API بەردەستە، بەڵام وردەکاریی ڕووداوەکان پێویستی بە پلانی بەرزتر هەیە."
         >
           <DashboardSurface className="min-h-[520px]">
@@ -270,7 +264,7 @@ export function BusinessTikTokConfigPage() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-slate-700 dark:text-slate-200">
-                    ڕێکخستنەکانی تیکتۆک
+                    {DASHBOARD_PAGE_LABELS.tiktokSettings}
                   </h2>
                   <p className="mt-1 max-w-xl text-xs leading-5 text-slate-500 dark:text-slate-400">
                     دۆخی ڕووداوەکانی TikTok بە شێوەیەکی سادە ببینە.
@@ -289,9 +283,7 @@ export function BusinessTikTokConfigPage() {
             </div>
 
             <div className="mt-6 grid gap-8 border-t border-slate-100 pt-6 dark:border-white/5 xl:grid-cols-2">
-              <div
-                className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]"
-              >
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]">
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
                   <div>
@@ -311,8 +303,8 @@ export function BusinessTikTokConfigPage() {
                   بەراوردکردنی ئەنجامەکان
                 </p>
                 <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                  ئەنجامی ناوخۆ لەگەڵ ڕووداوە وەرگیراوەکانی TikTok
-                  بەراورد دەکرێت.
+                  ئەنجامی ناوخۆ لەگەڵ ڕووداوە وەرگیراوەکانی TikTok بەراورد
+                  دەکرێت.
                 </p>
                 <div className="mt-5 grid grid-cols-2 divide-x divide-slate-100 dark:divide-white/5">
                   <StatCard

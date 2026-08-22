@@ -312,6 +312,35 @@ function summaryUrl(
   return `/api/analytics/v2/summary?${params}`;
 }
 
+/**
+ * The per-action rows for a page.
+ *
+ * A Creator sees the same button list as a business, but the business route is
+ * behind `BusinessGuard`, so the Creator workspace serves its own copy scoped
+ * to the session's own page. Platform surfaces never ask for this list.
+ */
+function actionsUrl(
+  dataSource: PageAnalyticsDataSource,
+  pageId: string,
+  bypassCache: boolean,
+): string {
+  const params = new URLSearchParams();
+  if (bypassCache) params.set("_t", String(Date.now()));
+
+  if (dataSource === "creator-linktree") {
+    const query = params.toString();
+    return `/api/creator/linktrees/${pageId}/analytics/actions${query ? `?${query}` : ""}`;
+  }
+
+  if (dataSource === "creator-mini-website") {
+    const query = params.toString();
+    return `/api/creator/mini-websites/${pageId}/analytics/actions${query ? `?${query}` : ""}`;
+  }
+
+  params.set("pageId", pageId);
+  return `/api/analytics/v2/pages/${pageId}/actions?${params}`;
+}
+
 function clearUrl(dataSource: PageAnalyticsDataSource, pageId: string): string {
   return dataSource === "platform-linktree"
     ? `/api/platform/linktrees/${pageId}/analytics`
@@ -353,40 +382,17 @@ export function BusinessPageAnalyticsModal({
     async (bypassCache = false) => {
       const reqId = ++dataRef.current;
 
-      if (summaryOnly) {
-        try {
-          const nextTotals = await fetchJson<Totals>(
-            summaryUrl(dataSource, pageId, bypassCache),
-          );
-          if (reqId !== dataRef.current) return;
-          setTotals(nextTotals ?? null);
-          setActions([]);
-          setLastUpdated(new Date());
-        } catch (error) {
-          if (reqId !== dataRef.current) return;
-          console.error("Analytics summary load failed:", error);
-          toast.error("داتاکانی ئامار بارنەکران");
-        } finally {
-          if (reqId === dataRef.current) {
-            setLoading(false);
-            setRefreshing(false);
-          }
-        }
-        return;
-      }
-
-      const params = new URLSearchParams({ pageId: pageId });
-      if (bypassCache) params.set("_t", String(Date.now()));
-
-      const results = await Promise.allSettled([
-        fetchJson<Totals>(`/api/analytics/v2/summary?${params}`),
-        fetchJson<ActionRow[]>(
-          `/api/analytics/v2/pages/${pageId}/actions?${params}`,
-        ),
+      // Both reads are addressed by data source, so a Creator workspace runs
+      // exactly this code path against its own endpoints rather than falling
+      // through to the business ones, which are behind `BusinessGuard`.
+      const [totalsResult, actionsResult] = await Promise.allSettled([
+        fetchJson<Totals>(summaryUrl(dataSource, pageId, bypassCache)),
+        summaryOnly
+          ? Promise.resolve<ActionRow[]>([])
+          : fetchJson<ActionRow[]>(actionsUrl(dataSource, pageId, bypassCache)),
       ]);
       if (reqId !== dataRef.current) return;
 
-      const [totalsResult, actionsResult] = results;
       let hadError = false;
 
       if (totalsResult.status === "fulfilled") {
@@ -568,7 +574,7 @@ export function BusinessPageAnalyticsModal({
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                {!summaryOnly && (
+                {dataSource === "business" && (
                   <button
                     type="button"
                     onClick={goToAdvancedAnalytics}

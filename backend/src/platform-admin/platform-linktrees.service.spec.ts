@@ -1,3 +1,4 @@
+import { ConflictException } from '@nestjs/common';
 import { PlatformLinktreesService } from './platform-linktrees.service';
 import { LinktreesService } from '../linktrees/linktrees.service';
 import { PlatformContentWorkspaceService } from '../platform-workspace/platform-content-workspace.service';
@@ -41,6 +42,50 @@ describe('PlatformLinktreesService', () => {
   );
 
   beforeEach(() => jest.clearAllMocks());
+
+  /**
+   * The root Linktree namespace is shared with every Creator, so the console's
+   * availability check can go stale between the answer and the save.
+   * `root_public_slugs_pkey` is the arbiter, and a lost race is a conflict.
+   */
+  it('reports a lost root-slug race on create as a conflict', async () => {
+    (linktrees.createLinktree as jest.Mock).mockRejectedValue({
+      code: '23505',
+      constraint: 'root_public_slugs_pkey',
+    });
+
+    await expect(
+      service.create({ name: 'Campaign', slug: 'taken' }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    // The page never landed, so nothing may be purged as though it had.
+    expect(redis.del).not.toHaveBeenCalled();
+  });
+
+  it('reports a lost root-slug race on update as a conflict', async () => {
+    (linktrees.getLinktreeById as jest.Mock).mockResolvedValue({
+      uid: 'uid-1',
+      seo_name: 'before',
+    });
+    (linktrees.updateLinktree as jest.Mock).mockRejectedValue({
+      code: '23505',
+      constraint: 'root_public_slugs_pkey',
+    });
+
+    await expect(
+      service.update('page-id', {
+        name: 'Campaign',
+        slug: 'taken',
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(linktrees.syncSubmittedLinks).not.toHaveBeenCalled();
+  });
+
+  it('does not disguise an unrelated failure as a slug conflict', async () => {
+    const failure = new Error('connection terminated');
+    (linktrees.createLinktree as jest.Mock).mockRejectedValue(failure);
+
+    await expect(service.create({ name: 'Campaign' })).rejects.toBe(failure);
+  });
 
   it('does not expose the internal owner id in dashboard context', async () => {
     await expect(service.getContext()).resolves.toEqual({

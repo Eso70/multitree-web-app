@@ -14,6 +14,24 @@ describe('request origin protection', () => {
     expect(isAuthenticatedMutation('POST', {})).toBe(false);
   });
 
+  /**
+   * A session type missing from the cookie list is not treated as
+   * authenticated, so the same-origin check is skipped rather than failed —
+   * the Creator workspace shipped its writes with no cross-origin rejection at
+   * all until `creator_session` was added.
+   */
+  it('recognises every session cookie that can authenticate a mutation', () => {
+    expect(isAuthenticatedMutation('PUT', { creator_session: 'token' })).toBe(
+      true,
+    );
+    expect(
+      isAuthenticatedMutation('DELETE', { platform_admin_session: 'token' }),
+    ).toBe(true);
+    expect(isAuthenticatedMutation('GET', { creator_session: 'token' })).toBe(
+      false,
+    );
+  });
+
   it('accepts same-origin and server requests', () => {
     expect(
       isSameOriginBrowserRequest(

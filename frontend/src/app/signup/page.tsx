@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CreatorAuthPage } from "@/features/creator/CreatorAuthPage";
 
 export const metadata: Metadata = {
-  title: "دروستکردنی هەژماری Creator",
+  title: "دروستکردنی هەژمار",
   robots: "noindex, nofollow",
 };
 

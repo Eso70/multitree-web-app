@@ -2,6 +2,10 @@
 import { DatabaseService } from '../database/database.service';
 import { GoneException } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
+import {
+  PUBLIC_PLANS_CACHE_KEY,
+  PUBLIC_PLANS_CACHE_TTL_SECONDS,
+} from '../common/public-catalog-cache';
 import { PublicPageAnalyticsService } from '../analytics/public-page-analytics.service';
 import { PlatformContentWorkspaceService } from '../platform-workspace/platform-content-workspace.service';
 import {
@@ -625,7 +629,7 @@ export class PublicService {
   }
 
   async getPlans() {
-    const cacheKey = 'cache:public:plans';
+    const cacheKey = PUBLIC_PLANS_CACHE_KEY;
     const cached = await this.redisService.get<PlanSummary[]>(cacheKey);
     if (cached) return cached;
 
@@ -668,7 +672,11 @@ export class PublicService {
       };
     });
 
-    await this.redisService.set(cacheKey, plans, 300);
+    await this.redisService.set(
+      cacheKey,
+      plans,
+      PUBLIC_PLANS_CACHE_TTL_SECONDS,
+    );
     return plans;
   }
 

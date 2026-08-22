@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { rethrowRootSlugConflict } from '../common/root-slug-conflict';
 import { UnifiedAnalyticsService } from '../analytics/unified-analytics.service';
 import { SaveMiniWebsiteDto } from '../mini-websites/dto/mini-website.dto';
 import { MiniWebsitesService } from '../mini-websites/mini-websites.service';
@@ -31,17 +32,33 @@ export class PlatformMiniWebsitesService {
     return this.miniWebsites.get(id, await this.workspaceId());
   }
 
+  // Root-domain slugs are shared with every Creator, so the availability check
+  // the console runs can be true when it is asked and false by the time the
+  // save arrives. `root_public_slugs_pkey` settles it, and the collision is
+  // reported as the conflict it is rather than as a server error.
   async create(data: SaveMiniWebsiteDto) {
-    return this.miniWebsites.create(data, await this.workspaceId(), 'platform');
+    try {
+      return await this.miniWebsites.create(
+        data,
+        await this.workspaceId(),
+        'platform',
+      );
+    } catch (error) {
+      rethrowRootSlugConflict(error);
+    }
   }
 
   async update(id: string, data: SaveMiniWebsiteDto) {
-    return this.miniWebsites.update(
-      id,
-      data,
-      await this.workspaceId(),
-      'platform',
-    );
+    try {
+      return await this.miniWebsites.update(
+        id,
+        data,
+        await this.workspaceId(),
+        'platform',
+      );
+    } catch (error) {
+      rethrowRootSlugConflict(error);
+    }
   }
 
   async remove(id: string) {

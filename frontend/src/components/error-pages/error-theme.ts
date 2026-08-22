@@ -1,9 +1,13 @@
-import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import { MULTITREE_LOGO } from "@/lib/brand/brand-assets";
+import {
+  getMultiTreeAccentInk,
+  MULTITREE_ACCENT_COLOR,
+} from "@/lib/multitree-theme";
 import type { BusinessSubdomainTheme } from "@/lib/utils/business-error-theme";
 import { readableInk } from "@/lib/utils/parse-website-color";
 
 export interface ErrorPageTheme {
-  scope: "multitree" | "business";
+  scope: "multitree" | "business" | "platform";
   accentColor: string;
   accentBackground?: string;
   accentInk?: string;
@@ -26,9 +30,50 @@ export interface ErrorPageTheme {
 export const MULTITREE_ERROR_THEME: ErrorPageTheme = {
   scope: "multitree",
   accentColor: MULTITREE_ACCENT_COLOR,
-  accentInk: "var(--multitree-accent-ink, #ffffff)",
+  // A concrete ink value, not `var(--multitree-accent-ink)`: the page writes
+  // this back onto that same custom property, and a self-referential
+  // declaration resolves to nothing.
+  accentInk: getMultiTreeAccentInk(MULTITREE_ACCENT_COLOR),
   mutedColor: "var(--multitree-accent-text-muted, #475569)",
+  logo: MULTITREE_LOGO,
+  name: "MultiTree",
 };
+
+interface PlatformErrorBranding {
+  name?: string | null;
+  logo?: string | null;
+  accentColor?: string;
+  accentBackground?: string;
+  accentInk?: string;
+}
+
+export function platformErrorTheme({
+  name: brandName,
+  logo: brandLogo,
+  accentColor = MULTITREE_ACCENT_COLOR,
+  accentBackground,
+  accentInk = readableInk(accentColor),
+}: PlatformErrorBranding = {}): ErrorPageTheme {
+  // Platform chrome carries MultiTree's own mark. Coalesced rather than
+  // defaulted: the console holds its branding as `logo: null` until platform
+  // settings supply one, and a parameter default only covers `undefined`, so
+  // the null flowed through and the shared navbar fell back to the neutral
+  // business placeholder on every console error page.
+  const logo = brandLogo ?? MULTITREE_LOGO;
+  const name = brandName ?? "MultiTree";
+  return {
+    scope: "platform",
+    accentColor,
+    accentBackground,
+    accentInk,
+    logo,
+    name,
+    footer: {
+      description: "پلاتفۆرمی دروستکردنی Linktree و ماڵپەڕی بچووک",
+      brandingRemoved: true,
+    },
+  };
+}
 
 export function businessErrorTheme(
   theme: BusinessSubdomainTheme,

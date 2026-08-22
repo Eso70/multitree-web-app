@@ -1,8 +1,38 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { WEBSITE_GRADIENT_DIRECTIONS } from "@/lib/utils/parse-website-color";
 import { BackgroundColorPicker } from "./BackgroundColorPicker";
 
 describe("BackgroundColorPicker", () => {
+  it("paints the custom swatch for every gradient direction", () => {
+    // A local direction table here listed only four of the nine and emitted
+    // `linear-gradient(, …)` for the rest — invalid CSS, so the swatch went
+    // blank and the direction read as ignored.
+    for (const direction of WEBSITE_GRADIENT_DIRECTIONS) {
+      const view = render(
+        <BackgroundColorPicker
+          value={`gradient:${direction}:#ff0000:#0000ff`}
+          onChange={vi.fn()}
+        />,
+      );
+
+      const swatch = view.container.querySelector<HTMLElement>(
+        'button[title="ئارەزوومەندانەیە"] span',
+      );
+      const background = swatch?.style.background || "";
+
+      // jsdom drops a declaration it cannot parse, so a non-empty value is
+      // itself the proof that the emitted CSS is valid. It also normalizes hex
+      // to rgb().
+      expect(background, `direction ${direction}`).not.toContain("(,");
+      expect(background, `direction ${direction}`).toContain(
+        direction === "radial" ? "radial-gradient" : "linear-gradient",
+      );
+      expect(background, `direction ${direction}`).toContain("rgb(255, 0, 0)");
+      view.unmount();
+    }
+  });
+
   it("shows only common solid colors and keeps the custom picker", () => {
     render(
       <BackgroundColorPicker value="#ffffff" onChange={vi.fn()} />,

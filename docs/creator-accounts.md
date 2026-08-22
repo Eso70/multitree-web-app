@@ -13,6 +13,12 @@ not invitations and they do not use a business subdomain.
 - One stable Google subject, verified email, and remembered device can claim
   only one Creator trial.
 - A Creator can own exactly one Linktree **or** one mini website at a time.
+- Creator navigation exposes the same Linktree and mini-website workspaces used
+  elsewhere. After the first page is committed, the opposite workspace is
+  disabled in the dashboard and the server remains the authoritative lock.
+- Creators cannot delete their public page. Only a platform administrator with
+  `platform:creators:manage` may delete it; that action is audited and does not
+  erase the durable trial claims or grant another trial.
 - The trial starts when the first page is created, not when signup completes.
 - `CREATOR_TRIAL_DAYS` is either 7 or 30 days. A three-day read-only grace
   window follows the trial. The root public page is unavailable after grace.
@@ -48,6 +54,48 @@ workspaces. Shared behavior must be changed in the shared implementation and
 verified in all applicable workspaces. Platform-only administration controls
 remain behind platform capabilities.
 
+A Creator owns the page it inspects, so `BusinessPageAnalyticsModal` runs in
+its full mode there — the same loading skeleton, stat cards, conversion tiles,
+sort controls, per-button list, refresh, and clear controls a business sees.
+Only the endpoints differ: totals and action rows are read from
+`/api/creator/{linktrees,mini-websites}/:id/analytics` and
+`.../analytics/actions`, which resolve the workspace from the `creator_session`
+and prove ownership before reading. The business `/api/analytics/v2` routes are
+never called from a Creator workspace. The advanced-analytics button is hidden
+because `/business/analytics` is a business-only route; platform administration
+keeps the summary-only mode, since it reviews pages it does not own.
+
+The `/account/linktree`, `/account/mini-website`, and `/account/settings`
+workspaces also use the same `DashboardSidebar`,
+`DashboardHeader`, viewport shell, profile menu, theme persistence, responsive
+mobile drawer, page container, surfaces, statistic cards, tabs, and skeletons
+as the Business and Platform dashboards. `/account/settings` provides a
+read-only Google-backed account view and the shared session-management panel.
+Creator account routes are private, no-store, and excluded from indexing.
+
+Only the minimum verified Google profile is retained: stable provider subject,
+normalized verified email, display name, and avatar URL. The authenticated
+Creator response deliberately omits internal user/business/account ids,
+provider subject, identity claims, device/IP HMACs, and risk level. Platform
+management may see name, email, avatar, verified-email status, last Google
+authentication, last login, account creation time, and active-session count;
+OAuth tokens and anti-abuse identifiers are never returned.
+
+Creator security settings list only that Creator workspace's active sessions
+and Creator audit events. The current session cannot be revoked through the
+single-session endpoint, while "sign out all other sessions" preserves it.
+Every lookup and revoke derives the workspace from the isolated
+`creator_session`; no client-supplied owner id is accepted.
+
+Creator Settings uses the same segmented settings surface as Business. Its
+first tab uses the shared read-only account identity fields to present the
+verified profile image, account name, and email without exposing provider or
+security metadata. It is followed by session security and the shared
+TikTok Pixel/Events API configuration. TikTok settings are resolved only from
+the authenticated Creator workspace, allow at most one Pixel group, return only a
+token-presence flag and last four characters, and become read-only when page
+editing becomes read-only. The encrypted Events API token is never returned.
+
 ## Operations
 
 Configure Google OAuth as described in `backend.md`, then set the trial length:
@@ -64,6 +112,9 @@ require an explicitly reviewed backup-and-replacement procedure.
 
 The platform permission catalog contains `platform:creators:read` and
 `platform:creators:manage`. Suspension revokes all active Creator sessions.
+`DELETE /api/platform/creators/:id/page` requires the manage capability and an
+audit event. Creator-scoped page DELETE routes always return a forbidden
+response, independently of which controls are visible in the browser.
 
 ## Billing boundary
 

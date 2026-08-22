@@ -23,6 +23,23 @@ identity service through `/api/creator/auth/google/start?intent=signup|login`.
 The callback dispatches Creator-prefixed single-use OAuth state back to the
 Creator domain, creates its isolated session cookie, and never stores a Google
 access or refresh token.
+Creator context and session responses use an explicit account projection:
+verified email, Google display name/avatar, verification state, relevant
+account/trial timestamps, and page state only. Internal ids, provider subject,
+trial-claim HMACs, device/IP claims, and risk level remain server-only.
+`GET /api/creator/auth/sessions` and its delete variants reuse the hashed
+business-session store while filtering login activity to Creator audit events
+and deriving the owner exclusively from `creator_session`.
+Creator Linktree and mini-website controllers delegate CRUD, analytics, upload,
+and validation behavior to the same domain services used by Business and
+Platform. Creator page DELETE routes fail with `403`; the only deletion path is
+the audited platform Creator-management endpoint protected by
+`platform:creators:manage`.
+Creator TikTok settings use `/api/creator/settings/tiktok` and its health/error
+subroutes. `CreatorGuard` derives the owner from the isolated session, the
+shared TikTok configuration service validates the Creator-specific one-group limit and
+encrypts Events API tokens, and expired/read-only accounts cannot mutate the
+configuration. Successful updates are recorded in the security audit log.
 Tenant OAuth handoff redirects must be built with `buildTenantUrl`; never assign
 a path containing `?` directly to `URL.pathname`, because that percent-encodes
 the query marker and routes the callback to a nonexistent page.

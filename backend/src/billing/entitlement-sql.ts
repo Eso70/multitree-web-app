@@ -14,24 +14,50 @@
  *
  * Correlates on `<alias>.id`, so the query must expose a `businesses` alias.
  */
+/**
+ * Rejects anything that is not a bare SQL identifier.
+ *
+ * These fragments are interpolated, not parameterised: they are composed into
+ * larger statements whose placeholder numbering the caller owns. Every caller
+ * passes a compile-time constant today, and this is what keeps that true — a
+ * fragment builder that skips the check is one refactor away from splicing a
+ * column name that came from a request.
+ */
+function assertSqlAlias(alias: string): void {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(alias)) {
+    throw new Error(`Unsafe SQL alias: ${alias}`);
+  }
+}
+
+/** As {@link assertSqlAlias}, allowing one `alias.column` qualification. */
+function assertSqlColumn(column: string): void {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$/.test(column)) {
+    throw new Error(`Unsafe SQL column: ${column}`);
+  }
+}
+
 export function entitledSql(
   entitlementKey: string,
   businessAlias = 'business',
 ): string {
-  // Interpolated, not parameterised: these fragments are composed into larger
-  // statements whose placeholder numbering the caller owns. Every key is a
-  // compile-time constant from ENTITLEMENT below, never user input.
+  // Every key is a compile-time constant from ENTITLEMENT below, never user
+  // input; see assertSqlAlias for why that is checked rather than assumed.
   if (!/^[a-z0-9_.]+$/.test(entitlementKey)) {
     throw new Error(`Unsafe entitlement key: ${entitlementKey}`);
   }
-  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(businessAlias)) {
-    throw new Error(`Unsafe SQL alias: ${businessAlias}`);
-  }
+  assertSqlAlias(businessAlias);
   return `EXISTS (
     SELECT 1
       FROM public.business_subscriptions subscription
       JOIN public.billing_entitlements entitlement
         ON entitlement.entitlement_key = '${entitlementKey}'
+       -- Retired entitlements carry no grant. Every other reader of this
+       -- catalog -- effective access, the public business payload, the plan
+       -- editor -- filters on status, and this fragment did not: an
+       -- entitlement a platform administrator deactivated kept the paid public
+       -- surface serving and the Events API forwarding, while every dashboard
+       -- reported the feature as gone.
+       AND entitlement.status = 'active'
       JOIN public.billing_plan_entitlements plan_value
         ON plan_value.plan_configuration_id = subscription.plan_configuration_id
        AND plan_value.entitlement_id = entitlement.id
@@ -69,6 +95,8 @@ export function allowedTemplateKeySql(
   templateColumn: string,
   businessAlias = 'business',
 ): string {
+  assertSqlColumn(templateColumn);
+  assertSqlAlias(businessAlias);
   return `CASE
     WHEN ${templateColumn} IS NULL THEN NULL
     WHEN EXISTS (

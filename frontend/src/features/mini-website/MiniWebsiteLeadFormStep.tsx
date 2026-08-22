@@ -20,6 +20,7 @@ import {
   TextField,
 } from "./MiniWebsiteCollectionEditor";
 import {
+  claimLeadFieldMapping,
   LEAD_FIELD_MAPPING_LABELS,
   LEAD_FIELD_TYPE_LABELS,
   parseLeadFieldOptions,
@@ -57,6 +58,7 @@ export function MiniWebsiteLeadFormFields({
   const patchForm = (patch: Partial<MiniWebsiteDraft["leadForm"]>) =>
     onChange({ ...draft, leadForm: { ...leadForm, ...patch } });
   const setFields = (fields: MiniWebsiteLeadField[]) => patchForm({ fields });
+
 
   return (
     <div className="space-y-5">
@@ -175,7 +177,11 @@ export function MiniWebsiteLeadFormFields({
               <CustomSelect<MiniWebsiteLeadFieldMapping>
                 label="لە CRM ـدا وەک"
                 value={field.mapping}
-                onChange={(mapping) => patch({ mapping })}
+                onChange={(mapping) =>
+                  setFields(
+                    claimLeadFieldMapping(leadForm.fields, index, mapping),
+                  )
+                }
                 options={mappingsFor(field.type).map((mapping) => ({
                   value: mapping,
                   label: LEAD_FIELD_MAPPING_LABELS[mapping],

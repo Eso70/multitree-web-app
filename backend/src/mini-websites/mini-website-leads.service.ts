@@ -99,7 +99,15 @@ export class MiniWebsiteLeadsService {
          JOIN businesses business ON business.id = website.business_id
         WHERE (
           ($3::uuid IS NULL AND lower(business.subdomain) = lower($1) AND business.account_type='business')
-          OR ($3::uuid IS NOT NULL AND business.id = $3::uuid AND business.account_type='platform')
+          -- Root-domain pages have two owners, not one: the platform's own
+          -- workspace and every Creator. Naming only 'platform' here rejected
+          -- the submission of a form the Creator's page had already rendered.
+          --
+          -- Whether that Creator is still entitled to serve the page is not
+          -- re-decided here. findRootOwnerId resolved this id from the slug and
+          -- already applied the active/paid/grace gate; repeating it would be
+          -- the second copy of a rule that has to stay in step.
+          OR ($3::uuid IS NOT NULL AND business.id = $3::uuid AND business.account_type IN ('platform','creator'))
         )
           AND website.slug = $2
           AND website.status = 'published'`,

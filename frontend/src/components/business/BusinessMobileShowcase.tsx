@@ -30,7 +30,6 @@ import {
   createMiniWebsiteDraft,
   type MiniWebsiteDraft,
 } from "@/features/mini-website/types";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
   BUSINESS_LANDING_DECORATION_COLORS,
   BUSINESS_LANDING_DECORATION_LABELS,
@@ -76,20 +75,29 @@ type ShowcaseScreen =
       component: MiniWebsiteTemplateComponent;
     };
 
-const MOBILE_STACK_OFFSETS = [-1, 0, 1] as const;
-const WIDE_STACK_OFFSETS = [-2, -1, 0, 1, 2] as const;
-const MOBILE_PHONE_LAYOUTS = [
-  "left-[1%] w-[49%] max-[380px]:w-[47%]",
-  "left-[25.5%] w-[49%] max-[380px]:left-[26.5%] max-[380px]:w-[47%]",
-  "right-[1%] w-[49%] max-[380px]:w-[47%]",
-] as const;
-const WIDE_PHONE_LAYOUTS = [
-  "left-[1%] w-[36%] max-[380px]:left-[2%] max-[380px]:w-[34%] sm:left-[2%] sm:w-[29%] lg:left-[4%] lg:w-[23%]",
-  "left-[16%] w-[39%] max-[380px]:left-[17%] max-[380px]:w-[37%] sm:left-[19%] sm:w-[31%] lg:left-[21%] lg:w-[25%]",
-  "left-[30.5%] w-[39%] max-[380px]:left-[31.5%] max-[380px]:w-[37%] sm:left-[34.5%] sm:w-[31%] lg:left-[37.5%] lg:w-[25%]",
-  "right-[16%] w-[39%] max-[380px]:right-[17%] max-[380px]:w-[37%] sm:right-[19%] sm:w-[31%] lg:right-[21%] lg:w-[25%]",
-  "right-[1%] w-[36%] max-[380px]:right-[2%] max-[380px]:w-[34%] sm:right-[2%] sm:w-[29%] lg:right-[4%] lg:w-[23%]",
-] as const;
+/** Which screens flank the active one: one either side, on every device. */
+const STACK_OFFSETS = [-1, 0, 1] as const;
+
+/**
+ * How wide each phone is, as a share of the stage.
+ *
+ * The three sit in a plain flex row, so they are beside each other by
+ * construction at every size — no absolute anchors to retune per breakpoint,
+ * and no JavaScript media query deciding the arrangement. Phones take a little
+ * more of the row on a phone screen, where there is less of it to go round, and
+ * overlap slightly there so the stack still reads as depth.
+ */
+const PHONE_SLOT_WIDTH =
+  "w-[38%] -mx-[3%] sm:w-[34%] sm:mx-0 lg:w-[30%]";
+
+/**
+ * The stage's own proportions, derived from the slot above: a phone is
+ * `8 / 17` of its width tall, and the centre one is scaled up by
+ * `getPhoneScale`. Expressing it as an aspect ratio rather than a fixed height
+ * means the stage is exactly as tall as the phones it holds, so none is ever
+ * cropped and no dead space is left under them.
+ */
+const STAGE_ASPECT = "aspect-[1/0.86] sm:aspect-[1/0.77] lg:aspect-[1/0.68]";
 
 const TEMPLATE_PREVIEW_LINKS = createBusinessContactPreviewLinks();
 
@@ -125,10 +133,14 @@ const CONTROL_SPRING = {
   damping: 24,
 } as const;
 
+/**
+ * Depth, as scale alone. Kept shallow: the phones sit shoulder to shoulder in
+ * the row, and shrinking the outer two hard would open gaps between them.
+ */
 const getPhoneScale = (distanceFromCenter: number) => {
-  if (distanceFromCenter === 0) return 1.065;
-  if (distanceFromCenter === 1) return 0.98;
-  return 0.91;
+  if (distanceFromCenter === 0) return 1.06;
+  if (distanceFromCenter === 1) return 0.92;
+  return 0.86;
 };
 
 const ShowcasePhoneContent = memo(function ShowcasePhoneContent({
@@ -143,12 +155,13 @@ const ShowcasePhoneContent = memo(function ShowcasePhoneContent({
 
   return (
     <PhoneMockup
-      className="absolute inset-x-0 top-0"
       ariaLabel={`${screen.label} mobile preview`}
       name={screen.label}
       statusBarClassName="!text-white mix-blend-difference"
     >
-      <div className="pointer-events-none h-full overflow-hidden">
+      {/* The frame's own viewport clips and scrolls now, so this wrapper must
+          not crop the page a second time. */}
+      <div className="pointer-events-none min-h-full">
         {screen.kind === "linktree" ? (
           <DynamicTemplate
             linktree={screen.linktree}
@@ -182,7 +195,6 @@ export function BusinessMobileShowcase({
     "قالبەکانی لینکتری و ماڵپەڕی بچووک بە شێوازی ڕاستەقینە و گونجاو بۆ شاشەی مۆبایل ببینە.",
 }: BusinessMobileShowcaseProps) {
   const reduceMotion = useReducedMotion() ?? false;
-  const useWideLayout = useMediaQuery("(min-width: 640px)");
   const [activeIndex, setActiveIndex] = useState(0);
   const miniWebsiteDraft = useMemo<MiniWebsiteDraft>(() => {
     const draft = createMiniWebsiteDraft({
@@ -208,12 +220,7 @@ export function BusinessMobileShowcase({
   }, [accentColor, businessLogo, businessName, miniWebsite, phoneNumber]);
 
   const screens = SHOWCASE_SCREENS;
-  const stackOffsets = useWideLayout
-    ? WIDE_STACK_OFFSETS
-    : MOBILE_STACK_OFFSETS;
-  const phoneLayouts = useWideLayout
-    ? WIDE_PHONE_LAYOUTS
-    : MOBILE_PHONE_LAYOUTS;
+  const stackOffsets = STACK_OFFSETS;
   const centerLayoutIndex = Math.floor(stackOffsets.length / 2);
   const visibleScreens = useMemo(
     () =>
@@ -237,7 +244,7 @@ export function BusinessMobileShowcase({
     <PublicSection
       id={BUSINESS_LANDING_SECTION_IDS.mobileShowcase}
       labelledBy="business-mobile-showcase-title"
-      className="pb-0 sm:pb-0 lg:pb-0"
+      className="pb-16 sm:pb-20 lg:pb-24"
       decorations={
         <BusinessSectionDecorations
           colors={BUSINESS_LANDING_DECORATION_COLORS.mobileShowcase}
@@ -255,7 +262,7 @@ export function BusinessMobileShowcase({
         <div
           role="group"
           aria-label="Mobile template carousel"
-          className="relative isolate mx-auto mt-20 h-[calc(100vw+1rem)] max-w-6xl overflow-hidden sm:mt-24 sm:h-[33rem] lg:h-[38rem]"
+          className={`relative isolate mx-auto mt-20 flex max-w-6xl items-end justify-center sm:mt-24 ${STAGE_ASPECT}`}
         >
           {visibleScreens.map(({ screenIndex, layoutIndex }) => {
             const screen = screens[screenIndex];
@@ -266,12 +273,17 @@ export function BusinessMobileShowcase({
             const selected = distanceFromCenter === 0;
 
             return (
+              // Keyed by screen, so advancing the carousel re-orders these
+              // elements in the row and `layout="position"` animates each one
+              // across to its new slot. Scale sits on a child of its own: both
+              // are written as `transform`, and on one element the layout
+              // projection would overwrite it.
               <motion.div
                 key={screen.id}
                 layout="position"
                 layoutDependency={activeIndex}
                 aria-hidden={!selected}
-                className={`pointer-events-none absolute bottom-0 ${phoneLayouts[layoutIndex]}`}
+                className={`pointer-events-none shrink-0 ${PHONE_SLOT_WIDTH}`}
                 style={
                   {
                     zIndex: 30 - distanceFromCenter * 10,
@@ -280,19 +292,17 @@ export function BusinessMobileShowcase({
                 initial={false}
                 transition={reduceMotion ? { duration: 0 } : PHONE_SPRING}
               >
-                <motion.div
-                  className="origin-bottom"
-                  initial={false}
-                  animate={{ scale: getPhoneScale(distanceFromCenter) }}
-                  transition={reduceMotion ? { duration: 0 } : PHONE_SPRING}
-                >
-                  <div className="relative aspect-[8/15.3] overflow-hidden">
+                  <motion.div
+                    className="w-full origin-bottom"
+                    initial={false}
+                    animate={{ scale: getPhoneScale(distanceFromCenter) }}
+                    transition={reduceMotion ? { duration: 0 } : PHONE_SPRING}
+                  >
                     <ShowcasePhoneContent
                       screen={screen}
                       miniWebsiteDraft={miniWebsiteDraft}
                     />
-                  </div>
-                </motion.div>
+                  </motion.div>
               </motion.div>
             );
           })}

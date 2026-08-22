@@ -1,7 +1,18 @@
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+/**
+ * Every cookie that authenticates a mutation.
+ *
+ * A surface missing from this list gets no cross-origin rejection at all: the
+ * request is not recognised as authenticated, so the same-origin check is
+ * skipped rather than failed. `creator_session` was absent while the Creator
+ * workspace shipped its own writes — settings, page edits, session revocation —
+ * leaving `SameSite=Lax` as the only thing between them and a cross-site
+ * submission. Add the cookie here when a new session type is introduced.
+ */
 const SESSION_COOKIE_NAMES = [
   'business_session',
   'platform_admin_session',
+  'creator_session',
 ] as const;
 type HeaderValue = string | string[] | undefined;
 

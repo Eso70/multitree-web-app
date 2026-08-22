@@ -755,11 +755,19 @@ export class ApprovalService {
     await client.query(`SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, [
       `profile-change:${businessId}`,
     ]);
+    // A retired catalog entry resolves to no row, which reads as a zero
+    // allowance below — the same outcome an entitlement that was never seeded
+    // already produces. Effective access drops a retired key entirely, so
+    // enforcing one here that no dashboard reports would be the disagreement.
+    // Fail-closed, matching the other billing gates: a limit the platform has
+    // retired stops granting an allowance rather than quietly keeping the last
+    // one it had.
     const entitlement = await client.query<{ value: number | null }>(
       `SELECT COALESCE(plan_value.value, '0'::jsonb) AS value
        FROM business_subscriptions subscription
        JOIN billing_entitlements entitlement
          ON entitlement.entitlement_key='limit.profile_changes_monthly'
+        AND entitlement.status='active'
        LEFT JOIN billing_plan_entitlements plan_value
          ON plan_value.plan_configuration_id =
             subscription.plan_configuration_id

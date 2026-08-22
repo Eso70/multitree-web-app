@@ -13,17 +13,11 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-/**
- * The address schemes a link may use.
- *
- * Mirrors the `links_url_check` constraint in `full_schema.sql` exactly. It
- * used to be `@IsUrl({ protocols: ['http', 'https'] })`, which rejected every
- * `tel:`, `mailto:` and `viber://` link — the three the link editor generates
- * for the phone, email and Viber platforms. Saving a page that contained one
- * failed with a bare "Validation failed", so a phone button could be built in
- * the editor and never stored.
- */
-const ALLOWED_LINK_URL = /^(https?:\/\/|tel:|mailto:|viber:\/\/)/;
+import {
+  ALLOWED_LINK_URL,
+  LINK_URL_MAX_LENGTH,
+  LINK_URL_MESSAGE,
+} from '../link-url';
 
 export class SyncLinkItemDto {
   @IsString()
@@ -31,10 +25,8 @@ export class SyncLinkItemDto {
   platform!: string;
 
   @IsString()
-  @Matches(ALLOWED_LINK_URL, {
-    message: 'url must start with http://, https://, tel:, mailto: or viber://',
-  })
-  @MaxLength(2048)
+  @Matches(ALLOWED_LINK_URL, { message: LINK_URL_MESSAGE })
+  @MaxLength(LINK_URL_MAX_LENGTH)
   url!: string;
 
   /**

@@ -1,9 +1,12 @@
 import {
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
   Post,
+  Param,
+  ParseUUIDPipe,
   Query,
   Req,
   Res,
@@ -73,10 +76,57 @@ export class CreatorAuthController {
   @Get('session')
   @UseGuards(CreatorGuard)
   async session(@CurrentUser() user: SessionUser) {
-    const profile = await this.accounts.profile(user.id);
+    const profile = await this.accounts.accountView(user.id);
     if (!profile)
       throw new UnauthorizedException('Creator account unavailable');
     return { authenticated: true, user: profile };
+  }
+
+  @Get('sessions')
+  @UseGuards(CreatorGuard)
+  async activeSessions(
+    @CurrentUser() user: SessionUser,
+    @Req() request: FastifyRequest & { sessionToken?: string },
+  ) {
+    return {
+      success: true,
+      data: await this.sessions.getCreatorLoginSecurity(
+        user.id,
+        request.sessionToken,
+      ),
+    };
+  }
+
+  @Delete('sessions')
+  @UseGuards(CreatorGuard)
+  async revokeOtherSessions(
+    @CurrentUser() user: SessionUser,
+    @Req() request: FastifyRequest & { sessionToken?: string },
+  ) {
+    return {
+      success: true,
+      data: {
+        revoked: await this.sessions.revokeBusinessSessions(
+          user.id,
+          request.sessionToken,
+        ),
+      },
+    };
+  }
+
+  @Delete('sessions/:id')
+  @UseGuards(CreatorGuard)
+  async revokeSession(
+    @CurrentUser() user: SessionUser,
+    @Param('id', ParseUUIDPipe) sessionId: string,
+    @Req() request: FastifyRequest & { sessionToken?: string },
+  ) {
+    await this.sessions.revokeBusinessSession(
+      user.id,
+      sessionId,
+      request.sessionToken,
+    );
+    return { success: true };
   }
 
   @Post('logout')

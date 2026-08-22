@@ -39,6 +39,7 @@ import { MINI_WEBSITE_TEMPLATE_DEFAULT_ID } from "@/components/templates/mini-we
 import { apiRequest } from "@/lib/api/request";
 import { createMiniWebsiteSavePayload } from "./save-payload";
 import { ClearAnalyticsButton } from "@/components/shared/ClearAnalyticsButton";
+import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
 import {
   MINI_WEBSITE_TRAFFIC_LABELS,
   MiniWebsiteListMeta,
@@ -58,6 +59,8 @@ export interface MiniWebsitesPageProps {
   websiteColor?: string | null;
   workspaceConfig?: MiniWebsiteWorkspaceConfig;
   maxPages?: number;
+  canDelete?: boolean;
+  onCreated?: () => void;
 }
 
 export function MiniWebsitesPage(props: MiniWebsitesPageProps) {
@@ -75,6 +78,8 @@ function MiniWebsitesWorkspacePage({
   businessDefaultAvatar = null,
   websiteColor = "#b6f20d",
   maxPages,
+  canDelete = true,
+  onCreated,
 }: MiniWebsitesPageProps) {
   const workspace = useMiniWebsiteWorkspace();
   const accent = websiteColor?.startsWith("#") ? websiteColor : "#b6f20d";
@@ -102,6 +107,8 @@ function MiniWebsitesWorkspacePage({
   } | null>(null);
   const [clearAnalyticsOpen, setClearAnalyticsOpen] = useState(false);
   const [clearingAnalytics, setClearingAnalytics] = useState(false);
+  const pageLimitReached =
+    maxPages !== undefined && profiles.length >= maxPages;
   const {
     totals: analyticsTotals,
     hasData: hasAnalyticsData,
@@ -332,6 +339,7 @@ function MiniWebsitesWorkspacePage({
   }, []);
 
   const openCreate = () => {
+    if (pageLimitReached) return;
     setEditorId(null);
     setDraft(
       createMiniWebsiteDraft({
@@ -365,6 +373,7 @@ function MiniWebsitesWorkspacePage({
         },
       );
       setEditorOpen(false);
+      if (!editorId) onCreated?.();
       await loadProfiles(true);
       toast.success(
         editorId ? "مینی وێبسایتەکە نوێکرایەوە" : "مینی وێبسایت دروستکرا",
@@ -469,7 +478,7 @@ function MiniWebsitesWorkspacePage({
 
       <DashboardSurface className="space-y-6">
         <PageHeader
-          title="مینی وێبسایت"
+          title={DASHBOARD_PAGE_LABELS.miniWebsite}
           description="مینی وێبسایتی پیشەیی دروست و بەڕێوە ببە و بینین و کلیکەکانی هەر یەکێک چاودێری بکە."
           icon={IdCard}
           action={
@@ -564,8 +573,13 @@ function MiniWebsitesWorkspacePage({
               <button
                 type="button"
                 onClick={openCreate}
-                title="دروستکردنی مینی وێبسایتی نوێ"
-                className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
+                disabled={pageLimitReached}
+                title={
+                  pageLimitReached
+                    ? "سنووری دروستکردنی پەڕە پڕ بووە"
+                    : "دروستکردنی مینی وێبسایتی نوێ"
+                }
+                className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Plus className="h-4 w-4 transition-transform group-hover:scale-110" />
                 <span>مینی وێبسایتی نوێ</span>
@@ -585,10 +599,14 @@ function MiniWebsitesWorkspacePage({
                 const profile = findProfile(id);
                 if (profile) openEdit(profile);
               }}
-              onDelete={(id) => {
-                const profile = findProfile(id);
-                if (profile) setDeleteTarget(profile);
-              }}
+              onDelete={
+                canDelete
+                  ? (id) => {
+                      const profile = findProfile(id);
+                      if (profile) setDeleteTarget(profile);
+                    }
+                  : undefined
+              }
               onViewAnalytics={(id, name) => setAnalyticsTarget({ id, name })}
               showPageMeta
               MetaBadgesComponent={MiniWebsiteListMeta}
@@ -604,10 +622,14 @@ function MiniWebsitesWorkspacePage({
                 const profile = findProfile(id);
                 if (profile) openEdit(profile);
               }}
-              onDelete={(id) => {
-                const profile = findProfile(id);
-                if (profile) setDeleteTarget(profile);
-              }}
+              onDelete={
+                canDelete
+                  ? (id) => {
+                      const profile = findProfile(id);
+                      if (profile) setDeleteTarget(profile);
+                    }
+                  : undefined
+              }
               onViewAnalytics={(id, name) => setAnalyticsTarget({ id, name })}
               showPageMeta
               MetaBadgesComponent={MiniWebsiteListMeta}
@@ -625,7 +647,7 @@ function MiniWebsitesWorkspacePage({
           pageName={analyticsTarget.name}
           pageKind="mini_website"
           dataSource={workspace.analyticsDataSource}
-          summaryOnly={workspace.analyticsDataSource !== "business"}
+          summaryOnly={!workspace.detailedAnalytics}
           onAnalyticsCleared={() => refreshAnalytics()}
         />
       )}
@@ -693,7 +715,7 @@ function MiniWebsitesWorkspacePage({
         }
       />
       <ConfirmDeleteModal
-        isOpen={!!deleteTarget}
+        isOpen={canDelete && !!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={async () => {
           if (!deleteTarget) return;

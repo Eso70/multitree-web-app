@@ -20,6 +20,7 @@ import {
 } from 'crypto';
 import type { PoolClient } from 'pg';
 import { DatabaseService } from '../database/database.service';
+import { normalizeBusinessSubdomain } from '../common/business-subdomain';
 import { RedisService } from '../redis/redis.service';
 import {
   GoogleIdentityService,
@@ -247,7 +248,7 @@ export class BusinessOnboardingService {
     rememberDevice = false,
   ): Promise<string> {
     this.assertTemporaryStore();
-    const normalized = this.normalizeSubdomain(subdomain);
+    const normalized = normalizeBusinessSubdomain(subdomain);
     const found = await this.database.query(
       `SELECT 1 FROM businesses WHERE subdomain = $1 AND status = 'active'`,
       [normalized],
@@ -264,7 +265,7 @@ export class BusinessOnboardingService {
   async requestBusinessEmailCode(emailInput: string, subdomainInput: string) {
     this.assertTemporaryStore();
     const email = emailInput.trim().toLowerCase();
-    const subdomain = this.normalizeSubdomain(subdomainInput);
+    const subdomain = normalizeBusinessSubdomain(subdomainInput);
     await this.assertRateLimit(
       `business-email:${subdomain}:${this.hash(email)}`,
       5,
@@ -336,7 +337,7 @@ export class BusinessOnboardingService {
     this.assertTemporaryStore();
     const key = `business:email-login:${this.hash(input.challengeId || '')}`;
     const challenge = await this.redis.consume<BusinessEmailChallenge>(key);
-    const subdomain = this.normalizeSubdomain(input.subdomain);
+    const subdomain = normalizeBusinessSubdomain(input.subdomain);
     if (
       !challenge ||
       challenge.subdomain !== subdomain ||
@@ -1182,7 +1183,7 @@ export class BusinessOnboardingService {
     const handoff = await this.redis.consume<AuthHandoffPayload>(
       authHandoffKey(input.code || ''),
     );
-    const subdomain = this.normalizeSubdomain(input.subdomain);
+    const subdomain = normalizeBusinessSubdomain(input.subdomain);
     if (!handoff || handoff.subdomain !== subdomain) {
       throw new UnauthorizedException('Sign-in handoff expired');
     }
@@ -1242,7 +1243,7 @@ export class BusinessOnboardingService {
     dto: UpdateSignupApplicationDto,
   ) {
     const session = await this.signupSession(sessionToken);
-    const subdomain = this.normalizeSubdomain(dto.requestedSubdomain);
+    const subdomain = normalizeBusinessSubdomain(dto.requestedSubdomain);
     try {
       const result = await this.database.query(
         `UPDATE business_signup_applications SET
@@ -1307,7 +1308,7 @@ export class BusinessOnboardingService {
 
   async subdomainAvailable(sessionToken: string, raw: string) {
     const session = await this.signupSession(sessionToken);
-    const subdomain = this.normalizeSubdomain(raw);
+    const subdomain = normalizeBusinessSubdomain(raw);
     const result = await this.database.query(
       `SELECT 1 FROM businesses WHERE subdomain = $1
        UNION ALL
@@ -1550,33 +1551,5 @@ export class BusinessOnboardingService {
     ];
     if (client) await client.query(sql, params);
     else await this.database.query(sql, params);
-  }
-
-  private normalizeSubdomain(value: string): string {
-    const normalized = value.trim().toLowerCase();
-    if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(normalized)) {
-      throw new BadRequestException('Invalid subdomain');
-    }
-    const reserved = new Set([
-      'www',
-      'api',
-      'admin',
-      'platform',
-      'system',
-      'join',
-      'login',
-      'business',
-      'auth',
-      'legal',
-      'images',
-      'fonts',
-      'cursors',
-      'advertising',
-      'bio',
-      'linktree',
-    ]);
-    if (reserved.has(normalized))
-      throw new BadRequestException('Subdomain is reserved');
-    return normalized;
   }
 }

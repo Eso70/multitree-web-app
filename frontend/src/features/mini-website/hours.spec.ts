@@ -135,6 +135,29 @@ describe("normalizeWeek", () => {
     expect(normalizeWeek(undefined)).toEqual(createMiniWebsiteWeekHours());
   });
 
+  /**
+   * The server is what stores the week, so where the two normalizers could
+   * disagree the editor follows it. Both of these were disagreements.
+   */
+  it("pads a time the way the server stores it", () => {
+    const restored = normalizeWeek([
+      { day: "mon", closed: false, open: "9:00", close: "8:05" },
+    ]);
+    const monday = restored.find((entry) => entry.day === "mon");
+    expect(monday?.open).toBe("09:00");
+    expect(monday?.close).toBe("08:05");
+  });
+
+  it("keeps the first entry when a day is listed twice", () => {
+    const restored = normalizeWeek([
+      { day: "mon", closed: false, open: "08:00", close: "20:00" },
+      { day: "mon", closed: false, open: "10:00", close: "22:00" },
+    ]);
+    const monday = restored.find((entry) => entry.day === "mon");
+    expect(monday?.open).toBe("08:00");
+    expect(monday?.close).toBe("20:00");
+  });
+
   it("treats a day a saved week left out as closed", () => {
     // Matches the server: once a week is recorded, an omitted day is not open.
     const restored = normalizeWeek([

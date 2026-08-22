@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { memo, useCallback, useState, type ComponentType } from "react";
-import { SkeletonTable } from "@/components/shared/Skeleton";
 import Image from "next/image";
 import {
   Trash2,
@@ -9,11 +8,18 @@ import {
   Copy,
   Check,
   Edit,
+  Link as LinkIcon,
   MousePointerClick,
 } from "lucide-react";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { formatDate, getAbsoluteUrl } from "@/lib/utils/linktree-utils";
-import { TablePagination } from "@/components/shared/TablePagination";
+import {
+  ManagementTable,
+  MANAGEMENT_TABLE_CARD_CLASS,
+  MANAGEMENT_TABLE_ROW_CLASS,
+  type ManagementTableColumn,
+  type ManagementTablePagination,
+} from "@/components/shared/ManagementTable";
 import {
   LINKTREE_TRAFFIC_LABELS,
   LinktreeMetaBadges,
@@ -21,8 +27,6 @@ import {
   type PageListTrafficLabels,
 } from "@/components/business/LinktreeMeta";
 import type { LinktreeListItem as Linktree } from "@linktree/types";
-
-const PAGE_SIZE = 10;
 
 interface LinktreesTableProps {
   publicPathPrefix?: string;
@@ -42,6 +46,51 @@ interface LinktreesTableProps {
   showPageMeta?: boolean;
   MetaBadgesComponent?: ComponentType<LinktreeMetaBadgesProps>;
   trafficLabels?: PageListTrafficLabels;
+  emptyDescription?: string;
+  pagination?: ManagementTablePagination;
+}
+
+/**
+ * The header cells, in order.
+ *
+ * Both optional columns are table-level decisions rather than per-row ones, and
+ * they are dropped from this list rather than rendered conditionally, so the
+ * header count and the `<td>`s in `TableRow` cannot drift apart and shear the
+ * columns.
+ */
+function buildColumns(
+  displaysPageMeta: boolean,
+  showTraffic: boolean,
+  trafficLabels: PageListTrafficLabels,
+): ManagementTableColumn[] {
+  return [
+    { key: "image", header: "وێنە", width: "w-16 sm:w-20" },
+    { key: "name", header: "ناو", width: "w-32 sm:w-40" },
+    {
+      key: "subtitle",
+      header: "ناونیشانی کورت",
+      width: "w-32 lg:w-40",
+      hideBelow: "md",
+    },
+    ...(displaysPageMeta
+      ? []
+      : ([
+          { key: "slug", header: "Slug", width: "w-24", hideBelow: "lg" },
+        ] as ManagementTableColumn[])),
+    { key: "link", header: "بەستەر", width: "w-32 sm:w-40 lg:w-48" },
+    ...(showTraffic
+      ? ([
+          {
+            key: "traffic",
+            header: trafficLabels.column,
+            width: "w-24",
+          },
+        ] as ManagementTableColumn[])
+      : []),
+    { key: "created", header: "دروستکراوە", width: "w-28", hideBelow: "xl" },
+    { key: "updated", header: "نوێکراوە", width: "w-28", hideBelow: "xl" },
+    { key: "actions", header: "کارەکان", width: "w-28 sm:w-32" },
+  ];
 }
 
 function getPublicIdentifier(item: Linktree): string {
@@ -95,7 +144,7 @@ const TableRow = memo(function TableRow({
 
   return (
     <tr
-      className="border-b border-slate-100 dark:border-white/5 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors duration-200 transform-gpu"
+      className={MANAGEMENT_TABLE_ROW_CLASS}
       style={{
         contentVisibility: "auto",
         containIntrinsicSize: "80px",
@@ -276,7 +325,7 @@ const MobileCard = memo(function MobileCard({
   const publicIdentifier = getPublicIdentifier(item);
   return (
     <div
-      className="p-4 flex gap-4 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors duration-200 transform-gpu"
+      className={MANAGEMENT_TABLE_CARD_CLASS}
       onClick={() => onView(publicIdentifier)}
       style={{
         contentVisibility: "auto",
@@ -407,25 +456,20 @@ export const LinktreesTable = memo(function LinktreesTable({
   onViewAnalytics,
   viewActionLabel = "ئامار",
   emptyTitle = "هیچ داتایەک نەدۆزرایەوە",
+  emptyDescription = "هیچ داتایەک بۆ پیشاندان نییە.",
+  pagination = { mode: "client" },
   showLinktreeMeta = false,
   showPageMeta,
   MetaBadgesComponent = LinktreeMetaBadges,
   trafficLabels = LINKTREE_TRAFFIC_LABELS,
 }: LinktreesTableProps) {
   const [copiedUid, setCopiedUid] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
   const displaysPageMeta = showPageMeta ?? showLinktreeMeta;
-  const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const visibleData = data.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
 
   // The optional slug and traffic columns are table-level decisions so every
   // body row remains aligned with the header, even when one row has no totals.
   const showTraffic = displaysPageMeta && data.some((item) => item.analytics);
-  const columnCount = (displaysPageMeta ? 7 : 8) + (showTraffic ? 1 : 0);
+  const columns = buildColumns(displaysPageMeta, showTraffic, trafficLabels);
 
   const formatDateString = useCallback((dateString: string) => {
     return formatDate(dateString);
@@ -467,127 +511,52 @@ export const LinktreesTable = memo(function LinktreesTable({
   );
 
   return (
-    <div className="w-full" dir="ltr">
-      {/* Mobile cards */}
-      <div className="sm:hidden divide-y divide-slate-100 dark:divide-white/5 border-t border-b border-slate-200/80 dark:border-white/10">
-        {isLoading ? (
-          <div className="p-3">
-            <SkeletonTable rows={6} />
-          </div>
-        ) : data.length === 0 ? (
-          <div className="p-6 text-center text-gray-600 dark:text-gray-400">
-            {emptyTitle}
-          </div>
-        ) : (
-          visibleData.map((item) => (
-            <MobileCard
-              key={item.id}
-              item={item}
-              onEdit={onEdit}
-              onDelete={handleDelete}
-              onViewAnalytics={onViewAnalytics}
-              copiedUid={copiedUid}
-              onCopy={handleCopyUrl}
-              onView={handleView}
-              formatDate={formatDateString}
-              viewActionLabel={viewActionLabel}
-              publicPathPrefix={publicPathPrefix}
-              showPageMeta={displaysPageMeta}
-              MetaBadgesComponent={MetaBadgesComponent}
-              trafficLabels={trafficLabels}
-            />
-          ))
-        )}
-      </div>
-
-      {/* Desktop table */}
-      <div className="hidden sm:block w-full overflow-x-auto">
-        <div className="w-full">
-          <table className="w-full border-collapse table-fixed min-w-180">
-            <thead>
-              <tr className="border-b border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/5">
-                <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide w-16 sm:w-20">
-                  وێنە
-                </th>
-                <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide w-32 sm:w-40">
-                  ناو
-                </th>
-                <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide hidden md:table-cell w-32 lg:w-40">
-                  ناونیشانی کورت
-                </th>
-                {!displaysPageMeta && (
-                  <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide hidden lg:table-cell w-24">
-                    Slug
-                  </th>
-                )}
-                <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide w-32 sm:w-40 lg:w-48">
-                  بەستەر
-                </th>
-                {showTraffic && (
-                  <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide hidden sm:table-cell w-24">
-                    {trafficLabels.column}
-                  </th>
-                )}
-                <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide hidden xl:table-cell w-28">
-                  دروستکراوە
-                </th>
-                <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide hidden xl:table-cell w-28">
-                  نوێکراوە
-                </th>
-                <th className="px-2 sm:px-3 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide w-28 sm:w-32">
-                  کارەکان
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-              {isLoading ? (
-                <tr className="bg-white dark:bg-transparent">
-                  <td colSpan={columnCount} className="px-3 py-3">
-                    <SkeletonTable rows={6} />
-                  </td>
-                </tr>
-              ) : data.length === 0 ? (
-                <tr className="bg-white">
-                  <td
-                    colSpan={columnCount}
-                    className="px-4 py-8 text-center text-gray-500 text-xs sm:text-sm bg-white"
-                  >
-                    {emptyTitle}
-                  </td>
-                </tr>
-              ) : (
-                visibleData.map((item) => (
-                  <TableRow
-                    key={item.id}
-                    item={item}
-                    onEdit={onEdit}
-                    onDelete={handleDelete}
-                    onViewAnalytics={onViewAnalytics}
-                    copiedUid={copiedUid}
-                    onCopy={handleCopyUrl}
-                    formatDate={formatDateString}
-                    viewActionLabel={viewActionLabel}
-                    publicPathPrefix={publicPathPrefix}
-                    showPageMeta={displaysPageMeta}
-                    showTraffic={showTraffic}
-                    MetaBadgesComponent={MetaBadgesComponent}
-                    trafficLabels={trafficLabels}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      {!isLoading && (
-        <TablePagination
-          page={currentPage}
-          pageSize={PAGE_SIZE}
-          totalItems={data.length}
-          totalPages={totalPages}
-          onPageChange={setPage}
+    <ManagementTable
+      data={data}
+      columns={columns}
+      getRowKey={(item) => item.id}
+      isLoading={isLoading}
+      minWidth="min-w-180"
+      pagination={pagination}
+      empty={{
+        icon: LinkIcon,
+        title: emptyTitle,
+        description: emptyDescription,
+      }}
+      renderRow={(item) => (
+        <TableRow
+          item={item}
+          onEdit={onEdit}
+          onDelete={handleDelete}
+          onViewAnalytics={onViewAnalytics}
+          copiedUid={copiedUid}
+          onCopy={handleCopyUrl}
+          formatDate={formatDateString}
+          viewActionLabel={viewActionLabel}
+          publicPathPrefix={publicPathPrefix}
+          showPageMeta={displaysPageMeta}
+          showTraffic={showTraffic}
+          MetaBadgesComponent={MetaBadgesComponent}
+          trafficLabels={trafficLabels}
         />
       )}
-    </div>
+      renderCard={(item) => (
+        <MobileCard
+          item={item}
+          onEdit={onEdit}
+          onDelete={handleDelete}
+          onViewAnalytics={onViewAnalytics}
+          copiedUid={copiedUid}
+          onCopy={handleCopyUrl}
+          onView={handleView}
+          formatDate={formatDateString}
+          viewActionLabel={viewActionLabel}
+          publicPathPrefix={publicPathPrefix}
+          showPageMeta={displaysPageMeta}
+          MetaBadgesComponent={MetaBadgesComponent}
+          trafficLabels={trafficLabels}
+        />
+      )}
+    />
   );
 });

@@ -11,7 +11,7 @@ export function TemplatePhonePreview({
   ariaLabel,
   darkTheme = false,
   locked = false,
-  scrollable = false,
+  scrollable = true,
   children,
 }: {
   name: string;
@@ -24,15 +24,19 @@ export function TemplatePhonePreview({
   const { ref, isNear } = useNearViewport();
 
   return (
-    <div
-      ref={ref}
-      className="relative mx-auto w-[260px] max-w-full sm:w-[320px]"
-    >
+    // A flex row rather than a shrink-to-fit box: the frame's own width is a
+    // percentage on phones, and a percentage inside `w-fit` resolves against a
+    // width that does not exist yet, collapsing the mockup to nothing.
+    <div ref={ref} className="relative flex w-full justify-center">
       <PhoneMockup
+        size="responsive"
         name={name}
         ariaLabel={ariaLabel}
         darkTheme={darkTheme}
         scrollable={scrollable}
+        // The nested viewport is only built once the card is near the screen,
+        // so a catalog of frames costs one document, not five.
+        active={isNear}
         overlay={
           locked ? (
             <LockedItemOverlay

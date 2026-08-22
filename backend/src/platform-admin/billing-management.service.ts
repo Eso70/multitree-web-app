@@ -2,11 +2,14 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import type { PoolClient } from 'pg';
 import { AdvertisingService } from '../advertising/advertising.service';
+import { describeError } from '../common/describe-error';
 import { DatabaseService } from '../database/database.service';
+import { PUBLIC_PLANS_CACHE_KEY } from '../common/public-catalog-cache';
 import { RedisService } from '../redis/redis.service';
 import type {
   CreateEntitlementDto,
@@ -72,6 +75,8 @@ const DEFAULT_BUSINESS_PERMISSION_KEYS = [
 
 @Injectable()
 export class BillingManagementService {
+  private readonly logger = new Logger(BillingManagementService.name);
+
   constructor(
     private readonly database: DatabaseService,
     private readonly redis: RedisService,
@@ -281,7 +286,7 @@ export class BillingManagementService {
   }
 
   async createPlan(dto: CreatePlanDto, actorId: string) {
-    return this.database
+    const created = await this.database
       .transaction(async (client) => {
         const planName = dto.name.trim();
         await client.query(
@@ -385,6 +390,8 @@ export class BillingManagementService {
           throw new ConflictException('Plan code already exists');
         throw error;
       });
+    await this.invalidatePublicPlans();
+    return created;
   }
 
   async updatePlan(id: string, dto: UpdatePlanDto) {
@@ -428,6 +435,9 @@ export class BillingManagementService {
       return { id };
     });
     await this.invalidatePlanBusinesses(id);
+    // A permission profile is the configuration a subscription plan points at,
+    // and the public list reads that plan's entitlements through it.
+    await this.invalidatePublicPlans();
     return updated;
   }
 
@@ -566,7 +576,7 @@ export class BillingManagementService {
     dto: CreateSubscriptionPlanDto,
     actorId: string,
   ) {
-    return this.database
+    const created = await this.database
       .transaction(async (client) => {
         const name = dto.name.trim();
         const status = dto.status || 'active';
@@ -629,6 +639,8 @@ export class BillingManagementService {
         return result.rows[0];
       })
       .catch((error) => this.translateSubscriptionPlanConflict(error));
+    await this.invalidatePublicPlans();
+    return created;
   }
 
   async updateSubscriptionPlan(id: string, dto: UpdateSubscriptionPlanDto) {
@@ -735,11 +747,12 @@ export class BillingManagementService {
       })
       .catch((error) => this.translateSubscriptionPlanConflict(error));
     await this.invalidateSubscriptionPlanBusinesses(id);
+    await this.invalidatePublicPlans();
     return result;
   }
 
   async deleteSubscriptionPlan(id: string) {
-    return this.database.transaction(async (client) => {
+    const deleted = await this.database.transaction(async (client) => {
       const plan = await client.query<{
         id: string;
         name: string;
@@ -776,6 +789,8 @@ export class BillingManagementService {
       );
       return { id, name: plan.rows[0].name };
     });
+    await this.invalidatePublicPlans();
+    return deleted;
   }
 
   async upsertSubscription(
@@ -978,6 +993,7 @@ export class BillingManagementService {
       return { id: configurationId, planId };
     });
     await this.invalidatePlanBusinesses(planId);
+    await this.invalidatePublicPlans();
     return result;
   }
 
@@ -1377,6 +1393,30 @@ export class BillingManagementService {
     await Promise.all(
       businessIds.map((businessId) => this.invalidateBusiness(businessId)),
     );
+  }
+
+  /**
+   * Drops the cached public pricing list.
+   *
+   * That list is served from one Redis entry for five minutes and is not
+   * re-derived per request, so every mutation that changes what the marketing
+   * plan table shows — price, name, trial length, order, status, the
+   * entitlements and templates behind a plan, or removing one outright — has
+   * to clear it. Nothing did, so a pricing change or a deleted plan stayed on
+   * the public page until the entry expired.
+   *
+   * Never allowed to fail the mutation it follows: the plan change is already
+   * committed by this point, and a Redis outage must not turn a saved edit into
+   * an error. A stale list expires on its own.
+   */
+  private async invalidatePublicPlans() {
+    try {
+      await this.redis.del(PUBLIC_PLANS_CACHE_KEY);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to clear the public plan cache: ${describeError(error)}`,
+      );
+    }
   }
 
   private async invalidateSubscriptionPlanBusinesses(

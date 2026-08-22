@@ -12,6 +12,33 @@ describe("request origin protection", () => {
     expect(isAuthenticatedMutation("POST", null)).toBe(false);
   });
 
+  /**
+   * A session type missing from the cookie list is not treated as
+   * authenticated, so the proxy skips the same-origin check rather than
+   * failing it — Creator writes crossed this proxy unchecked until
+   * `creator_session` was added.
+   */
+  it("recognises every session cookie that can authenticate a mutation", () => {
+    expect(isAuthenticatedMutation("PUT", "creator_session=token")).toBe(true);
+    expect(
+      isAuthenticatedMutation("DELETE", "theme=dark; creator_session=token"),
+    ).toBe(true);
+    expect(isAuthenticatedMutation("GET", "creator_session=token")).toBe(false);
+  });
+
+  /** A name that merely ends with a known one is a different cookie. */
+  it("matches whole cookie names only", () => {
+    expect(isAuthenticatedMutation("POST", "not_creator_session=token")).toBe(
+      false,
+    );
+    expect(isAuthenticatedMutation("POST", "xbusiness_session=token")).toBe(
+      false,
+    );
+    expect(isAuthenticatedMutation("POST", "creator_session_hint=1")).toBe(
+      false,
+    );
+  });
+
   it("accepts same-origin browser requests and server requests without origin headers", () => {
     expect(isSameOriginBrowserRequest("https://tenant.example.com/api/test", "https://tenant.example.com", null)).toBe(true);
     expect(isSameOriginBrowserRequest("https://tenant.example.com/api/test", null, null)).toBe(true);

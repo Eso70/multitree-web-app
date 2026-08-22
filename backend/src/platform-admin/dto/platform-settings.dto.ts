@@ -15,10 +15,8 @@ import {
   ArrayMinSize,
   ArrayUnique,
   ValidateIf,
-  ValidateNested,
-  ArrayMaxSize,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { WEBSITE_COLOR_PATTERN } from '../../common/website-color';
 
 export class UpdatePlatformProfileDto {
   @IsOptional()
@@ -147,40 +145,10 @@ export class UpdatePlatformBrandingDto {
   @IsOptional()
   @IsString()
   @MaxLength(100)
-  @Matches(
-    /^(?:#[0-9a-fA-F]{3,6}|gradient:(?:to-r|to-l|to-b|to-t|to-br|to-bl|to-tr|to-tl|radial):#[0-9a-fA-F]{3,6}:#[0-9a-fA-F]{3,6})$/,
-  )
+  @Matches(WEBSITE_COLOR_PATTERN)
   accent_color?: string;
 
   @IsOptional()
   @IsHexColor()
   accent_ink_color?: string;
-}
-
-export class PlatformTikTokPixelConfigDto {
-  @IsOptional()
-  @IsString()
-  @Matches(/^[0-9a-fA-F-]{36}$/)
-  id?: string;
-
-  @IsString()
-  @Matches(/^[A-Za-z0-9_-]{8,255}$/)
-  pixel_id: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(4096)
-  events_token?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  keep_events_token?: boolean;
-}
-
-export class UpdatePlatformTikTokDto {
-  @IsArray()
-  @ArrayMaxSize(3)
-  @ValidateNested({ each: true })
-  @Type(() => PlatformTikTokPixelConfigDto)
-  tiktok_configs: PlatformTikTokPixelConfigDto[];
 }

@@ -1,8 +1,32 @@
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
+/**
+ * Every cookie that authenticates a mutation.
+ *
+ * A surface missing here is not treated as authenticated, so the proxy skips
+ * the same-origin check instead of failing it. `creator_session` was absent
+ * while the Creator workspace shipped its own writes. Add the cookie when a new
+ * session type is introduced; the backend keeps the matching list in
+ * `common/request-origin.ts`.
+ */
+const SESSION_COOKIE_NAMES = [
+  "business_session",
+  "platform_admin_session",
+  "creator_session",
+] as const;
+
 export function isAuthenticatedMutation(method: string, cookieHeader: string | null): boolean {
   if (SAFE_METHODS.has(method.toUpperCase())) return false;
-  return /(?:^|;\s*)(?:business_session|platform_admin_session)=/.test(cookieHeader || "");
+  // Split rather than match: a name built into a `RegExp` has to be escaped,
+  // and a template literal silently eats the `\s` that made the old pattern
+  // read as whitespace.
+  const present = new Set(
+    (cookieHeader || "")
+      .split(";")
+      .map((pair) => pair.split("=", 1)[0]?.trim())
+      .filter(Boolean),
+  );
+  return SESSION_COOKIE_NAMES.some((cookieName) => present.has(cookieName));
 }
 
 export function isSameOriginBrowserRequest(

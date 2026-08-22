@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { UserRound } from "lucide-react";
+import { remoteAvatarSrc } from "@/lib/utils/remote-avatar";
 
 export interface AvatarMenuItem {
   id: string;
@@ -39,6 +40,9 @@ export function AvatarMenu({
   onItemClick,
 }: AvatarMenuProps) {
   const [open, setOpen] = useState(false);
+  // A stored photo `next/image` cannot load draws the placeholder instead of
+  // throwing the whole header away.
+  const avatarImage = remoteAvatarSrc(avatarSrc);
   const container = useRef<HTMLDivElement>(null);
 
   // Show the real sign-in address or nothing. This used to synthesize
@@ -79,9 +83,9 @@ export function AvatarMenu({
         title={name}
         className={`group relative flex items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50 to-gray-50 shadow-sm transition-all duration-300 hover:from-slate-100 hover:to-gray-100 hover:shadow dark:border-white/10 dark:from-white/5 dark:to-white/5 dark:hover:from-white/10 dark:hover:to-white/10 ${sizeClassName} ${className}`}
       >
-        {avatarSrc ? (
+        {avatarImage ? (
           <Image
-            src={avatarSrc}
+            src={avatarImage}
             alt={name || "Avatar"}
             width={48}
             height={48}
@@ -98,9 +102,9 @@ export function AvatarMenu({
         >
           <div className="flex items-start gap-3 border-b border-slate-100 p-4 dark:border-white/5">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100 dark:bg-white/10">
-              {avatarSrc ? (
+              {avatarImage ? (
                 <Image
-                  src={avatarSrc}
+                  src={avatarImage}
                   alt={name ?? "Avatar"}
                   width={44}
                   height={44}

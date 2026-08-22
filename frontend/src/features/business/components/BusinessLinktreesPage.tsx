@@ -25,6 +25,7 @@ import type { BusinessLinktreeSummary as Linktree } from "@linktree/types";
 import { useRegisterBusinessDashboardRefresh } from "@/features/business/dashboard-refresh";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
 import { ClearAnalyticsButton } from "@/components/shared/ClearAnalyticsButton";
+import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
 
 const LinktreesGrid = dynamic(
   () =>
@@ -99,7 +100,7 @@ export function BusinessLinktreesPage({
         <StatCard
           loading={isLoading}
           icon={FileText}
-          label="کۆی پەڕەکانی لینک‌تری"
+          label="کۆی پەڕەکانی لینکتری"
           value={linktreeCount}
           color="blue"
         />
@@ -142,7 +143,7 @@ export function BusinessLinktreesPage({
 
       <DashboardSurface as="div" className="space-y-6">
         <PageHeader
-          title="پەیجەکان"
+          title={DASHBOARD_PAGE_LABELS.linktrees}
           description="پەیجەکانت دروست و بەڕێوە ببە و بینین و کلیکەکانی هەر پەیجێک چاودێری بکە."
           icon={FileText}
           action={

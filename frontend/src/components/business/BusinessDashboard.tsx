@@ -45,6 +45,7 @@ import {
   DashboardSidebar,
   type DashboardSidebarItem,
 } from "@/components/shared/DashboardSidebar";
+import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
 import {
   isBusinessPageLocked,
   type BusinessDashboardPage,
@@ -211,15 +212,15 @@ interface BusinessDashboardProps {
 
 type BusinessTheme = "light" | "dark";
 const BUSINESS_PAGE_TITLES: Record<BusinessDashboardPage, string> = {
-  linktrees: "پەیجەکان",
-  "mini-website": "مینی وێبسایت",
+  linktrees: DASHBOARD_PAGE_LABELS.linktrees,
+  "mini-website": DASHBOARD_PAGE_LABELS.miniWebsite,
   analytics: "شیکاری",
   crm: "بەڕێوەبردنی پەیوەندییەکانی کڕیار",
-  "tiktok-config": "ڕێکخستنەکانی تیکتۆک",
+  "tiktok-config": DASHBOARD_PAGE_LABELS.tiktokSettings,
   advertising: "خزمەتگوزاری ڕیکلام",
-  templates: "قاڵبەکان",
+  templates: DASHBOARD_PAGE_LABELS.templates,
   profile: "پڕۆفایل",
-  settings: "ڕێکخستنەکان",
+  settings: DASHBOARD_PAGE_LABELS.settings,
 };
 
 function getBusinessPage(pathname: string): BusinessDashboardPage {
@@ -311,14 +312,14 @@ export const BusinessDashboard = memo(function BusinessDashboard({
     () => [
       {
         id: "linktrees",
-        label: "پەیجەکان",
+        label: DASHBOARD_PAGE_LABELS.linktrees,
         icon: <FileText className="h-4 w-4" />,
         active: activeTab === "linktrees",
         onClick: () => router.push("/business/pages"),
       },
       {
         id: "mini-website",
-        label: "مینی وێبسایت",
+        label: DASHBOARD_PAGE_LABELS.miniWebsite,
         icon: <IdCard className="h-4 w-4" />,
         active: activeTab === "mini-website",
         onClick: () => router.push("/business/mini-website"),
@@ -339,14 +340,14 @@ export const BusinessDashboard = memo(function BusinessDashboard({
       },
       {
         id: "tiktok-config",
-        label: "ڕێکخستنەکانی تیکتۆک",
+        label: DASHBOARD_PAGE_LABELS.tiktokSettings,
         icon: <TbBrandTiktok className="h-4 w-4" />,
         active: activeTab === "tiktok-config",
         onClick: () => router.push("/business/tiktok-config"),
       },
       {
         id: "templates",
-        label: "قاڵبەکان",
+        label: DASHBOARD_PAGE_LABELS.templates,
         icon: <LayoutTemplate className="h-4 w-4" />,
         active: activeTab === "templates",
         onClick: () => router.push("/business/templates"),
@@ -360,7 +361,7 @@ export const BusinessDashboard = memo(function BusinessDashboard({
       },
       {
         id: "settings",
-        label: "ڕێکخستنەکان",
+        label: DASHBOARD_PAGE_LABELS.settings,
         icon: <Settings className="h-4 w-4" />,
         active: activeTab === "settings",
         onClick: () => router.push("/business/settings"),
@@ -695,7 +696,7 @@ export const BusinessDashboard = memo(function BusinessDashboard({
         ]);
       } catch (error) {
         if (rethrow) throw error;
-        toast.error("نوێکردنەوەی پەڕەکانی لینک‌تری سەرکەوتوو نەبوو");
+        toast.error("نوێکردنەوەی پەڕەکانی لینکتری سەرکەوتوو نەبوو");
       } finally {
         setIsRefreshing(false);
       }
@@ -1575,7 +1576,7 @@ export const BusinessDashboard = memo(function BusinessDashboard({
                 items: [
                   {
                     id: "settings",
-                    label: "ڕێکخستنەکان",
+                    label: DASHBOARD_PAGE_LABELS.settings,
                     icon: <Settings className="h-4 w-4" />,
                     onClick: () => router.push("/business/settings"),
                   },
@@ -1685,7 +1686,9 @@ export const BusinessDashboard = memo(function BusinessDashboard({
                           <Settings className="h-16 w-16 mx-auto mb-6 text-slate-300 dark:text-gray-600" />
                         )}
                         <h2 className="text-2xl font-bold text-slate-600 dark:text-gray-300 mb-2">
-                          {activeTab === "profile" ? "پڕۆفایل" : "ڕێکخستنەکان"}
+                          {activeTab === "profile"
+                            ? "پڕۆفایل"
+                            : DASHBOARD_PAGE_LABELS.settings}
                         </h2>
                         <p className="text-slate-400 dark:text-gray-500">
                           Coming Soon
@@ -1731,14 +1734,14 @@ export const BusinessDashboard = memo(function BusinessDashboard({
               if (!isClearingAnalytics) setIsClearAnalyticsModalOpen(false);
             }}
             onConfirm={handleClearAllAnalytics}
-            title="پاککردنەوەی ئاماری لینک‌تری"
+            title="پاککردنەوەی ئاماری لینکتری"
             confirmLabel="بەڵێ، پاکی بکەوە"
             loadingLabel="پاکدەکرێتەوە..."
             cancelLabel="هەڵوەشاندنەوە"
             isDeleting={isClearingAnalytics}
             message={
               <p>
-                دڵنیایت لە پاککردنەوەی تەنها ئامارەکانی پەڕەکانی لینک‌تری؟
+                دڵنیایت لە پاککردنەوەی تەنها ئامارەکانی پەڕەکانی لینکتری؟
                 ئاماری مینی وێبسایتەکان دەستکاری ناکرێت.
               </p>
             }

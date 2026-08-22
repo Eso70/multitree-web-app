@@ -2,6 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import { ImagePlus, X } from "lucide-react";
+import { parseWebsiteColor } from "@/lib/utils/parse-website-color";
 import { ColorGradientModal } from "./ColorGradientModal";
 
 export interface BackgroundColorOption {
@@ -48,25 +49,16 @@ interface BackgroundColorPickerProps {
 const IMAGE_TILE_LABEL = "وێنەی باکگڕاوند";
 const IMAGE_REMOVE_LABEL = "لابردنی وێنەی باکگڕاوند";
 
+/**
+ * The swatch reads the gradient through `parseWebsiteColor`, never its own
+ * direction table. A local table here only listed four of the nine directions
+ * and emitted `linear-gradient(, …)` — invalid CSS, so choosing `to-t`, `to-l`,
+ * `to-tr`, or `to-tl` blanked the swatch and read as "the direction did
+ * nothing".
+ */
 function customSwatchStyle(value: string): CSSProperties {
   if (value.startsWith("gradient:")) {
-    const parts = value.split(":");
-    const dir = parts[1];
-    const from = parts[2];
-    const to = parts[3];
-    const cssDir =
-      dir === "to-r"
-        ? "to right"
-        : dir === "to-b"
-          ? "to bottom"
-          : dir === "to-br"
-            ? "to bottom right"
-            : dir === "to-bl"
-              ? "to bottom left"
-              : "";
-    return dir === "radial"
-      ? { background: `radial-gradient(circle, ${from}, ${to})` }
-      : { background: `linear-gradient(${cssDir}, ${from}, ${to})` };
+    return { background: parseWebsiteColor(value).css };
   }
   return {
     background: "conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",

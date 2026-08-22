@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { rootPublicLinktreeCacheKeys } from '../common/root-public-cache';
+import { rethrowRootSlugConflict } from '../common/root-slug-conflict';
 import { RedisService } from '../redis/redis.service';
 import { CreateLinktreeDto } from '../linktrees/dto/create-linktree.dto';
 import { LinktreesService } from '../linktrees/linktrees.service';
@@ -19,13 +21,7 @@ export class PlatformLinktreesService {
   }
 
   private async invalidate(...identifiers: Array<string | null | undefined>) {
-    const keys = [
-      ...new Set(
-        identifiers
-          .map((value) => value?.trim())
-          .filter((value): value is string => !!value),
-      ),
-    ].map((value) => `cache:platform-linktree:${value}`);
+    const keys = rootPublicLinktreeCacheKeys(...identifiers);
     await Promise.all(keys.map((key) => this.redis.del(key)));
   }
 
@@ -95,13 +91,22 @@ export class PlatformLinktreesService {
     );
   }
 
+  // Root-domain slugs are shared with every Creator, so the availability check
+  // the console runs can be true when it is asked and false by the time the
+  // save arrives. `root_public_slugs_pkey` settles it, and the collision is
+  // reported as the conflict it is rather than as a server error.
   async create(data: CreateLinktreeDto) {
     const businessId = await this.workspaceId();
-    const created = await this.linktrees.createLinktree(
-      { ...data, is_default: false },
-      businessId,
-      'platform',
-    );
+    let created;
+    try {
+      created = await this.linktrees.createLinktree(
+        { ...data, is_default: false },
+        businessId,
+        'platform',
+      );
+    } catch (error) {
+      rethrowRootSlugConflict(error);
+    }
     await this.invalidate(created.uid, created.seo_name);
     return created;
   }
@@ -109,23 +114,28 @@ export class PlatformLinktreesService {
   async update(id: string, data: CreateLinktreeDto) {
     const businessId = await this.workspaceId();
     const current = await this.linktrees.getLinktreeById(id, businessId);
-    const updated = await this.linktrees.updateLinktree(
-      id,
-      {
-        name: data.name,
-        subtitle: data.subtitle,
-        description: data.description,
-        seo_name: data.seo_name || data.slug,
-        image: data.image,
-        background_color: data.background_color,
-        template_config: data.template_config,
-        footer_text: data.footer_text,
-        footer_phone: data.footer_phone,
-        footer_hidden: data.footer_hidden,
-      },
-      businessId,
-      'platform',
-    );
+    let updated;
+    try {
+      updated = await this.linktrees.updateLinktree(
+        id,
+        {
+          name: data.name,
+          subtitle: data.subtitle,
+          description: data.description,
+          seo_name: data.seo_name || data.slug,
+          image: data.image,
+          background_color: data.background_color,
+          template_config: data.template_config,
+          footer_text: data.footer_text,
+          footer_phone: data.footer_phone,
+          footer_hidden: data.footer_hidden,
+        },
+        businessId,
+        'platform',
+      );
+    } catch (error) {
+      rethrowRootSlugConflict(error);
+    }
     await this.linktrees.syncSubmittedLinks(id, data, businessId);
     await this.invalidate(
       current.uid,

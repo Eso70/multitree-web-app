@@ -5,6 +5,7 @@ import { ErrorPage } from "@/components/error-pages/ErrorPage";
 import {
   businessErrorTheme,
   MULTITREE_ERROR_THEME,
+  platformErrorTheme,
   type ErrorPageTheme,
 } from "@/components/error-pages/error-theme";
 import { ERROR_PAGE_COPY } from "@/components/error-pages/copy";
@@ -15,7 +16,7 @@ import {
 } from "@/lib/utils/business-error-theme";
 
 interface RuntimeErrorPageProps {
-  context: "root" | "business";
+  context: "root" | "business" | "platform";
   error: Error & { digest?: string };
   reset: () => void;
 }
@@ -25,13 +26,19 @@ export function RuntimeErrorPage({
   error,
   reset,
 }: RuntimeErrorPageProps) {
-  const [theme, setTheme] = useState<ErrorPageTheme>(MULTITREE_ERROR_THEME);
+  const [theme, setTheme] = useState<ErrorPageTheme>(() =>
+    context === "platform" ? platformErrorTheme() : MULTITREE_ERROR_THEME,
+  );
 
   useEffect(() => {
     if (context === "business") {
       loadAuthenticatedBusinessTheme().then((value) =>
         setTheme(businessErrorTheme(value)),
       );
+      return;
+    }
+
+    if (context === "platform") {
       return;
     }
 

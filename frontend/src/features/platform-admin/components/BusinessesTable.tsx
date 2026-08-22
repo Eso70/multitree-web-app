@@ -3,18 +3,47 @@
 import { memo, useState } from "react";
 import Image from "next/image";
 import { Edit, Trash2, Eye, ShieldCheck, LogIn } from "lucide-react";
+import {
+  ManagementTable,
+  MANAGEMENT_TABLE_CARD_CLASS,
+  MANAGEMENT_TABLE_ROW_CLASS,
+  hideBelowClass,
+  type ManagementTableColumn,
+  type ManagementTablePagination,
+} from "@/components/shared/ManagementTable";
 import { formatDate, getRootDomain } from "@/lib/utils/linktree-utils";
 import type { PlatformBusiness as Business } from "@linktree/types";
 import { BusinessMetaBadges } from "@/features/platform-admin/components/BusinessMetaBadges";
 
 interface BusinessesTableProps {
   data?: Business[];
+  isLoading?: boolean;
+  pagination?: ManagementTablePagination;
   onEdit?: (business: Business) => void;
   onDelete?: (id: string, name: string) => void;
   onViewAnalytics?: (business: Business) => void;
   onManageSessions?: (business: Business) => void;
   onOpenDashboard?: (business: Business) => void;
 }
+
+/**
+ * Header and cell hiding come from one list, so a column that disappears at a
+ * breakpoint cannot take its header with it and shear the row.
+ */
+const COLUMNS: ManagementTableColumn[] = [
+  { key: "avatar", width: "w-14" },
+  { key: "name", header: "ناو" },
+  { key: "contact", header: "بەکارهێنەر / پەیوەندی" },
+  { key: "subdomain", header: "سەب دۆمەین", width: "w-48", hideBelow: "lg" },
+  { key: "meta", header: "ڕەوشت / پلان", width: "w-64" },
+  {
+    key: "dates",
+    header: "دروستکراوە / نوێکراوە",
+    width: "w-28",
+    hideBelow: "xl",
+  },
+  { key: "actions", header: "کارەکان", width: "w-28" },
+];
 
 function AvatarCell({ item }: { item: Business }) {
   const [imgError, setImgError] = useState(false);
@@ -58,7 +87,7 @@ const TableRow = memo(function TableRow({
 }) {
   return (
     <tr
-      className="border-b border-slate-100 dark:border-white/5 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors duration-200 transform-gpu"
+      className={MANAGEMENT_TABLE_ROW_CLASS}
       style={{
         contentVisibility: "auto",
         containIntrinsicSize: "90px",
@@ -72,7 +101,7 @@ const TableRow = memo(function TableRow({
           {item.name}
         </div>
       </td>
-      <td className="px-3 py-3 hidden sm:table-cell">
+      <td className="px-3 py-3">
         <div className="text-xs text-gray-600 truncate">
           @{item.username}
         </div>
@@ -83,7 +112,7 @@ const TableRow = memo(function TableRow({
           {item.phone?.trim() || "—"}
         </div>
       </td>
-      <td className="px-3 py-3 hidden lg:table-cell">
+      <td className={`px-3 py-3 ${hideBelowClass("lg")}`}>
         {item.subdomain ? (
           <div className="text-xs text-gray-600 font-mono truncate">
             {item.subdomain}.{getRootDomain()}
@@ -95,7 +124,7 @@ const TableRow = memo(function TableRow({
       <td className="px-3 py-3">
         <BusinessMetaBadges item={item} />
       </td>
-      <td className="px-3 py-3 hidden xl:table-cell">
+      <td className={`px-3 py-3 ${hideBelowClass("xl")}`}>
         <div className="text-xs text-gray-600">
           {formatDate(item.created_at)}
         </div>
@@ -173,7 +202,7 @@ const MobileCard = memo(function MobileCard({
 
   return (
     <div
-      className="p-4 flex gap-4 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors duration-200 transform-gpu"
+      className={MANAGEMENT_TABLE_CARD_CLASS}
       style={{
         contentVisibility: "auto",
         containIntrinsicSize: "175px",
@@ -224,6 +253,8 @@ const MobileCard = memo(function MobileCard({
 
 export const BusinessesTable = memo(function BusinessesTable({
   data = [],
+  isLoading = false,
+  pagination,
   onEdit,
   onDelete,
   onViewAnalytics,
@@ -231,76 +262,32 @@ export const BusinessesTable = memo(function BusinessesTable({
   onOpenDashboard,
 }: BusinessesTableProps) {
   return (
-    <div className="w-full" dir="ltr">
-      {/* Mobile cards */}
-      <div className="md:hidden divide-y divide-slate-100 dark:divide-white/5 border-t border-b border-slate-200/80 dark:border-white/10">
-        {data.length === 0 ? (
-          <div className="p-6 text-center text-gray-550">هیچ داتایەک نەدۆزرایەوە</div>
-        ) : (
-          data.map((item) => (
-            <MobileCard
-              key={item.id}
-              item={item}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onViewAnalytics={onViewAnalytics}
-              onManageSessions={onManageSessions}
-              onOpenDashboard={onOpenDashboard}
-            />
-          ))
-        )}
-      </div>
-
-      {/* Desktop table */}
-      <div className="hidden md:block w-full overflow-x-auto">
-        <table className="w-full border-collapse table-fixed min-w-[600px]">
-          <thead>
-            <tr className="border-b border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/5">
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide w-14">
-              </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                ناو
-              </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide hidden sm:table-cell">
-                بەکارهێنەر / پەیوەندی
-              </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide hidden lg:table-cell w-48">
-                سەب دۆمەین
-              </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide w-64">
-                ڕەوشت / پلان
-              </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide hidden xl:table-cell w-28">
-                دروستکراوە / نوێکراوە
-              </th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide w-28">
-                کارەکان
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-            {data.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-500 text-xs sm:text-sm">
-                  هیچ داتایەک نەدۆزرایەوە
-                </td>
-              </tr>
-            ) : (
-              data.map((item) => (
-                <TableRow
-                  key={item.id}
-                  item={item}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onViewAnalytics={onViewAnalytics}
-                  onManageSessions={onManageSessions}
-                  onOpenDashboard={onOpenDashboard}
-                />
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <ManagementTable
+      data={data}
+      columns={COLUMNS}
+      getRowKey={(item) => item.id}
+      isLoading={isLoading}
+      pagination={pagination}
+      renderRow={(item) => (
+        <TableRow
+          item={item}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onViewAnalytics={onViewAnalytics}
+          onManageSessions={onManageSessions}
+          onOpenDashboard={onOpenDashboard}
+        />
+      )}
+      renderCard={(item) => (
+        <MobileCard
+          item={item}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onViewAnalytics={onViewAnalytics}
+          onManageSessions={onManageSessions}
+          onOpenDashboard={onOpenDashboard}
+        />
+      )}
+    />
   );
 });
