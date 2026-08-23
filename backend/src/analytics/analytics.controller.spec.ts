@@ -208,4 +208,101 @@ describe('PublicUnifiedAnalyticsController', () => {
 
     expect(redirect).toHaveBeenCalledWith('https://wa.me/9647500000000', 302);
   });
+
+  it('redirects when the handoff query is invalid instead of returning 400', async () => {
+    const ingest = jest.fn();
+    const controller = new PublicUnifiedAnalyticsController(
+      {
+        resolveRedirectDestination: jest
+          .fn()
+          .mockResolvedValue('https://wa.me/9647500000000'),
+        ingest,
+      } as never,
+      { isRateLimited: jest.fn() } as never,
+      { assertForPublicPages: jest.fn() } as never,
+    );
+    const redirect = jest.fn();
+    const reply = {
+      header: jest.fn(),
+      redirect,
+    } as unknown as FastifyReply;
+
+    await controller.open(
+      '22222222-2222-4222-8222-222222222222',
+      '33333333-3333-4333-8333-333333333333',
+      { eventId: 'not-a-uuid', visitorId: ['unexpected-array'] },
+      { headers: {}, ip: '203.0.113.22' } as unknown as FastifyRequest,
+      reply,
+    );
+
+    expect(ingest).not.toHaveBeenCalled();
+    expect(redirect).toHaveBeenCalledWith('https://wa.me/9647500000000', 302);
+  });
+
+  it('bounds oversized attribution and still records the tracked click', async () => {
+    const pageId = '22222222-2222-4222-8222-222222222222';
+    const actionId = '33333333-3333-4333-8333-333333333333';
+    const eventId = '11111111-1111-4111-8111-111111111111';
+    const ingest = jest.fn().mockResolvedValue({
+      accepted: true,
+      deduplicated: false,
+      eventId,
+    });
+    const resolveRedirectDestination = jest
+      .fn()
+      .mockResolvedValue('https://wa.me/9647500000000');
+    const controller = new PublicUnifiedAnalyticsController(
+      { ingest, resolveRedirectDestination } as never,
+      { isRateLimited: jest.fn().mockResolvedValue(false) } as never,
+      { assertForPublicPages: jest.fn().mockResolvedValue(undefined) } as never,
+    );
+    const reply = {
+      header: jest.fn(),
+      redirect: jest.fn(),
+    } as unknown as FastifyReply;
+
+    await controller.open(
+      pageId,
+      actionId,
+      {
+        eventId,
+        eventName: 'whatsapp_click',
+        visitorId: 'visitor-valid-1',
+        sessionId: 'session-valid-1',
+        occurredAt: new Date().toISOString(),
+        consentState: 'granted',
+        browserDispatched: 'true',
+        browserEventName: 'Contact',
+        pageUrl: `https://example.com/?ttclid=${'a'.repeat(3000)}`,
+        referrer: `https://www.tiktok.com/${'b'.repeat(3000)}`,
+        ttclid: 'c'.repeat(500),
+        ttp: 'd'.repeat(500),
+        message: 'e'.repeat(2500),
+      },
+      { headers: {}, ip: '203.0.113.23' } as unknown as FastifyRequest,
+      reply,
+    );
+
+    expect(resolveRedirectDestination).toHaveBeenCalledWith(
+      pageId,
+      actionId,
+      'e'.repeat(2000),
+    );
+    expect(ingest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pageUrl: `https://example.com/?ttclid=${'a'.repeat(3000)}`.slice(
+          0,
+          2048,
+        ),
+        referrer: `https://www.tiktok.com/${'b'.repeat(3000)}`.slice(0, 2048),
+        ttclid: 'c'.repeat(255),
+        ttp: 'd'.repeat(255),
+      }),
+      expect.any(Object),
+    );
+    expect(reply.redirect).toHaveBeenCalledWith(
+      'https://wa.me/9647500000000',
+      302,
+    );
+  });
 });

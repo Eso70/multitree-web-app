@@ -42,6 +42,35 @@ import { AnalyticsReadService } from './analytics-read.service';
 import { UnifiedAnalyticsService } from './unified-analytics.service';
 import { AccessRuleEnforcementService } from '../auth/access-rule-enforcement.service';
 
+function redirectQueryString(
+  query: Record<string, unknown>,
+  key: string,
+  maxLength?: number,
+): string | undefined {
+  const value = query[key];
+  if (typeof value !== 'string') return undefined;
+  return maxLength === undefined ? value : value.slice(0, maxLength);
+}
+
+function prepareRedirectQuery(
+  query: Record<string, unknown>,
+): TrackAnalyticsRedirectDto {
+  return plainToInstance(TrackAnalyticsRedirectDto, {
+    eventId: redirectQueryString(query, 'eventId'),
+    eventName: redirectQueryString(query, 'eventName'),
+    visitorId: redirectQueryString(query, 'visitorId', 128),
+    sessionId: redirectQueryString(query, 'sessionId', 128),
+    occurredAt: redirectQueryString(query, 'occurredAt'),
+    pageUrl: redirectQueryString(query, 'pageUrl', 2048),
+    referrer: redirectQueryString(query, 'referrer', 2048),
+    ttclid: redirectQueryString(query, 'ttclid', 255),
+    ttp: redirectQueryString(query, 'ttp', 255),
+    consentState: redirectQueryString(query, 'consentState'),
+    browserDispatched: redirectQueryString(query, 'browserDispatched'),
+    browserEventName: redirectQueryString(query, 'browserEventName'),
+  });
+}
+
 @Controller('api/public/analytics')
 export class PublicUnifiedAnalyticsController {
   private readonly logger = new Logger(PublicUnifiedAnalyticsController.name);
@@ -169,7 +198,10 @@ export class PublicUnifiedAnalyticsController {
   async open(
     @Param('pageId', ParseUUIDPipe) pageId: string,
     @Param('actionId', ParseUUIDPipe) actionId: string,
-    @Query() query: TrackAnalyticsRedirectDto,
+    // Keep the raw query out of the global DTO pipe. Validation belongs inside
+    // the fail-open block below; otherwise one oversized TikTok attribution
+    // value can return 400 before the registered destination is resolved.
+    @Query() query: Record<string, unknown>,
     @Req() request: FastifyRequest,
     @Res() reply: FastifyReply,
   ) {
@@ -178,15 +210,28 @@ export class PublicUnifiedAnalyticsController {
     const destination = await this.analytics.resolveRedirectDestination(
       pageId,
       actionId,
-      query.message,
+      redirectQueryString(query, 'message', 2000),
     );
     const context = analyticsRequestContext(request);
+    const redirectEvent = prepareRedirectQuery(query);
 
     try {
+      const validationErrors = await validate(redirectEvent, {
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        forbidUnknownValues: true,
+      });
+      if (validationErrors.length) {
+        throw new Error(
+          `invalid handoff fields: ${validationErrors
+            .map(({ property }) => property)
+            .join(', ')}`,
+        );
+      }
       await this.accessRules.assertForPublicPages(context.ip, [pageId]);
       const [visitorLimited, addressLimited] = await Promise.all([
         this.redis.isRateLimited(
-          `rl:analytics-v2:${context.ip}:${query.visitorId}`,
+          `rl:analytics-v2:${context.ip}:${redirectEvent.visitorId}`,
           180,
           60,
         ),
@@ -195,11 +240,10 @@ export class PublicUnifiedAnalyticsController {
       if (!visitorLimited && !addressLimited) {
         await this.analytics.ingest(
           plainToInstance(TrackAnalyticsEventDto, {
-            ...query,
-            message: undefined,
+            ...redirectEvent,
             pageId,
             actionId,
-            browserDispatched: query.browserDispatched === 'true',
+            browserDispatched: redirectEvent.browserDispatched === 'true',
             properties: { delivery: 'first_party_redirect' },
           }),
           context,
@@ -209,7 +253,7 @@ export class PublicUnifiedAnalyticsController {
       // Analytics must fail open: a database, Redis, or policy error must not
       // stop the visitor reaching the business they intentionally selected.
       this.logger.warn(
-        `Tracked navigation analytics failed (${query.eventId}): ${
+        `Tracked navigation analytics failed (${redirectEvent.eventId || 'unknown'}): ${
           error instanceof Error ? error.message : String(error)
         }`,
       );

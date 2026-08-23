@@ -137,6 +137,35 @@ describe("analytics queue delivery", () => {
     expect(trackedNavigationUrl(clickId, "tel:+9647500000000")).toBeUndefined();
   });
 
+  it("bounds production attribution before building a tracked hop", async () => {
+    const actionId = "33333333-3333-4333-8333-333333333333";
+    localStorage.setItem(
+      QUEUE_KEY,
+      JSON.stringify([
+        storedEvent({
+          actionId,
+          eventName: "whatsapp_click",
+          pageUrl: `https://example.com/?ttclid=${"a".repeat(3000)}`,
+          referrer: `https://www.tiktok.com/${"b".repeat(3000)}`,
+          ttclid: "c".repeat(500),
+          ttp: "d".repeat(500),
+        }),
+      ]),
+    );
+    const { trackedNavigationUrl } = await loadQueueModule();
+
+    const url = trackedNavigationUrl(
+      UUID,
+      "https://wa.me/9647500000000",
+    );
+    const query = new URL(url || "", "https://example.com").searchParams;
+
+    expect(query.get("pageUrl")).toHaveLength(2048);
+    expect(query.get("referrer")).toHaveLength(2048);
+    expect(query.get("ttclid")).toHaveLength(255);
+    expect(query.get("ttp")).toHaveLength(255);
+  });
+
   it("discards a stored event whose id the server could never parse", async () => {
     // An id minted by an older build, before createRuntimeId always produced a
     // UUID. It cannot be accepted, so keeping it only blocks the queue.

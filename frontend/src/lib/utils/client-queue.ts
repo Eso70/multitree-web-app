@@ -54,8 +54,30 @@ const QUEUE_KEY = "multitree_analytics_events_v2";
 const MAX_QUEUE_SIZE = 500;
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const FLUSH_INTERVAL_MS = 15_000;
+const MAX_ANALYTICS_URL_LENGTH = 2048;
+const MAX_TIKTOK_ATTRIBUTION_LENGTH = 255;
 let memoryQueue: QueuedAnalyticsEvent[] = [];
 let flushPromise: Promise<void> | null = null;
+
+function boundedAnalyticsValue(
+  value: string | undefined,
+  maxLength: number,
+): string | undefined {
+  return value ? value.slice(0, maxLength) : undefined;
+}
+
+function normalizeEvent(event: QueuedAnalyticsEvent): QueuedAnalyticsEvent {
+  return {
+    ...event,
+    pageUrl: boundedAnalyticsValue(event.pageUrl, MAX_ANALYTICS_URL_LENGTH),
+    referrer: boundedAnalyticsValue(event.referrer, MAX_ANALYTICS_URL_LENGTH),
+    ttclid: boundedAnalyticsValue(
+      event.ttclid,
+      MAX_TIKTOK_ATTRIBUTION_LENGTH,
+    ),
+    ttp: boundedAnalyticsValue(event.ttp, MAX_TIKTOK_ATTRIBUTION_LENGTH),
+  };
+}
 
 function storageAvailable(): boolean {
   try {
@@ -121,10 +143,12 @@ function readQueue(): QueuedAnalyticsEvent[] {
         combined.push(memoryEvent);
       }
     }
-    const queue = combined.filter(
-      (event) =>
-        validEvent(event) && new Date(event.occurredAt).getTime() >= cutoff,
-    );
+    const queue = combined
+      .filter(
+        (event): event is QueuedAnalyticsEvent =>
+          validEvent(event) && new Date(event.occurredAt).getTime() >= cutoff,
+      )
+      .map(normalizeEvent);
     memoryQueue = queue.slice(-MAX_QUEUE_SIZE);
     if (queue.length !== stored.length) writeQueue(queue);
     return queue;
@@ -161,10 +185,19 @@ function attribution(): {
   if (typeof window === "undefined") return {};
   const params = new URLSearchParams(window.location.search);
   return {
-    pageUrl: window.location.href,
-    referrer: document.referrer || undefined,
-    ttclid: params.get("ttclid") || undefined,
-    ttp: cookie("_ttp"),
+    pageUrl: boundedAnalyticsValue(
+      window.location.href,
+      MAX_ANALYTICS_URL_LENGTH,
+    ),
+    referrer: boundedAnalyticsValue(
+      document.referrer || undefined,
+      MAX_ANALYTICS_URL_LENGTH,
+    ),
+    ttclid: boundedAnalyticsValue(
+      params.get("ttclid") || undefined,
+      MAX_TIKTOK_ATTRIBUTION_LENGTH,
+    ),
+    ttp: boundedAnalyticsValue(cookie("_ttp"), MAX_TIKTOK_ATTRIBUTION_LENGTH),
   };
 }
 

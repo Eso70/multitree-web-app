@@ -330,6 +330,15 @@ navigation fails open and still reaches the business. The queue later retries
 the same id. Database uniqueness collapses the redirect, beacon, and fetch no
 matter which arrives first.
 
+The redirect query is intentionally accepted as raw input and normalized only
+after the registered destination has been resolved. Validation then runs
+inside the fail-open analytics block. This ordering is essential: TikTok ad
+URLs can carry attribution values longer than the database fields, and a
+global DTO rejection would otherwise return `400` before the controller could
+redirect. The browser and controller both bound page/referrer URLs to 2048
+characters and TikTok identifiers to 255 characters; malformed analytics is
+logged and skipped, but it never blocks the outbound navigation.
+
 Native `tel:`, `mailto:`, and application schemes stay on the immediate-beacon
 plus queue path because mobile browsers do not consistently follow an HTTP
 redirect into those schemes. Download anchors also retain their native browser
