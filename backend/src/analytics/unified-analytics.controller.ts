@@ -15,6 +15,8 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 import type { FastifyRequest } from 'fastify';
 import { AuthorizationGuard } from '../auth/authorization.guard';
 import { BusinessGuard } from '../auth/business.guard';
@@ -24,7 +26,10 @@ import { RequireCapabilities } from '../auth/require-capabilities.decorator';
 import type { SessionUser } from '../auth/session.service';
 import { analyticsRequestContext } from '../common/request-context';
 import { RedisService } from '../redis/redis.service';
-import { TrackAnalyticsBatchDto } from './dto/analytics-event.dto';
+import {
+  TrackAnalyticsBatchDto,
+  TrackAnalyticsEventDto,
+} from './dto/analytics-event.dto';
 import {
   CreateCrmNoteDto,
   CRM_LEAD_STATUSES,
@@ -52,16 +57,40 @@ export class PublicUnifiedAnalyticsController {
     @Req() request: FastifyRequest,
   ) {
     const context = analyticsRequestContext(request);
+    const prepared = await Promise.all(
+      body.events.map(async (rawEvent) => {
+        const raw =
+          rawEvent && typeof rawEvent === 'object' && !Array.isArray(rawEvent)
+            ? (rawEvent as Record<string, unknown>)
+            : undefined;
+        const eventId = typeof raw?.eventId === 'string' ? raw.eventId : '';
+        if (!raw) return { eventId };
+        const event = plainToInstance(TrackAnalyticsEventDto, raw);
+        const errors = await validate(event, {
+          whitelist: true,
+          forbidNonWhitelisted: true,
+          forbidUnknownValues: true,
+        });
+        return errors.length ? { eventId } : { eventId, event };
+      }),
+    );
     await this.accessRules.assertForPublicPages(
       context.ip,
-      body.events.map((event) => event.pageId),
+      prepared.flatMap(({ event }) => (event ? [event.pageId] : [])),
     );
-    const limited = await this.redis.isRateLimited(
-      `rl:analytics-v2:${context.ip}`,
-      180,
-      60,
-    );
-    if (limited) {
+    const visitorKey = prepared.find(({ event }) => event)?.event?.visitorId;
+    const [visitorLimited, addressLimited] = await Promise.all([
+      this.redis.isRateLimited(
+        `rl:analytics-v2:${context.ip}:${visitorKey || 'invalid'}`,
+        180,
+        60,
+      ),
+      // A high address ceiling still bounds abuse if a caller rotates visitor
+      // ids, without grouping ordinary visitors behind one CDN/proxy address
+      // into the much smaller per-visitor allowance.
+      this.redis.isRateLimited(`rl:analytics-v2-ip:${context.ip}`, 5_000, 60),
+    ]);
+    if (visitorLimited || addressLimited) {
       throw new HttpException(
         { message: 'Too many analytics requests', retryAfter: 60 },
         HttpStatus.TOO_MANY_REQUESTS,
@@ -87,7 +116,16 @@ export class PublicUnifiedAnalyticsController {
       deduplicated: boolean;
       eventId: string;
     }> = [];
-    for (const event of body.events) {
+    for (const preparedEvent of prepared) {
+      const event = preparedEvent.event;
+      if (!event) {
+        results.push({
+          accepted: false,
+          deduplicated: false,
+          eventId: preparedEvent.eventId,
+        });
+        continue;
+      }
       try {
         results.push(await this.analytics.ingest(event, context));
       } catch (error) {

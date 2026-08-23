@@ -14,11 +14,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const QUEUE_KEY = "multitree_analytics_events_v2";
 const UUID = "11111111-1111-4111-8111-111111111111";
+const PAGE_UUID = "22222222-2222-4222-8222-222222222222";
 
 function storedEvent(overrides: Record<string, unknown> = {}) {
   return {
     eventId: UUID,
-    pageId: "page-1",
+    pageId: PAGE_UUID,
     eventName: "page_view",
     visitorId: "visitor-1",
     sessionId: "session-1",
@@ -73,7 +74,7 @@ describe("analytics queue delivery", () => {
   it("marks every new public-page event for automatic marketing delivery", async () => {
     const { queueAnalyticsEvent } = await loadQueueModule();
 
-    queueAnalyticsEvent({ pageId: "page-1", eventName: "page_view" });
+    queueAnalyticsEvent({ pageId: PAGE_UUID, eventName: "page_view" });
 
     const [event] = JSON.parse(
       localStorage.getItem(QUEUE_KEY) || "[]",
@@ -93,9 +94,11 @@ describe("analytics queue delivery", () => {
         storedEvent({ eventId: UUID }),
       ]),
     );
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue({ ok: true, status: 202, json: () => ({}) });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 202,
+      json: () => ({ data: { events: [{ eventId: UUID }] } }),
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     const { flushNow } = await loadQueueModule();
@@ -150,12 +153,16 @@ describe("analytics queue delivery", () => {
     const sendBeacon = vi.fn().mockReturnValue(true);
     vi.stubGlobal("navigator", { ...globalThis.navigator, sendBeacon });
     vi.stubGlobal("fetch", vi.fn());
+    const listenerSpy = vi.spyOn(window, "addEventListener");
 
     await loadQueueModule();
-    window.dispatchEvent(new Event("pagehide"));
+    const pagehide = listenerSpy.mock.calls.find(
+      ([eventName]) => eventName === "pagehide",
+    )?.[1] as EventListener;
+    pagehide(new Event("pagehide"));
 
     expect(sendBeacon).toHaveBeenCalledTimes(3);
-    expect(readStored()).toEqual([]);
+    expect(readStored()).toHaveLength(120);
   });
 
   it("stops handing off once the browser refuses a beacon", async () => {
@@ -172,12 +179,16 @@ describe("analytics queue delivery", () => {
     const sendBeacon = vi.fn().mockReturnValueOnce(true).mockReturnValue(false);
     vi.stubGlobal("navigator", { ...globalThis.navigator, sendBeacon });
     vi.stubGlobal("fetch", vi.fn());
+    const listenerSpy = vi.spyOn(window, "addEventListener");
 
     await loadQueueModule();
-    window.dispatchEvent(new Event("pagehide"));
+    const pagehide = listenerSpy.mock.calls.find(
+      ([eventName]) => eventName === "pagehide",
+    )?.[1] as EventListener;
+    pagehide(new Event("pagehide"));
 
-    // The accepted batch is cleared; the refused remainder is kept.
-    expect(readStored()).toHaveLength(70);
+    // Browser acceptance is not a server acknowledgement, so all remain.
+    expect(readStored()).toHaveLength(120);
   });
 
   it("keeps a rate-limited batch, which is a wait rather than a rejection", async () => {
@@ -191,5 +202,117 @@ describe("analytics queue delivery", () => {
     await expect(flushNow()).rejects.toThrow();
 
     expect(readStored()).toHaveLength(1);
+  });
+
+  it("retires individually rejected events acknowledged by the server", async () => {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify([storedEvent()]));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 202,
+        json: () => ({
+          data: {
+            accepted: 0,
+            deduplicated: 0,
+            events: [{ eventId: UUID, accepted: false }],
+          },
+        }),
+      }),
+    );
+
+    const { flushNow } = await loadQueueModule();
+    await flushNow();
+
+    expect(readStored()).toEqual([]);
+  });
+
+  it("keeps events when a success response lacks complete acknowledgements", async () => {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify([storedEvent()]));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 202,
+        json: () => ({ data: { accepted: 1 } }),
+      }),
+    );
+
+    const { flushNow } = await loadQueueModule();
+    await expect(flushNow()).rejects.toThrow();
+
+    expect(readStored()).toHaveLength(1);
+  });
+
+  it("still sends a click queued while a view batch is in flight", async () => {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify([storedEvent()]));
+    let resolveFirst: ((value: unknown) => void) | undefined;
+    const firstResponse = new Promise((resolve) => {
+      resolveFirst = resolve;
+    });
+    const clickId = "33333333-3333-4333-8333-333333333333";
+    const fetchMock = vi
+      .fn()
+      .mockReturnValueOnce(firstResponse)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 202,
+        json: () => ({ data: { events: [{ eventId: clickId }] } }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { flushNow, queueAnalyticsEvent } = await loadQueueModule();
+    const firstFlush = flushNow();
+    queueAnalyticsEvent({
+      pageId: PAGE_UUID,
+      eventId: clickId,
+      eventName: "button_click",
+    });
+    const clickFlush = flushNow();
+    resolveFirst?.({
+      ok: true,
+      status: 202,
+      json: () => ({ data: { events: [{ eventId: UUID }] } }),
+    });
+
+    await firstFlush;
+    await clickFlush;
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(readStored()).toEqual([]);
+  });
+
+  it("delivers from memory when localStorage is blocked", async () => {
+    vi.stubGlobal("localStorage", {
+      setItem: () => {
+        throw new Error("blocked");
+      },
+      removeItem: () => {
+        throw new Error("blocked");
+      },
+      getItem: () => {
+        throw new Error("blocked");
+      },
+    });
+    const fetchMock = vi.fn().mockImplementation((_url, init) => {
+      const payload = JSON.parse(init.body) as {
+        events: Array<{ eventId: string }>;
+      };
+      return Promise.resolve({
+        ok: true,
+        status: 202,
+        json: () => ({
+          data: {
+            events: payload.events.map(({ eventId }) => ({ eventId })),
+          },
+        }),
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { flushNow, queueAnalyticsEvent } = await loadQueueModule();
+    queueAnalyticsEvent({ pageId: PAGE_UUID, eventName: "page_view" });
+    await flushNow();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -62,4 +62,25 @@ describe('AccessRuleEnforcementService', () => {
     await expect(service.assertAllowed('unknown')).resolves.toBeUndefined();
     expect(query).not.toHaveBeenCalled();
   });
+
+  it('resolves source Linktree and mini-website ids to their business rules', async () => {
+    const query = jest
+      .fn()
+      .mockResolvedValueOnce({ rows: [{ business_id: 'business-id' }] })
+      .mockResolvedValueOnce({ rows: [] });
+    const service = new AccessRuleEnforcementService({
+      query,
+    } as unknown as DatabaseService);
+
+    await service.assertForPublicPages('203.0.113.10', [
+      '11111111-1111-4111-8111-111111111111',
+    ]);
+
+    const calls = query.mock.calls as unknown as Array<[string, unknown[]]>;
+    expect(calls[0][0]).toContain('source_linktree_id=ANY');
+    expect(calls[0][0]).toContain('source_mini_website_id=ANY');
+    expect(calls[1][1]).toEqual(
+      expect.arrayContaining(['business', 'business-id']),
+    );
+  });
 });

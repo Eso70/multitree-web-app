@@ -10,13 +10,19 @@ export const TemplateSelector = memo(function TemplateSelector({
   onClose,
   selectedTemplate,
   onSelectTemplate,
+  allowedTemplateKeys,
 }: {
   isOpen: boolean;
   onClose: () => void;
   selectedTemplate: TemplateKey;
   onSelectTemplate: (template: TemplateKey) => void;
+  /** Explicit access snapshot for non-account workflows such as a client invitation. */
+  allowedTemplateKeys?: readonly TemplateKey[];
 }) {
-  const { isTemplateAllowed } = useTemplateAccess();
+  const { isTemplateAllowed } = useTemplateAccess(
+    allowedTemplateKeys === undefined,
+  );
+  const explicitAllowedKeys = new Set(allowedTemplateKeys);
 
   return (
     <CompactTemplateSelectorModal
@@ -27,7 +33,11 @@ export const TemplateSelector = memo(function TemplateSelector({
       onSelectTemplate={(templateId) =>
         onSelectTemplate(templateId as TemplateKey)
       }
-      isAllowed={isTemplateAllowed}
+      isAllowed={(templateKey) =>
+        allowedTemplateKeys === undefined
+          ? isTemplateAllowed(templateKey)
+          : explicitAllowedKeys.has(templateKey as TemplateKey)
+      }
     />
   );
 });

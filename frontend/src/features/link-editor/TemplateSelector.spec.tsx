@@ -31,4 +31,20 @@ describe("TemplateSelector", () => {
     expect(screen.getByRole("button", { name: /Frost/i })).toBeDisabled();
     expect(screen.getByRole("button", { name: /Serenity/i })).toBeDisabled();
   });
+
+  it("uses an explicit invitation snapshot without exposing other templates", async () => {
+    render(
+      <TemplateSelector
+        isOpen
+        onClose={vi.fn()}
+        selectedTemplate="frost"
+        onSelectTemplate={vi.fn()}
+        allowedTemplateKeys={["frost", "aurora"]}
+      />,
+    );
+
+    expect(await screen.findByRole("button", { name: /Frost/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /Aurora/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /Spectrum/i })).toBeDisabled();
+  });
 });

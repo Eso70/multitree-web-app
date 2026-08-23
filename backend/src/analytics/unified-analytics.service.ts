@@ -163,6 +163,13 @@ export type AnalyticsChannel =
 
 const SEARCH_ENGINE_HOSTS = /google\.|bing\.|yahoo\.|duckduckgo\./i;
 
+const ANALYTICS_BOT_USER_AGENT =
+  /googlebot|bingbot|yandexbot|duckduckbot|applebot|baiduspider|bytespider|petalbot|ahrefsbot|semrushbot|mj12bot|dotbot|facebookexternalhit|twitterbot|linkedinbot|slackbot|telegrambot|discordbot|embedly|quora link preview|(?:^|[^a-z])bot(?:[^a-z]|$)|crawler|spider|headlesschrome|phantomjs|puppeteer|playwright|python-requests|scrapy|curl\/|wget\//i;
+
+export function isAnalyticsBotUserAgent(userAgent: string): boolean {
+  return ANALYTICS_BOT_USER_AGENT.test(userAgent);
+}
+
 /**
  * Event properties that identify a person rather than describe a click.
  *
@@ -314,9 +321,7 @@ export class UnifiedAnalyticsService {
   }
 
   private isBot(userAgent: string): boolean {
-    return /bot|crawler|spider|headless|preview|facebookexternalhit|bytespider/i.test(
-      userAgent,
-    );
+    return isAnalyticsBotUserAgent(userAgent);
   }
 
   private attribution(
@@ -409,17 +414,15 @@ export class UnifiedAnalyticsService {
       `SELECT id, label, action_type, tiktok_event
        FROM public_page_actions
        WHERE public_page_id = $1
-         AND status = 'active'
          AND (id = $2::uuid OR source_link_id = $2::uuid)
        LIMIT 1`,
       [pageId, sourceOrActionId],
     );
-    if (!result.rows[0]) {
-      throw new BadRequestException(
-        'The analytics action does not belong to this public page',
-      );
-    }
-    return result.rows[0];
+    // An already-rendered page may click an action after an editor archives or
+    // replaces it. Resolve archived rows on the same page so the real click
+    // still reaches page totals. Unknown or cross-page ids remain detached
+    // from action rollups instead of rejecting the whole event.
+    return result.rows[0] || null;
   }
 
   private tiktokEvent(

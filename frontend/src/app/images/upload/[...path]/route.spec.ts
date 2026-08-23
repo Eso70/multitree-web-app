@@ -1,6 +1,6 @@
 import { join, resolve } from "path";
 import { getUploadDirectories, resolveUploadPath } from "./upload-path";
-import { __testing } from "./route";
+import { getUploadContentType } from "./content-type";
 
 describe("uploaded image compatibility route", () => {
   const runtimeDirectory = resolve("C:/multitree/.runtime/uploads");
@@ -51,7 +51,7 @@ describe("uploaded image compatibility route", () => {
 });
 
 describe("uploaded image content type", () => {
-  const { getContentType } = __testing;
+  const getContentType = getUploadContentType;
 
   it.each([
     ["jpg", "image/jpeg"],

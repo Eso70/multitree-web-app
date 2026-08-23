@@ -157,7 +157,10 @@ export class AccessRuleEnforcementService {
     }
     const result = await this.database.query<{ business_id: string }>(
       `SELECT DISTINCT business_id::text
-       FROM public_pages WHERE id=ANY($1::uuid[])`,
+       FROM public_pages
+       WHERE id=ANY($1::uuid[])
+          OR source_linktree_id=ANY($1::uuid[])
+          OR source_mini_website_id=ANY($1::uuid[])`,
       [uniquePageIds],
     );
     if (!result.rows.length) {

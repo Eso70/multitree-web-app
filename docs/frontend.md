@@ -957,3 +957,27 @@ Default local address: `http://localhost:3011`. For subdomain routing in
 development, use a wildcard localhost domain such as `http://acme.lvh.me:3011`
 and include every browser origin, including its port, in `CORS_ORIGIN`. Add
 local hostnames used for device testing to `ALLOWED_DEV_ORIGINS`.
+
+## Temporary client-access frontend prototype
+
+The Linktree management screen at `/business/pages` includes a **Client
+invitations** tab containing a deliberately isolated frontend prototype of
+temporary client Linktree creation. It stores mock invitations, PINs, drafts,
+submission state, publication state, and illustrative results in browser
+`localStorage`. The corresponding public demo routes are
+`/client-linktree-demo/:token` and `/client-linktree-demo/:token/results`.
+
+The prototype performs no mutating API requests, creates no business-owned
+content, uploads no media, and provides no security or tenant boundary. It
+reuses the existing read-only `/api/auth/template-access` response so the mock
+invitation can expose every Linktree template currently available to the
+business. The left-to-right client route reuses the shared Linktree editor
+modal and wizard steps through a typed browser-local workflow. That workflow
+uses the invitation's template snapshot, skips availability checks, converts
+images to bounded local previews instead of uploading them, hides business-only
+fields, and applies the invitation's link limit. PIN attempts are bounded only
+for the current browser session; this is demo behavior, not authentication.
+Invitation state remains browser-local. Its visible warnings are part of the
+product contract: it is for evaluating UI and workflow only, never for real
+clients or sensitive information. The future production implementation remains specified in
+`docs/new-feature-client-linktree-access.md`.

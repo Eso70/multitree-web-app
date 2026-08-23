@@ -1,4 +1,3 @@
-import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
@@ -14,7 +13,6 @@ import {
   Matches,
   MaxLength,
   Min,
-  ValidateNested,
 } from 'class-validator';
 
 export const ANALYTICS_EVENT_NAMES = [
@@ -139,7 +137,5 @@ export class TrackAnalyticsEventDto {
 export class TrackAnalyticsBatchDto {
   @IsArray()
   @ArrayMaxSize(50)
-  @ValidateNested({ each: true })
-  @Type(() => TrackAnalyticsEventDto)
-  events: TrackAnalyticsEventDto[];
+  events: unknown[];
 }

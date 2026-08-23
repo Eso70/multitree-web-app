@@ -90,6 +90,8 @@ interface BasicInfoStepProps {
   onUsernameChange?: (value: string) => void;
   isEditMode?: boolean;
   hideRemoveImage?: boolean;
+  hideImageUploads?: boolean;
+  allowedTemplateKeys?: readonly TemplateKey[];
 }
 
 export const BasicInfoStep = memo(function BasicInfoStep({
@@ -143,6 +145,8 @@ export const BasicInfoStep = memo(function BasicInfoStep({
   username = "",
   onUsernameChange,
   hideRemoveImage = false,
+  hideImageUploads = false,
+  allowedTemplateKeys,
 }: BasicInfoStepProps) {
   const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
   const [isPatternSelectorOpen, setIsPatternSelectorOpen] = useState(false);
@@ -178,16 +182,18 @@ export const BasicInfoStep = memo(function BasicInfoStep({
     <>
       <div className="space-y-5">
         {/* Profile Image Upload */}
-        <AvatarImageUpload
-          imageUrl={profileImagePreview}
-          fileInputRef={fileInputRef}
-          onFileChange={onImageChange}
-          onUploadClick={onUploadClick}
-          onRemove={onRemoveImage}
-          hideRemove={hideRemoveImage}
-          error={errors.image}
-          uploadLabel={onUploadClick ? "بارکردنی وێنەکانی بڕاند" : "وێنەی پڕۆفایل هەڵبژێرە"}
-        />
+        {!hideImageUploads && (
+          <AvatarImageUpload
+            imageUrl={profileImagePreview}
+            fileInputRef={fileInputRef}
+            onFileChange={onImageChange}
+            onUploadClick={onUploadClick}
+            onRemove={onRemoveImage}
+            hideRemove={hideRemoveImage}
+            error={errors.image}
+            uploadLabel={onUploadClick ? "بارکردنی وێنەکانی بڕاند" : "وێنەی پڕۆفایل هەڵبژێرە"}
+          />
+        )}
 
         {/* Name and Subtitle / Username / ExpireDate */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -341,8 +347,8 @@ export const BasicInfoStep = memo(function BasicInfoStep({
               onChange={onBackgroundColorChange}
               onBlur={onBackgroundColorBlur}
               imagePreview={backgroundImagePreview}
-              onImageChange={onBackgroundImageChange}
-              onImageRemove={onBackgroundImageRemove}
+              onImageChange={hideImageUploads ? undefined : onBackgroundImageChange}
+              onImageRemove={hideImageUploads ? undefined : onBackgroundImageRemove}
               error={errors.backgroundColor && touched.backgroundColor ? errors.backgroundColor : undefined}
             />
           </EditorField>
@@ -572,9 +578,9 @@ export const BasicInfoStep = memo(function BasicInfoStep({
         onClose={() => setIsTemplateSelectorOpen(false)}
         selectedTemplate={templateKey}
         onSelectTemplate={onTemplateKeyChange}
+        allowedTemplateKeys={allowedTemplateKeys}
       />
     </>
   );
 });
-
 

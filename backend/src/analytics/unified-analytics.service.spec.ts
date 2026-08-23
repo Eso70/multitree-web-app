@@ -7,6 +7,7 @@ import {
   automaticCrmStatus,
   crmProspectLockKey,
   forwardsToTikTok,
+  isAnalyticsBotUserAgent,
 } from './unified-analytics.service';
 
 describe('automaticCrmStatus', () => {
@@ -179,6 +180,66 @@ describe('forwardsToTikTok', () => {
         hasAction: false,
       }),
     ).toBe(true);
+  });
+});
+
+describe('analytics bot detection', () => {
+  it('does not classify CUBOT Android phones as bots', () => {
+    expect(
+      isAnalyticsBotUserAgent(
+        'Mozilla/5.0 (Linux; Android 10; CUBOT_NOTE_20 Build/QP1A)',
+      ),
+    ).toBe(false);
+  });
+
+  it('still classifies known crawlers and generic bot tokens', () => {
+    expect(isAnalyticsBotUserAgent('facebookexternalhit/1.1')).toBe(true);
+    expect(isAnalyticsBotUserAgent('Example-Bot/1.0')).toBe(true);
+  });
+});
+
+describe('action resolution', () => {
+  it('accepts an archived action that still belongs to the page', async () => {
+    const service = buildService();
+    const action = {
+      id: 'action-id',
+      label: 'Old button',
+      action_type: 'button',
+      tiktok_event: 'ClickButton',
+    };
+    const client = { query: jest.fn().mockResolvedValue({ rows: [action] }) };
+
+    const result = await (
+      service as unknown as {
+        resolveAction: (
+          client: unknown,
+          pageId: string,
+          actionId: string,
+        ) => Promise<unknown>;
+      }
+    ).resolveAction(client, 'page-id', 'action-id');
+
+    expect(result).toEqual(action);
+    expect(mockArg<string>(client.query, 0, 0)).not.toContain(
+      "status = 'active'",
+    );
+  });
+
+  it('keeps an unknown or cross-page action detached from action rollups', async () => {
+    const service = buildService();
+    const client = { query: jest.fn().mockResolvedValue({ rows: [] }) };
+
+    await expect(
+      (
+        service as unknown as {
+          resolveAction: (
+            client: unknown,
+            pageId: string,
+            actionId: string,
+          ) => Promise<unknown>;
+        }
+      ).resolveAction(client, 'page-id', 'other-action-id'),
+    ).resolves.toBeNull();
   });
 });
 

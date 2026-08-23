@@ -217,5 +217,12 @@ describe('BusinessAdministrationService', () => {
     );
     expect(values).toHaveLength(18);
     expect(values[17]).toBe('Imported description');
+    expect(
+      clientQuery.mock.calls.some(([statement]) =>
+        /DELETE FROM analytics_(events|page_daily|action_daily)/.test(
+          statement,
+        ),
+      ),
+    ).toBe(false);
   });
 });

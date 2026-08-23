@@ -290,6 +290,36 @@ which is why `trackServerConversion` fires the pixel and nothing else.
 
 ## Delivery
 
+### Browser queue
+
+`client-queue.ts` keeps first-party analytics events until the ingest endpoint
+acknowledges every `eventId` in the sent batch. A successful HTTP status alone
+is not an acknowledgement: the endpoint can accept some events and reject
+others in the same `202` response. The client retires both accepted and
+permanently rejected event ids from that response and retries any id whose
+result is missing. Database uniqueness on `analytics_events.event_id` makes
+those retries idempotent.
+
+The queue never clears a batch before `fetch` completes. A click added while a
+view batch is in flight waits for that request and starts the next flush, which
+is important when the click immediately opens another tab or application.
+When local storage is blocked, the current page keeps the queue and anonymous
+visitor/session ids in memory so its events can still be delivered.
+
+`pagehide` and hidden-page delivery use `sendBeacon` as a best-effort handoff.
+A `true` return value means only that the browser accepted the beacon for
+delivery; it is not a server acknowledgement, so beacon attempts never remove
+events from persistent storage. A later visit safely retries them under the
+same event ids.
+
+The public controller validates events individually after enforcing the
+50-event batch boundary. One malformed event is returned as rejected without
+preventing valid neighbors from being ingested. Stale and archived action ids
+from an already-rendered page still count toward that page; an action belonging
+to another page is never attached to the requested page's action rollup.
+
+### TikTok Events API outbox
+
 `marketing_event_outbox` rows are written inside the ingest transaction — one
 per active pixel — and delivered by `TikTokOutboxProcessor` every two seconds.
 
@@ -397,9 +427,10 @@ turns it off. It costs one disabled boolean check when off.
 With debug on, `loadTikTokPixel` also records the SDK script's own `onload` /
 `onerror` under a `pixel_loaded` / `pixel_failed` entry — a pixel blocked by an
 ad blocker or refused by the network is visible in the report instead of being
-silent. The report's `flushes` row answers "did the server accept it?": the
-queue dispatches `mt:analytics-flush` on every batch outcome with the HTTP
-status and the server's `accepted` / `deduplicated` counts.
+silent. The report's `flushes` row answers "did the server acknowledge it?":
+the queue dispatches `mt:analytics-flush` on every outcome with the HTTP status
+and the server's `accepted` / `deduplicated` counts. A `202` with incomplete
+event-level acknowledgements is retryable and remains queued.
 
 ---
 

@@ -54,7 +54,8 @@ const QUEUE_KEY = "multitree_analytics_events_v2";
 const MAX_QUEUE_SIZE = 500;
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const FLUSH_INTERVAL_MS = 15_000;
-let flushing = false;
+let memoryQueue: QueuedAnalyticsEvent[] = [];
+let flushPromise: Promise<void> | null = null;
 
 function storageAvailable(): boolean {
   try {
@@ -85,24 +86,47 @@ function validEvent(value: unknown): value is QueuedAnalyticsEvent {
     event.eventId &&
     UUID_PATTERN.test(event.eventId) &&
     event.pageId &&
+    UUID_PATTERN.test(event.pageId) &&
     event.eventName &&
-    event.visitorId &&
-    event.sessionId &&
-    event.occurredAt,
+    typeof event.visitorId === "string" &&
+    event.visitorId.length >= 8 &&
+    event.visitorId.length <= 128 &&
+    typeof event.sessionId === "string" &&
+    event.sessionId.length >= 8 &&
+    event.sessionId.length <= 128 &&
+    event.occurredAt &&
+    Number.isFinite(new Date(event.occurredAt).getTime()),
   );
 }
 
 function readQueue(): QueuedAnalyticsEvent[] {
-  if (!storageAvailable()) return [];
-  try {
-    const parsed = JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]");
-    if (!Array.isArray(parsed)) return [];
-    const cutoff = Date.now() - MAX_AGE_MS;
-    const queue = parsed.filter(
+  const cutoff = Date.now() - MAX_AGE_MS;
+  if (!storageAvailable()) {
+    memoryQueue = memoryQueue.filter(
       (event) =>
         validEvent(event) && new Date(event.occurredAt).getTime() >= cutoff,
     );
-    if (queue.length !== parsed.length) writeQueue(queue);
+    return [...memoryQueue];
+  }
+  try {
+    const parsed = JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]");
+    const stored = Array.isArray(parsed) ? parsed : [];
+    const combined = [...stored];
+    for (const memoryEvent of memoryQueue) {
+      if (
+        !combined.some(
+          (event) => validEvent(event) && event.eventId === memoryEvent.eventId,
+        )
+      ) {
+        combined.push(memoryEvent);
+      }
+    }
+    const queue = combined.filter(
+      (event) =>
+        validEvent(event) && new Date(event.occurredAt).getTime() >= cutoff,
+    );
+    memoryQueue = queue.slice(-MAX_QUEUE_SIZE);
+    if (queue.length !== stored.length) writeQueue(queue);
     return queue;
   } catch {
     return [];
@@ -110,12 +134,10 @@ function readQueue(): QueuedAnalyticsEvent[] {
 }
 
 function writeQueue(events: QueuedAnalyticsEvent[]): void {
+  memoryQueue = events.slice(-MAX_QUEUE_SIZE);
   if (!storageAvailable()) return;
   try {
-    localStorage.setItem(
-      QUEUE_KEY,
-      JSON.stringify(events.slice(-MAX_QUEUE_SIZE)),
-    );
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(memoryQueue));
   } catch {
     // Analytics must never interrupt the public page.
   }
@@ -151,7 +173,7 @@ function add(event: QueuedAnalyticsEvent): void {
   if (queue.some((stored) => stored.eventId === event.eventId)) return;
   queue.push(event);
   writeQueue(queue);
-  if (queue.length >= 25) void flushQueue();
+  if (queue.length >= 25) void flushQueue().catch(() => undefined);
 }
 
 function createEvent(input: {
@@ -201,116 +223,117 @@ export function queueAnalyticsEvent(input: {
   return event.eventId;
 }
 
-async function flushQueue(): Promise<void> {
-  if (flushing) return;
-  const snapshot = readQueue();
-  if (!snapshot.length) return;
-  flushing = true;
-  writeQueue([]);
+function reportFlush(detail: {
+  ok: boolean;
+  statusCode?: number;
+  accepted?: number;
+  deduplicated?: number;
+  total: number;
+  retryable?: boolean;
+}): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent("mt:analytics-flush", { detail }));
+}
+
+function removeQueuedEvents(eventIds: Set<string>): void {
+  if (!eventIds.size) return;
+  writeQueue(readQueue().filter((event) => !eventIds.has(event.eventId)));
+}
+
+async function deliverNextBatch(): Promise<void> {
+  const sent = readQueue().slice(0, 50);
+  if (!sent.length) return;
+
   try {
     const response = await fetch("/api/public/analytics/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       keepalive: true,
-      body: JSON.stringify({ events: snapshot.slice(0, 50) }),
+      body: JSON.stringify({ events: sent }),
     });
-    // Report the outcome to `?ttdebug=1` (when enabled) so a live page can
-    // answer "did the server accept it?" without querying the database. The
-    // listener is installed only once debug is on.
-    const report = (detail: {
-      ok: boolean;
-      statusCode?: number;
-      accepted?: number;
-      deduplicated?: number;
-      total: number;
-      retryable?: boolean;
-    }) => {
-      if (typeof window === "undefined") return;
-      window.dispatchEvent(new CustomEvent("mt:analytics-flush", { detail }));
-    };
-    // A 4xx is the server saying this batch will never be accepted — a
-    // malformed event, a page that no longer exists, a payload a newer server
-    // rejects. Retrying it forever would block every event queued behind it,
-    // so the batch is dropped and the rest of the queue continues. 5xx and
-    // network failures fall through to the catch and are retried.
     if (response.status >= 400 && response.status < 500) {
       if (response.status === 429) throw new Error("Analytics rate limited");
-      writeQueue([
-        ...snapshot.slice(50),
-        ...readQueue().filter(
-          (event) => !snapshot.some((sent) => sent.eventId === event.eventId),
-        ),
-      ]);
-      report({
+      removeQueuedEvents(new Set(sent.map((event) => event.eventId)));
+      reportFlush({
         ok: false,
         statusCode: response.status,
         retryable: false,
-        total: snapshot.length,
+        total: sent.length,
       });
       return;
     }
     if (!response.ok) throw new Error(`Analytics HTTP ${response.status}`);
+
     let accepted: number | undefined;
     let deduplicated: number | undefined;
+    let acknowledgedEventIds: Set<string> | undefined;
     try {
       const payload = (await response.json()) as {
-        data?: { accepted?: number; deduplicated?: number };
+        data?: {
+          accepted?: number;
+          deduplicated?: number;
+          events?: Array<{ eventId?: string }>;
+        };
       };
       accepted = payload.data?.accepted;
       deduplicated = payload.data?.deduplicated;
+      if (Array.isArray(payload.data?.events)) {
+        const sentIds = new Set(sent.map((event) => event.eventId));
+        acknowledgedEventIds = new Set(
+          payload.data.events
+            .map((event) => event.eventId)
+            .filter(
+              (eventId): eventId is string =>
+                typeof eventId === "string" && sentIds.has(eventId),
+            ),
+        );
+      }
     } catch {
-      // The batch landed; the summary is only for diagnostics, so a body that
-      // fails to parse changes nothing about delivery.
+      // Retain the idempotent batch unless every event is acknowledged.
     }
-    report({
+    if (!acknowledgedEventIds || acknowledgedEventIds.size !== sent.length) {
+      throw new Error("Analytics acknowledgement was incomplete");
+    }
+
+    removeQueuedEvents(acknowledgedEventIds);
+    reportFlush({
       ok: true,
       statusCode: response.status,
       accepted,
       deduplicated,
-      total: snapshot.length,
+      total: sent.length,
     });
-    const remaining = snapshot.slice(50);
-    writeQueue([
-      ...remaining,
-      ...readQueue().filter(
-        (event) =>
-          !remaining.some(
-            (remainingEvent) => remainingEvent.eventId === event.eventId,
-          ),
-      ),
-    ]);
   } catch {
-    const current = readQueue();
-    const restored = [...snapshot];
-    for (const event of current) {
-      if (!restored.some((stored) => stored.eventId === event.eventId)) {
-        restored.push(event);
-      }
-    }
-    writeQueue(restored);
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(
-        new CustomEvent("mt:analytics-flush", {
-          detail: { ok: false, retryable: true, total: snapshot.length },
-        }),
-      );
-    }
+    reportFlush({ ok: false, retryable: true, total: sent.length });
     throw new Error("Analytics delivery failed");
-  } finally {
-    flushing = false;
   }
 }
 
-export function flushNow(): Promise<void> {
-  return flushQueue();
+function flushQueue(): Promise<void> {
+  if (flushPromise) return flushPromise;
+  flushPromise = deliverNextBatch().finally(() => {
+    flushPromise = null;
+  });
+  return flushPromise;
+}
+
+export async function flushNow(): Promise<void> {
+  const activeFlush = flushPromise;
+  if (activeFlush) await activeFlush;
+  await flushQueue();
 }
 
 if (typeof window !== "undefined") {
-  let timer = window.setInterval(() => void flushQueue(), FLUSH_INTERVAL_MS);
+  let timer = window.setInterval(
+    () => void flushQueue().catch(() => undefined),
+    FLUSH_INTERVAL_MS,
+  );
 
   /**
-   * Hands the queue off on the way out, in batches the endpoint accepts.
+   * Attempts a final handoff without mistaking browser acceptance for a
+   * server acknowledgement. Successfully stored events are safe to retry
+   * because `eventId` is idempotent.
    *
    * `sendBeacon` is the only send that survives the page going away, so it has
    * to clear more than one batch: a visitor who clicked through several links
@@ -319,7 +342,6 @@ if (typeof window !== "undefined") {
    */
   const beacon = () => {
     let pending = readQueue();
-    const delivered = new Set<string>();
     // Bounded: sendBeacon has a per-origin size budget, and a page being
     // unloaded is not the place to attempt an unbounded drain.
     for (let batch = 0; batch < 4 && pending.length; batch += 1) {
@@ -332,11 +354,7 @@ if (typeof window !== "undefined") {
       );
       // Refused, usually because the budget is spent. Keep what is left.
       if (!accepted) break;
-      for (const event of events) delivered.add(event.eventId);
       pending = pending.slice(50);
-    }
-    if (delivered.size) {
-      writeQueue(readQueue().filter((event) => !delivered.has(event.eventId)));
     }
   };
 
@@ -351,6 +369,10 @@ if (typeof window !== "undefined") {
   window.addEventListener("pageshow", (event) => {
     if (!(event as PageTransitionEvent).persisted) return;
     window.clearInterval(timer);
-    timer = window.setInterval(() => void flushQueue(), FLUSH_INTERVAL_MS);
+    timer = window.setInterval(
+      () => void flushQueue().catch(() => undefined),
+      FLUSH_INTERVAL_MS,
+    );
+    void flushQueue().catch(() => undefined);
   });
 }

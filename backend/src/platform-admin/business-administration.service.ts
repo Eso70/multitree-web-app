@@ -1234,29 +1234,9 @@ export class BusinessAdministrationService {
             toText(page.description) || null,
           ],
         );
-        // An import is content-only: remove any analytics already attached to a
-        // page with the preserved UUID before replacing its buttons.
-        await client.query(
-          `DELETE FROM analytics_events
-           WHERE public_page_id IN (
-             SELECT id FROM public_pages WHERE source_linktree_id=$1
-           )`,
-          [targetPageId],
-        );
-        await client.query(
-          `DELETE FROM analytics_page_daily
-           WHERE public_page_id IN (
-             SELECT id FROM public_pages WHERE source_linktree_id=$1
-           )`,
-          [targetPageId],
-        );
-        await client.query(
-          `DELETE FROM analytics_action_daily
-           WHERE public_page_id IN (
-             SELECT id FROM public_pages WHERE source_linktree_id=$1
-           )`,
-          [targetPageId],
-        );
+        // Import replaces content only. The preserved page UUID also preserves
+        // its page-level analytics; replaced buttons start new action history
+        // while archived action rows keep the historical event relationships.
         await client.query(
           'DELETE FROM whatsapp_questions WHERE linktree_id = $1',
           [targetPageId],

@@ -59,7 +59,19 @@ export type {
   LinktreeEditorSubmitData,
 } from "@/features/link-editor/editor-types";
 
-interface LinktreeEditorModalProps {
+export interface LinktreeEditorWorkflow {
+  /** Local demo mode never calls availability or upload endpoints. */
+  persistence: "api" | "browser-local";
+  allowedTemplateKeys?: readonly TemplateKey[];
+  maxLinks?: number;
+  allowImageUploads?: boolean;
+  maxImageBytes?: number;
+  hideBusinessFields?: boolean;
+  title?: string;
+  submitLabel?: string;
+}
+
+export interface LinktreeEditorModalProps {
   isOpen: boolean;
   onClose: () => void;
   isDefault?: boolean;
@@ -85,6 +97,7 @@ interface LinktreeEditorModalProps {
     checkSlug: string;
     checkName: string;
   };
+  workflow?: LinktreeEditorWorkflow;
 }
 
 const DEFAULT_API_ENDPOINTS = {
@@ -139,7 +152,15 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
   businessIdentity,
   isDefault = false,
   apiEndpoints = DEFAULT_API_ENDPOINTS,
+  workflow = { persistence: "api" },
 }: LinktreeEditorModalProps) {
+  const isBrowserLocal = workflow.persistence === "browser-local";
+  const maxLinks = workflow.maxLinks
+    ? Math.max(1, Math.floor(workflow.maxLinks))
+    : undefined;
+  const defaultTemplateKey =
+    workflow.allowedTemplateKeys?.[0] ??
+    resolveDefaultTemplateKey(businessDefaults?.default_template);
   const { color: businessTheme } = useTheme();
   const [currentStep, setCurrentStep] = useState<"basic" | "select" | "links">("basic");
   const [profileImage, setProfileImage] = useState<File | null>(null);
@@ -153,7 +174,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
   // the profile image, the file is held until submit and uploaded once.
   const [backgroundImage, setBackgroundImage] = useState<File | null>(null);
   const [backgroundImagePreview, setBackgroundImagePreview] = useState<string | null>(null);
-  const [templateKey, setTemplateKey] = useState<TemplateKey>(() => resolveDefaultTemplateKey(businessDefaults?.default_template));
+  const [templateKey, setTemplateKey] = useState<TemplateKey>(defaultTemplateKey);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const selectedPlatforms = useMemo(
     () =>
@@ -275,8 +296,14 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     if (!value || !isTemplateKey(value)) {
       return "تکایە شێوازی پەڕە هەڵبژێرە";
     }
+    if (
+      workflow.allowedTemplateKeys &&
+      !workflow.allowedTemplateKeys.includes(value)
+    ) {
+      return "ئەم شێوازی پەڕەیە بۆ ئەم بانگهێشتنامەیە ڕێگەپێنەدراوە";
+    }
     return undefined;
-  }, []);
+  }, [workflow.allowedTemplateKeys]);
 
   const validatePlatforms = useCallback((platforms: string[]): string | undefined => {
     if (!platforms || platforms.length === 0) {
@@ -288,6 +315,9 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
   const validateLinks = useCallback((links: SocialLink[], selected: string[]): string | undefined => {
     if (!selected || selected.length === 0) {
       return "لانیکەم یەک پلاتفۆڕمەکان هەڵبژێرە";
+    }
+    if (maxLinks && selected.length > maxLinks) {
+      return `زۆرترین ژمارەی لینک بۆ ئەم بانگهێشتنامەیە ${maxLinks} ـە`;
     }
     
     let hasError = false;
@@ -323,7 +353,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     }
     
     return undefined;
-  }, []);
+  }, [maxLinks]);
 
   const validateFooterPhone = useCallback((value: string): string | undefined => {
     const trimmed = value.trim();
@@ -425,7 +455,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     if (file) {
       const validationError = validateUploadFile(file, {
         allowedMimeTypes: ["image/png", "image/jpeg"],
-        maxBytes: 10 * 1024 * 1024,
+        maxBytes: workflow.maxImageBytes ?? 10 * 1024 * 1024,
       });
       if (validationError) {
         setUploadError(validationError);
@@ -447,7 +477,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       };
       reader.readAsDataURL(file);
     }
-  }, []);
+  }, [workflow.maxImageBytes]);
 
   const handleBackgroundImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -459,7 +489,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
 
     const validationError = validateUploadFile(file, {
       allowedMimeTypes: ["image/png", "image/jpeg"],
-      maxBytes: 10 * 1024 * 1024,
+      maxBytes: workflow.maxImageBytes ?? 10 * 1024 * 1024,
     });
     if (validationError) {
       setUploadError(validationError);
@@ -473,7 +503,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       setBackgroundImagePreview(reader.result as string);
     };
     reader.readAsDataURL(file);
-  }, []);
+  }, [workflow.maxImageBytes]);
 
   const handleRemoveBackgroundImage = useCallback(() => {
     setBackgroundImage(null);
@@ -495,6 +525,16 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     file: File,
     assetType: "profile-image" | "background-image",
   ): Promise<string | null> => {
+    if (isBrowserLocal) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(
+          typeof reader.result === "string" ? reader.result : null,
+        );
+        reader.onerror = () => reject(new Error("Unable to read local image"));
+        reader.readAsDataURL(file);
+      });
+    }
     return enqueueImageUpload(async () => {
       setUploadError(null);
       try {
@@ -536,12 +576,14 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       setLinkErrors({});
       setBackgroundImage(null);
       setBackgroundImagePreview(null);
-      const defaultTemplate = resolveDefaultTemplateKey(businessDefaults?.default_template);
+      const defaultTemplate =
+        workflow.allowedTemplateKeys?.[0] ??
+        resolveDefaultTemplateKey(businessDefaults?.default_template);
       setBackgroundColor(resolveDefaultBackgroundColor(businessDefaults?.default_background_color));
       setTemplateKey(defaultTemplate);
       setTemplateConfig(normalizeTemplateConfig(defaultTemplate, null));
     }
-  }, [isOpen, businessDefaults?.default_background_color, businessDefaults?.default_template, resetSubmission]);
+  }, [isOpen, businessDefaults?.default_background_color, businessDefaults?.default_template, resetSubmission, workflow.allowedTemplateKeys]);
 
   // Initialize form data when editing (optimized - only runs when editData changes)
   useEffect(() => {
@@ -806,6 +848,11 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
    * last and paint an error for a slug the field no longer holds.
    */
   useEffect(() => {
+    if (isBrowserLocal) {
+      setSlugApiError(null);
+      setCheckingSlug(false);
+      return;
+    }
     const s = slug.trim();
     if (!s) {
       setSlugApiError(null);
@@ -835,7 +882,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [slug, isEditMode, editData?.linktree?.id, apiEndpoints.checkSlug]);
+  }, [slug, isEditMode, editData?.linktree?.id, apiEndpoints.checkSlug, isBrowserLocal]);
 
   /**
    * Debounced duplicate-name check.
@@ -844,6 +891,11 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
    * server would have accepted.
    */
   useEffect(() => {
+    if (isBrowserLocal) {
+      setNameWarning(null);
+      setCheckingName(false);
+      return;
+    }
     const trimmed = name.trim();
     if (trimmed.length < 2) {
       setNameWarning(null);
@@ -872,7 +924,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [name, isEditMode, editData?.linktree?.id, apiEndpoints.checkName]);
+  }, [name, isEditMode, editData?.linktree?.id, apiEndpoints.checkName, isBrowserLocal]);
 
   // Merge API slug error into displayed errors
   const displayErrors = useMemo(() => {
@@ -893,6 +945,15 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
   // Toggle a platform by updating the canonical link list. Selected IDs are
   // derived from this list so the selection and links steps cannot drift.
   const togglePlatform = useCallback((platformId: string) => {
+    const isSelected = socialLinks.some((link) => link.platform === platformId);
+    if (!isSelected && maxLinks && socialLinks.length >= maxLinks) {
+      setErrors((previous) => ({
+        ...previous,
+        platforms: `زۆرترین ژمارەی لینک بۆ ئەم بانگهێشتنامەیە ${maxLinks} ـە`,
+      }));
+      setTouched((previous) => ({ ...previous, platforms: true }));
+      return;
+    }
     startTransition(() => {
       setSocialLinks(prevLinks => {
         const existingLinks = prevLinks.filter(l => l.platform === platformId);
@@ -922,11 +983,19 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
         return nextLinks.map((link, index) => ({ ...link, order: index }));
       });
     });
-  }, [generateLinkId]);
+  }, [generateLinkId, maxLinks, socialLinks]);
 
   // Add another instance of a platform - memoized for performance
   const addPlatformInstance = useCallback((platformId: string) => {
     if (platformId === "gps") {
+      return;
+    }
+    if (maxLinks && socialLinks.length >= maxLinks) {
+      setErrors((previous) => ({
+        ...previous,
+        links: `زۆرترین ژمارەی لینک بۆ ئەم بانگهێشتنامەیە ${maxLinks} ـە`,
+      }));
+      setTouched((previous) => ({ ...previous, links: true }));
       return;
     }
     const newLinkId = generateLinkId(platformId);
@@ -945,7 +1014,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       const nextLinks = [...nonGpsLinks, newLink, ...gpsLinks];
       return nextLinks.map((link, index) => ({ ...link, order: index }));
     });
-  }, [generateLinkId]);
+  }, [generateLinkId, maxLinks, socialLinks.length]);
 
   // Remove a link instance - memoized for performance
   const removeLinkInstance = useCallback((linkId: string) => {
@@ -1544,11 +1613,11 @@ if (!isOpen) return null;
       isOpen={isOpen}
       onClose={onClose}
       title={
-        isEditMode
+        workflow.title ?? (isEditMode
           ? "دەستکاریکردنی پەڕە"
           : isDefault
             ? "دروستکردنی پەڕەی بنەڕەتی"
-            : "پەڕەی نوێ دروست بکە"
+            : "پەڕەی نوێ دروست بکە")
       }
       description={
         currentStep === "basic"
@@ -1582,11 +1651,11 @@ if (!isOpen) return null;
           canContinue={currentStep === "links" ? hasValidLinks : canContinueToNextStep}
           disableWhenInvalid={false}
           submitLabel={
-            isEditMode
+            workflow.submitLabel ?? (isEditMode
               ? "پاشەکەوتکردن"
               : isDefault
                 ? "دروستکردنی پەڕەی بنەڕەتی"
-                : "دروستکردن"
+                : "دروستکردن")
           }
           saveCurrentLabel="ئێستا پاشەکەوت بکە"
           onSaveCurrent={
@@ -1689,6 +1758,10 @@ if (!isOpen) return null;
             onWhatsappModalTitleChange={setWhatsappModalTitle}
             onWhatsappModalSubtitleChange={setWhatsappModalSubtitle}
             onWhatsappQuestionsChange={setWhatsappQuestions}
+            hideFooterSection={workflow.hideBusinessFields}
+            hideWhatsappQuestions={workflow.hideBusinessFields}
+            hideImageUploads={workflow.allowImageUploads === false}
+            allowedTemplateKeys={workflow.allowedTemplateKeys}
           />
         )}
 

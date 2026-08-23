@@ -2,11 +2,31 @@
 
 ## Status
 
-**Planning only — not implemented.**
+**Frontend prototype implemented — backend and database not implemented.**
 
-This document records a possible future MultiTree feature. It does not describe
-current application behavior and must not be treated as an implemented API,
-database schema, entitlement, or security control.
+The business dashboard now includes a browser-local demonstration in the
+**Client invitations** tab of `/business/pages`, with public mock client and
+results routes under `/client-linktree-demo/:token`. The prototype uses
+`localStorage` only and must not be treated as a secure invitation, implemented
+API, database schema, entitlement, upload path, or authorization control.
+
+The prototype reads the business's existing template-access response and
+captures all currently allowed Linktree templates in the browser-local mock
+invitation. It does not add or modify any backend endpoint, database table,
+entitlement, or permission.
+
+The mock client surface is left-to-right and renders the same reusable
+Linktree editor modal, wizard steps, validation, template selector, platform
+selector, and link controls as the authenticated business surface. A typed
+browser-local workflow adapter disables slug/name availability requests and
+real uploads, hides business-only settings, and applies the invitation's
+captured template and link limits. This adapter is presentation-only and is not
+a production authorization boundary.
+
+It is intended only for testing the proposed interface and workflow. Real
+clients and sensitive information must not be used until the backend security,
+tenant isolation, token handling, uploads, persistence, quotas, auditing, and
+cleanup described below are implemented.
 
 ## Summary
 
