@@ -1,7 +1,12 @@
 "use client";
 
 import type { PublicPageAnalytics } from "@linktree/types";
-import { flushNow, queueAnalyticsEvent } from "@/lib/utils/client-queue";
+import {
+  flushNow,
+  handoffAnalyticsEvent,
+  queueAnalyticsEvent,
+  trackedNavigationUrl,
+} from "@/lib/utils/client-queue";
 import { createRuntimeId } from "@/lib/utils/random-id";
 import { trackTikTokEvent } from "./tiktok-dispatch";
 import { recordTikTokDebug } from "./tiktok-debug";
@@ -72,6 +77,13 @@ export interface TrackActionOptions {
   once?: boolean;
 }
 
+export interface TrackedActionResult {
+  /** Shared by the browser Pixel, redirect ingest, beacon, and queue retry. */
+  eventId: string;
+  /** Present for registered HTTP(S) actions that can use the reliable hop. */
+  navigationUrl?: string;
+}
+
 export interface PageTracker {
   /** Reports the visit. Fires `ViewContent`, the page-level standard event. */
   trackView: () => void;
@@ -86,9 +98,9 @@ export interface PageTracker {
     actionKey: string,
     eventName: PageEventName,
     options?: TrackActionOptions,
-  ) => void;
+  ) => TrackedActionResult | undefined;
   /** Reports a click on an anchor, using its `data-mini-action` hint when present. */
-  trackAnchor: (anchor: HTMLAnchorElement) => void;
+  trackAnchor: (anchor: HTMLAnchorElement) => TrackedActionResult | undefined;
   /**
    * Reports engagement that is real but is not a conversion — a section
    * reached, a gallery opened, time on the page. Internal only: these never
@@ -190,7 +202,7 @@ export function createPageTracker(options: PageTrackerOptions): PageTracker {
     /** Only registered actions carry one; engagement events pass none. */
     action?: PublicPageAnalytics["actions"][string];
     immediate?: boolean;
-  }) => {
+  }): TrackedActionResult => {
     // Minted once, shared by both halves. This is the whole deduplication
     // contract in one line.
     const eventId = createRuntimeId();
@@ -246,6 +258,11 @@ export function createPageTracker(options: PageTrackerOptions): PageTracker {
       pixelDispatched,
     });
 
+    // Do this synchronously, while the click's user-activation task is still
+    // alive. TikTok's WebView can suspend the page as soon as WhatsApp opens;
+    // waiting for pagehide is already too late on affected devices.
+    if (input.immediate) handoffAnalyticsEvent(eventId);
+
     // Everything else is delivered by the queue's own batching: at twenty-five
     // events, every fifteen seconds, and on pagehide. Nothing is lost by
     // waiting, and the page stays responsive while it does.
@@ -258,6 +275,11 @@ export function createPageTracker(options: PageTrackerOptions): PageTracker {
           detail: error instanceof Error ? error.message : String(error),
         }),
       );
+
+    return {
+      eventId,
+      navigationUrl: trackedNavigationUrl(eventId, input.destination),
+    };
   };
 
   const resolveAction = (actionKey: string) =>
@@ -311,7 +333,7 @@ export function createPageTracker(options: PageTrackerOptions): PageTracker {
       }
       if (isRepeat(`${eventName}:${key}`)) return;
 
-      send({
+      return send({
         eventName,
         actionKey: key,
         label: input.label || options.pageName,
@@ -337,7 +359,7 @@ export function createPageTracker(options: PageTrackerOptions): PageTracker {
       // the ad algorithm the wrong thing.
       const reportable = anchor.dataset.miniTrack !== "internal";
 
-      send({
+      return send({
         eventName: declaredKey
           ? inferEventName(declaredKey)
           : inferEventFromHref(href),

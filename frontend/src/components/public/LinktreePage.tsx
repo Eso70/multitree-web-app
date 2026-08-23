@@ -443,7 +443,7 @@ export const LinktreePage = memo(function LinktreePage({
   const reportLinkClick = useCallback(
     (linkId: string, platform: string, destination: string) => {
       const link = links.find((item) => item.id === linkId);
-      tracker.trackAction(
+      return tracker.trackAction(
         linkActionKey(linkId),
         clickEventName(platform),
         {
@@ -475,8 +475,8 @@ export const LinktreePage = memo(function LinktreePage({
     }
 
     const finalUrl = appendMessageToUrl(url, platform, defaultMessage);
-    reportLinkClick(linkId, platform, finalUrl);
-    openUrl(finalUrl);
+    const tracked = reportLinkClick(linkId, platform, finalUrl);
+    openUrl(tracked?.navigationUrl || finalUrl);
   }, [whatsappModalConfig, openUrl, reportLinkClick, tracker]);
 
   // Handle WhatsApp question selection
@@ -488,8 +488,8 @@ export const LinktreePage = memo(function LinktreePage({
     // Report before navigating, exactly as the direct path does. `trackAction`
     // flushes immediately, and a click that leaves the page must not race the
     // send that records it.
-    reportLinkClick(pending.linkId, pending.platform, finalUrl);
-    openUrl(finalUrl);
+    const tracked = reportLinkClick(pending.linkId, pending.platform, finalUrl);
+    openUrl(tracked?.navigationUrl || finalUrl);
 
     // Reset state
     pendingWhatsAppRef.current = null;

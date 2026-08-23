@@ -252,6 +252,59 @@ function buildService(database: unknown = {}) {
   );
 }
 
+describe('tracked redirect destinations', () => {
+  it('resolves only the registered HTTP destination', async () => {
+    const database = {
+      query: jest.fn().mockResolvedValueOnce({
+        rows: [{ destination: 'https://wa.me/9647500000000' }],
+      }),
+    };
+    const service = buildService(database);
+
+    await expect(
+      service.resolveRedirectDestination('page-id', 'action-id'),
+    ).resolves.toBe('https://wa.me/9647500000000');
+
+    const query = mockArg<string>(database.query, 0, 0);
+    expect(query).toContain('action.id = $2::uuid');
+    expect(query).toContain('page.source_linktree_id = $1::uuid');
+    expect(query).toContain('page.source_mini_website_id = $1::uuid');
+    expect(query).not.toContain('destination = $');
+  });
+
+  it('refuses a stored non-http destination', async () => {
+    const database = {
+      query: jest.fn().mockResolvedValueOnce({
+        rows: [{ destination: 'javascript:alert(1)' }],
+      }),
+    };
+    const service = buildService(database);
+
+    await expect(
+      service.resolveRedirectDestination('page-id', 'action-id'),
+    ).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('preserves a WhatsApp preset without allowing the target to change', async () => {
+    const database = {
+      query: jest.fn().mockResolvedValueOnce({
+        rows: [{ destination: 'https://wa.me/9647500000000' }],
+      }),
+    };
+    const service = buildService(database);
+
+    await expect(
+      service.resolveRedirectDestination(
+        'page-id',
+        'action-id',
+        'I want the holiday offer',
+      ),
+    ).resolves.toBe(
+      'https://wa.me/9647500000000?text=I+want+the+holiday+offer',
+    );
+  });
+});
+
 describe('unique view/click rollups', () => {
   /**
    * A visitor returning on a later day is still the same visitor, not a new
@@ -401,6 +454,8 @@ describe('getDaily/getTimeline uniques', () => {
     expect(query).not.toContain('daily.unique_clickers');
     expect(query).toContain('day_uniques AS');
     expect(query).toContain('COUNT(DISTINCT event.visitor_id)');
+    expect(query).toContain('AT TIME ZONE page.timezone');
+    expect(query).toContain('target.local_today');
   });
 
   it('computes getTimeline uniques from the event log, not the daily rollup', async () => {
@@ -416,5 +471,6 @@ describe('getDaily/getTimeline uniques', () => {
     expect(query).not.toContain('daily.unique_clickers');
     expect(query).toContain('day_uniques AS');
     expect(query).toContain('COUNT(DISTINCT event.visitor_id)');
+    expect(query).toContain('scope.local_today');
   });
 });

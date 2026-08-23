@@ -374,6 +374,16 @@ before it.
 Form submissions and lead events populate the CRM model. Analytics and CRM
 reads remain business scoped.
 
+Outbound registered HTTP(S) actions use
+`GET /api/public/analytics/open/:pageId/:actionId` as a first-party navigation
+handoff. The destination is resolved from `public_page_actions`; the endpoint
+never accepts an outbound URL from the caller. It commits the same event id
+used by the Pixel and browser queue before returning a `302`, which prevents a
+TikTok in-app WebView from losing the internal click when it suspends the page
+to open WhatsApp. Analytics failures after destination resolution fail open so
+the visitor still reaches the business. Native application schemes retain the
+immediate-beacon and durable-queue path.
+
 The business Dashboard reads its CRM workload through
 `GET /api/analytics/v2/crm/summary`. This endpoint aggregates status counts
 across every public page owned by the authenticated tenant and uses the same

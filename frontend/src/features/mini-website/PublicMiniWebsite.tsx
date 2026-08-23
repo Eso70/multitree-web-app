@@ -139,7 +139,22 @@ export function PublicMiniWebsite({
           const target = event.target as HTMLElement;
           const anchor = target.closest("a");
           if (anchor instanceof HTMLAnchorElement) {
-            tracker.trackAnchor(anchor);
+            const originalHref = anchor.getAttribute("href");
+            const tracked = tracker.trackAnchor(anchor);
+            if (
+              originalHref &&
+              tracked?.navigationUrl &&
+              !anchor.hasAttribute("download")
+            ) {
+              // Preserve the anchor's normal target/modifier-key behavior by
+              // changing only the destination used by this click. Restore it
+              // on the next task so later clicks do not wrap the redirect.
+              anchor.href = tracked.navigationUrl;
+              window.setTimeout(
+                () => anchor.setAttribute("href", originalHref),
+                0,
+              );
+            }
             return;
           }
           // Buttons that open something in place — a photo, a player, an

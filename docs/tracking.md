@@ -312,6 +312,29 @@ delivery; it is not a server acknowledgement, so beacon attempts never remove
 events from persistent storage. A later visit safely retries them under the
 same event ids.
 
+Navigation-critical events do not wait for `pagehide`. The shared tracker
+hands the single event to `sendBeacon` synchronously inside the click task,
+then starts the ordinary acknowledged fetch flush. This is required for
+TikTok's in-app WebView: switching to WhatsApp can suspend the landing page
+before either `visibilitychange` or the fetch completion runs. Beacon
+acceptance still does not clear the queue.
+
+Registered HTTP(S) actions add a stronger guarantee. The browser navigates to
+`GET /api/public/analytics/open/:pageId/:actionId` with the same event id the
+Pixel and queue received. The backend resolves the destination exclusively
+from `public_page_actions`, commits the analytics event, and only then returns
+the redirect. The outbound destination is never accepted in the URL, so this
+cannot be used as an arbitrary open redirect. If analytics, Redis, or an
+access-rule dependency fails after the registered destination is resolved,
+navigation fails open and still reaches the business. The queue later retries
+the same id. Database uniqueness collapses the redirect, beacon, and fetch no
+matter which arrives first.
+
+Native `tel:`, `mailto:`, and application schemes stay on the immediate-beacon
+plus queue path because mobile browsers do not consistently follow an HTTP
+redirect into those schemes. Download anchors also retain their native browser
+behavior and use the beacon path.
+
 The public controller validates events individually after enforcing the
 50-event batch boundary. One malformed event is returned as rejected without
 preventing valid neighbors from being ingested. Stale and archived action ids

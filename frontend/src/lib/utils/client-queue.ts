@@ -223,6 +223,92 @@ export function queueAnalyticsEvent(input: {
   return event.eventId;
 }
 
+/**
+ * Hands one navigation-critical event to the browser immediately.
+ *
+ * Unlike the normal fetch flush, `sendBeacon` transfers ownership before the
+ * caller opens another application. A true result is not a server
+ * acknowledgement, so the durable queue intentionally retains the event and
+ * retries it later under the same id.
+ */
+export function handoffAnalyticsEvent(eventId: string): boolean {
+  if (
+    typeof navigator === "undefined" ||
+    typeof navigator.sendBeacon !== "function"
+  ) {
+    return false;
+  }
+  const event = readQueue().find((queued) => queued.eventId === eventId);
+  if (!event) return false;
+  try {
+    return navigator.sendBeacon(
+      "/api/public/analytics/events",
+      new Blob([JSON.stringify({ events: [event] })], {
+        type: "application/json",
+      }),
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Builds the first-party navigation hop for a registered HTTP(S) action.
+ *
+ * The destination is used only to decide whether the browser supports the
+ * hop; it is never placed in the URL. The backend resolves the real target
+ * from `public_page_actions`, which prevents this endpoint becoming an open
+ * redirect. Native schemes stay on the direct-beacon path.
+ */
+export function trackedNavigationUrl(
+  eventId: string,
+  destination: string | undefined,
+): string | undefined {
+  if (!destination) return undefined;
+  let protocol: string;
+  try {
+    protocol = new URL(destination, window.location.href).protocol;
+  } catch {
+    return undefined;
+  }
+  if (protocol !== "http:" && protocol !== "https:") return undefined;
+
+  const event = readQueue().find((queued) => queued.eventId === eventId);
+  if (!event?.actionId) return undefined;
+  const query = new URLSearchParams({
+    eventId: event.eventId,
+    eventName: event.eventName,
+    visitorId: event.visitorId,
+    sessionId: event.sessionId,
+    occurredAt: event.occurredAt,
+    consentState: event.consentState,
+    browserDispatched: String(event.browserDispatched),
+  });
+  if (event.pageUrl) query.set("pageUrl", event.pageUrl);
+  if (event.referrer) query.set("referrer", event.referrer);
+  if (event.ttclid) query.set("ttclid", event.ttclid);
+  if (event.ttp) query.set("ttp", event.ttp);
+  if (event.browserEventName)
+    query.set("browserEventName", event.browserEventName);
+  const parsedDestination = new URL(destination, window.location.href);
+  const hostname = parsedDestination.hostname.toLowerCase();
+  const message =
+    hostname === "wa.me" ||
+    hostname === "whatsapp.com" ||
+    hostname.endsWith(".whatsapp.com")
+      ? parsedDestination.searchParams.get("text")
+      : hostname === "t.me" ||
+          hostname === "telegram.me" ||
+          hostname.endsWith(".telegram.me")
+        ? parsedDestination.searchParams.get("start")
+        : undefined;
+  if (message) query.set("message", message.slice(0, 2000));
+
+  return `/api/public/analytics/open/${encodeURIComponent(
+    event.pageId,
+  )}/${encodeURIComponent(event.actionId)}?${query.toString()}`;
+}
+
 function reportFlush(detail: {
   ok: boolean;
   statusCode?: number;

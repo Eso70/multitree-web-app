@@ -13,11 +13,12 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import type { FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthorizationGuard } from '../auth/authorization.guard';
 import { BusinessGuard } from '../auth/business.guard';
 import { Capability } from '../auth/capabilities';
@@ -29,6 +30,7 @@ import { RedisService } from '../redis/redis.service';
 import {
   TrackAnalyticsBatchDto,
   TrackAnalyticsEventDto,
+  TrackAnalyticsRedirectDto,
 } from './dto/analytics-event.dto';
 import {
   CreateCrmNoteDto,
@@ -151,6 +153,71 @@ export class PublicUnifiedAnalyticsController {
         events: results,
       },
     };
+  }
+
+  /**
+   * Records a real outbound action before sending the visitor to its target.
+   *
+   * TikTok's in-app browser may suspend the landing page as soon as WhatsApp
+   * opens. A background fetch can be cancelled in that transition even though
+   * TikTok's own pixel call already ran. This first-party hop makes the click
+   * request itself the navigation, so the server commits it before returning
+   * the redirect. The normal queue sends the same event id as a fallback and
+   * database idempotency collapses whichever request arrives second.
+   */
+  @Get('open/:pageId/:actionId')
+  async open(
+    @Param('pageId', ParseUUIDPipe) pageId: string,
+    @Param('actionId', ParseUUIDPipe) actionId: string,
+    @Query() query: TrackAnalyticsRedirectDto,
+    @Req() request: FastifyRequest,
+    @Res() reply: FastifyReply,
+  ) {
+    // Resolve first. The destination is owned by the registered action and is
+    // never read from the query string, preventing an arbitrary open redirect.
+    const destination = await this.analytics.resolveRedirectDestination(
+      pageId,
+      actionId,
+      query.message,
+    );
+    const context = analyticsRequestContext(request);
+
+    try {
+      await this.accessRules.assertForPublicPages(context.ip, [pageId]);
+      const [visitorLimited, addressLimited] = await Promise.all([
+        this.redis.isRateLimited(
+          `rl:analytics-v2:${context.ip}:${query.visitorId}`,
+          180,
+          60,
+        ),
+        this.redis.isRateLimited(`rl:analytics-v2-ip:${context.ip}`, 5_000, 60),
+      ]);
+      if (!visitorLimited && !addressLimited) {
+        await this.analytics.ingest(
+          plainToInstance(TrackAnalyticsEventDto, {
+            ...query,
+            message: undefined,
+            pageId,
+            actionId,
+            browserDispatched: query.browserDispatched === 'true',
+            properties: { delivery: 'first_party_redirect' },
+          }),
+          context,
+        );
+      }
+    } catch (error) {
+      // Analytics must fail open: a database, Redis, or policy error must not
+      // stop the visitor reaching the business they intentionally selected.
+      this.logger.warn(
+        `Tracked navigation analytics failed (${query.eventId}): ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+
+    reply.header('Cache-Control', 'no-store, private');
+    reply.header('Referrer-Policy', 'no-referrer');
+    return reply.redirect(destination, HttpStatus.FOUND);
   }
 }
 

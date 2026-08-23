@@ -139,3 +139,80 @@ export class TrackAnalyticsBatchDto {
   @ArrayMaxSize(50)
   events: unknown[];
 }
+
+/**
+ * The first-party navigation handoff used by outbound public-page actions.
+ *
+ * Query strings are strings at the HTTP boundary. In particular,
+ * `browserDispatched` deliberately stays a string here: class-transformer's
+ * generic boolean conversion treats the non-empty string `"false"` as true.
+ */
+export class TrackAnalyticsRedirectDto {
+  @IsUUID()
+  eventId: string;
+
+  @IsIn(ANALYTICS_EVENT_NAMES)
+  eventName: AnalyticsEventName;
+
+  @IsString()
+  @Length(8, 128)
+  visitorId: string;
+
+  @IsString()
+  @Length(8, 128)
+  sessionId: string;
+
+  @IsISO8601({ strict: true })
+  occurredAt: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  pageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  referrer?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  ttclid?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  ttp?: string;
+
+  @IsOptional()
+  @IsIn(['unknown', 'granted', 'denied'])
+  consentState?: 'unknown' | 'granted' | 'denied';
+
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  browserDispatched?: 'true' | 'false';
+
+  @IsOptional()
+  @IsIn([
+    'ViewContent',
+    'ClickButton',
+    'Contact',
+    'Lead',
+    'SubmitForm',
+    'CompleteRegistration',
+    'InitiateCheckout',
+    'CompletePayment',
+    'Download',
+    'Search',
+    'AddToCart',
+    'PlaceAnOrder',
+  ])
+  browserEventName?: string;
+
+  /** Optional prefilled text for a registered WhatsApp/Telegram destination. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  message?: string;
+}

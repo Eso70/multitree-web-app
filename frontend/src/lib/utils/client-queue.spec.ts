@@ -84,6 +84,59 @@ describe("analytics queue delivery", () => {
     expect(event.consentState).toBe("granted");
   });
 
+  it("hands a click to sendBeacon immediately without clearing its retry", async () => {
+    const sendBeacon = vi.fn().mockReturnValue(true);
+    vi.stubGlobal("navigator", { ...globalThis.navigator, sendBeacon });
+    const { handoffAnalyticsEvent, queueAnalyticsEvent } =
+      await loadQueueModule();
+    const clickId = queueAnalyticsEvent({
+      pageId: PAGE_UUID,
+      actionId: "33333333-3333-4333-8333-333333333333",
+      eventName: "whatsapp_click",
+    });
+
+    expect(handoffAnalyticsEvent(clickId)).toBe(true);
+    expect(sendBeacon).toHaveBeenCalledTimes(1);
+    expect(sendBeacon.mock.calls[0][0]).toBe("/api/public/analytics/events");
+    expect(readStored()).toHaveLength(1);
+  });
+
+  it("builds a tracked hop without exposing the outbound destination", async () => {
+    const actionId = "33333333-3333-4333-8333-333333333333";
+    const { queueAnalyticsEvent, trackedNavigationUrl } =
+      await loadQueueModule();
+    const clickId = queueAnalyticsEvent({
+      pageId: PAGE_UUID,
+      actionId,
+      eventName: "whatsapp_click",
+      browserDispatched: true,
+      browserEventName: "Contact",
+    });
+
+    const url = trackedNavigationUrl(
+      clickId,
+      "https://wa.me/9647500000000?text=secret",
+    );
+
+    expect(url).toContain(`/open/${PAGE_UUID}/${actionId}?`);
+    expect(url).toContain(`eventId=${clickId}`);
+    expect(url).toContain("browserEventName=Contact");
+    expect(url).not.toContain("wa.me");
+    expect(url).toContain("message=secret");
+  });
+
+  it("keeps native application schemes on the beacon path", async () => {
+    const { queueAnalyticsEvent, trackedNavigationUrl } =
+      await loadQueueModule();
+    const clickId = queueAnalyticsEvent({
+      pageId: PAGE_UUID,
+      actionId: "33333333-3333-4333-8333-333333333333",
+      eventName: "call_click",
+    });
+
+    expect(trackedNavigationUrl(clickId, "tel:+9647500000000")).toBeUndefined();
+  });
+
   it("discards a stored event whose id the server could never parse", async () => {
     // An id minted by an older build, before createRuntimeId always produced a
     // UUID. It cannot be accepted, so keeping it only blocks the queue.

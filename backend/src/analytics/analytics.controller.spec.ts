@@ -1,5 +1,5 @@
 import { PATH_METADATA } from '@nestjs/common/constants';
-import type { FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { PublicUnifiedAnalyticsController } from './unified-analytics.controller';
 
 describe('PublicUnifiedAnalyticsController', () => {
@@ -113,5 +113,99 @@ describe('PublicUnifiedAnalyticsController', () => {
         eventId: '33333333-3333-4333-8333-333333333333',
       },
     ]);
+  });
+
+  it('commits a tracked navigation before redirecting to its stored target', async () => {
+    const pageId = '22222222-2222-4222-8222-222222222222';
+    const actionId = '33333333-3333-4333-8333-333333333333';
+    const eventId = '11111111-1111-4111-8111-111111111111';
+    const ingest = jest.fn().mockResolvedValue({
+      accepted: true,
+      deduplicated: false,
+      eventId,
+    });
+    const resolveRedirectDestination = jest
+      .fn()
+      .mockResolvedValue('https://wa.me/9647500000000');
+    const controller = new PublicUnifiedAnalyticsController(
+      { ingest, resolveRedirectDestination } as never,
+      { isRateLimited: jest.fn().mockResolvedValue(false) } as never,
+      { assertForPublicPages: jest.fn().mockResolvedValue(undefined) } as never,
+    );
+    const request = {
+      headers: {},
+      ip: '203.0.113.20',
+    } as unknown as FastifyRequest;
+    const header = jest.fn();
+    const redirect = jest.fn();
+    const reply = { header, redirect } as unknown as FastifyReply;
+
+    await controller.open(
+      pageId,
+      actionId,
+      {
+        eventId,
+        eventName: 'whatsapp_click',
+        visitorId: 'visitor-valid-1',
+        sessionId: 'session-valid-1',
+        occurredAt: new Date().toISOString(),
+        consentState: 'granted',
+        browserDispatched: 'true',
+        browserEventName: 'Contact',
+      },
+      request,
+      reply,
+    );
+
+    expect(resolveRedirectDestination).toHaveBeenCalledWith(
+      pageId,
+      actionId,
+      undefined,
+    );
+    expect(ingest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pageId,
+        actionId,
+        eventId,
+        browserDispatched: true,
+        browserEventName: 'Contact',
+      }),
+      expect.objectContaining({ ip: '203.0.113.20' }),
+    );
+    expect(redirect).toHaveBeenCalledWith('https://wa.me/9647500000000', 302);
+  });
+
+  it('fails analytics open so visitors still reach WhatsApp', async () => {
+    const controller = new PublicUnifiedAnalyticsController(
+      {
+        resolveRedirectDestination: jest
+          .fn()
+          .mockResolvedValue('https://wa.me/9647500000000'),
+        ingest: jest.fn().mockRejectedValue(new Error('database unavailable')),
+      } as never,
+      { isRateLimited: jest.fn().mockResolvedValue(false) } as never,
+      { assertForPublicPages: jest.fn().mockResolvedValue(undefined) } as never,
+    );
+    const redirect = jest.fn();
+    const reply = {
+      header: jest.fn(),
+      redirect,
+    } as unknown as FastifyReply;
+
+    await controller.open(
+      '22222222-2222-4222-8222-222222222222',
+      '33333333-3333-4333-8333-333333333333',
+      {
+        eventId: '11111111-1111-4111-8111-111111111111',
+        eventName: 'whatsapp_click',
+        visitorId: 'visitor-valid-1',
+        sessionId: 'session-valid-1',
+        occurredAt: new Date().toISOString(),
+      },
+      { headers: {}, ip: '203.0.113.21' } as unknown as FastifyRequest,
+      reply,
+    );
+
+    expect(redirect).toHaveBeenCalledWith('https://wa.me/9647500000000', 302);
   });
 });

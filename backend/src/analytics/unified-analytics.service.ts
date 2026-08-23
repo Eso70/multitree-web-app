@@ -94,6 +94,10 @@ interface ActionRow {
   tiktok_event: string;
 }
 
+interface RedirectActionRow {
+  destination: string;
+}
+
 export const CLICK_EVENTS = new Set<AnalyticsEventName>([
   'button_click',
   'whatsapp_click',
@@ -423,6 +427,73 @@ export class UnifiedAnalyticsService {
     // still reaches page totals. Unknown or cross-page ids remain detached
     // from action rollups instead of rejecting the whole event.
     return result.rows[0] || null;
+  }
+
+  /**
+   * Resolves an outbound navigation from the canonical registered action.
+   *
+   * The destination is never accepted from the browser. That makes the
+   * tracking handoff safe to expose publicly without creating an arbitrary
+   * open redirect. Only HTTP(S) destinations use this endpoint; native app
+   * schemes use the browser's immediate beacon path instead because several
+   * mobile browsers refuse an HTTP redirect into `tel:` or a custom scheme.
+   */
+  async resolveRedirectDestination(
+    pageId: string,
+    actionId: string,
+    message?: string,
+  ): Promise<string> {
+    const result = await this.database.query<RedirectActionRow>(
+      `SELECT action.destination
+       FROM public_page_actions action
+       JOIN public_pages page ON page.id = action.public_page_id
+       WHERE (
+           page.id = $1::uuid
+           OR page.source_linktree_id = $1::uuid
+           OR page.source_mini_website_id = $1::uuid
+         )
+         AND action.id = $2::uuid
+         AND page.deleted_at IS NULL
+         AND page.status = 'published'
+         AND action.destination IS NOT NULL
+       LIMIT 1`,
+      [pageId, actionId],
+    );
+    const destination = result.rows[0]?.destination?.trim();
+    if (!destination) {
+      throw new NotFoundException('Tracked destination not found');
+    }
+    let parsed: URL;
+    try {
+      parsed = new URL(destination);
+    } catch {
+      throw new NotFoundException('Tracked destination not found');
+    }
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      throw new NotFoundException('Tracked destination not found');
+    }
+    // Public Linktrees keep default/preset messages separately from the link
+    // destination and append them only when clicked. Preserve that behavior
+    // without accepting a caller-controlled host or path: the browser may
+    // supply text, but only the parameter appropriate for an already-stored
+    // WhatsApp or Telegram destination can change.
+    const hostname = parsed.hostname.toLowerCase();
+    if (message) {
+      if (
+        hostname === 'wa.me' ||
+        hostname === 'whatsapp.com' ||
+        hostname.endsWith('.whatsapp.com')
+      ) {
+        parsed.searchParams.set('text', message);
+      } else if (
+        hostname === 't.me' ||
+        hostname === 'telegram.me' ||
+        hostname.endsWith('.telegram.me')
+      ) {
+        parsed.searchParams.set('start', message);
+      }
+    }
+    return parsed.href;
   }
 
   private tiktokEvent(
@@ -1535,7 +1606,14 @@ export class UnifiedAnalyticsService {
       // new_visitors/new_clickers only mark a visitor's first-ever event
       // (see updateRollups), which is a different, "new acquisition" number,
       // not "how many distinct people were active this day".
-      `WITH day_uniques AS (
+      `WITH target_page AS (
+         SELECT page.id,
+                (now() AT TIME ZONE page.timezone)::date AS local_today
+         FROM public_pages page
+         WHERE page.business_id = $1
+           AND (page.id = $2 OR page.source_linktree_id = $2 OR page.source_mini_website_id = $2)
+       ),
+       day_uniques AS (
          SELECT (event.occurred_at AT TIME ZONE page.timezone)::date AS day,
                 COUNT(DISTINCT event.visitor_id)
                   FILTER (WHERE event.event_name = 'page_view')::bigint AS unique_visitors,
@@ -1543,20 +1621,18 @@ export class UnifiedAnalyticsService {
                   FILTER (WHERE event.event_name = ANY($4::varchar[]))::bigint AS unique_clickers
          FROM analytics_events event
          JOIN public_pages page ON page.id = event.public_page_id
-         WHERE page.business_id = $1
-           AND (page.id = $2 OR page.source_linktree_id = $2 OR page.source_mini_website_id = $2)
-           AND (event.occurred_at AT TIME ZONE page.timezone)::date >= current_date - ($3::integer - 1)
+         JOIN target_page target ON target.id = page.id
+         WHERE (event.occurred_at AT TIME ZONE page.timezone)::date >= target.local_today - ($3::integer - 1)
          GROUP BY 1
        )
        SELECT daily.day, daily.total_views, daily.total_clicks, daily.conversions,
               COALESCE(du.unique_visitors, 0)::bigint AS unique_visitors,
               COALESCE(du.unique_clickers, 0)::bigint AS unique_clickers
        FROM analytics_page_daily daily
-       JOIN public_pages page ON page.id = daily.public_page_id
+       JOIN target_page target ON target.id = daily.public_page_id
        LEFT JOIN day_uniques du ON du.day = daily.day
        WHERE daily.business_id = $1
-         AND (page.id = $2 OR page.source_linktree_id = $2 OR page.source_mini_website_id = $2)
-         AND daily.day >= current_date - ($3::integer - 1)
+         AND daily.day >= target.local_today - ($3::integer - 1)
        ORDER BY daily.day ASC`,
       [
         businessId,
@@ -1596,12 +1672,29 @@ export class UnifiedAnalyticsService {
       // views/clicks/conversions, uniques computed live per day from the
       // event log rather than the rollup's new_visitors/new_clickers
       // (a different, "new acquisition" metric — see updateRollups).
-      `WITH days AS (
+      `WITH scope AS (
+         SELECT COALESCE(
+           MAX((now() AT TIME ZONE page.timezone)::date),
+           current_date
+         ) AS local_today
+         FROM public_pages page
+         WHERE page.business_id = $1
+           AND (
+             $3::uuid IS NULL
+             OR page.id = $3
+             OR page.source_linktree_id = $3
+             OR page.source_mini_website_id = $3
+           )
+           AND ($4::varchar IS NULL OR page.page_type = $4)
+           AND page.deleted_at IS NULL
+       ),
+       days AS (
          SELECT generate_series(
-           current_date - ($2::integer - 1),
-           current_date,
+           scope.local_today - ($2::integer - 1),
+           scope.local_today,
            interval '1 day'
          )::date AS day
+         FROM scope
        ),
        totals AS (
          SELECT daily.day,
@@ -1618,7 +1711,7 @@ export class UnifiedAnalyticsService {
              OR page.source_mini_website_id = $3
            )
            AND ($4::varchar IS NULL OR page.page_type = $4)
-           AND daily.day >= current_date - ($2::integer - 1)
+           AND daily.day >= (SELECT local_today FROM scope) - ($2::integer - 1)
          GROUP BY daily.day
        ),
        day_uniques AS (
@@ -1637,7 +1730,8 @@ export class UnifiedAnalyticsService {
              OR page.source_mini_website_id = $3
            )
            AND ($4::varchar IS NULL OR page.page_type = $4)
-           AND (event.occurred_at AT TIME ZONE page.timezone)::date >= current_date - ($2::integer - 1)
+           AND (event.occurred_at AT TIME ZONE page.timezone)::date >=
+               (SELECT local_today FROM scope) - ($2::integer - 1)
          GROUP BY 1
        )
        SELECT days.day,
