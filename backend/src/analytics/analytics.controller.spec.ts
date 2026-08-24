@@ -3,6 +3,8 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { PublicUnifiedAnalyticsController } from './unified-analytics.controller';
 
 describe('PublicUnifiedAnalyticsController', () => {
+  afterEach(() => jest.useRealTimers());
+
   it('exposes only the canonical events endpoint', () => {
     const eventsHandler = Object.getOwnPropertyDescriptor(
       PublicUnifiedAnalyticsController.prototype,
@@ -115,7 +117,9 @@ describe('PublicUnifiedAnalyticsController', () => {
     ]);
   });
 
-  it('commits a tracked navigation before redirecting to its stored target', async () => {
+  it('commits a tracked navigation at server time before redirecting', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-08-24T01:33:18.000Z'));
     const pageId = '22222222-2222-4222-8222-222222222222';
     const actionId = '33333333-3333-4333-8333-333333333333';
     const eventId = '11111111-1111-4111-8111-111111111111';
@@ -148,7 +152,9 @@ describe('PublicUnifiedAnalyticsController', () => {
         eventName: 'whatsapp_click',
         visitorId: 'visitor-valid-1',
         sessionId: 'session-valid-1',
-        occurredAt: new Date().toISOString(),
+        // A random visitor's device clock is far in the future. The verified
+        // navigation itself is still current according to the server.
+        occurredAt: '2099-01-01T00:00:00.000Z',
         consentState: 'granted',
         browserDispatched: 'true',
         browserEventName: 'Contact',
@@ -167,6 +173,7 @@ describe('PublicUnifiedAnalyticsController', () => {
         pageId,
         actionId,
         eventId,
+        occurredAt: '2026-08-24T01:33:18.000Z',
         browserDispatched: true,
         browserEventName: 'Contact',
       }),

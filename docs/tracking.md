@@ -339,6 +339,12 @@ redirect. The browser and controller both bound page/referrer URLs to 2048
 characters and TikTok identifiers to 255 characters; malformed analytics is
 logged and skipped, but it never blocks the outbound navigation.
 
+The redirect event time is the backend receive time, not the browser-provided
+time. The registered navigation proves the click is happening now, while a
+random visitor's phone clock may be days or years wrong. Ordinary queued events
+still use the client occurrence time and retain the seven-day-past and
+five-minute-future acceptance window.
+
 Native `tel:`, `mailto:`, and application schemes stay on the immediate-beacon
 plus queue path because mobile browsers do not consistently follow an HTTP
 redirect into those schemes. Download anchors also retain their native browser

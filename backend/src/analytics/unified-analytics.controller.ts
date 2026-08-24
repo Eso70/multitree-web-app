@@ -54,13 +54,17 @@ function redirectQueryString(
 
 function prepareRedirectQuery(
   query: Record<string, unknown>,
+  receivedAt: string,
 ): TrackAnalyticsRedirectDto {
   return plainToInstance(TrackAnalyticsRedirectDto, {
     eventId: redirectQueryString(query, 'eventId'),
     eventName: redirectQueryString(query, 'eventName'),
     visitorId: redirectQueryString(query, 'visitorId', 128),
     sessionId: redirectQueryString(query, 'sessionId', 128),
-    occurredAt: redirectQueryString(query, 'occurredAt'),
+    // A verified navigation is happening now. Random visitors can have a
+    // badly configured phone clock, so their client timestamp must not make a
+    // real registered click miss the business's analytics.
+    occurredAt: receivedAt,
     pageUrl: redirectQueryString(query, 'pageUrl', 2048),
     referrer: redirectQueryString(query, 'referrer', 2048),
     ttclid: redirectQueryString(query, 'ttclid', 255),
@@ -213,7 +217,7 @@ export class PublicUnifiedAnalyticsController {
       redirectQueryString(query, 'message', 2000),
     );
     const context = analyticsRequestContext(request);
-    const redirectEvent = prepareRedirectQuery(query);
+    const redirectEvent = prepareRedirectQuery(query, new Date().toISOString());
 
     try {
       const validationErrors = await validate(redirectEvent, {
