@@ -2,7 +2,7 @@
 
 import { memo, useMemo, useCallback } from "react";
 import { LinkButton } from "@/components/ui/LinkButton";
-import { PlatformLabel } from "@/lib/brand/PlatformVisuals";
+import { PlatformIcon, PlatformLabel } from "@/lib/brand/PlatformVisuals";
 import { getPlatformBrand, platformBorder, PLATFORM_BRANDS } from "@/lib/brand/platform-brands";
 
 import type { LinktreePresentationLink as Link } from "@linktree/types";
@@ -124,18 +124,16 @@ export function getPlatformName(platform: string): string {
 export function getPlatformIcon(
   platform: string,
   className = "h-5 w-5",
-  _customIcon?: string,
-  _customColor?: string,
+  customIcon?: string,
+  customColor?: string,
 ) {
   return (
-    <span
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-      style={{
-        backgroundColor: "rgba(255, 255, 255, 0.15)",
-        backdropFilter: "blur(8px)",
-      }}
-    >
-      <span className={className} data-platform-icon={platform} />
-    </span>
+    <PlatformIcon
+      platform={platform}
+      className={className}
+      customIconName={customIcon}
+      customColor={customColor}
+      tone="inherit"
+    />
   );
 }
