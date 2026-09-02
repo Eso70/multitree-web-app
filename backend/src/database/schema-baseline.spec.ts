@@ -247,6 +247,7 @@ describe('full_schema.sql baseline', () => {
   it('has only deliberate dated forward migrations after the current rebaseline', () => {
     expect(readdirSync(MIGRATIONS_DIR).sort()).toEqual([
       '2026-09-02_add_linktree_subtitle_color.sql',
+      '2026-09-03_add_linktree_subtitle_color_permission.sql',
       'baseline',
     ]);
   });

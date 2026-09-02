@@ -19,3 +19,11 @@ ALTER TABLE public.linktrees
 
 COMMENT ON COLUMN public.linktrees.subtitle_color IS
     'Optional CSS colour value (hex, rgb, hsl) for the short-description subtitle shown on the public Linktree page. NULL inherits the template default text colour.';
+
+-- Register subtitle_color under business:linktrees:update field_schema so the
+-- authorization guard allows businesses to update this field on PATCH /api/linktrees/:id.
+UPDATE public.auth_permissions
+SET field_schema = field_schema || '{"subtitle_color": "Subtitle color"}'::jsonb
+WHERE permission_key = 'business:linktrees:update'
+  AND NOT (field_schema ? 'subtitle_color');
+

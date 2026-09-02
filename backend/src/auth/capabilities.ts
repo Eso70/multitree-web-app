@@ -39,6 +39,7 @@ const DEFAULT_FIELDS = {
 const LINKTREE_FIELDS = {
   name: 'Page name',
   subtitle: 'Page subtitle',
+  subtitle_color: 'Subtitle color',
   description: 'Page description',
   seo_name: 'SEO name',
   image: 'Page image',
