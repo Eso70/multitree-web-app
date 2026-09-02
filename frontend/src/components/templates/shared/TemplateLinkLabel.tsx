@@ -33,13 +33,15 @@ export const TemplateLinkLabel = memo(function TemplateLinkLabel({
 
   return (
     <span className={className} style={style} data-template-link-label>
-      <span className={titleClassName} style={titleStyle}>
+      <span className={titleClassName} style={titleStyle} data-link-title>
         {title}
       </span>
       <span
+        id={`link-text-${link.platform.toLowerCase()}`}
         className={platformClassName}
         style={platformStyle}
         data-template-platform-name
+        data-platform={link.platform.toLowerCase()}
       >
         {platformName}
       </span>

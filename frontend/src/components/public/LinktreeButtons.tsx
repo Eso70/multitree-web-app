@@ -1,8 +1,8 @@
 "use client";
 
-import { memo, useMemo, useCallback, type ReactNode } from "react";
+import { memo, useMemo, useCallback } from "react";
 import { LinkButton } from "@/components/ui/LinkButton";
-import { PlatformIcon, PlatformLabel } from "@/lib/brand/PlatformVisuals";
+import { PlatformLabel } from "@/lib/brand/PlatformVisuals";
 import { getPlatformBrand, platformBorder, PLATFORM_BRANDS } from "@/lib/brand/platform-brands";
 
 import type { LinktreePresentationLink as Link } from "@linktree/types";
@@ -28,6 +28,8 @@ const LinkItem = memo(function LinkItem({
 
   return (
     <LinkButton
+      id={`link-${link.platform.toLowerCase()}`}
+      data-platform={link.platform.toLowerCase()}
       onClick={handleClick}
       gradientFrom={colors.from}
       gradientVia={colors.via}
@@ -121,17 +123,19 @@ export function getPlatformName(platform: string): string {
  */
 export function getPlatformIcon(
   platform: string,
-  className = "w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white",
-  customIconName?: string,
-  customColor?: string,
-): ReactNode {
+  className = "h-5 w-5",
+  _customIcon?: string,
+  _customColor?: string,
+) {
   return (
-    <PlatformIcon
-      platform={platform}
-      className={className}
-      customIconName={customIconName}
-      customColor={customColor}
-      tone="inherit"
-    />
+    <span
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+      style={{
+        backgroundColor: "rgba(255, 255, 255, 0.15)",
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      <span className={className} data-platform-icon={platform} />
+    </span>
   );
 }

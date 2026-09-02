@@ -131,6 +131,9 @@ export const FrostTemplate = memo(function FrostTemplate({
               return (
                 <TemplateActionButton
                   key={link.id}
+                  id={`link-${link.platform.toLowerCase()}`}
+                  data-platform={link.platform.toLowerCase()}
+                  data-action-key={`link:${link.id}`}
                   dir="ltr"
                   onClick={() =>
                     handleClick(

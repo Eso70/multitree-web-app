@@ -154,6 +154,9 @@ export const SpotlightTemplate = memo(function SpotlightTemplate({
               return (
                 <TemplateActionButton
                   key={link.id}
+                  id={`link-${link.platform.toLowerCase()}`}
+                  data-platform={link.platform.toLowerCase()}
+                  data-action-key={`link:${link.id}`}
                   onClick={() =>
                     handleLinkClick(
                       link.id,

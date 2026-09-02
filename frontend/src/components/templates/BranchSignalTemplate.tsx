@@ -295,6 +295,9 @@ export const BranchSignalTemplate = memo(function BranchSignalTemplate({
                   <BranchConnector accent={accent} side={side} />
                 ) : null}
                 <TemplateActionButton
+                  id={`link-${link.platform.toLowerCase()}`}
+                  data-platform={link.platform.toLowerCase()}
+                  data-action-key={`link:${link.id}`}
                   onClick={() =>
                     handleClick(
                       link.id,

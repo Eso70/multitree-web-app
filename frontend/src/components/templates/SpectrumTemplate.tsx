@@ -130,6 +130,9 @@ export const SpectrumTemplate = memo(function SpectrumTemplate({
               return (
                 <TemplateActionButton
                   key={link.id}
+                  id={`link-${link.platform.toLowerCase()}`}
+                  data-platform={link.platform.toLowerCase()}
+                  data-action-key={`link:${link.id}`}
                   onClick={() =>
                     handleLinkClick(
                       link.id,

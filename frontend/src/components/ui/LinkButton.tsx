@@ -11,6 +11,8 @@ interface LinkButtonProps {
   gradientFrom?: string;
   gradientVia?: string;
   gradientTo?: string;
+  id?: string;
+  "data-platform"?: string;
 }
 
 export const LinkButton = memo(function LinkButton({
@@ -20,10 +22,14 @@ export const LinkButton = memo(function LinkButton({
   gradientFrom = "rgba(59, 130, 246, 0.5)",
   gradientVia = "rgba(59, 130, 246, 0.4)",
   gradientTo = "rgba(59, 130, 246, 0.3)",
+  id,
+  "data-platform": dataPlatform,
 }: LinkButtonProps) {
   return (
     <motion.button
       type="button"
+      id={id}
+      data-platform={dataPlatform}
       dir="ltr"
       onClick={(e) => {
         e.preventDefault();
