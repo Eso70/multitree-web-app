@@ -8,7 +8,10 @@ import {
   GripVertical,
   MessageCircle,
   Sparkles,
+  Palette,
+  RotateCcw,
 } from "lucide-react";
+import { ColorGradientModal } from "../ColorGradientModal";
 import { DEFAULT_FOOTER_PHONE } from "../modal-constants";
 import {
   modalChoiceButtonClass,
@@ -35,6 +38,7 @@ interface BasicInfoStepProps {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   name: string;
   subtitle: string;
+  subtitleColor?: string;
   description: string;
   slug: string;
   backgroundColor: string;
@@ -85,6 +89,7 @@ interface BasicInfoStepProps {
   onNameChange: (value: string) => void;
   onNameBlur: () => void;
   onSubtitleChange: (value: string) => void;
+  onSubtitleColorChange?: (value: string) => void;
   onDescriptionChange: (value: string) => void;
   onSlugChange: (value: string) => void;
   onBackgroundColorChange: (value: string) => void;
@@ -113,6 +118,7 @@ export const BasicInfoStep = memo(function BasicInfoStep({
   fileInputRef,
   name,
   subtitle,
+  subtitleColor,
   description,
   slug,
   backgroundColor,
@@ -141,6 +147,7 @@ export const BasicInfoStep = memo(function BasicInfoStep({
   onNameChange,
   onNameBlur,
   onSubtitleChange,
+  onSubtitleColorChange,
   onDescriptionChange,
   onSlugChange,
   onBackgroundColorChange,
@@ -164,6 +171,7 @@ export const BasicInfoStep = memo(function BasicInfoStep({
 }: BasicInfoStepProps) {
   const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
   const [isPatternSelectorOpen, setIsPatternSelectorOpen] = useState(false);
+  const [isSubtitleColorPickerOpen, setIsSubtitleColorPickerOpen] = useState(false);
 
   // Helper functions for managing WhatsApp questions
   const handleAddQuestion = () => {
@@ -263,15 +271,58 @@ export const BasicInfoStep = memo(function BasicInfoStep({
             </EditorField>
           ) : (
             <EditorField label="ناونیشانی کورت">
-              <input
-                id="subtitle"
-                type="text"
-                value={subtitle}
-                onChange={(e) => onSubtitleChange(e.target.value)}
-                className={modalInputClass()}
-                placeholder="ناونیشانی کورت بنووسە"
-                dir="auto"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  id="subtitle"
+                  type="text"
+                  value={subtitle}
+                  onChange={(e) => onSubtitleChange(e.target.value)}
+                  className={modalInputClass(false, "flex-1")}
+                  placeholder="ناونیشانی کورت بنووسە"
+                  dir="auto"
+                />
+                <Tooltip content="ڕەنگی ناونیشانی کورت" side="top">
+                  <button
+                    type="button"
+                    onClick={() => setIsSubtitleColorPickerOpen(true)}
+                    className="relative shrink-0 w-10 h-10 sm:w-11 sm:h-11 overflow-hidden rounded-xl border border-gray-300 bg-white shadow-sm transition-all duration-200 cursor-pointer group hover:border-gray-400 focus:outline-none focus:ring-2 focus:border-brand-500 focus:ring-brand-500/30 dark:border-white/10 dark:bg-[#161B22] dark:hover:border-white/20"
+                    title="ڕەنگی ناونیشانی کورت"
+                    aria-label="ڕەنگی ناونیشانی کورت"
+                  >
+                    {subtitleColor ? (
+                      <span
+                        className="absolute inset-0"
+                        style={{ background: subtitleColor }}
+                      />
+                    ) : (
+                      <span className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-500 transition-colors group-hover:bg-gray-100 dark:bg-white/5 dark:text-gray-300 dark:group-hover:bg-white/10">
+                        <Palette className="h-4 w-4" />
+                      </span>
+                    )}
+                  </button>
+                </Tooltip>
+                {subtitleColor && onSubtitleColorChange && (
+                  <Tooltip content="سڕینەوەی ڕەنگ" side="top">
+                    <button
+                      type="button"
+                      onClick={() => onSubtitleColorChange("")}
+                      className="shrink-0 p-2 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                      title="سڕینەوەی ڕەنگ"
+                      aria-label="سڕینەوەی ڕەنگ"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
+                )}
+                <ColorGradientModal
+                  isOpen={isSubtitleColorPickerOpen}
+                  value={subtitleColor || "#ffffff"}
+                  onChange={(color) => onSubtitleColorChange?.(color)}
+                  onClose={() => setIsSubtitleColorPickerOpen(false)}
+                  solidFallback="#ffffff"
+                  gradientFallback="#0066ff"
+                />
+              </div>
             </EditorField>
           )}
         </div>

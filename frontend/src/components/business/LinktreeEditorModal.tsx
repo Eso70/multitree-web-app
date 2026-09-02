@@ -195,6 +195,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
   );
   const [name, setName] = useState("");
   const [subtitle, setSubtitle] = useState(DEFAULT_SUBTITLE);
+  const [subtitleColor, setSubtitleColor] = useState("");
   const [description, setDescription] = useState(DEFAULT_DESCRIPTION);
   const [slug, setSlug] = useState("");
   const [backgroundColor, setBackgroundColor] = useState(() =>
@@ -750,6 +751,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       // Sanitize and set subtitle (max 200 chars)
       const sanitizedSubtitle = (linktree.subtitle || "").trim().slice(0, 200);
       setSubtitle(sanitizedSubtitle || DEFAULT_SUBTITLE);
+      setSubtitleColor(linktree.subtitle_color || "");
 
       // Sanitize and set description (max 500 chars)
       const sanitizedDescription = (linktree.description || "")
@@ -925,6 +927,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
         "";
       setName(isDefault ? defaultBusinessName : "");
       setSubtitle(DEFAULT_SUBTITLE);
+      setSubtitleColor("");
       setDescription(DEFAULT_DESCRIPTION);
       setSlug("");
       setBackgroundColor(
@@ -1714,6 +1717,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
         {
           name: sanitizedName,
           subtitle: sanitizedSubtitle,
+          subtitle_color: subtitleColor.trim() || undefined,
           description: sanitizedDescription,
           slug: sanitizedSlug,
           image: imageUrl,
@@ -2062,6 +2066,8 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
             onNameChange={handleNameChange}
             onNameBlur={handleNameBlur}
             onSubtitleChange={setSubtitle}
+            subtitleColor={subtitleColor}
+            onSubtitleColorChange={setSubtitleColor}
             onDescriptionChange={setDescription}
             onSlugChange={setSlug}
             onBackgroundColorChange={handleBackgroundColorChange}

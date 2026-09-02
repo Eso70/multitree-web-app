@@ -6,6 +6,7 @@ export function buildPlatformLinktreePayload(data: LinktreeEditorSubmitData) {
   return {
     name: data.name.trim(),
     subtitle: data.subtitle?.trim() || undefined,
+    subtitle_color: data.subtitle_color?.trim() || undefined,
     description: data.description?.trim() || undefined,
     seo_name: data.slug.trim(),
     image: data.image || undefined,

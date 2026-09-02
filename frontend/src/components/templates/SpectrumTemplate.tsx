@@ -58,7 +58,9 @@ export const SpectrumTemplate = memo(function SpectrumTemplate({
     () => deriveTextSecondaryColor(theme.from, theme.via, theme.to),
     [theme.from, theme.via, theme.to],
   );
-  const subtitleColor = deriveSubtitleColor(linktree.business_website_color);
+  const subtitleColor =
+    linktree.subtitle_color ||
+    deriveSubtitleColor(linktree.business_website_color);
 
   const handleLinkClick = useCallback(
     (

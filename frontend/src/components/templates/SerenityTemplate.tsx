@@ -77,7 +77,9 @@ export const SerenityTemplate = memo(function SerenityTemplate({
     if (isWhiteBackground) return "#6b7280"; // gray-500 for white backgrounds
     return deriveTextSecondaryColor(theme.from, theme.via, theme.to);
   }, [isWhiteBackground, theme.from, theme.via, theme.to]);
-  const subtitleColor = deriveSubtitleColor(linktree.business_website_color);
+  const subtitleColor =
+    linktree.subtitle_color ||
+    deriveSubtitleColor(linktree.business_website_color);
 
   const handleClick = useCallback(
     (

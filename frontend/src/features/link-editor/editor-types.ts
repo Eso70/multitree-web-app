@@ -3,6 +3,7 @@ export interface EditLinkData {
     id: string;
     name: string;
     subtitle?: string | null;
+    subtitle_color?: string | null;
     description?: string | null;
     seo_name?: string | null;
     uid: string;
@@ -30,6 +31,7 @@ export interface LinktreeEditorSubmitData {
   is_default?: boolean;
   name: string;
   subtitle?: string;
+  subtitle_color?: string;
   description?: string;
   slug: string;
   image: string | null;

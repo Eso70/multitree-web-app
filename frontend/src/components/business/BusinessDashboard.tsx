@@ -851,6 +851,7 @@ export const BusinessDashboard = memo(function BusinessDashboard({
       data: {
         name: string;
         subtitle?: string;
+        subtitle_color?: string;
         description?: string;
         slug: string;
         image: string | null;
@@ -933,6 +934,7 @@ export const BusinessDashboard = memo(function BusinessDashboard({
             body: JSON.stringify({
               name: data.name.trim(),
               subtitle: data.subtitle?.trim() || null,
+              subtitle_color: data.subtitle_color?.trim() || null,
               description: data.description?.trim() || null,
               seo_name: data.slug.trim(),
               image: data.image || null,
@@ -1295,6 +1297,7 @@ export const BusinessDashboard = memo(function BusinessDashboard({
             body: JSON.stringify({
               name: data.name.trim(),
               subtitle: data.subtitle?.trim() || null,
+              subtitle_color: data.subtitle_color?.trim() || null,
               description: data.description?.trim() || null,
               slug: data.slug.trim(),
               image: data.image || null,

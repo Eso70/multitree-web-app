@@ -92,6 +92,7 @@ type LinktreeRow = {
   id: string;
   name: string;
   subtitle: string | null;
+  subtitle_color: string | null;
   description: string | null;
   seo_name: string;
   uid: string;
@@ -410,7 +411,7 @@ export class LinktreesService {
 
   async getAllLinktrees(businessId: string) {
     const res = await this.databaseService.query<LinktreeRow>(
-      `SELECT lt.id, lt.name, lt.subtitle, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
+      `SELECT lt.id, lt.name, lt.subtitle, lt.subtitle_color, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
               lt.template_key, lt.template_config, lt.whatsapp_modal_enabled,
               lt.footer_text, lt.footer_phone, lt.footer_hidden, lt.status, lt.is_default,
               lt.created_at, lt.updated_at, b.default_avatar AS business_default_avatar
@@ -451,7 +452,7 @@ export class LinktreesService {
 
   async getLinktreeById(id: string, businessId: string) {
     const res = await this.databaseService.query<LinktreeRow>(
-      `SELECT lt.id, lt.name, lt.subtitle, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
+      `SELECT lt.id, lt.name, lt.subtitle, lt.subtitle_color, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
               lt.template_key, lt.template_config, lt.whatsapp_modal_enabled,
               lt.footer_text, lt.footer_phone, lt.footer_hidden, lt.status, lt.is_default,
               lt.created_at, lt.updated_at, b.default_avatar AS business_default_avatar
@@ -623,12 +624,12 @@ export class LinktreesService {
           const nextSeoName = data.seo_name || data.slug;
           const updRes = await client.query<LinktreeRow>(
             `UPDATE linktrees SET
-              name = $1, subtitle = $2, description = $14, image = $3, background_color = $4,
+              name = $1, subtitle = $2, subtitle_color = $15, description = $14, image = $3, background_color = $4,
               template_key = $5, template_config = $6::jsonb, whatsapp_modal_enabled = $7,
               footer_text = $8, footer_phone = $9, footer_hidden = $10,
               seo_name = $13, updated_at = NOW()
              WHERE id = $11 AND business_id = $12
-             RETURNING id, name, subtitle, description, seo_name, uid, image, background_color,
+             RETURNING id, name, subtitle, subtitle_color, description, seo_name, uid, image, background_color,
                        template_key, template_config, whatsapp_modal_enabled,
                        footer_text, footer_phone, footer_hidden, status, is_default, created_at, updated_at`,
             [
@@ -646,6 +647,7 @@ export class LinktreesService {
               businessId,
               nextSeoName,
               data.description || null,
+              data.subtitle_color || null,
             ],
           );
           const updated = updRes.rows[0];
@@ -709,12 +711,12 @@ export class LinktreesService {
       const isDefaultFlag = !isPlatform && data.is_default ? true : false;
       const ltRes = await client.query<LinktreeRow>(
         `INSERT INTO linktrees (
-          name, subtitle, description, seo_name, uid, image, background_color,
+          name, subtitle, subtitle_color, description, seo_name, uid, image, background_color,
           template_key, template_config, whatsapp_modal_enabled,
           footer_text, footer_phone, footer_hidden, status, business_id, is_default,
           client_invitation_id
-        ) VALUES ($1, $2, $15, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, 'active', $13, $14, $16::uuid)
-        RETURNING id, name, subtitle, description, seo_name, uid, image, background_color,
+        ) VALUES ($1, $2, $17, $15, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, 'active', $13, $14, $16::uuid)
+        RETURNING id, name, subtitle, subtitle_color, description, seo_name, uid, image, background_color,
                   template_key, template_config, whatsapp_modal_enabled,
                   footer_text, footer_phone, footer_hidden, status, is_default, created_at, updated_at`,
         [
@@ -742,6 +744,7 @@ export class LinktreesService {
           isDefaultFlag,
           data.description || null,
           sourceClientInvitationId || null,
+          data.subtitle_color || null,
         ],
       );
 
@@ -925,7 +928,7 @@ export class LinktreesService {
 
     // 1. Fetch source linktree
     const sourceRes = await this.databaseService.query<LinktreeRow>(
-      `SELECT lt.id, lt.name, lt.subtitle, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
+      `SELECT lt.id, lt.name, lt.subtitle, lt.subtitle_color, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
               lt.template_key, lt.template_config, lt.whatsapp_modal_enabled,
               lt.footer_text, lt.footer_phone, lt.footer_hidden, lt.status, lt.is_default
        FROM linktrees lt
@@ -1069,11 +1072,11 @@ export class LinktreesService {
     const row = await this.databaseService.transaction(async (client) => {
       const ltRes = await client.query<LinktreeRow>(
         `INSERT INTO linktrees (
-          business_id, name, subtitle, description, seo_name, uid, image,
+          business_id, name, subtitle, subtitle_color, description, seo_name, uid, image,
           background_color, template_key, template_config, whatsapp_modal_enabled,
           footer_text, footer_phone, footer_hidden, status, is_default
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7,
+          $1, $2, $3, $17, $4, $5, $6, $7,
           $8, $9, $10, $11,
           $12, $13, $14, $15, $16
         ) RETURNING *`,
@@ -1094,6 +1097,7 @@ export class LinktreesService {
           source.footer_hidden,
           source.status || 'active',
           false, // duplicates are never default
+          source.subtitle_color || null,
         ],
       );
 
@@ -1220,6 +1224,10 @@ export class LinktreesService {
     const name = data.name !== undefined ? data.name : current.name;
     const subtitle =
       data.subtitle !== undefined ? data.subtitle : current.subtitle;
+    const subtitle_color =
+      data.subtitle_color !== undefined
+        ? data.subtitle_color || null
+        : current.subtitle_color;
     const description =
       data.description !== undefined ? data.description : current.description;
     const seo_name = nextSeoName !== undefined ? nextSeoName : current.seo_name;
@@ -1259,11 +1267,12 @@ export class LinktreesService {
     const row = await this.databaseService.transaction(async (client) => {
       const ltRes = await client.query<LinktreeRow>(
         `UPDATE linktrees
-         SET name = $1, subtitle = $2, description = $14, seo_name = $3, image = $4, background_color = $5,
+         SET name = $1, subtitle = $2, subtitle_color = $15, description = $14, seo_name = $3,
+             image = $4, background_color = $5,
              template_key = $6, template_config = $7::jsonb, whatsapp_modal_enabled = $8,
              footer_text = $9, footer_phone = $10, footer_hidden = $11, updated_at = NOW()
          WHERE id = $12 AND business_id = $13
-         RETURNING id, name, subtitle, description, seo_name, uid, image, background_color,
+         RETURNING id, name, subtitle, subtitle_color, description, seo_name, uid, image, background_color,
                    template_key, template_config, whatsapp_modal_enabled,
                    footer_text, footer_phone, footer_hidden, status, is_default, created_at, updated_at`,
         [
@@ -1281,6 +1290,7 @@ export class LinktreesService {
           id,
           businessId,
           description,
+          subtitle_color,
         ],
       );
 
@@ -1357,7 +1367,7 @@ export class LinktreesService {
 
   async getDefaultLinktree(businessId: string) {
     const res = await this.databaseService.query<LinktreeRow>(
-      `SELECT lt.id, lt.name, lt.subtitle, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
+      `SELECT lt.id, lt.name, lt.subtitle, lt.subtitle_color, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
               lt.template_key, lt.template_config, lt.whatsapp_modal_enabled,
               lt.footer_text, lt.footer_phone, lt.footer_hidden, lt.status, lt.is_default,
               lt.created_at, lt.updated_at, b.default_avatar AS business_default_avatar

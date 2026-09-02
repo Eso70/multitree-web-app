@@ -1,4 +1,4 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { GoneException } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
@@ -45,6 +45,7 @@ type PublicLinktreeRow = {
   id: string;
   name: string;
   subtitle: string | null;
+  subtitle_color: string | null;
   description: string | null;
   seo_name: string;
   uid: string;
@@ -349,7 +350,7 @@ export class PublicService {
     const templateKey = enforceBusinessEntitlement
       ? allowedTemplateKeySql('lt.template_key', 'a')
       : 'lt.template_key';
-    return `SELECT lt.id, lt.name, lt.subtitle, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
+    return `SELECT lt.id, lt.name, lt.subtitle, lt.subtitle_color, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
                    ${templateKey} AS template_key,
                    lt.template_config, lt.whatsapp_modal_enabled,
                    lt.footer_text, lt.footer_phone, lt.footer_hidden, lt.status, lt.is_default,

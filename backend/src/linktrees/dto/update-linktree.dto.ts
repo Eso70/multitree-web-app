@@ -24,6 +24,12 @@ export class UpdateLinktreeDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(WEBSITE_COLOR_MAX_LENGTH)
+  @Matches(WEBSITE_COLOR_PATTERN)
+  subtitle_color?: string;
+
+  @IsString()
+  @IsOptional()
   description?: string;
 
   @IsString()

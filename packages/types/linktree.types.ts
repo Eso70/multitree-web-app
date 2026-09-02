@@ -1,4 +1,7 @@
-import type { PublicPageAnalytics } from "./analytics.types";
+import type {
+  PublicPageAnalytics,
+  PublicRouteTracking,
+} from "./analytics.types";
 import {
   MINI_WEBSITE_BACKGROUND_STYLES,
   type MiniWebsiteBackgroundStyle,
@@ -98,6 +101,7 @@ export interface LinktreeListItem {
   created_at: string;
   updated_at: string;
   subtitle?: string | null;
+  subtitle_color?: string | null;
   description?: string | null;
   seo_name?: string | null;
   public_identifier?: string;
@@ -124,6 +128,7 @@ export interface LinktreeListItem {
 /** A Linktree returned by GET /linktrees for the business dashboard. */
 export interface BusinessLinktreeSummary extends LinktreeListItem {
   subtitle: string | null;
+  subtitle_color?: string | null;
   description: string | null;
   seo_name: string;
   image: string | null;
@@ -145,6 +150,7 @@ export interface PublicLinktree {
   uid: string;
   name: string;
   subtitle: string | null;
+  subtitle_color?: string | null;
   description: string | null;
   seo_name: string;
   image: string | null;
@@ -168,8 +174,13 @@ export interface PublicLinktreePayload {
   links: LinktreeLink[];
   /**
    * Page-level, not content: the pixel ids and the registered actions this
-   * page may report. Kept beside the linktree rather than inside it so the
-   * record that templates and editor previews render stays free of tracking.
+   * page must report to. Sourced from the live business record, not cache,
+   * so a lapsed plan stops immediately.
+   */
+  tracking?: PublicRouteTracking;
+  /**
+   * Public page traffic overview. Filled in by the public page endpoint; a
+   * page with no traffic yet reads as zeroes rather than being absent.
    */
   analytics: PublicPageAnalytics;
 }
@@ -181,6 +192,7 @@ export interface LinktreePresentation {
   name: string;
   seo_name?: string | null;
   subtitle?: string | null;
+  subtitle_color?: string | null;
   description?: string | null;
   image?: string | null;
   background_color?: string | null;
