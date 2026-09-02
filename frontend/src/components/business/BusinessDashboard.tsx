@@ -1049,6 +1049,7 @@ export const BusinessDashboard = memo(function BusinessDashboard({
               errorMessage,
               errorData ?? undefined,
             );
+            toast.error(errorMessage);
             throw new Error(errorMessage);
           }
 

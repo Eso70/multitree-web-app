@@ -137,6 +137,19 @@ const DEFAULT_API_ENDPOINTS = {
  */
 const DEFAULT_BACKGROUND_COLOR = "#ffffff";
 
+function extractSolidHex(color: string | undefined | null): string {
+  if (!color) return "";
+  const trimmed = color.trim();
+  if (/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(trimmed)) return trimmed;
+  if (trimmed.startsWith("gradient:")) {
+    const parts = trimmed.split(":");
+    if (parts.length >= 4 && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(parts[2])) {
+      return parts[2];
+    }
+  }
+  return "";
+}
+
 function resolveDefaultBackgroundColor(value?: string | null): string {
   const trimmed = value?.trim();
   if (!trimmed) {
@@ -261,6 +274,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     footerPhone?: string;
     image?: string;
     questions?: string;
+    subtitleColor?: string;
   }>({});
 
   // Per-link validation errors: { platformId_linkIndex: errorMessage }
@@ -273,6 +287,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     platforms?: boolean;
     links?: boolean;
     footerPhone?: boolean;
+    subtitleColor?: boolean;
   }>({});
 
   const [backgroundPattern, setBackgroundPattern] =
@@ -286,6 +301,9 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
    */
   const [nameWarning, setNameWarning] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<InlineRequestErrorData | null>(
+    null,
+  );
+  const [submitError, setSubmitError] = useState<InlineRequestErrorData | null>(
     null,
   );
   const [checkingSlug, setCheckingSlug] = useState(false);
@@ -440,7 +458,12 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     const newErrors: typeof errors = {};
 
     newErrors.name = validateName(name);
-    newErrors.slug = validateSlug(slug) || slugApiError || undefined;
+    const effectiveSlug =
+      slug.trim() || (name.trim() ? buildSlugFromName(name.trim()) : "");
+    newErrors.slug =
+      (effectiveSlug ? validateSlug(effectiveSlug) : validateSlug(slug)) ||
+      slugApiError ||
+      undefined;
     newErrors.backgroundColor = validateBackgroundColor(backgroundColor);
     newErrors.templateKey = validateTemplateKey(templateKey);
     newErrors.platforms = validatePlatforms(selectedPlatforms);
@@ -452,6 +475,14 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     if (footerPhone.trim()) {
       newErrors.footerPhone = validateFooterPhone(footerPhone);
     }
+    if (subtitleColor.trim()) {
+      const isSolidHex = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(
+        subtitleColor.trim(),
+      );
+      if (!isSolidHex) {
+        newErrors.subtitleColor = "ڕەنگ دەبێت کۆدی Hex بێت (وەک #000000)";
+      }
+    }
 
     setErrors(newErrors);
     setTouched({
@@ -462,6 +493,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       platforms: true,
       links: true,
       footerPhone: true,
+      subtitleColor: true,
     });
 
     return !Object.values(newErrors).some((error) => error !== undefined);
@@ -476,6 +508,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     whatsappQuestions,
     whatsappModalEnabled,
     footerPhone,
+    subtitleColor,
     validateName,
     validateSlug,
     validateBackgroundColor,
@@ -751,7 +784,8 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       // Sanitize and set subtitle (max 200 chars)
       const sanitizedSubtitle = (linktree.subtitle || "").trim().slice(0, 200);
       setSubtitle(sanitizedSubtitle || DEFAULT_SUBTITLE);
-      setSubtitleColor(linktree.subtitle_color || "");
+      setSubtitleColor(extractSolidHex(linktree.subtitle_color));
+      setSubmitError(null);
 
       // Sanitize and set description (max 500 chars)
       const sanitizedDescription = (linktree.description || "")
@@ -1514,6 +1548,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
 
   // Handle back step - memoized for performance
   const handleBackStep = useCallback(() => {
+    setSubmitError(null);
     if (currentStep === "select") {
       setCurrentStep("basic");
     } else if (currentStep === "links") {
@@ -1539,38 +1574,106 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     if (!beginSubmission()) return;
 
     try {
+      setSubmitError(null);
+
       // ============================================
       // VALIDATION CHECKS
       // ============================================
 
       // Validate all fields before submission
-      if (!validateAllFields()) {
-        // Focus first invalid field
-        if (errors.name) {
-          document.getElementById("name")?.focus();
-        } else if (errors.slug) {
-          document.getElementById("slug")?.focus();
-        } else if (errors.backgroundColor) {
-          // Scroll to background color section
+      const fieldErrors: typeof errors = {};
+      fieldErrors.name = validateName(name);
+      const effectiveSlug =
+        slug.trim() || (name.trim() ? buildSlugFromName(name.trim()) : "");
+      fieldErrors.slug =
+        (effectiveSlug ? validateSlug(effectiveSlug) : validateSlug(slug)) ||
+        slugApiError ||
+        undefined;
+      fieldErrors.backgroundColor = validateBackgroundColor(backgroundColor);
+      fieldErrors.templateKey = validateTemplateKey(templateKey);
+      fieldErrors.platforms = validatePlatforms(selectedPlatforms);
+      fieldErrors.links = validateLinks(socialLinks, selectedPlatforms);
+      fieldErrors.questions = validateQuestions(
+        whatsappQuestions,
+        whatsappModalEnabled,
+      );
+      if (footerPhone.trim()) {
+        fieldErrors.footerPhone = validateFooterPhone(footerPhone);
+      }
+      if (subtitleColor.trim()) {
+        const isSolidHex = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(
+          subtitleColor.trim(),
+        );
+        if (!isSolidHex) {
+          fieldErrors.subtitleColor = "ڕەنگ دەبێت کۆدی Hex بێت (وەک #000000)";
+        }
+      }
+
+      const hasValidationErrors = Object.values(fieldErrors).some(
+        (err) => err !== undefined,
+      );
+
+      if (hasValidationErrors) {
+        setErrors(fieldErrors);
+        setTouched({
+          name: true,
+          slug: true,
+          backgroundColor: true,
+          templateKey: true,
+          platforms: true,
+          links: true,
+          footerPhone: true,
+          subtitleColor: true,
+        });
+
+        let firstErrorMsg = "تکایە هەموو خانە پێویستەکان بە دروستی پڕبکەرەوە.";
+        if (fieldErrors.name) {
+          firstErrorMsg = fieldErrors.name;
+          if (currentStep !== "basic") setCurrentStep("basic");
+          setTimeout(() => document.getElementById("name")?.focus(), 50);
+        } else if (fieldErrors.slug) {
+          firstErrorMsg = fieldErrors.slug;
+          if (currentStep !== "basic") setCurrentStep("basic");
+          setTimeout(() => document.getElementById("slug")?.focus(), 50);
+        } else if (fieldErrors.subtitleColor) {
+          firstErrorMsg = fieldErrors.subtitleColor;
+          if (currentStep !== "basic") setCurrentStep("basic");
+        } else if (fieldErrors.backgroundColor) {
+          firstErrorMsg = fieldErrors.backgroundColor;
+          if (currentStep !== "basic") setCurrentStep("basic");
           document
             .querySelector("[data-bg-color-section]")
             ?.scrollIntoView({ behavior: "smooth", block: "center" });
         } else if (
-          errors.templateKey ||
+          fieldErrors.templateKey ||
           !templateKey ||
           !isTemplateKey(templateKey)
         ) {
+          firstErrorMsg = fieldErrors.templateKey || "شێوازی پەڕە هەڵبژێرە";
+          if (currentStep !== "basic") setCurrentStep("basic");
           document
             .querySelector("[data-template-section]")
             ?.scrollIntoView({ behavior: "smooth", block: "center" });
-        } else if (errors.platforms) {
-          // Scroll to platforms section
-          if (currentStep === "links") {
-            setCurrentStep("select");
-          }
-        } else if (errors.links) {
-          // Already on links step - validation will show inline
+        } else if (fieldErrors.platforms) {
+          firstErrorMsg = fieldErrors.platforms;
+          if (currentStep !== "select") setCurrentStep("select");
+        } else if (fieldErrors.links) {
+          firstErrorMsg = fieldErrors.links;
+          if (currentStep !== "links") setCurrentStep("links");
+        } else if (fieldErrors.questions) {
+          firstErrorMsg = fieldErrors.questions;
+          if (currentStep !== "basic") setCurrentStep("basic");
+        } else if (fieldErrors.footerPhone) {
+          firstErrorMsg = fieldErrors.footerPhone;
+          if (currentStep !== "basic") setCurrentStep("basic");
         }
+
+        setSubmitError({
+          code: "VALIDATION_FAILED",
+          title: "زانیارییەکان تەواو نین",
+          message: firstErrorMsg,
+          status: 400,
+        });
         throw new Error("Validation failed");
       }
 
@@ -1717,7 +1820,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
         {
           name: sanitizedName,
           subtitle: sanitizedSubtitle,
-          subtitle_color: subtitleColor.trim() || undefined,
+          subtitle_color: extractSolidHex(subtitleColor) || undefined,
           description: sanitizedDescription,
           slug: sanitizedSlug,
           image: imageUrl,
@@ -1742,19 +1845,14 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     } catch (error) {
       console.error("Error submitting:", error);
 
-      // Check if error has link-specific errors
-      if (error && typeof error === "object" && "linkErrors" in error) {
+      if (error instanceof Error && error.message === "Validation failed") {
+        // submitError is already set with the specific field error
+      } else if (error && typeof error === "object" && "linkErrors" in error) {
         const linkErrorsData = (
           error as Error & { linkErrors?: Record<string, string> }
         ).linkErrors;
         if (linkErrorsData && Object.keys(linkErrorsData).length > 0) {
-          // Map link errors to display format
-          // The key format from API is: platform_index (where index is position in linksToCreate)
-          // We need to map this to our linkId format
           const mappedErrors: Record<string, string> = {};
-
-          // Build a map of platform+index to linkId
-          // We need to match the order in which links were processed
           const platformLinkCounts = new Map<string, number>();
           selectedPlatforms.forEach((linkId) => {
             const link = socialLinks.find((l) => l.id === linkId);
@@ -1772,30 +1870,31 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
 
           if (Object.keys(mappedErrors).length > 0) {
             setLinkErrors(mappedErrors);
-            console.error("هەندێک لینک هەڵەیەک هەیە. تکایە چاکی بکەوە");
-          } else {
-            // Fallback: show general error if mapping failed
-            if (!(
-              error instanceof Error && error.message === "Validation failed"
-            )) {
-              console.error("هەڵە لە پاشەکەوتکردن");
-            }
-          }
-        } else {
-          // No link-specific errors, show general error
-          if (!(
-            error instanceof Error && error.message === "Validation failed"
-          )) {
-            console.error("هەڵە لە پاشەکەوتکردن");
+            if (currentStep !== "links") setCurrentStep("links");
           }
         }
+        setSubmitError({
+          code: "LINK_ERRORS",
+          title: "هەڵە لە لینکەکاندا هەیە",
+          message:
+            error instanceof Error &&
+            error.message &&
+            error.message !== "Some links have validation errors"
+              ? error.message
+              : "تکایە بەستەر و زانیاری لینکەکان بپشکنە و هەڵەکان چاک بکەوە.",
+          status: 400,
+        });
       } else {
-        // No link-specific errors, show general error
-        if (!(
-          error instanceof Error && error.message === "Validation failed"
-        )) {
-          console.error("هەڵە لە پاشەکەوتکردن");
-        }
+        const message =
+          error instanceof Error && error.message
+            ? error.message
+            : "هەڵەیەک ڕوویدا لە کاتی پاشەکەوتکردن. تکایە دووبارە هەوڵبدەوە.";
+        setSubmitError({
+          code: "SUBMIT_FAILED",
+          title: "پاشەکەوتکردن سەرکەوتوو نەبوو",
+          message,
+          status: 400,
+        });
       }
 
       // ALWAYS reset submission flag on error so user can retry
@@ -2029,6 +2128,9 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
           }
         }}
       >
+        {submitError && (
+          <InlineRequestError className="mb-4" error={submitError} />
+        )}
         {uploadError && (
           <InlineRequestError className="mb-4" error={uploadError} />
         )}

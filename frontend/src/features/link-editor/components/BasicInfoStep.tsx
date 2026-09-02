@@ -70,6 +70,7 @@ interface BasicInfoStepProps {
     templateKey?: string;
     footerPhone?: string;
     image?: string;
+    subtitleColor?: string;
   };
   /** Advisory, not blocking: another page already uses this display name. */
   nameWarning?: string | null;
@@ -320,9 +321,17 @@ export const BasicInfoStep = memo(function BasicInfoStep({
                   onChange={(color) => onSubtitleColorChange?.(color)}
                   onClose={() => setIsSubtitleColorPickerOpen(false)}
                   solidFallback="#ffffff"
-                  gradientFallback="#0066ff"
+                  gradientFallback="#ffffff"
+                  allowGradient={false}
+                  title="ڕەنگی ناونیشانی کورت"
+                  subtitle="ڕەنگێکی تاک بۆ ناونیشانی کورت هەڵبژێرە"
                 />
               </div>
+              {errors.subtitleColor && (
+                <p className="text-xs text-red-500 mt-1 font-kurdish">
+                  {errors.subtitleColor}
+                </p>
+              )}
             </EditorField>
           )}
         </div>

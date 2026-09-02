@@ -9,6 +9,8 @@ import {
   MinLength,
 } from 'class-validator';
 import {
+  SOLID_HEX_COLOR_MAX_LENGTH,
+  SOLID_HEX_COLOR_PATTERN,
   WEBSITE_COLOR_MAX_LENGTH,
   WEBSITE_COLOR_PATTERN,
 } from '../../common/website-color';
@@ -37,8 +39,8 @@ export class CreateLinktreeDto {
 
   @IsString()
   @IsOptional()
-  @MaxLength(WEBSITE_COLOR_MAX_LENGTH)
-  @Matches(WEBSITE_COLOR_PATTERN)
+  @MaxLength(SOLID_HEX_COLOR_MAX_LENGTH)
+  @Matches(SOLID_HEX_COLOR_PATTERN)
   subtitle_color?: string;
 
   @IsString()

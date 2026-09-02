@@ -15,6 +15,10 @@ export const WEBSITE_COLOR_PATTERN =
 /** Longest value the pattern can match, for a companion length bound. */
 export const WEBSITE_COLOR_MAX_LENGTH = 40;
 
+/** Solid hex color shape `#rgb` or `#rrggbb`. */
+export const SOLID_HEX_COLOR_PATTERN = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+export const SOLID_HEX_COLOR_MAX_LENGTH = 7;
+
 export function isWebsiteColor(value: string): boolean {
   return WEBSITE_COLOR_PATTERN.test(value);
 }
