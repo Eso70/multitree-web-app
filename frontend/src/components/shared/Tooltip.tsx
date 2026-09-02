@@ -19,6 +19,7 @@ export interface TooltipProps {
   delay?: number;
   disabled?: boolean;
   className?: string;
+  tooltipClassName?: string;
   children: ReactNode;
 }
 
@@ -34,6 +35,7 @@ export function Tooltip({
   delay = 150,
   disabled = false,
   className = "",
+  tooltipClassName = "",
   children,
 }: TooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -177,8 +179,13 @@ export function Tooltip({
   if (React.isValidElement(children)) {
     const child = children as ReactElement<Record<string, unknown>>;
     const originalRef = (child as unknown as { ref?: React.Ref<HTMLElement> }).ref;
+    const existingClassName = (child.props.className as string) || "";
+    const mergedClassName = className
+      ? `${existingClassName} ${className}`.trim()
+      : existingClassName;
 
     triggerElement = React.cloneElement(child, {
+      className: mergedClassName,
       ref: (node: HTMLElement | null) => {
         triggerRef.current = node;
         if (typeof originalRef === "function") {
@@ -224,7 +231,7 @@ export function Tooltip({
         onFocus={handleFocus}
         onBlur={handleBlur}
         aria-describedby={isOpen ? tooltipId : undefined}
-        className="inline-flex"
+        className={`inline-flex ${className}`.trim()}
       >
         {children}
       </span>
@@ -245,7 +252,7 @@ export function Tooltip({
               opacity: coords ? 1 : 0,
               pointerEvents: "none",
             }}
-            className={`z-[9999] px-2.5 py-1 text-[11px] sm:text-xs font-medium rounded-lg shadow-md border backdrop-blur-xs transition-opacity duration-150 ease-out select-none whitespace-nowrap bg-white/95 text-slate-800 border-slate-200/90 dark:bg-[#161B22]/95 dark:text-slate-100 dark:border-white/10 dark:shadow-xl font-kurdish ${className}`}
+            className={`z-[9999] px-2.5 py-1 text-xs font-medium rounded-lg shadow-md border backdrop-blur-xs transition-opacity duration-150 ease-out select-none whitespace-nowrap bg-white/95 text-slate-800 border-slate-200/90 dark:bg-[#161B22]/95 dark:text-slate-100 dark:border-white/10 dark:shadow-xl font-kurdish max-w-xs pointer-events-none ${tooltipClassName}`.trim()}
           >
             {content}
           </div>,

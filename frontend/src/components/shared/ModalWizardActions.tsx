@@ -40,31 +40,31 @@ export function ModalWizardActions({
 }: ModalWizardActionsProps) {
   const nextClassName =
     variant === "multitree"
-      ? "w-full rounded-xl px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold sa-gradient sa-gradient-hover shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer"
-      : "w-full rounded-xl px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer";
+      ? "flex h-11 w-full items-center justify-center rounded-xl px-4 sm:px-6 text-sm font-semibold sa-gradient sa-gradient-hover shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
+      : "flex h-11 w-full items-center justify-center rounded-xl px-4 sm:px-6 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap";
   const submitClassName =
     variant === "multitree"
-      ? "w-full rounded-xl px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold sa-ink shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 sa-gradient sa-gradient-hover cursor-pointer"
-      : "w-full rounded-xl px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer";
+      ? "flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 sm:px-6 text-sm font-semibold sa-ink shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed sa-gradient sa-gradient-hover cursor-pointer whitespace-nowrap"
+      : "flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 sm:px-6 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap";
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 border-t border-gray-100/50 p-4 sm:p-5 md:p-6 bg-linear-to-r from-white to-slate-50/30">
+    <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 border-t border-gray-100/60 p-3.5 sm:p-4 bg-linear-to-r from-white to-slate-50/30">
       {!isFirstStep && (
         <Tooltip content="گەڕانەوە بۆ هەنگاوی پێشوو" side="top">
           <button
             type="button"
             onClick={onBack}
-            className="w-full sm:w-auto px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 rounded-xl bg-linear-to-br from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 border border-slate-100 text-slate-600 hover:text-slate-700 text-xs sm:text-sm font-medium transition-all duration-300 shadow-sm hover:shadow cursor-pointer"
+            className="flex h-11 w-full sm:w-auto items-center justify-center px-4 sm:px-5 rounded-xl bg-linear-to-br from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 border border-slate-200/80 dark:border-white/10 text-slate-600 hover:text-slate-700 dark:text-slate-300 dark:hover:text-white text-sm font-medium transition-all duration-300 shadow-xs hover:shadow-sm cursor-pointer whitespace-nowrap"
           >
             گەڕانەوە
           </button>
         </Tooltip>
       )}
-      <Tooltip content="داخستن و هەڵوەشاندنەوەی گۆڕانکارییەکان" side="top" className={isFirstStep ? "sm:flex-1" : ""}>
+      <Tooltip content="داخستن و هەڵوەشاندنەوەی گۆڕانکارییەکان" side="top">
         <button
           type="button"
           onClick={onCancel}
-          className={`w-full sm:w-auto px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 rounded-xl bg-linear-to-br from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 border border-slate-100 text-slate-600 hover:text-slate-700 text-xs sm:text-sm font-medium transition-all duration-300 shadow-sm hover:shadow cursor-pointer ${isFirstStep ? "w-full sm:w-full" : ""}`}
+          className={`flex h-11 w-full sm:w-auto items-center justify-center px-4 sm:px-5 rounded-xl bg-linear-to-br from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 border border-slate-200/80 dark:border-white/10 text-slate-600 hover:text-slate-700 dark:text-slate-300 dark:hover:text-white text-sm font-medium transition-all duration-300 shadow-xs hover:shadow-sm cursor-pointer whitespace-nowrap ${isFirstStep ? "sm:flex-1" : ""}`}
         >
           هەڵوەشاندنەوە
         </button>
@@ -75,7 +75,7 @@ export function ModalWizardActions({
             type="button"
             onClick={onSaveCurrent}
             disabled={isSubmitting}
-            className="flex w-full items-center justify-center rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-sm transition-all duration-300 hover:shadow disabled:cursor-wait disabled:opacity-50 sm:w-auto sm:px-5 sm:py-3 sm:text-sm cursor-pointer"
+            className="flex h-11 w-full items-center justify-center rounded-xl border px-4 sm:px-5 text-sm font-semibold shadow-xs transition-all duration-300 hover:shadow-sm disabled:cursor-wait disabled:opacity-50 sm:w-auto cursor-pointer whitespace-nowrap"
             style={{
               borderColor: "var(--theme-primary, var(--multitree-accent))",
               color: "var(--theme-primary, var(--multitree-accent))",
@@ -93,7 +93,6 @@ export function ModalWizardActions({
         <Tooltip
           content={canContinue ? nextLabel : "تکایە خانە پێویستەکان پڕبکەرەوە"}
           side="top"
-          className="w-full sm:flex-1"
         >
           {variant === "multitree" ? (
             <button
@@ -109,7 +108,7 @@ export function ModalWizardActions({
               type="button"
               onClick={onNext}
               disabled={isSubmitting || (disableWhenInvalid && !canContinue)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-xs font-semibold text-[var(--theme-ink)] shadow-sm transition-all duration-300 [background:var(--theme-css)] hover:brightness-95 hover:shadow disabled:cursor-wait disabled:opacity-60 sm:px-5 sm:py-3 sm:text-sm md:px-6 cursor-pointer"
+              className="flex h-11 w-full sm:flex-1 items-center justify-center gap-2 rounded-xl border border-transparent px-4 sm:px-6 text-sm font-semibold text-[var(--theme-ink)] shadow-md transition-all duration-300 [background:var(--theme-css)] hover:brightness-95 hover:shadow-lg disabled:cursor-wait disabled:opacity-60 cursor-pointer whitespace-nowrap"
             >
               <span>{nextLabel}</span>
             </button>
@@ -119,7 +118,6 @@ export function ModalWizardActions({
         <Tooltip
           content={isSubmitting ? "پاشەکەوت دەکرێت..." : submitLabel}
           side="top"
-          className="w-full sm:flex-1"
         >
           {variant === "multitree" ? (
             <button
@@ -146,7 +144,7 @@ export function ModalWizardActions({
               onClick={onSubmit}
               aria-busy={isSubmitting}
               disabled={isSubmitting || (disableWhenInvalid && !canContinue)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-transparent px-4 py-2.5 text-xs font-semibold text-[var(--theme-ink)] shadow-sm transition-all duration-300 [background:var(--theme-css)] hover:brightness-95 hover:shadow disabled:cursor-wait disabled:opacity-60 sm:px-5 sm:py-3 sm:text-sm md:px-6 cursor-pointer"
+              className="flex h-11 w-full sm:flex-1 items-center justify-center gap-2 rounded-xl border border-transparent px-4 sm:px-6 text-sm font-semibold text-[var(--theme-ink)] shadow-md transition-all duration-300 [background:var(--theme-css)] hover:brightness-95 hover:shadow-lg disabled:cursor-wait disabled:opacity-60 cursor-pointer whitespace-nowrap"
             >
               {isSubmitting ? (
                 <>

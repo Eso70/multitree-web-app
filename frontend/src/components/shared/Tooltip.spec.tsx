@@ -89,4 +89,29 @@ describe("Tooltip component", () => {
 
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
+
+  it("merges layout className onto trigger without inflating tooltip bubble", () => {
+    render(
+      <Tooltip content="ڕوونکردنەوە" delay={50} className="w-full sm:flex-1">
+        <button className="base-btn">کردار</button>
+      </Tooltip>,
+    );
+
+    const button = screen.getByRole("button", { name: "کردار" });
+    expect(button.className).toContain("w-full");
+    expect(button.className).toContain("sm:flex-1");
+    expect(button.className).toContain("base-btn");
+
+    fireEvent.mouseEnter(button);
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+
+    const tooltip = screen.getByRole("tooltip");
+    expect(tooltip).toBeInTheDocument();
+    expect(tooltip.className).toContain("max-w-xs");
+    expect(tooltip.className).toContain("text-xs");
+    expect(tooltip.className).not.toContain("w-full");
+    expect(tooltip.className).not.toContain("sm:flex-1");
+  });
 });
