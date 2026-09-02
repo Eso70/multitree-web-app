@@ -5,6 +5,8 @@ import { CirclePause, MessageCircle, Star } from "lucide-react";
 import { getRecordAgeBadge } from "@/lib/utils/record-age";
 import { getTemplateName } from "@/lib/templates/config";
 import type { LinktreeListItem } from "@linktree/types";
+import { ANALYTICS_TERMS } from "@/components/shared/analytics-terminology";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 const PILL_BASE =
   "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold leading-none";
@@ -20,12 +22,16 @@ export const LinktreePill = memo(function LinktreePill({
   className?: string;
   icon?: React.ReactNode;
 }) {
-  return (
-    <span className={`${PILL_BASE} ${className}`} title={title || label}>
+  const pill = (
+    <span className={`${PILL_BASE} ${className}`}>
       {icon}
       {label}
     </span>
   );
+  if (title) {
+    return <Tooltip content={title} side="top">{pill}</Tooltip>;
+  }
+  return pill;
 });
 
 export interface LinktreeMetaBadgesProps {
@@ -55,8 +61,8 @@ export interface PageListTrafficLabels {
 
 export const LINKTREE_TRAFFIC_LABELS: PageListTrafficLabels = {
   column: "ترافیک",
-  views: "بینەری تاک",
-  interactions: "کرتەکەری تاک",
+  views: ANALYTICS_TERMS.uniqueViewer,
+  interactions: ANALYTICS_TERMS.uniqueClicker,
 };
 
 /**
@@ -87,18 +93,19 @@ export const LinktreeMetaBadges = memo(function LinktreeMetaBadges({
   return (
     <div className={`flex flex-wrap items-center gap-1 ${className}`}>
       {item.is_default && (
-        <span
-          className={`${PILL_BASE} border-transparent`}
-          title="پەیجی بنەڕەتی بزنسەکە"
-          style={{
-            background:
-              "color-mix(in srgb, var(--theme-primary, #64748b) 14%, white)",
-            color: "var(--theme-primary, #64748b)",
-          }}
-        >
-          <Star className="h-2.5 w-2.5" />
-          بنەڕەت
-        </span>
+        <Tooltip content="پەیجی بنەڕەتی بزنسەکە" side="top">
+          <span
+            className={`${PILL_BASE} border-transparent cursor-default`}
+            style={{
+              background:
+                "color-mix(in srgb, var(--theme-primary, #64748b) 14%, white)",
+              color: "var(--theme-primary, #64748b)",
+            }}
+          >
+            <Star className="h-2.5 w-2.5" />
+            بنەڕەت
+          </span>
+        </Tooltip>
       )}
       {ageBadge && (
         <LinktreePill
@@ -151,12 +158,11 @@ export const LinktreeMetaField = memo(function LinktreeMetaField({
       <span className="block text-[9px] font-semibold uppercase tracking-wide text-gray-400">
         {label}
       </span>
-      <span
-        className="block truncate text-[11px] text-gray-700 dark:text-gray-300"
-        title={value}
-      >
-        {value}
-      </span>
+      <Tooltip content={value} side="top">
+        <span className="block truncate text-[11px] text-gray-700 dark:text-gray-300">
+          {value}
+        </span>
+      </Tooltip>
     </div>
   );
 });

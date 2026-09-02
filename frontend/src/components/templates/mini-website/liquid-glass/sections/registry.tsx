@@ -8,7 +8,6 @@ import {
   CalendarDays,
   CalendarRange,
   ChartNoAxesCombined,
-  ClipboardList,
   Clock3,
   Columns2,
   CreditCard,
@@ -78,7 +77,6 @@ import {
   FaqSection,
   GallerySection,
   HoursSection,
-  LeadFormSection,
   LinkRecordsSection,
   LocationSection,
   OwnedPropertiesSection,
@@ -110,8 +108,6 @@ export interface SectionRegistryContext {
   fullPage: boolean;
   interactive: boolean;
   whatsappHref?: string;
-  leadFormEndpoint?: string;
-  onLeadSubmitted?: (eventId: string) => void;
   dark?: boolean;
   index: number;
   /** The business's brand colour. */
@@ -425,22 +421,6 @@ export const SECTION_REGISTRY: Record<string, SectionRegistryEntry> = {
     palette: FAQ_TONES,
     placement: "half",
     render: (ctx) => <FaqSection entries={ctx.profile.faq} {...ctx.header} {...ctx.common} />,
-  },
-  leadForm: {
-    label: "فۆرمی داواکاری و پەیوەندی",
-    icon: ClipboardList,
-    palette: [],
-    placement: "full",
-    render: (ctx) => (
-      <LeadFormSection
-        form={ctx.profile.leadForm}
-        endpoint={ctx.leadFormEndpoint}
-        onSubmitted={ctx.onLeadSubmitted}
-        interactive={ctx.interactive}
-        {...ctx.header}
-        {...ctx.common}
-      />
-    ),
   },
   pricing: {
     label: "پلان و پاکێجەکان",

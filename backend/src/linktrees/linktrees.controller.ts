@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Get,
   Post,
@@ -19,6 +19,7 @@ import { LinksService } from '../links/links.service';
 import { BatchSyncLinksDto } from '../links/dto/sync-links.dto';
 import { CreateLinktreeDto } from './dto/create-linktree.dto';
 import { UpdateLinktreeDto } from './dto/update-linktree.dto';
+import { DuplicateLinktreeDto } from './dto/duplicate-linktree.dto';
 import { BusinessGuard } from '../auth/business.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { SessionUser } from '../auth/session.service';
@@ -139,6 +140,25 @@ export class LinktreesController {
     const linktree = await this.linktreesService.createLinktree(
       createDto,
       business.id,
+    );
+    return { success: true, data: linktree };
+  }
+
+  @Post(':id/duplicate')
+  @RequireCapabilities(Capability.BusinessLinktreesCreate)
+  @AuditEvent('business.linktree.duplicate', {
+    resourceType: 'linktree',
+    resourceIdParam: 'id',
+  })
+  async duplicate(
+    @Param('id') id: string,
+    @Body() duplicateDto: DuplicateLinktreeDto,
+    @CurrentUser() business: SessionUser,
+  ) {
+    const linktree = await this.linktreesService.duplicateLinktree(
+      id,
+      business.id,
+      duplicateDto,
     );
     return { success: true, data: linktree };
   }

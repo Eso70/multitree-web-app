@@ -40,12 +40,12 @@ import { apiRequest } from "@/lib/api/request";
 import { createMiniWebsiteSavePayload } from "./save-payload";
 import { ClearAnalyticsButton } from "@/components/shared/ClearAnalyticsButton";
 import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
+import { Tooltip } from "@/components/shared/Tooltip";
 import {
   MINI_WEBSITE_TRAFFIC_LABELS,
   MiniWebsiteListMeta,
 } from "./MiniWebsiteListMeta";
 import {
-  BUSINESS_MINI_WEBSITE_WORKSPACE,
   MiniWebsiteWorkspaceProvider,
   useMiniWebsiteWorkspace,
   type MiniWebsiteWorkspaceConfig,
@@ -57,7 +57,7 @@ export interface MiniWebsitesPageProps {
   businessLogo?: string | null;
   businessDefaultAvatar?: string | null;
   websiteColor?: string | null;
-  workspaceConfig?: MiniWebsiteWorkspaceConfig;
+  workspaceConfig: MiniWebsiteWorkspaceConfig;
   maxPages?: number;
   canDelete?: boolean;
   onCreated?: () => void;
@@ -65,9 +65,7 @@ export interface MiniWebsitesPageProps {
 
 export function MiniWebsitesPage(props: MiniWebsitesPageProps) {
   return (
-    <MiniWebsiteWorkspaceProvider
-      config={props.workspaceConfig ?? BUSINESS_MINI_WEBSITE_WORKSPACE}
-    >
+    <MiniWebsiteWorkspaceProvider config={props.workspaceConfig}>
       <MiniWebsitesWorkspacePage {...props} />
     </MiniWebsiteWorkspaceProvider>
   );
@@ -491,99 +489,109 @@ function MiniWebsitesWorkspacePage({
                 }
               />
               {maxPages === undefined || profiles.length < maxPages ? (
-                <button
-                  type="button"
-                  onClick={() => void refreshWorkspace()}
-                  disabled={refreshing || isAnalyticsRefreshing}
-                  aria-busy={refreshing || isAnalyticsRefreshing}
-                  className="group flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:shadow dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
-                  title="نوێکردنەوە"
-                >
-                  <MotionSpinner active={refreshing || isAnalyticsRefreshing}>
-                    <RefreshCw className="h-4 w-4 -transform" />
-                  </MotionSpinner>
-                </button>
+                <Tooltip content="نوێکردنەوە" side="bottom">
+                  <button
+                    type="button"
+                    onClick={() => void refreshWorkspace()}
+                    disabled={refreshing || isAnalyticsRefreshing}
+                    aria-busy={refreshing || isAnalyticsRefreshing}
+                    className="group flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:shadow dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 cursor-pointer"
+                    aria-label="نوێکردنەوە"
+                  >
+                    <MotionSpinner active={refreshing || isAnalyticsRefreshing}>
+                      <RefreshCw className="h-4 w-4 -transform" />
+                    </MotionSpinner>
+                  </button>
+                </Tooltip>
               ) : null}
-              <button
-                type="button"
-                onClick={() =>
-                  query.trim() ? setQuery("") : setSearchOpen(true)
-                }
-                className={`group relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border px-0 shadow-sm transition-all duration-300 hover:shadow ${query.trim() ? "" : "sm:w-44 sm:justify-between sm:px-3.5"} ${searchOpen ? "text-slate-700 dark:text-gray-200" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50/50 hover:text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"}`}
-                style={
-                  searchOpen
-                    ? {
-                        background:
-                          "color-mix(in srgb, var(--theme-css, #64748b) 20%, transparent)",
-                        borderColor:
-                          "color-mix(in srgb, var(--theme-css, #64748b) 35%, transparent)",
-                        color: "var(--theme-css, #64748b)",
-                      }
-                    : undefined
-                }
-                title={query.trim() ? "پاککردنەوەی گەڕان" : "گەڕان (Ctrl+K)"}
-              >
-                {query.trim() ? (
-                  <X className="h-4 w-4 text-slate-500 transition-transform group-hover:scale-110 dark:text-gray-400" />
-                ) : (
-                  <>
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Search className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:scale-110 dark:text-gray-500" />
-                      <span className="hidden truncate text-xs font-semibold text-slate-400 transition-colors group-hover:text-slate-600 dark:text-gray-500 dark:group-hover:text-gray-300 sm:inline">
-                        گەڕان...
-                      </span>
-                    </div>
-                    <kbd className="hidden select-none items-center gap-0.5 rounded bg-slate-100 px-1 py-0.5 font-sans text-[8px] font-bold text-slate-400 dark:bg-white/10 dark:text-gray-500 sm:inline-flex">
-                      <span>Ctrl</span>
-                      <span>K</span>
-                    </kbd>
-                  </>
-                )}
-              </button>
+              <Tooltip content={query.trim() ? "پاککردنەوەی گەڕان" : "گەڕان (Ctrl+K)"} side="bottom">
+                <button
+                  type="button"
+                  onClick={() =>
+                    query.trim() ? setQuery("") : setSearchOpen(true)
+                  }
+                  className={`group relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border px-0 shadow-sm transition-all duration-300 hover:shadow ${query.trim() ? "" : "sm:w-44 sm:justify-between sm:px-3.5"} ${searchOpen ? "text-slate-700 dark:text-gray-200" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50/50 hover:text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"}`}
+                  style={
+                    searchOpen
+                      ? {
+                          background:
+                            "color-mix(in srgb, var(--theme-css, #64748b) 20%, transparent)",
+                          borderColor:
+                            "color-mix(in srgb, var(--theme-css, #64748b) 35%, transparent)",
+                          color: "var(--theme-css, #64748b)",
+                        }
+                      : undefined
+                  }
+                  aria-label={query.trim() ? "پاککردنەوەی گەڕان" : "گەڕان (Ctrl+K)"}
+                >
+                  {query.trim() ? (
+                    <X className="h-4 w-4 text-slate-500 transition-transform group-hover:scale-110 dark:text-gray-400" />
+                  ) : (
+                    <>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <Search className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:scale-110 dark:text-gray-500" />
+                        <span className="hidden truncate text-xs font-semibold text-slate-400 transition-colors group-hover:text-slate-600 dark:text-gray-500 dark:group-hover:text-gray-300 sm:inline">
+                          گەڕان...
+                        </span>
+                      </div>
+                      <kbd className="hidden select-none items-center gap-0.5 rounded bg-slate-100 px-1 py-0.5 font-sans text-[8px] font-bold text-slate-400 dark:bg-white/10 dark:text-gray-500 sm:inline-flex">
+                        <span>Ctrl</span>
+                        <span>K</span>
+                      </kbd>
+                    </>
+                  )}
+                </button>
+              </Tooltip>
               <div className="flex h-10 shrink-0 items-center rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-white/10 dark:bg-white/5">
-                <button
-                  type="button"
-                  onClick={() => setView("grid")}
-                  className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg transition-all duration-300 ${view === "grid" ? "text-white shadow-md" : "text-slate-500 hover:bg-slate-50/50 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"}`}
-                  style={
-                    view === "grid"
-                      ? { background: "var(--theme-css, #64748b)" }
-                      : undefined
-                  }
-                  aria-label="پیشاندانی تۆڕی"
-                  title="بینینی گرید"
-                >
-                  <LayoutGrid className="h-4 w-4 shrink-0" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setView("table")}
-                  className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg transition-all duration-300 ${view === "table" ? "text-white shadow-md" : "text-slate-500 hover:bg-slate-50/50 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"}`}
-                  style={
-                    view === "table"
-                      ? { background: "var(--theme-css, #64748b)" }
-                      : undefined
-                  }
-                  aria-label="پیشاندانی خشتەیی"
-                  title="بینینی خشتە"
-                >
-                  <Table2 className="h-4 w-4 shrink-0" />
-                </button>
+                <Tooltip content="بینینی گرید" side="bottom">
+                  <button
+                    type="button"
+                    onClick={() => setView("grid")}
+                    className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg transition-all duration-300 ${view === "grid" ? "text-white shadow-md" : "text-slate-500 hover:bg-slate-50/50 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"}`}
+                    style={
+                      view === "grid"
+                        ? { background: "var(--theme-css, #64748b)" }
+                        : undefined
+                    }
+                    aria-label="پیشاندانی تۆڕی"
+                  >
+                    <LayoutGrid className="h-4 w-4 shrink-0" />
+                  </button>
+                </Tooltip>
+                <Tooltip content="بینینی خشتە" side="bottom">
+                  <button
+                    type="button"
+                    onClick={() => setView("table")}
+                    className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg transition-all duration-300 ${view === "table" ? "text-white shadow-md" : "text-slate-500 hover:bg-slate-50/50 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"}`}
+                    style={
+                      view === "table"
+                        ? { background: "var(--theme-css, #64748b)" }
+                        : undefined
+                    }
+                    aria-label="پیشاندانی خشتەیی"
+                  >
+                    <Table2 className="h-4 w-4 shrink-0" />
+                  </button>
+                </Tooltip>
               </div>
-              <button
-                type="button"
-                onClick={openCreate}
-                disabled={pageLimitReached}
-                title={
+              <Tooltip
+                content={
                   pageLimitReached
                     ? "سنووری دروستکردنی پەڕە پڕ بووە"
                     : "دروستکردنی مینی وێبسایتی نوێ"
                 }
-                className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-40"
+                side="bottom"
               >
-                <Plus className="h-4 w-4 transition-transform group-hover:scale-110" />
-                <span>مینی وێبسایتی نوێ</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={openCreate}
+                  disabled={pageLimitReached}
+                  className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                >
+                  <Plus className="h-4 w-4 transition-transform group-hover:scale-110" />
+                  <span>مینی وێبسایتی نوێ</span>
+                </button>
+              </Tooltip>
             </div>
           }
         />
@@ -655,6 +663,7 @@ function MiniWebsitesWorkspacePage({
       <SearchModal
         isOpen={searchOpen}
         onClose={() => setSearchOpen(false)}
+        businessTheme={workspace.analyticsDataSource === "business"}
         placeholder="ناوی مینی وێبسایت بنووسە بۆ گەڕان..."
         searchQuery={query}
         onSearchQueryChange={setQuery}

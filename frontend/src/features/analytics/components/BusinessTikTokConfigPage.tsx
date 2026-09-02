@@ -17,8 +17,9 @@ import { DashboardSurface } from "@/components/shared/DashboardSurface";
 import { LockedContent } from "@/components/shared/LockedContent";
 import { SegmentedTabs } from "@/components/shared/SegmentedTabs";
 import { StatCard } from "@/components/shared/StatCard";
-import { SkeletonDashboardPage } from "@/components/shared/Skeleton";
-import { BusinessAnalyticsPage } from "./BusinessAnalyticsPage";
+import { SkeletonTikTokPage } from "@/components/shared/SkeletonPageLayouts";
+import { Tooltip } from "@/components/shared/Tooltip";
+import { BusinessTikTokDeliveryPage } from "./BusinessTikTokDeliveryPage";
 import { BusinessTikTokPixelConfigPage } from "./BusinessTikTokPixelConfigPage";
 import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
 import { useRegisterBusinessDashboardRefresh } from "@/features/business/dashboard-refresh";
@@ -186,21 +187,22 @@ export function BusinessTikTokConfigPage() {
 
   const deliveryAllowed = canReadDelivery(access);
   const lockedAction = (
-    <span
-      className="flex h-7 w-7 items-center justify-center rounded-lg"
-      style={{
-        background: "color-mix(in srgb, var(--theme-primary) 12%, transparent)",
-        color: "var(--theme-primary)",
-      }}
-      title="لە پلانی بەرزتردا بەردەستە"
-    >
-      <LockKeyhole className="h-3.5 w-3.5" />
-    </span>
+    <Tooltip content="لە پلانی بەرزتردا بەردەستە" side="top">
+      <span
+        className="flex h-7 w-7 items-center justify-center rounded-lg cursor-default"
+        style={{
+          background: "color-mix(in srgb, var(--theme-primary) 12%, transparent)",
+          color: "var(--theme-primary)",
+        }}
+      >
+        <LockKeyhole className="h-3.5 w-3.5" />
+      </span>
+    </Tooltip>
   );
 
   if (loading) {
     return (
-      <SkeletonDashboardPage body="analytics" statCount={4} tabCount={2} />
+      <SkeletonTikTokPage />
     );
   }
 
@@ -247,7 +249,7 @@ export function BusinessTikTokConfigPage() {
       {tab === "config" ? (
         <BusinessTikTokPixelConfigPage />
       ) : deliveryAllowed ? (
-        <BusinessAnalyticsPage surface="tracking" />
+        <BusinessTikTokDeliveryPage />
       ) : (
         <LockedContent
           locked

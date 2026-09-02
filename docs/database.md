@@ -52,24 +52,33 @@ It requires the PostgreSQL `pg_trgm` and `pgcrypto` extensions.
 
 The active schema is grouped as follows:
 
-| Area                             | Tables                                                                                                                                                                                                                                                                                                                                                                             |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Platform identity and access     | `platform_admins`, `platform_admin_sessions`, `access_rules`, `platform_permission_denies`, `auth_permissions`, `permission_approval_requests`, `security_audit_events`                                                                                                                                                                                                            |
-| Businesses and sessions          | `businesses`, `business_branding`, `business_defaults`, `business_profile_change_requests`, `business_sessions`, `business_tiktok_pixels`                                                                                                                                                                                                                                          |
-| Linktrees and public content     | `linktrees`, `links`, `whatsapp_questions`, `template_global_settings`, `public_pages`, `public_page_versions`, `public_page_actions`, `public_page_tombstones`                                                                                                                                                                                                                    |
-| Mini-websites                    | `mini_websites`, `mini_website_sections`, `mini_website_social_links`, `mini_website_locations`, `mini_website_hours`, `mini_website_items`, `mini_website_lead_forms`, `mini_website_versions`                                                                                                                                                                                    |
-| Advertising service              | `advertising_pages`, `advertising_sections`, `advertising_package_categories`, `advertising_package_tiers`, `advertising_results`, `advertising_testimonials`, `advertising_faqs`, `advertising_payment_providers`, `advertising_page_versions`                                                                                                                                    |
-| Billing and access configuration | `billing_entitlements`, `billing_plans`, `billing_plan_configurations`, `billing_plan_entitlements`, `billing_plan_permissions`, `billing_plan_templates`, `billing_subscription_plans`, `business_subscriptions`, `billing_usage_counters`, `billing_policy_audit_events`                                                                                                         |
-| Analytics and CRM                | `analytics_visitors`, `analytics_sessions`, `analytics_events`, `analytics_page_daily`, `analytics_action_daily`, `analytics_dimension_daily`, `crm_contacts`, `crm_leads`, `crm_lead_status_history`, `crm_lead_events`, `crm_notes`, `crm_tags`, `crm_lead_tags`, `crm_audience_exports`, `crm_audience_export_members`, `marketing_event_outbox`, `marketing_delivery_attempts` |
-| Communications                   | `communication_announcements`, `communication_announcement_deliveries`, `communication_notifications`, `communication_conversations`, `communication_messages`, `communication_homepage_placements`                                                                                                                                                                                |
-| Developer API                    | `api_clients`, `api_rate_limit_policies`, `api_usage_daily`, `api_idempotency_keys`, `api_external_resource_mappings`, `api_assets`, `api_webhook_endpoints`, `api_webhook_subscriptions`, `api_webhook_events`, `api_webhook_deliveries`, `api_webhook_delivery_attempts`, `api_versions`, `api_catalog_groups`, `api_linktree_schedules`                                         |
-| Operations and media             | `http_request_events`, `http_request_event_daily_stats`, `platform_data_retention_settings`, `platform_data_retention_runs`, `platform_media_settings`, `uploaded_media_assets`, `schema_migrations`                                                                                                                                                                               |
+| Area                             | Tables                                                                                                                                                                                                                                                                                                                                     |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Platform identity and access     | `platform_admins`, `platform_admin_sessions`, `access_rules`, `platform_permission_denies`, `auth_permissions`, `permission_approval_requests`, `security_audit_events`                                                                                                                                                                    |
+| Businesses and sessions          | `businesses`, `business_branding`, `business_defaults`, `business_profile_change_requests`, `business_sessions`, `business_tiktok_pixels`                                                                                                                                                                                                  |
+| Linktrees and public content     | `linktrees`, `links`, `whatsapp_questions`, `template_global_settings`, `public_pages`, `public_page_versions`, `public_page_actions`, `public_page_tombstones`                                                                                                                                                                            |
+| Mini-websites                    | `mini_websites`, `mini_website_sections`, `mini_website_social_links`, `mini_website_locations`, `mini_website_hours`, `mini_website_items`, `mini_website_versions`                                                                                                                                                                       |
+| Advertising service              | `advertising_pages`, `advertising_sections`, `advertising_package_categories`, `advertising_package_tiers`, `advertising_results`, `advertising_testimonials`, `advertising_faqs`, `advertising_payment_providers`, `advertising_page_versions`                                                                                            |
+| Billing and access configuration | `billing_entitlements`, `billing_plans`, `billing_plan_configurations`, `billing_plan_entitlements`, `billing_plan_permissions`, `billing_plan_templates`, `billing_subscription_plans`, `business_subscriptions`, `billing_usage_counters`, `billing_policy_audit_events`                                                                 |
+| Analytics and marketing delivery | `analytics_visitors`, `analytics_sessions`, `analytics_events`, `analytics_page_daily`, `analytics_action_daily`, `marketing_event_outbox`, `marketing_delivery_attempts`                                                                                                                                                                  |
+| Communications                   | `communication_announcements`, `communication_announcement_deliveries`, `communication_notifications`, `communication_conversations`, `communication_messages`, `communication_homepage_placements`                                                                                                                                        |
+| Developer API                    | `api_clients`, `api_rate_limit_policies`, `api_usage_daily`, `api_idempotency_keys`, `api_external_resource_mappings`, `api_assets`, `api_webhook_endpoints`, `api_webhook_subscriptions`, `api_webhook_events`, `api_webhook_deliveries`, `api_webhook_delivery_attempts`, `api_versions`, `api_catalog_groups`, `api_linktree_schedules` |
+| Operations and media             | `http_request_events`, `http_request_event_daily_stats`, `platform_data_retention_settings`, `platform_data_retention_runs`, `platform_media_settings`, `uploaded_media_assets`, `schema_migrations`                                                                                                                                       |
 
 ## Schema decisions carried in the baseline
 
 These were delivered as dated forward migrations and folded into
-`full_schema.sql` by the 2026-08-19 rebaseline; the files are gone, so the
+`full_schema.sql` by the 2026-08-24 rebaseline; the files are gone, so the
 reasoning lives here. Everything below is simply how the baseline is now.
+
+**CRM and Advanced Analytics retirement.** The baseline no longer creates the
+CRM tables, mini-website lead-form settings, Advanced Analytics dimension
+rollup, or acquisition-only daily-rollup columns. It also omits the retired
+Advanced Analytics permissions, entitlements, and plan grants. Core page/action
+totals, exact unique counts, and TikTok delivery data remain. The two dated
+removal migrations were folded into the baseline and deleted on 2026-08-24, so
+an older valuable database requires an explicitly reviewed backup and database
+replacement rather than relying on those removed files as an upgrade path.
 
 **Session impersonation.** `business_sessions.impersonated_by_platform_admin_id`,
 `.impersonation_reason` and `.impersonation_started_at` mark a session a
@@ -114,10 +123,12 @@ lives on `businesses` rather than `business_branding` because the window covers
 more than the branding columns.
 
 **Linktree template keys.** `spectrum`, `spotlight`, `frost`, `aurora`,
-`serenity` — renamed from `colorful-pills`, `mobile-spotlight`,
+`serenity`, `branch-signal` — renamed from `colorful-pills`, `mobile-spotlight`,
 `frosted-outline`, `aurora-pills`, `gentle-flow`. `hero-image` and `dark-card`
 were retired. `business_defaults.template_key` and `linktrees.template_key` both
-default to `spectrum`.
+default to `spectrum`. Branch Signal is assigned only to Ultra in the
+consolidated baseline; runtime plan checks also reject accidental non-Ultra
+assignments.
 
 **Mini-website templates.** `liquid-glass` is the only one
 (`mini_websites_template_key_check`), and therefore the only default. The set
@@ -175,7 +186,7 @@ single transaction by both `db:migrate` and `db:reset`:
 | `40_operations_and_media.sql`    | data retention and media policy                         |
 | `50_mini_websites.sql`           | mini-website profile, content, versions                 |
 | `60_advertising.sql`             | advertising pages, packages, versions                   |
-| `70_public_pages_analytics.sql`  | unified public page model, analytics, CRM               |
+| `70_public_pages_analytics.sql`  | unified public page model and analytics                 |
 | `80_performance.sql`             | FK-column indexes and per-table storage tuning          |
 | `90_onboarding_identity.sql`     | invite-only Google onboarding                           |
 | `92_creator_accounts.sql`        | Creator ownership, trial claims, global root slugs      |
@@ -240,12 +251,12 @@ platform write policy is enforced by the guarded platform service instead.
 `99_data.sql` registers the platform Linktree, mini-website, TikTok, and
 Creator-administration capabilities with that workspace.
 
-## Baseline rebaseline, 2026-08-20
+## Baseline rebaseline, 2026-08-24
 
 The numbered baseline now contains every forward migration that existed through
-the 2026-08-20 Creator Google-authentication change. The dated migration files
-were removed after their final schema and required catalog data were folded
-into the appropriate baseline domains.
+the 2026-08-24 CRM and Advanced Analytics retirements. The dated migration
+files were removed after their final schema and required catalog data were
+folded into the appropriate baseline domains.
 
 This was needed because `db:reset` applies the baseline and nothing else —
 `db-reset.ts` never calls `applyForwardMigrations`, and it asserts the ledger
@@ -255,11 +266,11 @@ as the business default, and no impersonation columns. `db:migrate` did not
 have this problem, because it runs the forward migrations after the baseline.
 
 This is the "separate, periodic maintenance step" that `forward-migrations.ts`
-describes. AGENTS.md's rule that the baseline is never edited for a schema
-change still stands — a schema change still ships as a new dated forward
-migration.
+describes. Ordinary schema changes still ship as dated forward migrations so
+existing databases have an upgrade path until an explicitly reviewed
+rebaseline retires those files.
 
-**The migration files were then deleted**, along with the seven
+**The folded migration files were then deleted**, along with the
 `*-migration.spec.ts` suites that read them. Every database is recreated from
 this baseline, so they had no upgrade path left to serve. The runner itself
 stays: `applyForwardMigrations` finds nothing until the next dated migration is
@@ -378,6 +389,13 @@ use `db:reset` as a production upgrade command.
 
 The post-migration helpers perform only idempotent seed/data work. They do not
 create tables, alter columns, create indexes, or modify constraints.
+
+The dated `2026-08-29_client_linktree_access.sql` migration adds hashed client
+invitation/session storage and the unique nullable
+`linktrees.client_invitation_id` origin reference. The foreign key uses
+`ON DELETE SET NULL`: access cleanup and business-owned content have separate
+lifecycles, so revoking or removing invitation data must never remove a
+Linktree.
 
 The baseline excludes the obsolete
 `platform_data_retention_settings.audit_log_days` column. Security audit

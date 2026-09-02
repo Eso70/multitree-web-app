@@ -11,7 +11,6 @@ import {
   ChartNoAxesCombined,
   Check,
   CirclePlay,
-  ClipboardList,
   Clock3,
   Columns2,
   GraduationCap,
@@ -77,7 +76,6 @@ export const SECTION_ICONS: Partial<
   ownedProperties: Crown,
   education: GraduationCap,
   experience: BriefcaseBusiness,
-  leadForm: ClipboardList,
   pricing: WalletCards,
 };
 

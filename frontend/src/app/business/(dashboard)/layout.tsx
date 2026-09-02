@@ -1,5 +1,5 @@
 import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import type { ComponentProps, ReactNode } from "react";
 import { BusinessDashboard } from "@/components/business/BusinessDashboard";
 import { BusinessImpersonationBanner } from "@/components/business/BusinessImpersonationBanner";
@@ -57,7 +57,7 @@ export default async function BusinessDashboardLayout({
   const sessionToken = cookieStore.get("business_session")?.value;
 
   if (!sessionToken) {
-    redirect("/business/login");
+    notFound();
   }
 
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -176,7 +176,7 @@ export default async function BusinessDashboardLayout({
   }
 
   if (authenticationInvalid) {
-    redirect("/business/login");
+    notFound();
   }
 
   if (accessForbidden) {
@@ -191,7 +191,7 @@ export default async function BusinessDashboardLayout({
   }
 
   if (!currentUser) {
-    redirect("/business/login");
+    notFound();
   }
 
   let initialLinktrees: InitialLinktree[] = [];

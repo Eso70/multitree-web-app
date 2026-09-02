@@ -3,14 +3,23 @@
 import { memo, useCallback, useMemo } from "react";
 import {
   getPlatformIcon,
-  getPlatformName,
   getPlatformColors,
 } from "@/components/public/LinktreeButtons";
-import { GpsLocationDisplay, splitGpsLinks } from "@/components/public/GpsLocationDisplay";
+import {
+  GpsLocationDisplay,
+  splitGpsLinks,
+} from "@/components/public/GpsLocationDisplay";
 import type { TemplateComponentProps } from "./types";
-import { deriveSubtitleColor, deriveTextColor, deriveTextSecondaryColor } from "@/lib/utils/theme-colors";
+import {
+  deriveSubtitleColor,
+  deriveTextColor,
+  deriveTextSecondaryColor,
+} from "@/lib/utils/theme-colors";
 import { areTemplatePropsEqual } from "@/lib/utils/linktree-utils";
-import { platformForeground, platformTextStyle } from "@/lib/brand/platform-brands";
+import {
+  platformForeground,
+  platformTextStyle,
+} from "@/lib/brand/platform-brands";
 import {
   STANDARD_TEMPLATE_BUTTON_SIZE_CLASS,
   STANDARD_TEMPLATE_HEADER_AVATAR_SIZES,
@@ -19,6 +28,7 @@ import {
   TemplateActionButtonList,
   TemplateFooter,
   TemplateHeader,
+  TemplateLinkLabel,
   TemplateViewportLayout,
   templateBackgroundStyle,
 } from "./shared";
@@ -29,7 +39,10 @@ export const AuroraTemplate = memo(function AuroraTemplate({
   theme,
   onLinkClick,
 }: TemplateComponentProps) {
-  const { gpsLink, regularLinks } = useMemo(() => splitGpsLinks(links), [links]);
+  const { gpsLink, regularLinks } = useMemo(
+    () => splitGpsLinks(links),
+    [links],
+  );
 
   const backgroundStyle = useMemo(
     () =>
@@ -40,22 +53,42 @@ export const AuroraTemplate = memo(function AuroraTemplate({
     [theme],
   );
 
-  const textColor = useMemo(() => deriveTextColor(theme.from, theme.via, theme.to), [theme.from, theme.via, theme.to]);
-  const textSecondaryColor = useMemo(() => deriveTextSecondaryColor(theme.from, theme.via, theme.to), [theme.from, theme.via, theme.to]);
+  const textColor = useMemo(
+    () => deriveTextColor(theme.from, theme.via, theme.to),
+    [theme.from, theme.via, theme.to],
+  );
+  const textSecondaryColor = useMemo(
+    () => deriveTextSecondaryColor(theme.from, theme.via, theme.to),
+    [theme.from, theme.via, theme.to],
+  );
   const subtitleColor = deriveSubtitleColor(linktree.business_website_color);
 
   const handleLinkClick = useCallback(
-    (linkId: string, url: string, platform: string, defaultMessage?: string | null) => {
+    (
+      linkId: string,
+      url: string,
+      platform: string,
+      defaultMessage?: string | null,
+    ) => {
       onLinkClick(linkId, url, platform, defaultMessage);
     },
     [onLinkClick],
   );
 
   const linksWithColors = useMemo(() => {
-    return regularLinks.map((link) => ({ link, colors: getPlatformColors(link.platform, link.metadata?.custom_color as string | undefined) }));
+    return regularLinks.map((link) => ({
+      link,
+      colors: getPlatformColors(
+        link.platform,
+        link.metadata?.custom_color as string | undefined,
+      ),
+    }));
   }, [regularLinks]);
 
-  const isPreview = useMemo(() => linktree.id.includes("preview"), [linktree.id]);
+  const isPreview = useMemo(
+    () => linktree.id.includes("preview"),
+    [linktree.id],
+  );
 
   return (
     <TemplateViewportLayout
@@ -91,14 +124,21 @@ export const AuroraTemplate = memo(function AuroraTemplate({
             emptyStateTextStyle={{ color: textSecondaryColor }}
           >
             {linksWithColors.map(({ link, colors }, index) => {
-              const displayName = link.display_name || getPlatformName(link.platform);
-              const customColor = link.metadata?.custom_color as string | undefined;
+              const customColor = link.metadata?.custom_color as
+                string | undefined;
               const foreground = platformForeground(link.platform, customColor);
               const labelStyle = platformTextStyle(link.platform, customColor);
               return (
                 <TemplateActionButton
                   key={link.id}
-                  onClick={() => handleLinkClick(link.id, link.url, link.platform, link.default_message)}
+                  onClick={() =>
+                    handleLinkClick(
+                      link.id,
+                      link.url,
+                      link.platform,
+                      link.default_message,
+                    )
+                  }
                   className={`group relative flex items-center gap-3 rounded-full shadow-lg backdrop-blur-md hover:shadow-xl ${STANDARD_TEMPLATE_BUTTON_SIZE_CLASS}`}
                   initial={isPreview ? false : { opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -111,15 +151,19 @@ export const AuroraTemplate = memo(function AuroraTemplate({
                   }}
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white shadow-inner">
-                    {getPlatformIcon(link.platform, "h-5 w-5", (link.metadata as Record<string, string>)?.custom_icon)}
+                    {getPlatformIcon(
+                      link.platform,
+                      "h-5 w-5",
+                      (link.metadata as Record<string, string>)?.custom_icon,
+                    )}
                   </div>
-                  <div className="flex-1 text-left" style={labelStyle}>
-                    <div className="text-base font-semibold leading-tight">{displayName}</div>
-                    <div className="text-xs leading-tight opacity-70">{getPlatformName(link.platform)}</div>
-                  </div>
+                  <TemplateLinkLabel link={link} style={labelStyle} />
                   <div
                     className="flex h-8 w-8 items-center justify-center rounded-full border opacity-80 transition group-hover:bg-white/15"
-                    style={{ color: foreground, borderColor: `${foreground}66` }}
+                    style={{
+                      color: foreground,
+                      borderColor: `${foreground}66`,
+                    }}
                   >
                     <svg
                       className="h-4 w-4"
@@ -129,7 +173,11 @@ export const AuroraTemplate = memo(function AuroraTemplate({
                       strokeWidth="2"
                       aria-hidden="true"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m9 18 6-6-6-6" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m9 18 6-6-6-6"
+                      />
                     </svg>
                   </div>
                 </TemplateActionButton>

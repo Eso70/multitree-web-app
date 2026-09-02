@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PAYMENT_PROVIDER_LOGOS } from "@/features/mini-website/payment-providers";
 import { copyToClipboard } from "@/lib/utils/clipboard";
+import { Tooltip } from "@/components/shared/Tooltip";
 import type { PaymentProvider } from "../journey-types";
 import type { AdvertisingPaymentProvider } from "../types";
 
@@ -114,18 +115,20 @@ export function AdvertisingPaymentStep({ selected, onChange, providers }: Advert
                   <span className="truncate text-xs tabular-nums text-black/48 dark:text-white/48" dir="ltr">
                     {provider.phone}
                   </span>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      copyPhone();
-                    }}
-                    aria-label={`کۆپیکردنی ژمارەی ${provider.name}`}
-                    title="کۆپیکردنی ژمارە"
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-black/40 transition-colors hover:bg-black/[0.06] hover:text-black/70 dark:text-white/40 dark:hover:bg-white/[0.1] dark:hover:text-white/80"
-                  >
-                    <Copy className="h-3 w-3" />
-                  </button>
+                  <Tooltip content="کۆپیکردنی ژمارە" side="top">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        copyPhone();
+                      }}
+                      aria-label={`کۆپیکردنی ژمارەی ${provider.name}`}
+                      title="کۆپیکردنی ژمارە"
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-black/40 transition-colors hover:bg-black/[0.06] hover:text-black/70 dark:text-white/40 dark:hover:bg-white/[0.1] dark:hover:text-white/80 cursor-pointer"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
             </div>

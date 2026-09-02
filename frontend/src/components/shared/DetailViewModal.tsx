@@ -57,11 +57,6 @@ export const DetailViewModal = memo(function DetailViewModal({
       className={`modal-ltr fixed inset-0 ${zIndexClassName} flex items-center justify-center p-2 sm:p-4`}
       onClick={handleBackdropClick}
       dir="ltr"
-      data-multitree-theme
-      style={{
-        "--theme-primary": "var(--multitree-accent)",
-        "--theme-css": "var(--multitree-accent)",
-      } as React.CSSProperties}
     >
       {/* Backdrop */}
       <MotionFade
@@ -71,7 +66,7 @@ export const DetailViewModal = memo(function DetailViewModal({
 
       <MotionReveal
         className={`
-          relative z-10 w-full overflow-hidden rounded-2xl bg-white dark:bg-[#1c222b] border border-slate-200 dark:border-white/10 shadow-2xl flex flex-col max-h-[95vh] sm:max-h-[90vh] selection:bg-lime-500/30 dark:selection:bg-lime-500/40
+          relative z-10 w-full overflow-hidden rounded-2xl bg-white dark:bg-[#1c222b] border border-slate-200 dark:border-white/10 shadow-2xl flex flex-col max-h-[95vh] sm:max-h-[90vh]
           ${wide ? "max-w-2xl" : "max-w-lg"}
         `}
       >

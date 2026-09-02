@@ -102,11 +102,19 @@ export function allowedTemplateKeySql(
     WHEN EXISTS (
       SELECT 1
         FROM public.business_subscriptions subscription
+        JOIN public.billing_plan_configurations configuration
+          ON configuration.id = subscription.plan_configuration_id
+        JOIN public.billing_plans plan
+          ON plan.id = configuration.plan_id
         JOIN public.billing_plan_templates plan_template
           ON plan_template.plan_configuration_id = subscription.plan_configuration_id
          AND plan_template.template_key = ${templateColumn}
        WHERE subscription.business_id = ${businessAlias}.id
          AND subscription.status IN ('trialing','active','grace_period')
+         AND (
+           ${templateColumn} <> 'branch-signal'
+           OR LOWER(plan.code) = 'ultra'
+         )
     ) THEN ${templateColumn}
     ELSE '${FALLBACK_TEMPLATE_KEY}'
   END`;

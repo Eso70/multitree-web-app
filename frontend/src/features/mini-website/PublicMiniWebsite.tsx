@@ -16,12 +16,8 @@ const ENGAGED_AFTER_MS = 15_000;
 
 export function PublicMiniWebsite({
   profile,
-  subdomain,
-  leadFormEndpoint,
 }: {
   profile: MiniWebsite;
-  subdomain?: string;
-  leadFormEndpoint?: string;
 }) {
   // One tracker for the page. Rebuilding it on every render would reset the
   // dedupe window and let a jittery scroll report the same section twice.
@@ -102,16 +98,6 @@ export function PublicMiniWebsite({
                 once: true,
                 properties: { section: key },
               });
-              // The form is the one section worth its own event: reaching it is
-              // the step before a lead, and the gap between the two is the
-              // number worth watching.
-              if (key === "leadForm") {
-                tracker.trackEngagement("form_view", {
-                  actionKey: "mini:leadForm",
-                  label: "فۆرمی داواکاری",
-                  once: true,
-                });
-              }
               observer.unobserve(entry.target);
             }, SECTION_DWELL_MS),
           );
@@ -187,21 +173,6 @@ export function PublicMiniWebsite({
           viewport="desktop"
           interactive
           fullPage
-          // Built here rather than inside the template: only this component
-          // knows which subdomain served the page, and the form must post to
-          // the page it is actually on.
-          leadFormEndpoint={
-            leadFormEndpoint ||
-            `/api/public/mini-websites/${encodeURIComponent(
-              subdomain || "",
-            )}/${encodeURIComponent(profile.slug)}/leads`
-          }
-          // The lead endpoint records the event itself, so only the pixel half
-          // is fired here — under the same id, which is what lets TikTok treat
-          // the pair as one conversion.
-          onLeadSubmitted={(eventId) =>
-            tracker.trackServerConversion("mini:leadForm", eventId)
-          }
         />
       </main>
     </ThemeProvider>

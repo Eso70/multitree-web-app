@@ -204,28 +204,23 @@ CREATE TABLE public.analytics_events (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Per-page daily rollup. Views/clicks are raw, additive counts. new_visitors/
--- new_clickers mark only a visitor's first-ever event on this page, credited
--- to the single day it happened - a "new visitor acquisition" trend metric,
--- not a per-day dedup. Genuine "how many unique people were active in this
--- range" numbers are computed live from analytics_events (COUNT(DISTINCT)),
--- not from this table - see getSummary/getPages in the analytics services.
+-- Per-page daily rollup. Views and clicks are raw, additive counts. Genuine
+-- "how many unique people were active in this range" numbers are computed live
+-- from analytics_events (COUNT(DISTINCT)), not from this table.
 CREATE TABLE public.analytics_page_daily (
   business_id uuid NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
   public_page_id uuid NOT NULL REFERENCES public.public_pages(id) ON DELETE CASCADE,
   day date NOT NULL,
   timezone varchar(64) NOT NULL,
   total_views bigint NOT NULL DEFAULT 0 CHECK (total_views >= 0),
-  new_visitors bigint NOT NULL DEFAULT 0 CHECK (new_visitors >= 0),
   total_clicks bigint NOT NULL DEFAULT 0 CHECK (total_clicks >= 0),
-  new_clickers bigint NOT NULL DEFAULT 0 CHECK (new_clickers >= 0),
   conversions bigint NOT NULL DEFAULT 0 CHECK (conversions >= 0),
   conversion_value numeric(18,2) NOT NULL DEFAULT 0 CHECK (conversion_value >= 0),
   updated_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (public_page_id, day, timezone)
 );
 
--- Per-action daily rollup. Same new_clickers convention as analytics_page_daily.
+-- Per-action daily rollup.
 CREATE TABLE public.analytics_action_daily (
   business_id uuid NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
   public_page_id uuid NOT NULL REFERENCES public.public_pages(id) ON DELETE CASCADE,
@@ -233,140 +228,10 @@ CREATE TABLE public.analytics_action_daily (
   day date NOT NULL,
   timezone varchar(64) NOT NULL,
   total_clicks bigint NOT NULL DEFAULT 0 CHECK (total_clicks >= 0),
-  new_clickers bigint NOT NULL DEFAULT 0 CHECK (new_clickers >= 0),
   conversions bigint NOT NULL DEFAULT 0 CHECK (conversions >= 0),
   conversion_value numeric(18,2) NOT NULL DEFAULT 0 CHECK (conversion_value >= 0),
   updated_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (public_page_action_id, day, timezone)
-);
-
--- Generic per-dimension daily rollup: views/clicks/uniques/conversions by
--- channel, source, referrer_host, utm_source, utm_campaign, country, region,
--- city, device, browser, os, language - and any future dimension without DDL.
-CREATE TABLE public.analytics_dimension_daily (
-  business_id uuid NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
-  public_page_id uuid NOT NULL REFERENCES public.public_pages(id) ON DELETE CASCADE,
-  day date NOT NULL,
-  timezone varchar(64) NOT NULL,
-  dimension varchar(30) NOT NULL,
-  dimension_value varchar(160) NOT NULL,
-  total_views bigint NOT NULL DEFAULT 0 CHECK (total_views >= 0),
-  unique_visitors bigint NOT NULL DEFAULT 0 CHECK (unique_visitors >= 0),
-  total_clicks bigint NOT NULL DEFAULT 0 CHECK (total_clicks >= 0),
-  unique_clickers bigint NOT NULL DEFAULT 0 CHECK (unique_clickers >= 0),
-  conversions bigint NOT NULL DEFAULT 0 CHECK (conversions >= 0),
-  conversion_value numeric(18,2) NOT NULL DEFAULT 0 CHECK (conversion_value >= 0),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (public_page_id, day, timezone, dimension, dimension_value)
-);
-
-CREATE TABLE public.crm_contacts (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  business_id uuid NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
-  visitor_id uuid REFERENCES public.analytics_visitors(id) ON DELETE SET NULL,
-  encrypted_name bytea,
-  encrypted_email bytea,
-  encrypted_phone bytea,
-  email_hmac char(64),
-  phone_hmac char(64),
-  country_code char(2),
-  region varchar(120),
-  city varchar(120),
-  language varchar(16),
-  attributes jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(attributes) = 'object'),
-  ads_consent varchar(20) NOT NULL DEFAULT 'unknown' CONSTRAINT chk_crm_contacts_ads_consent CHECK (ads_consent IN ('unknown','granted','denied')),
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE TABLE public.crm_leads (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  business_id uuid NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
-  public_page_id uuid NOT NULL REFERENCES public.public_pages(id) ON DELETE CASCADE,
-  contact_id uuid REFERENCES public.crm_contacts(id) ON DELETE SET NULL,
-  visitor_id uuid REFERENCES public.analytics_visitors(id) ON DELETE SET NULL,
-  session_id uuid REFERENCES public.analytics_sessions(id) ON DELETE SET NULL,
-  source_event_id uuid REFERENCES public.analytics_events(id) ON DELETE SET NULL,
-  status varchar(20) NOT NULL DEFAULT 'new' CHECK (status IN ('new','contacted','qualified','won','lost')),
-  value numeric(16,2) CHECK (value IS NULL OR value >= 0),
-  currency char(3),
-  owner_business_user_id uuid,
-  channel varchar(30),
-  attribution jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(attribution) = 'object'),
-  score smallint CONSTRAINT chk_crm_leads_score CHECK (score IS NULL OR score BETWEEN 0 AND 100),
-  metadata jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(metadata) = 'object'),
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE TABLE public.crm_lead_status_history (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  lead_id uuid NOT NULL REFERENCES public.crm_leads(id) ON DELETE CASCADE,
-  from_status varchar(20),
-  to_status varchar(20) NOT NULL CHECK (to_status IN ('new','contacted','qualified','won','lost')),
-  changed_by uuid,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE TABLE public.crm_lead_events (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  lead_id uuid NOT NULL REFERENCES public.crm_leads(id) ON DELETE CASCADE,
-  analytics_event_id uuid REFERENCES public.analytics_events(id) ON DELETE SET NULL,
-  event_type varchar(40) NOT NULL,
-  metadata jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(metadata) = 'object'),
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE TABLE public.crm_notes (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  lead_id uuid NOT NULL REFERENCES public.crm_leads(id) ON DELETE CASCADE,
-  encrypted_body bytea NOT NULL,
-  created_by uuid,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE TABLE public.crm_tags (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  business_id uuid NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
-  name varchar(80) NOT NULL,
-  color varchar(7) NOT NULL DEFAULT '#b6f20d' CHECK (color ~ '^#[0-9A-Fa-f]{6}$'),
-  created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (business_id, name)
-);
-
-CREATE TABLE public.crm_lead_tags (
-  lead_id uuid NOT NULL REFERENCES public.crm_leads(id) ON DELETE CASCADE,
-  tag_id uuid NOT NULL REFERENCES public.crm_tags(id) ON DELETE CASCADE,
-  PRIMARY KEY (lead_id, tag_id)
-);
-
--- TikTok Ads custom-audience export tracking. PII is hashed (SHA-256, TikTok
--- format) at export time from the encrypted contact columns; nothing plain is
--- stored here. Members make incremental re-syncs idempotent and auditable.
-CREATE TABLE public.crm_audience_exports (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  business_id uuid NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
-  public_page_id uuid REFERENCES public.public_pages(id) ON DELETE SET NULL,
-  provider varchar(30) NOT NULL DEFAULT 'tiktok' CHECK (provider IN ('tiktok')),
-  audience_name varchar(255) NOT NULL,
-  external_audience_id varchar(255),
-  filter jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(filter) = 'object'),
-  status varchar(20) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','exporting','completed','failed')),
-  member_count integer NOT NULL DEFAULT 0 CHECK (member_count >= 0),
-  last_error varchar(500),
-  last_exported_at timestamptz,
-  created_by uuid,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE TABLE public.crm_audience_export_members (
-  export_id uuid NOT NULL REFERENCES public.crm_audience_exports(id) ON DELETE CASCADE,
-  contact_id uuid NOT NULL REFERENCES public.crm_contacts(id) ON DELETE CASCADE,
-  lead_id uuid REFERENCES public.crm_leads(id) ON DELETE SET NULL,
-  exported_at timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (export_id, contact_id)
 );
 
 CREATE TABLE public.marketing_event_outbox (
@@ -425,27 +290,12 @@ CREATE INDEX idx_analytics_events_page_visitor_name ON public.analytics_events(p
 CREATE INDEX idx_analytics_events_action_visitor_name ON public.analytics_events(public_page_action_id, visitor_id, event_name) WHERE public_page_action_id IS NOT NULL;
 CREATE INDEX idx_analytics_page_daily_business_day ON public.analytics_page_daily(business_id, day DESC);
 CREATE INDEX idx_analytics_action_daily_page_day ON public.analytics_action_daily(public_page_id, day DESC);
-CREATE INDEX idx_crm_leads_page_status_time ON public.crm_leads(public_page_id, status, created_at DESC);
-CREATE INDEX idx_crm_leads_business_time ON public.crm_leads(business_id, created_at DESC);
-CREATE UNIQUE INDEX uq_crm_leads_source_event ON public.crm_leads(source_event_id) WHERE source_event_id IS NOT NULL;
-CREATE UNIQUE INDEX uq_crm_contacts_business_email ON public.crm_contacts(business_id, email_hmac) WHERE email_hmac IS NOT NULL;
-CREATE UNIQUE INDEX uq_crm_contacts_business_phone ON public.crm_contacts(business_id, phone_hmac) WHERE phone_hmac IS NOT NULL;
-CREATE UNIQUE INDEX uq_crm_contacts_business_visitor ON public.crm_contacts(business_id, visitor_id) WHERE visitor_id IS NOT NULL;
-CREATE UNIQUE INDEX uq_crm_leads_business_page_visitor ON public.crm_leads(business_id, public_page_id, visitor_id) WHERE visitor_id IS NOT NULL;
 CREATE INDEX idx_marketing_outbox_ready ON public.marketing_event_outbox(status, next_attempt_at, created_at)
   WHERE status IN ('pending','retry_scheduled');
 CREATE INDEX idx_marketing_outbox_business_time ON public.marketing_event_outbox(business_id, created_at DESC);
 CREATE INDEX idx_marketing_attempts_outbox_time ON public.marketing_delivery_attempts(outbox_id, created_at DESC);
 CREATE INDEX idx_analytics_sessions_channel_time ON public.analytics_sessions(business_id, channel, started_at DESC) WHERE channel IS NOT NULL;
 CREATE INDEX idx_analytics_events_channel_time ON public.analytics_events(business_id, channel, occurred_at DESC) WHERE channel IS NOT NULL;
-CREATE INDEX idx_analytics_dimension_daily_business ON public.analytics_dimension_daily(business_id, dimension, day DESC);
-CREATE INDEX idx_crm_leads_business_channel ON public.crm_leads(business_id, channel, created_at DESC) WHERE channel IS NOT NULL;
-CREATE INDEX idx_crm_contacts_business_country ON public.crm_contacts(business_id, country_code) WHERE country_code IS NOT NULL;
-CREATE INDEX idx_crm_audience_exports_business ON public.crm_audience_exports(business_id, created_at DESC);
-CREATE INDEX idx_crm_audience_exports_page ON public.crm_audience_exports(public_page_id) WHERE public_page_id IS NOT NULL;
-CREATE INDEX idx_crm_audience_export_members_contact ON public.crm_audience_export_members(contact_id);
-CREATE INDEX idx_crm_audience_export_members_lead ON public.crm_audience_export_members(lead_id) WHERE lead_id IS NOT NULL;
-
 CREATE OR REPLACE FUNCTION public.fn_sync_linktree_public_page() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -673,18 +523,6 @@ FOR EACH ROW EXECUTE FUNCTION public.fn_set_updated_at();
 
 CREATE TRIGGER trg_analytics_sessions_updated_at
 BEFORE UPDATE ON public.analytics_sessions
-FOR EACH ROW EXECUTE FUNCTION public.fn_set_updated_at();
-
-CREATE TRIGGER trg_crm_contacts_updated_at
-BEFORE UPDATE ON public.crm_contacts
-FOR EACH ROW EXECUTE FUNCTION public.fn_set_updated_at();
-
-CREATE TRIGGER trg_crm_leads_updated_at
-BEFORE UPDATE ON public.crm_leads
-FOR EACH ROW EXECUTE FUNCTION public.fn_set_updated_at();
-
-CREATE TRIGGER trg_crm_notes_updated_at
-BEFORE UPDATE ON public.crm_notes
 FOR EACH ROW EXECUTE FUNCTION public.fn_set_updated_at();
 
 CREATE TRIGGER trg_marketing_outbox_updated_at

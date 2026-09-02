@@ -1,5 +1,3 @@
-import type { TemplateKey } from "@/lib/templates/config";
-
 export interface EditLinkData {
   linktree: {
     id: string;
@@ -53,3 +51,4 @@ export interface LinktreeEditorSubmitData {
     }>
   >;
 }
+import type { TemplateKey } from "@/lib/templates/config";

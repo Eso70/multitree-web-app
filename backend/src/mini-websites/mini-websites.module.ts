@@ -7,14 +7,11 @@ import {
   MiniWebsitesController,
   PublicMiniWebsitesController,
 } from './mini-websites.controller';
-import { MiniWebsiteLeadsService } from './mini-website-leads.service';
 import { MiniWebsitesService } from './mini-websites.service';
 import { MiniWebsitesRepository } from './mini-websites.repository';
 import { PlatformContentWorkspaceModule } from '../platform-workspace/platform-content-workspace.module';
 
 @Module({
-  // Lead form submissions are handed to the shared analytics ingest, which is
-  // what creates the encrypted CRM contact and queues the TikTok conversion.
   imports: [
     AnalyticsModule,
     AuthModule,
@@ -23,11 +20,7 @@ import { PlatformContentWorkspaceModule } from '../platform-workspace/platform-c
     PlatformContentWorkspaceModule,
   ],
   controllers: [MiniWebsitesController, PublicMiniWebsitesController],
-  providers: [
-    MiniWebsitesRepository,
-    MiniWebsitesService,
-    MiniWebsiteLeadsService,
-  ],
+  providers: [MiniWebsitesRepository, MiniWebsitesService],
   exports: [MiniWebsitesService],
 })
 export class MiniWebsitesModule {}

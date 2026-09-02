@@ -51,7 +51,6 @@ const MINI_WEBSITE_SAVE_FIELDS = [
   "ownedProperties",
   "education",
   "experience",
-  "leadForm",
   "plans",
   "content",
 ] as const satisfies readonly (keyof MiniWebsiteDraft)[];

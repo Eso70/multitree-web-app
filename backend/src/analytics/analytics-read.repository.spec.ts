@@ -40,10 +40,6 @@ describe('AnalyticsReadRepository', () => {
       expect(Array.isArray(values[1])).toBe(true);
     });
 
-    /**
-     * `analytics_page_daily.new_visitors` marks only a visitor's first-ever
-     * event, so a lifetime unique count has to come from the event log.
-     */
     it('counts uniques from the event log, not the daily rollup', async () => {
       const query = jest.fn().mockResolvedValue({ rows: [] });
       const repository = new AnalyticsReadRepository({ query } as never);
@@ -52,7 +48,7 @@ describe('AnalyticsReadRepository', () => {
 
       const [sql] = query.mock.calls[0] as [string];
       expect(sql).toContain('COUNT(DISTINCT event.visitor_id)');
-      expect(sql).not.toContain('new_visitors');
+      expect(sql).not.toContain('SUM(daily.unique_visitors)');
       expect(sql).toContain('SUM(daily.total_clicks)');
       /*
        * Both CTEs must join from `pages` into the event log, not filter the

@@ -3,7 +3,7 @@
 import { memo } from "react";
 import { CompactTemplateSelectorModal } from "@/components/shared/CompactTemplateSelectorModal";
 import { useTemplateAccess } from "@/hooks/useTemplateAccess";
-import { TEMPLATE_OPTIONS, type TemplateKey } from "@/lib/templates/config";
+import { TEMPLATE_OPTIONS } from "@/lib/templates/config";
 
 export const TemplateSelector = memo(function TemplateSelector({
   isOpen,
@@ -14,10 +14,10 @@ export const TemplateSelector = memo(function TemplateSelector({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  selectedTemplate: TemplateKey;
-  onSelectTemplate: (template: TemplateKey) => void;
+  selectedTemplate: string;
+  onSelectTemplate: (template: string) => void;
   /** Explicit access snapshot for non-account workflows such as a client invitation. */
-  allowedTemplateKeys?: readonly TemplateKey[];
+  allowedTemplateKeys?: readonly string[];
 }) {
   const { isTemplateAllowed } = useTemplateAccess(
     allowedTemplateKeys === undefined,
@@ -30,13 +30,11 @@ export const TemplateSelector = memo(function TemplateSelector({
       onClose={onClose}
       templates={TEMPLATE_OPTIONS}
       selectedTemplate={selectedTemplate}
-      onSelectTemplate={(templateId) =>
-        onSelectTemplate(templateId as TemplateKey)
-      }
+      onSelectTemplate={onSelectTemplate}
       isAllowed={(templateKey) =>
         allowedTemplateKeys === undefined
           ? isTemplateAllowed(templateKey)
-          : explicitAllowedKeys.has(templateKey as TemplateKey)
+          : explicitAllowedKeys.has(templateKey)
       }
     />
   );

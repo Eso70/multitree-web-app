@@ -13,6 +13,7 @@ import {
   getBusinessPlanLabel,
 } from "@/features/platform-admin/utils/business-plan";
 import type { PlatformBusiness as Business } from "@linktree/types";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 const PILL_BASE =
   "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium leading-none";
@@ -28,11 +29,14 @@ export const BusinessPill = memo(function BusinessPill({
   className?: string;
   icon?: React.ReactNode;
 }) {
+  const text = title || label;
   return (
-    <span className={`${PILL_BASE} ${className}`} title={title || label}>
-      {icon}
-      {label}
-    </span>
+    <Tooltip content={text} side="top">
+      <span className={`${PILL_BASE} ${className} cursor-default`}>
+        {icon}
+        {label}
+      </span>
+    </Tooltip>
   );
 });
 
@@ -130,12 +134,13 @@ export const BusinessMetaField = memo(function BusinessMetaField({
       <span className="block text-[9px] font-semibold uppercase tracking-wide text-gray-400">
         {label}
       </span>
-      <span
-        className={`block truncate text-[11px] text-gray-700 dark:text-gray-300 ${mono ? "font-mono" : ""}`}
-        title={value}
-      >
-        {value}
-      </span>
+      <Tooltip content={value} side="top">
+        <span
+          className={`block truncate text-[11px] text-gray-700 dark:text-gray-300 cursor-default ${mono ? "font-mono" : ""}`}
+        >
+          {value}
+        </span>
+      </Tooltip>
     </div>
   );
 });

@@ -5,6 +5,8 @@ import Image from "next/image";
 import { UserRound } from "lucide-react";
 import { remoteAvatarSrc } from "@/lib/utils/remote-avatar";
 
+import { Tooltip } from "@/components/shared/Tooltip";
+
 export interface AvatarMenuItem {
   id: string;
   label: string;
@@ -75,26 +77,27 @@ export function AvatarMenu({
 
   return (
     <div className="relative" ref={container}>
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-label={ariaLabel}
-        aria-expanded={open}
-        title={name}
-        className={`group relative flex items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50 to-gray-50 shadow-sm transition-all duration-300 hover:from-slate-100 hover:to-gray-100 hover:shadow dark:border-white/10 dark:from-white/5 dark:to-white/5 dark:hover:from-white/10 dark:hover:to-white/10 ${sizeClassName} ${className}`}
-      >
-        {avatarImage ? (
-          <Image
-            src={avatarImage}
-            alt={name || "Avatar"}
-            width={48}
-            height={48}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        ) : (
-          <UserRound className="h-4 w-4 text-slate-400 sm:h-4 sm:w-4 md:h-5 md:w-5" />
-        )}
-      </button>
+      <Tooltip content={name || ariaLabel} side="bottom" disabled={open}>
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          aria-label={ariaLabel}
+          aria-expanded={open}
+          className={`group relative flex items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50 to-gray-50 shadow-sm transition-all duration-300 hover:from-slate-100 hover:to-gray-100 hover:shadow dark:border-white/10 dark:from-white/5 dark:to-white/5 dark:hover:from-white/10 dark:hover:to-white/10 cursor-pointer ${sizeClassName} ${className}`}
+        >
+          {avatarImage ? (
+            <Image
+              src={avatarImage}
+              alt={name || "Avatar"}
+              width={48}
+              height={48}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            <UserRound className="h-4 w-4 text-slate-400 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+          )}
+        </button>
+      </Tooltip>
 
       {open && (
         <div

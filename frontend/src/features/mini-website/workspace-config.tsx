@@ -29,22 +29,6 @@ export interface MiniWebsiteWorkspaceConfig {
   allowAllTemplates: boolean;
 }
 
-export const BUSINESS_MINI_WEBSITE_WORKSPACE: MiniWebsiteWorkspaceConfig = {
-  api: {
-    collection: "/api/mini-websites",
-    item: (id) => `/api/mini-websites/${encodeURIComponent(id)}`,
-    analytics: (id) => `/api/mini-websites/${encodeURIComponent(id)}/analytics`,
-    analyticsSummary: "/api/analytics/v2/summary?pageType=mini_website",
-    checkSlug: "/api/mini-websites/check-slug",
-    resolveMapLink: "/api/mini-websites/resolve-map-link",
-    uploadImage: "/api/mini-websites/upload/image",
-  },
-  publicPathPrefix: "/bio",
-  analyticsDataSource: "business",
-  detailedAnalytics: true,
-  allowAllTemplates: false,
-};
-
 export const PLATFORM_MINI_WEBSITE_WORKSPACE: MiniWebsiteWorkspaceConfig = {
   api: {
     collection: "/api/platform/mini-websites",
@@ -81,9 +65,8 @@ export const CREATOR_MINI_WEBSITE_WORKSPACE: MiniWebsiteWorkspaceConfig = {
   allowAllTemplates: true,
 };
 
-const MiniWebsiteWorkspaceContext = createContext<MiniWebsiteWorkspaceConfig>(
-  BUSINESS_MINI_WEBSITE_WORKSPACE,
-);
+const MiniWebsiteWorkspaceContext =
+  createContext<MiniWebsiteWorkspaceConfig | null>(null);
 
 export function MiniWebsiteWorkspaceProvider({
   children,
@@ -100,5 +83,9 @@ export function MiniWebsiteWorkspaceProvider({
 }
 
 export function useMiniWebsiteWorkspace(): MiniWebsiteWorkspaceConfig {
-  return useContext(MiniWebsiteWorkspaceContext);
+  const config = useContext(MiniWebsiteWorkspaceContext);
+  if (!config) {
+    throw new Error("MiniWebsiteWorkspaceProvider is required");
+  }
+  return config;
 }

@@ -5,6 +5,7 @@ import { useRef, useState, type DragEvent } from "react";
 import { Check, CloudUpload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PhoneMockup } from "@/components/shared/PhoneMockup";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 interface AdvertisingReceiptStepProps {
   receiptUrl: string | null;
@@ -12,12 +13,24 @@ interface AdvertisingReceiptStepProps {
   exampleImageUrl?: string;
 }
 
-export function AdvertisingReceiptStep({ receiptUrl, onReceiptChange, exampleImageUrl }: AdvertisingReceiptStepProps) {
+export function AdvertisingReceiptStep({
+  receiptUrl,
+  onReceiptChange,
+  exampleImageUrl,
+}: AdvertisingReceiptStepProps) {
   return (
-    <div className={cn("grid w-full items-center justify-items-center gap-3 sm:gap-6", exampleImageUrl ? "grid-cols-2" : "grid-cols-1")}>
+    <div
+      className={cn(
+        "grid w-full items-center justify-items-center gap-3 sm:gap-6",
+        exampleImageUrl ? "grid-cols-2" : "grid-cols-1",
+      )}
+    >
       {exampleImageUrl && (
         <div className="relative mx-auto w-[130px] max-w-full sm:w-[150px] lg:w-[190px]">
-          <PhoneMockup ariaLabel="پێشبینینی وەسڵی گواستنەوەی پارە" name="Receipt">
+          <PhoneMockup
+            ariaLabel="پێشبینینی وەسڵی گواستنەوەی پارە"
+            name="Receipt"
+          >
             <div className="relative flex h-full w-full items-center justify-center bg-[#f4efe8]">
               <Image
                 src={exampleImageUrl}
@@ -36,7 +49,10 @@ export function AdvertisingReceiptStep({ receiptUrl, onReceiptChange, exampleIma
       )}
 
       <div className="relative mx-auto w-[130px] max-w-full sm:w-[150px] lg:w-[190px]">
-        <ReceiptDropzone receiptUrl={receiptUrl} onReceiptChange={onReceiptChange} />
+        <ReceiptDropzone
+          receiptUrl={receiptUrl}
+          onReceiptChange={onReceiptChange}
+        />
         <p className="mt-2 text-center text-[9px] font-bold uppercase tracking-wide text-black/40 dark:text-white/40 sm:mt-3 sm:text-[10px]">
           وێنەی وەسڵەکە لێرە دابگرە
         </p>
@@ -45,7 +61,10 @@ export function AdvertisingReceiptStep({ receiptUrl, onReceiptChange, exampleIma
   );
 }
 
-function ReceiptDropzone({ receiptUrl, onReceiptChange }: AdvertisingReceiptStepProps) {
+function ReceiptDropzone({
+  receiptUrl,
+  onReceiptChange,
+}: AdvertisingReceiptStepProps) {
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -84,19 +103,26 @@ function ReceiptDropzone({ receiptUrl, onReceiptChange }: AdvertisingReceiptStep
       <PhoneMockup ariaLabel="پێشبینینی وەسڵی بارکراو" name="Receipt">
         <div className="relative h-full w-full bg-white dark:bg-white/[0.03]">
           {input}
-          <Image src={receiptUrl} alt="وەسڵی وەرکراو" fill sizes="190px" className="object-contain" />
+          <Image
+            src={receiptUrl}
+            alt="وەسڵی وەرکراو"
+            fill
+            sizes="190px"
+            className="object-contain"
+          />
           <span className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center gap-1.5 rounded-lg bg-black/70 px-2.5 py-1.5 text-[11px] font-bold text-white">
             <Check className="h-3.5 w-3.5 text-emerald-400" /> دیاریکراوە
           </span>
-          <button
-            type="button"
-            onClick={removeFile}
-            aria-label="سڕینەوەی وەسڵ"
-            title="سڕینەوەی وەسڵ"
-            className="absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white shadow transition-colors hover:bg-black"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <Tooltip content="سڕینەوەی وەسڵ" side="top">
+            <button
+              type="button"
+              onClick={removeFile}
+              aria-label="سڕینەوەی وەسڵ"
+              className="absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white shadow transition-colors hover:bg-black cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </Tooltip>
         </div>
       </PhoneMockup>
     );
@@ -110,7 +136,8 @@ function ReceiptDropzone({ receiptUrl, onReceiptChange }: AdvertisingReceiptStep
         aria-label="بەرزکردنەوەی وەسڵ"
         onClick={() => inputRef.current?.click()}
         onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") inputRef.current?.click();
+          if (event.key === "Enter" || event.key === " ")
+            inputRef.current?.click();
         }}
         onDragOver={(event) => {
           event.preventDefault();
@@ -129,9 +156,11 @@ function ReceiptDropzone({ receiptUrl, onReceiptChange }: AdvertisingReceiptStep
         </span>
         <div>
           <p className="text-sm font-black" dir="auto">
-            کرتە بکە یان وێنە بکێشە بۆ ئێرە
+            کلیک بکە یان وێنە بکێشە بۆ ئێرە
           </p>
-          <p className="mt-1 text-xs text-black/45 dark:text-white/45">PNG, JPG</p>
+          <p className="mt-1 text-xs text-black/45 dark:text-white/45">
+            PNG, JPG
+          </p>
         </div>
       </div>
     </PhoneMockup>

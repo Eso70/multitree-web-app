@@ -14,9 +14,9 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
 import {
   BarChart3,
+  Calendar,
   ChevronDown,
   Eye,
   ExternalLink,
@@ -28,6 +28,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { DateTimeInput } from "@/components/shared/DateTimeInput";
 import {
   getPlatformColors,
   getPlatformIcon,
@@ -36,10 +37,12 @@ import {
 import { toast } from "sonner";
 import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 import { StatCard } from "@/components/shared/StatCard";
-import { SkeletonList, SkeletonStatCards } from "@/components/shared/Skeleton";
+import { SkeletonPageAnalyticsContent } from "@/components/shared/SkeletonModalLayouts";
 import { analyticsModalScrollbarStyles } from "@/features/analytics/modalStyles";
 import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
+import { ANALYTICS_TERMS } from "@/components/shared/analytics-terminology";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 interface Totals {
   total_views: number;
@@ -79,7 +82,8 @@ export type PageAnalyticsDataSource =
   | "platform-linktree"
   | "platform-mini-website"
   | "creator-linktree"
-  | "creator-mini-website";
+  | "creator-mini-website"
+  | "client-linktree";
 
 interface BusinessPageAnalyticsModalProps {
   isOpen: boolean;
@@ -107,13 +111,59 @@ const HEADER_ICON_BUTTON = `${HEADER_BUTTON_BASE} w-10 shrink-0`;
 const HEADER_NEUTRAL_BUTTON =
   "bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/10 text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-200 dark:hover:border-white/20 hover:text-slate-700 dark:hover:text-gray-200";
 
-export type SortMode = "most-clicks" | "most-conversions" | "least";
+const HEADER_DANGER_BUTTON =
+  "bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20 text-rose-500 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/15 hover:border-rose-200 dark:hover:border-rose-500/30";
 
-const SORT_OPTIONS: Array<[SortMode, string]> = [
-  ["most-clicks", "زۆرترین کلیک"],
-  ["most-conversions", "زۆرترین گۆڕان"],
-  ["least", "کەمترین"],
+/** The preset options shown in the time-range filter strip. */
+export type DateRangePreset = "today" | "24h" | "7d" | "all" | "custom";
+
+const DATE_RANGE_OPTIONS: Array<{ id: DateRangePreset; label: string; hint: string }> = [
+  { id: "today", label: "ئەمڕۆ",    hint: "لە سەرەتای ئەمڕۆ"            },
+  { id: "24h",   label: "٢٤ ساعت",  hint: "٢٤ ساعتی ڕابردوو"            },
+  { id: "7d",    label: "٧ ڕۆژ",    hint: "٧ ڕۆژی ڕابردوو"              },
+  { id: "all",   label: "هەموو",    hint: "هەموو ماوەکان"                 },
+  { id: "custom",label: "تایبەت",   hint: "دیاریکردنی بەروار بە دەستی"  },
 ];
+
+function toLocalDateString(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/**
+ * Converts a preset (plus optional custom bounds) to the `from`/`to` query
+ * param pair the backend expects (`YYYY-MM-DD` strings, or undefined for
+ * all-time / missing bound).
+ */
+function presetToRange(
+  preset: DateRangePreset,
+  customFrom: string,
+  customTo: string,
+): { from?: string; to?: string } {
+  if (preset === "today") {
+    // From midnight of the current calendar day — distinct from "24h"
+    // which goes back exactly 24 clock-hours from now.
+    return { from: toLocalDateString(new Date()) };
+  }
+  if (preset === "24h") {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return { from: toLocalDateString(d) };
+  }
+  if (preset === "7d") {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return { from: toLocalDateString(d) };
+  }
+  if (preset === "custom") {
+    return {
+      from: customFrom || undefined,
+      to:   customTo   || undefined,
+    };
+  }
+  // "all" — no bounds
+  return {};
+}
 
 /**
  * The section an action belongs to, for a mini website.
@@ -140,7 +190,6 @@ const MINI_SECTION_LABELS: Record<string, string> = {
   location: "شوێن",
   section: "بەش",
   media: "وێنە",
-  leadForm: "فۆرم",
 };
 
 export function miniActionSection(actionKey: string): string | null {
@@ -233,36 +282,6 @@ function detectPlatform(actionType: string, label: string): string {
   return "custom";
 }
 
-/**
- * Only the buttons and links a visitor actually used, in the requested order.
- *
- * Every clickable thing on a page is registered up front, so an untouched page
- * would otherwise list dozens of rows of zeros — a mini website alone registers
- * around thirty-five. A row earns its place by having been clicked or by having
- * converted; the rest are noise that buries the ones that were.
- *
- * Ties break on the label so the order does not reshuffle between renders of
- * the same data.
- */
-export function sortAnalyticsActions<
-  T extends Pick<ActionRow, "label" | "totalClicks" | "conversions">,
->(actions: readonly T[], sortMode: SortMode): T[] {
-  return actions
-    .filter((action) => action.totalClicks > 0 || action.conversions > 0)
-    .sort((a, b) => {
-      if (sortMode === "most-conversions" && b.conversions !== a.conversions) {
-        return b.conversions - a.conversions;
-      }
-      if (sortMode === "least" && a.totalClicks !== b.totalClicks) {
-        return a.totalClicks - b.totalClicks;
-      }
-      if (sortMode === "most-clicks" && b.totalClicks !== a.totalClicks) {
-        return b.totalClicks - a.totalClicks;
-      }
-      return a.label.localeCompare(b.label);
-    });
-}
-
 function formatNumber(value: number): string {
   return value.toLocaleString("en-US");
 }
@@ -284,9 +303,18 @@ function summaryUrl(
   dataSource: PageAnalyticsDataSource,
   pageId: string,
   bypassCache: boolean,
+  from?: string,
+  to?: string,
 ): string {
   const params = new URLSearchParams();
   if (bypassCache) params.set("_t", String(Date.now()));
+  if (from) params.set("from", from);
+  if (to)   params.set("to",   to);
+
+  if (dataSource === "client-linktree") {
+    const query = params.toString();
+    return `/api/client-linktree-access/analytics/summary${query ? `?${query}` : ""}`;
+  }
 
   if (dataSource === "platform-linktree") {
     const query = params.toString();
@@ -323,9 +351,18 @@ function actionsUrl(
   dataSource: PageAnalyticsDataSource,
   pageId: string,
   bypassCache: boolean,
+  from?: string,
+  to?: string,
 ): string {
   const params = new URLSearchParams();
   if (bypassCache) params.set("_t", String(Date.now()));
+  if (from) params.set("from", from);
+  if (to)   params.set("to",   to);
+
+  if (dataSource === "client-linktree") {
+    const query = params.toString();
+    return `/api/client-linktree-access/analytics/actions${query ? `?${query}` : ""}`;
+  }
 
   if (dataSource === "creator-linktree") {
     const query = params.toString();
@@ -364,13 +401,17 @@ export function BusinessPageAnalyticsModal({
   dataSource = "business",
   onAnalyticsCleared,
 }: BusinessPageAnalyticsModalProps) {
-  const router = useRouter();
   const [totals, setTotals] = useState<Totals | null>(null);
   const [actions, setActions] = useState<ActionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [sortMode, setSortMode] = useState<SortMode>("most-clicks");
+
+  // Time-range filter
+  const [preset, setPreset] = useState<DateRangePreset>("all");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo]     = useState("");
+
   const [expandedActionId, setExpandedActionId] = useState<string | null>(null);
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
@@ -378,18 +419,24 @@ export function BusinessPageAnalyticsModal({
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
+  /** Derived from/to strings that are passed to every API request. */
+  const effectiveRange = useMemo(
+    () => presetToRange(preset, customFrom, customTo),
+    [preset, customFrom, customTo],
+  );
+
   const load = useCallback(
-    async (bypassCache = false) => {
+    async (bypassCache = false, range?: { from?: string; to?: string }) => {
       const reqId = ++dataRef.current;
 
       // Both reads are addressed by data source, so a Creator workspace runs
       // exactly this code path against its own endpoints rather than falling
       // through to the business ones, which are behind `BusinessGuard`.
       const [totalsResult, actionsResult] = await Promise.allSettled([
-        fetchJson<Totals>(summaryUrl(dataSource, pageId, bypassCache)),
+        fetchJson<Totals>(summaryUrl(dataSource, pageId, bypassCache, range?.from, range?.to)),
         summaryOnly
           ? Promise.resolve<ActionRow[]>([])
-          : fetchJson<ActionRow[]>(actionsUrl(dataSource, pageId, bypassCache)),
+          : fetchJson<ActionRow[]>(actionsUrl(dataSource, pageId, bypassCache, range?.from, range?.to)),
       ]);
       if (reqId !== dataRef.current) return;
 
@@ -426,15 +473,36 @@ export function BusinessPageAnalyticsModal({
     [dataSource, pageId, summaryOnly],
   );
 
+  // Initial load / re-load when the modal opens (or when pageId changes).
   useEffect(() => {
     if (!isOpen) return;
     const frame = window.requestAnimationFrame(() => {
       setLoading(true);
       setExpandedActionId(null);
-      void load();
+      // Reset time filter to "all" when the modal re-opens for a new page.
+      setPreset("all");
+      setCustomFrom("");
+      setCustomTo("");
+      void load(false, {});
     });
     return () => window.cancelAnimationFrame(frame);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, load]);
+
+  // Re-fetch whenever the effective date range changes (user picks a preset
+  // or finishes entering a custom range). Skip the very first render because
+  // the modal-open effect above handles that initial fetch.
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (!isOpen) return;
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    setLoading(true);
+    setExpandedActionId(null);
+    void load(false, effectiveRange);
+  // load is stable (useCallback); effectiveRange identity changes only when
+  // preset / customFrom / customTo actually change.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveRange]);
 
   useModalKeyboard({
     isOpen,
@@ -446,12 +514,7 @@ export function BusinessPageAnalyticsModal({
   const refresh = () => {
     if (refreshing) return;
     setRefreshing(true);
-    void load(true);
-  };
-
-  const goToAdvancedAnalytics = () => {
-    onClose();
-    router.push(`/business/analytics?pageId=${pageId}`);
+    void load(true, effectiveRange);
   };
 
   const handleClearAnalytics = async () => {
@@ -483,8 +546,8 @@ export function BusinessPageAnalyticsModal({
   };
 
   const filteredActions = useMemo(
-    () => sortAnalyticsActions(actions, sortMode),
-    [actions, sortMode],
+    () => actions.filter((a) => a.totalClicks > 0 || a.conversions > 0),
+    [actions],
   );
 
   // Clicks count too: a page can be reached from a QR code or a shared button
@@ -574,61 +637,50 @@ export function BusinessPageAnalyticsModal({
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                {dataSource === "business" && (
-                  <button
-                    type="button"
-                    onClick={goToAdvancedAnalytics}
-                    className={`${HEADER_BUTTON_BASE} w-10 shrink-0 border-slate-100 dark:border-white/10 sm:w-auto sm:px-3`}
-                    style={{
-                      background:
-                        "color-mix(in srgb, var(--theme-primary, #64748b) 10%, transparent)",
-                      color: "var(--theme-primary, #64748b)",
-                    }}
-                    aria-label="ئاماری وردتر"
-                    title="بینینی ئاماری وردتر"
-                  >
-                    <TrendingUp className="h-4 w-4 transition-transform group-hover:scale-110" />
-                    <span className="hidden sm:inline">ئاماری وردتر</span>
-                  </button>
-                )}
                 {canClearAnalytics && (
-                  <button
-                    type="button"
-                    onClick={() => setIsClearModalOpen(true)}
-                    disabled={!hasAnyData}
-                    className={`${HEADER_ICON_BUTTON} bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20 text-rose-500 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/15 hover:border-rose-200 dark:hover:border-rose-500/30`}
-                    aria-label="پاککردنەوەی داتاکان"
-                    title={
+                  <Tooltip
+                    content={
                       hasAnyData
                         ? "پاککردنەوەی هەموو داتاکانی ئامار"
                         : "هیچ داتایەک نییە بۆ پاککردنەوە"
                     }
+                    side="bottom"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsClearModalOpen(true)}
+                      disabled={refreshing || isClearing || !hasAnyData}
+                      className={`${HEADER_ICON_BUTTON} ${HEADER_DANGER_BUTTON}`}
+                      aria-label="پاککردنەوەی داتاکان"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
                 )}
-                <button
-                  type="button"
-                  onClick={refresh}
-                  disabled={refreshing}
-                  aria-busy={refreshing}
-                  className={`${HEADER_ICON_BUTTON} ${HEADER_NEUTRAL_BUTTON}`}
-                  aria-label="نوێکردنەوە"
-                  title="نوێکردنەوە"
-                >
-                  <MotionSpinner active={refreshing}>
-                    <RefreshCw className="h-4 w-4" />
-                  </MotionSpinner>
-                </button>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className={`${HEADER_ICON_BUTTON} ${HEADER_NEUTRAL_BUTTON}`}
-                  aria-label="داخستن"
-                  title="داخستن"
-                >
-                  <X className="h-4 w-4 transition-transform group-hover:rotate-90" />
-                </button>
+                <Tooltip content="نوێکردنەوە" side="bottom">
+                  <button
+                    type="button"
+                    onClick={refresh}
+                    disabled={refreshing}
+                    aria-busy={refreshing}
+                    className={`${HEADER_ICON_BUTTON} ${HEADER_NEUTRAL_BUTTON}`}
+                    aria-label="نوێکردنەوە"
+                  >
+                    <MotionSpinner active={refreshing}>
+                      <RefreshCw className="h-4 w-4" />
+                    </MotionSpinner>
+                  </button>
+                </Tooltip>
+                <Tooltip content="داخستن" side="bottom">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className={`${HEADER_ICON_BUTTON} ${HEADER_NEUTRAL_BUTTON}`}
+                    aria-label="داخستن"
+                  >
+                    <X className="h-4 w-4 transition-transform group-hover:rotate-90" />
+                  </button>
+                </Tooltip>
               </div>
             </div>
           </div>
@@ -636,36 +688,34 @@ export function BusinessPageAnalyticsModal({
           <div className="p-4 sm:p-5 md:p-6 overflow-y-auto max-h-[calc(100vh-180px)] sm:max-h-[calc(100vh-200px)] md:max-h-[calc(100vh-220px)] custom-scrollbar bg-white dark:bg-[#161B22]">
             {loading ? (
               // Shaped like what loads: the stat tiles, then the action list.
-              <div className="space-y-5">
-                <SkeletonStatCards count={summaryOnly ? 4 : 2} />
-                {!summaryOnly && <SkeletonList rows={5} />}
-              </div>
+              <SkeletonPageAnalyticsContent summaryOnly={summaryOnly} />
             ) : (
               <div className="space-y-5">
+
                 <StatCardGrid columns={2}>
                   {summaryOnly ? (
                     <>
                       <StatCard
                         icon={Eye}
-                        label="بینەری تاک"
+                        label={ANALYTICS_TERMS.uniqueViewer}
                         value={totals?.unique_views || 0}
                         color="blue"
                       />
                       <StatCard
                         icon={MousePointerClick}
-                        label="کۆی کلیکەکان"
+                        label={ANALYTICS_TERMS.totalClicks}
                         value={totals?.total_clicks || 0}
                         color="purple"
                       />
                       <StatCard
                         icon={Users}
-                        label="کلیککەری تاک"
+                        label={ANALYTICS_TERMS.uniqueClicker}
                         value={totals?.unique_clicks || 0}
                         color="green"
                       />
                       <StatCard
                         icon={Target}
-                        label="ڕێژەی کلیک"
+                        label={ANALYTICS_TERMS.clickRate}
                         value={`${clickRate}%`}
                         color="orange"
                       />
@@ -674,13 +724,13 @@ export function BusinessPageAnalyticsModal({
                     <>
                       <StatCard
                         icon={Eye}
-                        label="کۆی بینینەکان"
+                        label={ANALYTICS_TERMS.totalViews}
                         value={totals?.total_views || 0}
                         color="blue"
                       />
                       <StatCard
                         icon={Users}
-                        label="بینەری تاک"
+                        label={ANALYTICS_TERMS.uniqueViewer}
                         value={totals?.unique_views || 0}
                         color="green"
                       />
@@ -692,13 +742,13 @@ export function BusinessPageAnalyticsModal({
                       */}
                       <StatCard
                         icon={MousePointerClick}
-                        label="کۆی کرتەکان"
+                        label={ANALYTICS_TERMS.totalClicks}
                         value={totals?.total_clicks || 0}
                         color="purple"
                       />
                       <StatCard
                         icon={Target}
-                        label="کرتەکەری تاک"
+                        label={ANALYTICS_TERMS.uniqueClicker}
                         value={totals?.unique_clicks || 0}
                         color="orange"
                       />
@@ -726,49 +776,72 @@ export function BusinessPageAnalyticsModal({
 
                 {!summaryOnly && (
                   <div>
-                    <div className="flex items-center justify-between gap-3 mb-3">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="p-1.5 rounded-lg shadow-sm"
-                          style={{
-                            background: "var(--theme-primary, #64748b)",
-                          }}
-                        >
-                          <Target className="h-3.5 w-3.5 text-white" />
+                    {/* ── Time-range filter ── */}
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Calendar className="h-3 w-3 text-slate-400 dark:text-slate-500 shrink-0" />
+                        <div className="inline-flex items-center rounded-full bg-slate-100/80 dark:bg-white/[0.06] p-0.5 gap-0.5">
+                          {DATE_RANGE_OPTIONS.map((opt) => {
+                            const active = preset === opt.id;
+                            return (
+                              <Tooltip key={opt.id} content={opt.hint} side="top">
+                                <button
+                                  type="button"
+                                  aria-label={opt.hint}
+                                  aria-pressed={active}
+                                  onClick={() => setPreset(opt.id)}
+                                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                                    active
+                                      ? "bg-white dark:bg-white/[0.12] shadow-sm"
+                                      : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                                  }`}
+                                  style={active ? { color: "var(--theme-primary, #64748b)" } : undefined}
+                                >
+                                  {opt.label}
+                                </button>
+                              </Tooltip>
+                            );
+                          })}
                         </div>
-                        <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-200 font-kurdish">
-                          دوگمەکان ({filteredActions.length})
-                        </h3>
                       </div>
-                      {filteredActions.length > 0 && (
-                        <div className="flex gap-1.5">
-                          {SORT_OPTIONS.map(([value, label]) => (
-                            <button
-                              key={value}
-                              type="button"
-                              aria-pressed={sortMode === value}
-                              onClick={() => setSortMode(value)}
-                              className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-all cursor-pointer whitespace-nowrap ${
-                                sortMode === value
-                                  ? "text-white shadow-sm"
-                                  : "bg-white dark:bg-[#161B22] border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-400 hover:border-slate-300 dark:hover:border-white/20"
-                              }`}
-                              style={
-                                sortMode === value
-                                  ? {
-                                      background:
-                                        "var(--theme-primary, #64748b)",
-                                      borderColor:
-                                        "var(--theme-primary, #64748b)",
-                                    }
-                                  : undefined
-                              }
-                            >
-                              {label}
-                            </button>
-                          ))}
+
+                      {preset === "custom" && (
+                        <div className="mt-2.5 flex items-center gap-2">
+                          <div className="flex-1 min-w-0">
+                            <DateTimeInput
+                              label="لە بەرواری"
+                              value={customFrom}
+                              onChange={setCustomFrom}
+                              dateOnly
+                              accent="var(--theme-primary, #64748b)"
+                              max={customTo || undefined}
+                            />
+                          </div>
+                          <span className="text-slate-300 dark:text-white/20 text-sm font-light shrink-0 mt-5">→</span>
+                          <div className="flex-1 min-w-0">
+                            <DateTimeInput
+                              label="بۆ بەرواری"
+                              value={customTo}
+                              onChange={setCustomTo}
+                              dateOnly
+                              accent="var(--theme-primary, #64748b)"
+                              min={customFrom || undefined}
+                            />
+                          </div>
                         </div>
                       )}
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-3">
+                      <div
+                        className="p-1.5 rounded-lg shadow-sm"
+                        style={{ background: "var(--theme-primary, #64748b)" }}
+                      >
+                        <Target className="h-3.5 w-3.5 text-white" />
+                      </div>
+                      <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-200 font-kurdish">
+                        دوگمەکان ({filteredActions.length})
+                      </h3>
                     </div>
 
                     {filteredActions.length === 0 ? (
@@ -885,18 +958,20 @@ export function BusinessPageAnalyticsModal({
                                       </p>
                                     </div>
                                     {action.destination && (
-                                      <a
-                                        href={action.destination}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="col-span-2 sm:col-span-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-gray-400 hover:underline truncate self-center"
-                                      >
-                                        <ExternalLink className="h-3 w-3 shrink-0" />
-                                        <span className="truncate">
-                                          {action.destination}
-                                        </span>
-                                      </a>
+                                      <Tooltip content="کردنەوەی بەستەری مەبەست" side="top" className="col-span-2 sm:col-span-1 min-w-0">
+                                        <a
+                                          href={action.destination}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-gray-400 hover:underline truncate self-center"
+                                        >
+                                          <ExternalLink className="h-3 w-3 shrink-0" />
+                                          <span className="truncate">
+                                            {action.destination}
+                                          </span>
+                                        </a>
+                                      </Tooltip>
                                     )}
                                   </div>
                                 </div>

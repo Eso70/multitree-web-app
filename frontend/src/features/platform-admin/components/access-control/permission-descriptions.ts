@@ -48,9 +48,6 @@ const KURDISH_PERMISSION_DESCRIPTIONS: Readonly<Record<string, string>> = {
   "business:analytics:details-read": "بینینی وردەکاری ئامارەکانی لینکترێ",
   "business:analytics:tiktok-health-read":
     "بینینی دۆخی گەیاندنی ڕووداوەکانی TikTok و هەوڵدانەوە",
-  "business:analytics:daily-read": "بینینی ئامارە ڕۆژانەکان",
-  "business:analytics:range-read":
-    "گەڕان لە ئامارەکان بە پێی ماوەی بەروار",
   "business:analytics:clear-linktree":
     "سڕینەوەی ئامارەکانی تەنها یەک لینکترێ",
   "business:analytics:clear-all": "سڕینەوەی هەموو ئامارەکانی بزنس",

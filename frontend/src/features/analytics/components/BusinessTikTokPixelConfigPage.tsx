@@ -19,8 +19,9 @@ import type { EffectiveAccessManifest } from "@linktree/types";
 import { DashboardSurface } from "@/components/shared/DashboardSurface";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { SkeletonDashboardPage } from "@/components/shared/Skeleton";
+import { SkeletonTikTokPixelConfig } from "@/components/shared/SkeletonPageLayouts";
 import { TikTokDeliveryStatusPanel } from "@/features/analytics/components/TikTokDeliveryStatusPanel";
+import { Tooltip } from "@/components/shared/Tooltip";
 import {
   TIKTOK_CONFIG_WORKSPACES,
   type TikTokConfigOwner,
@@ -190,7 +191,7 @@ export function BusinessTikTokPixelConfigPage({
     "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--theme-primary)_18%,transparent)] dark:border-white/10 dark:bg-[#161B22] dark:text-slate-200 dark:placeholder:text-slate-500 dark:[color-scheme:dark]";
 
   if (loading) {
-    return <SkeletonDashboardPage body="form" statCount={0} />;
+    return <SkeletonTikTokPixelConfig />;
   }
 
   return (
@@ -210,33 +211,35 @@ export function BusinessTikTokPixelConfigPage({
             هەر tokenێک تەنها لەگەڵ Pixel IDی هەمان گرووپ بەکار دەکەوێت.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() =>
-            canAdd &&
-            setConfigs((current) => [
-              ...current,
-              {
-                pixel_id: "",
-                events_token: "",
-                has_events_token: false,
-                keep_events_token: false,
-              },
-            ])
-          }
-          disabled={!canAdd}
-          className="inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-xs font-bold shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45"
-          style={{
-            borderColor:
-              "color-mix(in srgb, var(--theme-primary) 28%, transparent)",
-            background:
-              "color-mix(in srgb, var(--theme-primary) 10%, transparent)",
-            color: "var(--theme-primary)",
-          }}
-        >
-          <Plus className="h-4 w-4" />
-          زیادکردنی گرووپ
-        </button>
+        <Tooltip content={canAdd ? "زیادکردنی گرووپێکی نوێی TikTok" : "گەیشتوویتە سنووری ڕێگەپێدراوی Pixel"} side="bottom">
+          <button
+            type="button"
+            onClick={() =>
+              canAdd &&
+              setConfigs((current) => [
+                ...current,
+                {
+                  pixel_id: "",
+                  events_token: "",
+                  has_events_token: false,
+                  keep_events_token: false,
+                },
+              ])
+            }
+            disabled={!canAdd}
+            className="inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-xs font-bold shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 cursor-pointer"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--theme-primary) 28%, transparent)",
+              background:
+                "color-mix(in srgb, var(--theme-primary) 10%, transparent)",
+              color: "var(--theme-primary)",
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            زیادکردنی گرووپ
+          </button>
+        </Tooltip>
       </div>
 
       {configs.length === 0 ? (
@@ -269,18 +272,20 @@ export function BusinessTikTokPixelConfigPage({
                     گرووپی TikTok
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setConfigs((current) =>
-                      current.filter((_, configIndex) => configIndex !== index),
-                    )
-                  }
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
-                  aria-label="سڕینەوەی گرووپ"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                <Tooltip content="سڕینەوەی ئەم گرووپە" side="top">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setConfigs((current) =>
+                        current.filter((_, configIndex) => configIndex !== index),
+                      )
+                    }
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10 cursor-pointer"
+                    aria-label="سڕینەوەی گرووپ"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </Tooltip>
               </div>
 
               <label className="block">
@@ -305,21 +310,23 @@ export function BusinessTikTokPixelConfigPage({
                     <span className="text-slate-400">(ئارەزوومەندانەیە)</span>
                   </span>
                   {config.has_events_token && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateConfig(index, {
-                          events_token: "",
-                          has_events_token: false,
-                          keep_events_token: false,
-                          token_last_four: null,
-                        })
-                      }
-                      className="inline-flex items-center gap-1 text-[11px] text-red-500 hover:text-red-600"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                      لابردن
-                    </button>
+                    <Tooltip content="لابردنی Events API Token" side="top">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateConfig(index, {
+                            events_token: "",
+                            has_events_token: false,
+                            keep_events_token: false,
+                            token_last_four: null,
+                          })
+                        }
+                        className="inline-flex items-center gap-1 text-[11px] text-red-500 hover:text-red-600 cursor-pointer"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        لابردن
+                      </button>
+                    </Tooltip>
                   )}
                 </span>
                 <div className="relative">
@@ -343,25 +350,27 @@ export function BusinessTikTokPixelConfigPage({
                         : "Events API Token"
                     }
                   />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowTokens((current) => ({
-                        ...current,
-                        [index]: !current[index],
-                      }))
-                    }
-                    className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200"
-                    aria-label={
-                      showTokens[index] ? "شاردنەوەی token" : "پیشاندانی token"
-                    }
-                  >
-                    {showTokens[index] ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
+                  <Tooltip content={showTokens[index] ? "شاردنەوەی token" : "پیشاندانی token"} side="top">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowTokens((current) => ({
+                          ...current,
+                          [index]: !current[index],
+                        }))
+                      }
+                      className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200 cursor-pointer"
+                      aria-label={
+                        showTokens[index] ? "شاردنەوەی token" : "پیشاندانی token"
+                      }
+                    >
+                      {showTokens[index] ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </Tooltip>
                 </div>
                 <p className="mt-2 text-[11px] leading-5 text-slate-400">
                   {config.keep_events_token
@@ -381,22 +390,24 @@ export function BusinessTikTokPixelConfigPage({
       />
 
       <div className="mt-5 flex justify-end border-t border-slate-100 pt-5 dark:border-white/5">
-        <button
-          type="button"
-          onClick={() => void save()}
-          aria-busy={saving}
-          disabled={hasInvalidRows || saving}
-          className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
-        >
-          {saving ? (
-            <MotionSpinner>
-              <Loader2 className="h-4 w-4 " />
-            </MotionSpinner>
-          ) : (
-            <Save className="h-4 w-4" />
-          )}
-          {saving ? "پاشەکەوتکردن..." : "پاشەکەوتکردن"}
-        </button>
+        <Tooltip content={saving ? "پاشەکەوت دەکرێت..." : hasInvalidRows ? "تکایە هەموو خانە پێویستەکان پڕبکەرەوە" : "پاشەکەوتکردنی ڕێکخستنەکانی TikTok"} side="top">
+          <button
+            type="button"
+            onClick={() => void save()}
+            aria-busy={saving}
+            disabled={hasInvalidRows || saving}
+            className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60 cursor-pointer"
+          >
+            {saving ? (
+              <MotionSpinner>
+                <Loader2 className="h-4 w-4 " />
+              </MotionSpinner>
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            {saving ? "پاشەکەوتکردن..." : "پاشەکەوتکردن"}
+          </button>
+        </Tooltip>
       </div>
     </DashboardSurface>
   );

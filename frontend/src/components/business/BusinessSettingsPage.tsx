@@ -21,8 +21,10 @@ import { ColorGradientModal } from "@/features/link-editor/ColorGradientModal";
 import { PageHeaderSection } from "@/components/shared/PageHeaderSection";
 import { SegmentedTabs } from "@/components/shared/SegmentedTabs";
 import { TabSaveButton } from "@/components/shared/TabSaveButton";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { StatCard } from "@/components/shared/StatCard";
-import { Skeleton, SkeletonDashboardPage } from "@/components/shared/Skeleton";
+import { Skeleton } from "@/components/shared/Skeleton";
+import { SkeletonSettingsPage } from "@/components/shared/SkeletonPageLayouts";
 import { TemplateCombobox } from "@/components/ui/TemplateCombobox";
 import { parseWebsiteColor } from "@/lib/utils/parse-website-color";
 import type { EffectiveAccessManifest } from "@linktree/types";
@@ -32,6 +34,7 @@ import { isBusinessSettingsTabLocked } from "@/lib/business-page-access";
 import { DashboardSurface } from "@/components/shared/DashboardSurface";
 import { LockedContent } from "@/components/shared/LockedContent";
 import { InlineRequestError } from "@/components/shared/InlineRequestError";
+import { MotionSpinner } from "@/components/motion/MotionPrimitives";
 import {
   createUploadFailureError,
   inlineRequestErrorFromResponse,
@@ -433,7 +436,7 @@ export function BusinessSettingsPage() {
 
   if (loading)
     return (
-      <SkeletonDashboardPage body="form" statCount={4} tabCount={tabs.length} />
+      <SkeletonSettingsPage tabCount={tabs.length} />
     );
 
   return (
@@ -516,22 +519,24 @@ export function BusinessSettingsPage() {
                     />
                   )}
                   <div className="mt-3 flex justify-center">
-                    <button
-                      type="button"
-                      onClick={() => setShowColorPicker(true)}
-                      disabled={!profileEditingAllowed || Boolean(cooldown)}
-                      className="group inline-flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white/90 px-3 py-1.5 text-xs font-semibold text-gray-600 shadow-sm backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:bg-white hover:text-gray-800 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-gray-100"
-                    >
-                      <span
-                        className="flex h-6 w-6 items-center justify-center rounded-full text-white shadow-sm"
-                        style={{
-                          background: parseWebsiteColor(data.website_color).css,
-                        }}
+                    <Tooltip content="گۆڕینی ڕەنگی سەرەکی وێبسایت" side="bottom">
+                      <button
+                        type="button"
+                        onClick={() => setShowColorPicker(true)}
+                        disabled={!profileEditingAllowed || Boolean(cooldown)}
+                        className="group inline-flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white/90 px-3 py-1.5 text-xs font-semibold text-gray-600 shadow-sm backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:bg-white hover:text-gray-800 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-gray-100 cursor-pointer"
                       >
-                        <Palette className="h-3.5 w-3.5" />
-                      </span>
-                      <span>ڕەنگی وێبسایت</span>
-                    </button>
+                        <span
+                          className="flex h-6 w-6 items-center justify-center rounded-full text-white shadow-sm"
+                          style={{
+                            background: parseWebsiteColor(data.website_color).css,
+                          }}
+                        >
+                          <Palette className="h-3.5 w-3.5" />
+                        </span>
+                        <span>ڕەنگی وێبسایت</span>
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
                 <div className="col-span-full">
@@ -609,23 +614,25 @@ export function BusinessSettingsPage() {
                         />
                       </Field>
                       <Field label="ڕەنگی پاشبنەما">
-                        <button
-                          type="button"
-                          onClick={() => setShowDefaultColorPicker(true)}
-                          className={`${inputClass} flex items-center justify-between gap-3`}
-                        >
-                          <span className="truncate text-xs text-slate-500 dark:text-slate-400">
-                            {data.default_background_color || "ڕەنگی پاشبنەما"}
-                          </span>
-                          <span
-                            className="h-5 w-5 shrink-0 rounded border-2 border-white shadow-sm ring-1 ring-slate-200 dark:border-[#161B22] dark:ring-white/10"
-                            style={{
-                              background: parseWebsiteColor(
-                                data.default_background_color || "#000000",
-                              ).css,
-                            }}
-                          />
-                        </button>
+                        <Tooltip content="دیاریکردنی ڕەنگی پاشبنەمای بنەڕەتی" side="top">
+                          <button
+                            type="button"
+                            onClick={() => setShowDefaultColorPicker(true)}
+                            className={`${inputClass} flex items-center justify-between gap-3 cursor-pointer`}
+                          >
+                            <span className="truncate text-xs text-slate-500 dark:text-slate-400">
+                              {data.default_background_color || "ڕەنگی پاشبنەما"}
+                            </span>
+                            <span
+                              className="h-5 w-5 shrink-0 rounded border-2 border-white shadow-sm ring-1 ring-slate-200 dark:border-[#161B22] dark:ring-white/10"
+                              style={{
+                                background: parseWebsiteColor(
+                                  data.default_background_color || "#000000",
+                                ).css,
+                              }}
+                            />
+                          </button>
+                        </Tooltip>
                       </Field>
                       <Field label="دەقی فوتر">
                         <input
@@ -758,21 +765,25 @@ export function BusinessSettingsPage() {
                         یەکەم پەڕەت دروست بکە تا وەک پەیجی بنەڕەتی بزنسەکەت
                         کاربکات
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => void handleCreateDefaultPage()}
-                        disabled={creatingDefault}
-                        className="mx-auto flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
-                      >
-                        {creatingDefault ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Plus className="h-4 w-4" />
-                        )}
-                        {creatingDefault
-                          ? "دروستکردن..."
-                          : "دروستکردنی پەیجی بنەڕەت"}
-                      </button>
+                      <Tooltip content="دروستکردنی پەیجی بنەڕەت بۆ بزنس" side="bottom">
+                        <button
+                          type="button"
+                          onClick={() => void handleCreateDefaultPage()}
+                          disabled={creatingDefault}
+                          className="mx-auto flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60 cursor-pointer"
+                        >
+                          {creatingDefault ? (
+                            <MotionSpinner>
+                              <Loader2 className="h-4 w-4" />
+                            </MotionSpinner>
+                          ) : (
+                            <Plus className="h-4 w-4" />
+                          )}
+                          {creatingDefault
+                            ? "دروستکردن..."
+                            : "دروستکردنی پەیجی بنەڕەت"}
+                        </button>
+                      </Tooltip>
                     </div>
                   )}
                 </div>
@@ -881,61 +892,67 @@ function BrandImageStack({
       }`}
     >
       <div className="relative h-44 w-72 sm:h-48 sm:w-80">
-        <label className="group absolute left-5 top-7 z-30 h-24 w-24 rotate-[-8deg] cursor-pointer overflow-hidden rounded-full border-4 border-white bg-white shadow-xl ring-1 ring-gray-200 transition hover:rotate-0 hover:scale-105 dark:border-[#161B22] dark:bg-[#161B22] dark:ring-white/10">
-          <Image
-            src={data.default_avatar || DEFAULT_AVATAR}
-            alt="Default avatar"
-            width={112}
-            height={112}
-            className="h-full w-full object-cover"
-          />
-          <UploadOverlay label="ئەڤاتار" />
-          <input
-            type="file"
-            accept={AVATAR_ACCEPT}
-            className="hidden"
-            onChange={(e) =>
-              e.target.files?.[0] &&
-              onUpload(e.target.files[0], "default-avatar")
-            }
-          />
-        </label>
-        <label className="group absolute right-6 top-4 z-30 h-20 w-20 rotate-[10deg] cursor-pointer overflow-hidden rounded-2xl border-4 border-white bg-white p-2 shadow-lg ring-1 ring-gray-200 transition hover:rotate-0 hover:scale-105 dark:border-[#161B22] dark:bg-[#161B22] dark:ring-white/10">
-          <Image
-            src={data.favicon || BUSINESS_FAVICON_PLACEHOLDER}
-            alt="Favicon"
-            width={96}
-            height={96}
-            className="h-full w-full object-contain"
-          />
-          <UploadOverlay label="فایڤ" />
-          <input
-            type="file"
-            accept={FAVICON_ACCEPT}
-            className="hidden"
-            onChange={(e) =>
-              e.target.files?.[0] && onUpload(e.target.files[0], "favicon")
-            }
-          />
-        </label>
-        <label className="group absolute left-1/2 top-12 z-20 h-32 w-32 -translate-x-1/2 cursor-pointer overflow-hidden rounded-3xl border-4 border-white bg-white p-3 shadow-2xl ring-1 ring-gray-200 transition hover:scale-105 dark:border-[#161B22] dark:bg-[#161B22] dark:ring-white/10">
-          <Image
-            src={data.logo || BUSINESS_LOGO_PLACEHOLDER}
-            alt="Logo"
-            width={144}
-            height={144}
-            className="h-full w-full object-contain"
-          />
-          <UploadOverlay label="لۆگۆ" />
-          <input
-            type="file"
-            accept={LOGO_ACCEPT}
-            className="hidden"
-            onChange={(e) =>
-              e.target.files?.[0] && onUpload(e.target.files[0], "logo")
-            }
-          />
-        </label>
+        <Tooltip content="گۆڕینی ئەڤاتاری بنەڕەتی" side="top">
+          <label className="group absolute left-5 top-7 z-30 h-24 w-24 rotate-[-8deg] cursor-pointer overflow-hidden rounded-full border-4 border-white bg-white shadow-xl ring-1 ring-gray-200 transition hover:rotate-0 hover:scale-105 dark:border-[#161B22] dark:bg-[#161B22] dark:ring-white/10">
+            <Image
+              src={data.default_avatar || DEFAULT_AVATAR}
+              alt="Default avatar"
+              width={112}
+              height={112}
+              className="h-full w-full object-cover"
+            />
+            <UploadOverlay label="ئەڤاتار" />
+            <input
+              type="file"
+              accept={AVATAR_ACCEPT}
+              className="hidden"
+              onChange={(e) =>
+                e.target.files?.[0] &&
+                onUpload(e.target.files[0], "default-avatar")
+              }
+            />
+          </label>
+        </Tooltip>
+        <Tooltip content="گۆڕینی وێنۆچکەی ماڵپەڕ (Favicon)" side="top">
+          <label className="group absolute right-6 top-4 z-30 h-20 w-20 rotate-[10deg] cursor-pointer overflow-hidden rounded-2xl border-4 border-white bg-white p-2 shadow-lg ring-1 ring-gray-200 transition hover:rotate-0 hover:scale-105 dark:border-[#161B22] dark:bg-[#161B22] dark:ring-white/10">
+            <Image
+              src={data.favicon || BUSINESS_FAVICON_PLACEHOLDER}
+              alt="Favicon"
+              width={96}
+              height={96}
+              className="h-full w-full object-contain"
+            />
+            <UploadOverlay label="فایڤ" />
+            <input
+              type="file"
+              accept={FAVICON_ACCEPT}
+              className="hidden"
+              onChange={(e) =>
+                e.target.files?.[0] && onUpload(e.target.files[0], "favicon")
+              }
+            />
+          </label>
+        </Tooltip>
+        <Tooltip content="گۆڕینی لۆگۆی سەرەکی بزنس" side="top">
+          <label className="group absolute left-1/2 top-12 z-20 h-32 w-32 -translate-x-1/2 cursor-pointer overflow-hidden rounded-3xl border-4 border-white bg-white p-3 shadow-2xl ring-1 ring-gray-200 transition hover:scale-105 dark:border-[#161B22] dark:bg-[#161B22] dark:ring-white/10">
+            <Image
+              src={data.logo || BUSINESS_LOGO_PLACEHOLDER}
+              alt="Logo"
+              width={144}
+              height={144}
+              className="h-full w-full object-contain"
+            />
+            <UploadOverlay label="لۆگۆ" />
+            <input
+              type="file"
+              accept={LOGO_ACCEPT}
+              className="hidden"
+              onChange={(e) =>
+                e.target.files?.[0] && onUpload(e.target.files[0], "logo")
+              }
+            />
+          </label>
+        </Tooltip>
       </div>
       <div className="-mt-2 flex items-center gap-2 rounded-full border border-gray-200 bg-white/90 px-3 py-1.5 text-[11px] font-medium text-gray-500 shadow-sm dark:border-white/10 dark:bg-[#161B22]/90 dark:text-gray-300">
         <span

@@ -13,6 +13,8 @@ import { ColorGradientModal } from "@/features/link-editor/ColorGradientModal";
 import { TikTokConfigModal } from "@/features/link-editor/TikTokConfigModal";
 import { modalInputClass } from "@/features/link-editor/modal-input-styles";
 import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import { MotionSpinner } from "@/components/motion/MotionPrimitives";
+import { SkeletonBusinessInfoForm } from "@/components/shared/SkeletonModalLayouts";
 
 type TikTokConfig = {
   id?: string;
@@ -220,9 +222,7 @@ export function BusinessGettingStarted(_props: { initialStep?: number }) {
         headerAction={<LockKeyhole className="h-4 w-4 text-slate-400" />}
       >
         {!error ? (
-          <div className="flex min-h-40 items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-          </div>
+          <SkeletonBusinessInfoForm />
         ) : (
           <InlineRequestError
             error={{
@@ -262,7 +262,9 @@ export function BusinessGettingStarted(_props: { initialStep?: number }) {
             className="ml-auto flex h-11 min-w-40 items-center justify-center gap-2 rounded-xl bg-[var(--multitree-accent)] px-5 text-sm font-bold text-[var(--multitree-accent-ink)] disabled:opacity-50"
           >
             {busy ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <MotionSpinner>
+                <Loader2 className="h-4 w-4" />
+              </MotionSpinner>
             ) : (
               <>
                 <CheckCircle2 className="h-4 w-4" />

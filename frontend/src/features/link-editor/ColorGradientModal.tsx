@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Pipette, X } from "lucide-react";
 import { useModalKeyboard } from "@/hooks/useModalKeyboard";
+import { Tooltip } from "@/components/shared/Tooltip";
 import {
   parseWebsiteColor,
   WEBSITE_GRADIENT_DIRECTIONS,
@@ -450,16 +451,18 @@ export function ColorGradientModal({
                 autoCapitalize="none"
                 autoCorrect="off"
               />
-              <button
-                type="button"
-                onClick={pickScreenColor}
-                disabled={isPickingColor}
-                className="flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-600 transition-all hover:border-gray-300 hover:bg-gray-100 disabled:cursor-wait disabled:opacity-70"
-                title="پێنووسی ڕەنگ"
-              >
-                <Pipette className="h-4 w-4" />
-                <span className="hidden sm:inline">{isPickingColor ? "..." : "پێنووس"}</span>
-              </button>
+              <Tooltip content="پێنووسی ڕەنگ" side="top">
+                <button
+                  type="button"
+                  onClick={pickScreenColor}
+                  disabled={isPickingColor}
+                  className="flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-600 transition-all hover:border-gray-300 hover:bg-gray-100 disabled:cursor-wait disabled:opacity-70 cursor-pointer"
+                  aria-label="پێنووسی ڕەنگ"
+                >
+                  <Pipette className="h-4 w-4" />
+                  <span className="hidden sm:inline">{isPickingColor ? "..." : "پێنووس"}</span>
+                </button>
+              </Tooltip>
             </div>
             {pickerMessage && (
               <p className="text-[11px] text-gray-500">{pickerMessage}</p>
@@ -553,18 +556,20 @@ export function ColorGradientModal({
                   { id: "to-tl", label: "↖", title: "بۆ سەرەوەی چەپ" },
                   { id: "radial", label: "◎", title: "بازنەیی" },
                 ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    title={item.title}
-                    onClick={() =>
-                      setDirection(item.id as WebsiteGradientDirection)
-                    }
-                    className={`h-11 sm:h-9 w-full rounded-xl text-base sm:text-sm font-medium border transition-all ${direction === item.id ? "border-transparent shadow-sm" : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"}`}
-                    style={direction === item.id ? { ...themedButtonStyle, borderColor: "var(--theme-primary, var(--multitree-accent))" } : undefined}
-                  >
-                    {item.label}
-                  </button>
+                  <Tooltip key={item.id} content={item.title} side="top">
+                    <button
+                      type="button"
+                      aria-label={item.title}
+                      title={item.title}
+                      onClick={() =>
+                        setDirection(item.id as WebsiteGradientDirection)
+                      }
+                      className={`h-11 sm:h-9 w-full rounded-xl text-base sm:text-sm font-medium border transition-all cursor-pointer ${direction === item.id ? "border-transparent shadow-sm" : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"}`}
+                      style={direction === item.id ? { ...themedButtonStyle, borderColor: "var(--theme-primary, var(--multitree-accent))" } : undefined}
+                    >
+                      {item.label}
+                    </button>
+                  </Tooltip>
                 ))}
               </div>
             </div>
@@ -593,17 +598,19 @@ export function ColorGradientModal({
               <label className="text-xs font-medium text-gray-600">ڕەنگە وەرگیراوەکان</label>
               <div className="flex flex-wrap gap-1.5">
                 {pickedColors.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => {
-                    setHexDraft(null);
-                    setActiveValue(color);
-                  }}
-                    className={`h-9 w-9 sm:h-7 sm:w-7 rounded-lg border transition-all ${activeValue === color ? "border-gray-900 scale-110 ring-1 ring-gray-900/30" : "border-gray-200 hover:scale-105"}`}
-                    style={{ backgroundColor: color }}
-                    title={color}
-                  />
+                  <Tooltip key={color} content={color} side="top">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHexDraft(null);
+                        setActiveValue(color);
+                      }}
+                      className={`h-9 w-9 sm:h-7 sm:w-7 rounded-lg border transition-all cursor-pointer ${activeValue === color ? "border-gray-900 scale-110 ring-1 ring-gray-900/30" : "border-gray-200 hover:scale-105"}`}
+                      style={{ backgroundColor: color }}
+                      title={color}
+                      aria-label={color}
+                    />
+                  </Tooltip>
                 ))}
               </div>
             </div>

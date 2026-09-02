@@ -3,7 +3,7 @@
 import { memo, useMemo } from "react";
 import type { TemplateComponentProps } from "./types";
 import { TEMPLATE_COMPONENTS, TEMPLATE_DEFAULT_ID, type TemplateKey } from ".";
-import { normalizeTemplateConfig, isTemplateKey } from "@/lib/templates/config";
+import { isTemplateKey, normalizeTemplateConfig } from "@/lib/templates/config";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -15,7 +15,9 @@ function coerceTemplateConfig(config: unknown): UnknownRecord | null {
   if (typeof config === "string") {
     try {
       const parsed = JSON.parse(config) as unknown;
-      return typeof parsed === "object" && parsed !== null ? (parsed as UnknownRecord) : null;
+      return typeof parsed === "object" && parsed !== null
+        ? (parsed as UnknownRecord)
+        : null;
     } catch {
       return null;
     }
@@ -28,14 +30,19 @@ function coerceTemplateConfig(config: unknown): UnknownRecord | null {
   return null;
 }
 
-function extractTemplateKey(config: UnknownRecord | null, fallback?: unknown): TemplateKey {
+function extractTemplateKey(
+  config: UnknownRecord | null,
+  fallback?: unknown,
+): string {
   const candidate = [
     config?.["templateKey"],
     config?.["template_key"],
     fallback,
   ].find((value): value is string => typeof value === "string");
 
-  return candidate && isTemplateKey(candidate) ? candidate : TEMPLATE_DEFAULT_ID;
+  return candidate && isTemplateKey(candidate)
+    ? candidate
+    : TEMPLATE_DEFAULT_ID;
 }
 
 export const DynamicTemplate = memo(function DynamicTemplate({
@@ -53,17 +60,27 @@ export const DynamicTemplate = memo(function DynamicTemplate({
 
   const templateKey = useMemo(() => {
     const value = normalizedConfig["templateKey"];
-    return typeof value === "string" && isTemplateKey(value) ? value : TEMPLATE_DEFAULT_ID;
+    return typeof value === "string" && isTemplateKey(value)
+      ? value
+      : TEMPLATE_DEFAULT_ID;
   }, [normalizedConfig]);
 
-  const linktreeWithConfig = useMemo(() => ({
-    ...linktree,
-    template_config: normalizedConfig,
-  }), [linktree, normalizedConfig]);
+  const linktreeWithConfig = useMemo(
+    () => ({
+      ...linktree,
+      template_config: normalizedConfig,
+    }),
+    [linktree, normalizedConfig],
+  );
 
-  const TemplateComponent = TEMPLATE_COMPONENTS[templateKey] ?? TEMPLATE_COMPONENTS[TEMPLATE_DEFAULT_ID];
+  const builtInKey = isTemplateKey(templateKey)
+    ? templateKey
+    : TEMPLATE_DEFAULT_ID;
+  const TemplateComponent =
+    TEMPLATE_COMPONENTS[builtInKey as TemplateKey] ??
+    TEMPLATE_COMPONENTS[TEMPLATE_DEFAULT_ID];
   return (
-    <div className="public-template-shell" data-template-key={templateKey}>
+    <div className="public-template-shell" data-template-key={builtInKey}>
       <TemplateComponent
         linktree={linktreeWithConfig}
         links={links}

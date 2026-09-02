@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Upload, X } from "lucide-react";
 import { DEFAULT_AVATAR } from "@/lib/brand/brand-assets";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 interface AvatarImageUploadProps {
   imageUrl?: string | null;
@@ -80,40 +81,45 @@ export function AvatarImageUpload({
           </label>
         )}
         {showRemove && (
-          <button
-            type="button"
-            onClick={onRemove}
-            className="absolute -top-2 -right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition-all duration-200 hover:scale-110 hover:bg-red-600"
-            aria-label="Remove image"
-            title="Remove image"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <Tooltip content="لادانی وێنە" side="top">
+            <button
+              type="button"
+              onClick={onRemove}
+              className="absolute -top-2 -right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition-all duration-200 hover:scale-110 hover:bg-red-600 cursor-pointer"
+              aria-label="Remove image"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </Tooltip>
         )}
       </div>
       {error && <p className="text-center font-kurdish text-xs text-red-500">{error}</p>}
       {onUploadClick ? (
-        <button
-          type="button"
-          onClick={onUploadClick}
-          className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
-        >
-          <Upload className="h-4 w-4" />
-          <span>{uploadLabel}</span>
-        </button>
+        <Tooltip content={uploadLabel} side="bottom">
+          <button
+            type="button"
+            onClick={onUploadClick}
+            className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60 cursor-pointer"
+          >
+            <Upload className="h-4 w-4" />
+            <span>{uploadLabel}</span>
+          </button>
+        </Tooltip>
       ) : (
-        <label
-          className="group relative flex h-10 cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95"
-        >
-          <Upload className="h-4 w-4" />
-          <span>{uploadLabel}</span>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={onFileChange}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          />
-        </label>
+        <Tooltip content={uploadLabel} side="bottom">
+          <label
+            className="group relative flex h-10 cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95"
+          >
+            <Upload className="h-4 w-4" />
+            <span>{uploadLabel}</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={onFileChange}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+          </label>
+        </Tooltip>
       )}
     </div>
   );

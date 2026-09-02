@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { AuthenticationCard } from "@/components/shared/AuthenticationCard";
 import { AuthenticationShell } from "@/components/shared/AuthenticationShell";
 import { AuthenticationMethods } from "@/components/shared/AuthenticationMethods";
-import { MotionSpinner } from "@/components/motion/MotionPrimitives";
+import { LoadingState } from "@/components/shared/LoadingState";
 import { ErrorPagePanel } from "@/components/error-pages/ErrorPage";
 import { ERROR_PAGE_COPY } from "@/components/error-pages/copy";
 import { MULTITREE_ERROR_THEME } from "@/components/error-pages/error-theme";
@@ -62,12 +62,10 @@ export function InvitationEntryPage() {
         description="بانگێشت نامەکەت پشتڕاست بکەوە بە گوگڵ یاخود ئیمەیڵ"
       >
         {state === "loading" ? (
-          <div className="flex min-h-40 flex-col items-center justify-center gap-3 text-sm text-slate-500">
-            <MotionSpinner>
-              <Loader2 className="h-6 w-6" />
-            </MotionSpinner>
-            بانگهێشتنامەکە پشتڕاست دەکرێتەوە...
-          </div>
+          <LoadingState
+            title="بانگهێشتنامەکە پشتڕاست دەکرێتەوە"
+            description="تکایە چاوەڕێ بکە تا بەستەرە پارێزراوەکەت بپشکنین."
+          />
         ) : state === "invalid" ? (
           <div
             role="alert"

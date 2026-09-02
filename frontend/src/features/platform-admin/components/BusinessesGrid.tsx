@@ -14,6 +14,7 @@ import {
   BusinessMetaBadges,
   BusinessMetaField,
 } from "@/features/platform-admin/components/BusinessMetaBadges";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 interface BusinessesGridProps {
   data?: Business[];
@@ -49,32 +50,24 @@ const BusinessCard = memo(function BusinessCard({
 
   const borderClasses = [
     index !== total - 1 ? "border-b border-slate-100 dark:border-white/5" : "",
-    index % 2 === 0 ? "sm:border-r sm:border-b-0" : "sm:border-r-0",
-    index < total - (total % 2 === 0 ? 2 : 1) ? "sm:border-b" : "sm:border-b-0",
+    index % 2 === 0 ? "lg:border-r lg:border-b-0" : "lg:border-r-0",
+    index < total - (total % 2 === 0 ? 2 : 1) ? "lg:border-b" : "lg:border-b-0",
+    index % 3 !== 2 ? "xl:border-r xl:border-b-0" : "xl:border-r-0",
+    index < total - (total % 3 === 0 ? 3 : total % 3)
+      ? "xl:border-b"
+      : "xl:border-b-0",
   ].join(" ");
 
   return (
     <div
-      className={`group relative flex h-full flex-col bg-transparent p-4 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-all duration-300 transform-gpu ${borderClasses}`}
+      className={`group relative flex h-full flex-col bg-transparent p-4 sm:p-5 md:p-6 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-all duration-300 transform-gpu ${borderClasses}`}
       style={{
         contentVisibility: "auto",
         containIntrinsicSize: "330px",
       }}
     >
-      {onManageSessions && (
-        <button
-          type="button"
-          onClick={() => onManageSessions(item)}
-          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 transition-colors hover:bg-emerald-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 sm:right-4 sm:top-4 sm:h-10 sm:w-10 sm:rounded-xl dark:text-emerald-300"
-          title="Manage sessions"
-          aria-label={`Manage sessions for ${item.name}`}
-        >
-          <ShieldCheck className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
-        </button>
-      )}
-
       {/* Header Section */}
-      <div className={`flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3 ${onManageSessions ? "pr-11 sm:pr-12" : ""}`}>
+      <div className="flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3">
         <div className="relative w-10 h-10 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-gray-200 shrink-0 shadow-sm">
           {avatarUrl && !imgError ? (
             <Image
@@ -121,26 +114,73 @@ const BusinessCard = memo(function BusinessCard({
       </div>
 
       {/* Actions Section */}
-      <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-2 sm:pt-3 border-t border-gray-200 sm:gap-2">
+      <div className="mt-auto flex items-center gap-1.5 sm:gap-2 pt-2 sm:pt-3 border-t border-gray-200">
         {onViewAnalytics && (
-          <button onClick={() => onViewAnalytics(item)} className="flex flex-1 items-center justify-center gap-1 rounded-lg sm:rounded-xl border border-sky-500/30 bg-sky-500/10 px-2 py-2 text-xs font-medium text-sky-700 hover:bg-sky-500/20 min-w-0 cursor-pointer" title="بینینی ئامار">
-            <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" /><span className="hidden sm:inline">ئامار</span>
-          </button>
+          <Tooltip content="بینینی ئامار" side="top" className="flex-1">
+            <button
+              type="button"
+              onClick={() => onViewAnalytics(item)}
+              className="w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-700 hover:text-sky-800 transition-all duration-200 text-xs font-medium cursor-pointer"
+              title="بینینی ئامار"
+              aria-label={`بینینی ئاماری ${item.name}`}
+            >
+              <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden lg:inline text-xs">ئامار</span>
+            </button>
+          </Tooltip>
         )}
         {onEdit && (
-          <button onClick={() => onEdit(item)} className="flex flex-1 items-center justify-center gap-1 rounded-lg sm:rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-2 py-2 text-xs font-medium text-yellow-700 hover:bg-yellow-500/20 min-w-0 cursor-pointer" title="دەستکاری">
-            <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" /><span className="hidden sm:inline">دەستکاری</span>
-          </button>
+          <Tooltip content="دەستکاریکردن" side="top" className="flex-1">
+            <button
+              type="button"
+              onClick={() => onEdit(item)}
+              className="w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-700 hover:text-yellow-800 transition-all duration-200 text-xs font-medium cursor-pointer"
+              title="دەستکاریکردن"
+              aria-label={`دەستکاریکردنی ${item.name}`}
+            >
+              <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden lg:inline text-xs">دەستکاریکردن</span>
+            </button>
+          </Tooltip>
         )}
-        {onDelete && (
-          <button onClick={() => onDelete(item.id, item.name)} className="flex flex-1 items-center justify-center gap-1 rounded-lg sm:rounded-xl border border-red-500/30 bg-red-500/10 px-2 py-2 text-xs font-medium text-red-700 hover:bg-red-500/20 min-w-0 cursor-pointer" title="سڕینەوە">
-            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" /><span className="hidden sm:inline">سڕینەوە</span>
-          </button>
+        {onManageSessions && (
+          <Tooltip content="بەڕێوەبردنی دانیشتنەکان" side="top">
+            <button
+              type="button"
+              onClick={() => onManageSessions(item)}
+              className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 hover:text-emerald-800 transition-all duration-200 cursor-pointer dark:text-emerald-300"
+              title="Manage sessions"
+              aria-label={`Manage sessions for ${item.name}`}
+            >
+              <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </button>
+          </Tooltip>
         )}
         {onOpenDashboard && item.subdomain && item.status === "active" && (
-          <button onClick={() => onOpenDashboard(item)} className="flex items-center justify-center rounded-lg sm:rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-2 py-2 text-indigo-700 hover:bg-indigo-500/20 transition-all cursor-pointer" title="Open dashboard as this business" aria-label={`Open the dashboard as ${item.name}`}>
-            <LogIn className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-          </button>
+          <Tooltip content="چوونە ناو داشبۆرد وەک ئەم بزنسە" side="top">
+            <button
+              type="button"
+              onClick={() => onOpenDashboard(item)}
+              className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20 hover:text-indigo-800 transition-all duration-200 cursor-pointer"
+              title="Open dashboard as this business"
+              aria-label={`Open the dashboard as ${item.name}`}
+            >
+              <LogIn className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </button>
+          </Tooltip>
+        )}
+        {onDelete && (
+          <Tooltip content="سڕینەوە" side="top">
+            <button
+              type="button"
+              onClick={() => onDelete(item.id, item.name)}
+              className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-700 hover:text-red-800 transition-all duration-200 cursor-pointer"
+              title="سڕینەوە"
+              aria-label={`سڕینەوەی ${item.name}`}
+            >
+              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </button>
+          </Tooltip>
         )}
       </div>
     </div>
@@ -172,7 +212,7 @@ export const BusinessesGrid = memo(function BusinessesGrid({
 
   return (
     <div dir="ltr">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-0">
         {visibleData.map((item, index) => (
           <BusinessCard
             key={item.id}

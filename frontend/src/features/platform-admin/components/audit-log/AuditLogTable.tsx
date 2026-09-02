@@ -3,6 +3,7 @@
 import type { AuditLogEntry } from "@linktree/types";
 import { Eye } from "lucide-react";
 import { TablePagination } from "@/components/shared/TablePagination";
+import { Tooltip } from "@/components/shared/Tooltip";
 import {
   actorTypeLabel,
   eventLabel,
@@ -91,18 +92,20 @@ export function AuditLogTable({
                     <td className="px-4 py-3.5 font-mono text-[11px] text-slate-500 dark:text-slate-400" dir="ltr">{event.ipAddress || "—"}</td>
                     <td className="whitespace-nowrap px-4 py-3.5 text-xs text-slate-500 dark:text-slate-400">{formatAuditDate(event.createdAt)}</td>
                     <td className="px-3 py-3.5">
-                      <button
-                        type="button"
-                        onClick={(clickEvent) => {
-                          clickEvent.stopPropagation();
-                          onSelect(event);
-                        }}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-sky-600 transition hover:bg-sky-50 dark:hover:bg-sky-500/10"
-                        title="بینین"
-                        aria-label="بینینی وردەکاری"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
+                      <Tooltip content="بینینی وردەکاری" side="top">
+                        <button
+                          type="button"
+                          onClick={(clickEvent) => {
+                            clickEvent.stopPropagation();
+                            onSelect(event);
+                          }}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-sky-600 transition hover:bg-sky-50 dark:hover:bg-sky-500/10 cursor-pointer"
+                          title="بینین"
+                          aria-label="بینینی وردەکاری"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                      </Tooltip>
                     </td>
                   </tr>
                 );

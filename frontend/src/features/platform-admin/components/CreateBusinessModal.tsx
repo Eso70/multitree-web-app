@@ -1,6 +1,7 @@
 "use client";
 
 import { MotionSpinner } from "@/components/motion/MotionPrimitives";
+import { SkeletonBusinessInfoForm } from "@/components/shared/SkeletonModalLayouts";
 
 import {
   memo,
@@ -652,12 +653,7 @@ setUploadError(null);
               <InlineRequestError className="mb-4" error={uploadError} />
             )}
             {isLoadingEditData ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <MotionSpinner className="mb-4">
-                  <span className="sa-border-top h-12 w-12 rounded-full border-3 border-slate-200" />
-                </MotionSpinner>
-                <p className="text-sm text-slate-500">Loading business data...</p>
-              </div>
+              <SkeletonBusinessInfoForm />
             ) : (
               <BusinessInfoStep
                 name={businessName}

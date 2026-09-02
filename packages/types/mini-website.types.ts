@@ -40,7 +40,6 @@ export type MiniWebsiteSectionKey =
   | "branches"
   | "partners"
   | "serviceAreas"
-  | "leadForm"
   | "pricing"
   | "customBlocks";
 
@@ -983,146 +982,6 @@ export function createMiniWebsiteFaqEntry(
 }
 
 /**
- * What a single question on the lead form asks for.
- *
- * `phone` and `email` are separate from `text` because they decide the mobile
- * keyboard, the browser autofill hint, and — through the field's mapping — which
- * encrypted CRM contact column the answer is stored in.
- */
-export type MiniWebsiteLeadFieldType =
-  | "text"
-  | "textarea"
-  | "email"
-  | "phone"
-  | "number"
-  | "select"
-  | "date"
-  | "checkbox";
-
-export const MINI_WEBSITE_LEAD_FIELD_TYPES: readonly MiniWebsiteLeadFieldType[] =
-  [
-    "text",
-    "textarea",
-    "email",
-    "phone",
-    "number",
-    "select",
-    "date",
-    "checkbox",
-  ] as const;
-
-/**
- * Which CRM identity column an answer becomes.
- *
- * The three mapped answers are the only ones treated as identity: they are
- * encrypted at rest, hashed for de-duplication, and are what a TikTok custom
- * audience is later built from. Everything else is stored as lead metadata, so
- * a business asking "which branch is nearest to you?" never turns that answer
- * into a contact record it has no consent to match on.
- */
-export type MiniWebsiteLeadFieldMapping = "none" | "name" | "email" | "phone";
-
-export const MINI_WEBSITE_LEAD_FIELD_MAPPINGS: readonly MiniWebsiteLeadFieldMapping[] =
-  ["none", "name", "email", "phone"] as const;
-
-/** The mapping each field type may claim; anything else falls back to `none`. */
-export const MINI_WEBSITE_LEAD_MAPPING_TYPES: Record<
-  Exclude<MiniWebsiteLeadFieldMapping, "none">,
-  readonly MiniWebsiteLeadFieldType[]
-> = {
-  name: ["text"],
-  email: ["email"],
-  phone: ["phone"],
-};
-
-export interface MiniWebsiteLeadField {
-  id: string;
-  label: string;
-  placeholder: string;
-  /** Optional line under the input, for a format hint or a reassurance. */
-  helpText: string;
-  type: MiniWebsiteLeadFieldType;
-  mapping: MiniWebsiteLeadFieldMapping;
-  required: boolean;
-  /** Choices for a `select`; ignored by every other type. */
-  options: string[];
-}
-
-export const MINI_WEBSITE_MAX_LEAD_FIELDS = 12;
-export const MINI_WEBSITE_MAX_LEAD_FIELD_OPTIONS = 20;
-/** Upper bound on one answer, so a submission cannot be used as storage. */
-export const MINI_WEBSITE_MAX_LEAD_ANSWER_LENGTH = 1_000;
-
-/**
- * The enquiry form a visitor fills in, and what happens around it.
- *
- * Unlike every other section, this one is written *by the public*: the business
- * describes the questions, and each submission becomes a CRM contact and lead.
- * The consent line is therefore part of the form rather than decoration — it is
- * the record of what the visitor agreed to when they handed over their details.
- */
-export interface MiniWebsiteLeadForm {
-  title: string;
-  description: string;
-  /** Text on the button; empty falls back to a default. */
-  submitLabel: string;
-  /** Shown in place of the form once a submission is accepted. */
-  successMessage: string;
-  /** The sentence beside the consent checkbox. Empty hides the checkbox. */
-  consentText: string;
-  /** When true the form cannot be submitted until consent is ticked. */
-  consentRequired: boolean;
-  fields: MiniWebsiteLeadField[];
-}
-
-export function createMiniWebsiteLeadField(
-  type: MiniWebsiteLeadFieldType = "text",
-  id = `lead-field-${Math.random().toString(36).slice(2, 10)}`,
-): MiniWebsiteLeadField {
-  return {
-    id,
-    label: "",
-    placeholder: "",
-    helpText: "",
-    type,
-    mapping: type === "email" ? "email" : type === "phone" ? "phone" : "none",
-    required: false,
-    options: [],
-  };
-}
-
-/**
- * A blank form that already asks the three things a lead is useless without.
- *
- * Starting empty would let a business publish a form that collects answers it
- * can never follow up on, so the default asks for a name and one way to reply.
- */
-export function createMiniWebsiteLeadForm(): MiniWebsiteLeadForm {
-  return {
-    title: "",
-    description: "",
-    submitLabel: "",
-    successMessage: "",
-    consentText: "",
-    consentRequired: false,
-    fields: [
-      {
-        ...createMiniWebsiteLeadField("text"),
-        label: "ناو",
-        mapping: "name",
-        required: true,
-      },
-      {
-        ...createMiniWebsiteLeadField("phone"),
-        label: "ژمارەی مۆبایل",
-        required: true,
-      },
-      { ...createMiniWebsiteLeadField("textarea"), label: "پەیامەکەت" },
-    ],
-  };
-}
-
-/**
  * One tier in the pricing table.
  *
  * `services` already lists what a business sells, one card at a time. A plan is
@@ -1230,7 +1089,6 @@ export const MINI_WEBSITE_SECTION_KEYS: readonly MiniWebsiteSectionKey[] = [
   "ownedProperties",
   "education",
   "experience",
-  "leadForm",
   "pricing",
 ] as const;
 

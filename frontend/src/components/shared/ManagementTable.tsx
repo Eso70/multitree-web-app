@@ -166,7 +166,7 @@ export function ManagementTable<T>({
   if (isLoading) {
     return (
       <div className={`w-full ${className}`} dir="ltr">
-        <SkeletonTable rows={skeletonRows} />
+        <SkeletonTable rows={skeletonRows} columns={columnCount} />
       </div>
     );
   }

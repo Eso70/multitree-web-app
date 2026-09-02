@@ -86,4 +86,50 @@ describe("BusinessPageAnalyticsModal summary mode", () => {
     );
     expect(onAnalyticsCleared).toHaveBeenCalledOnce();
   });
+
+  it("uses the client-scoped endpoints without analytics deletion", async () => {
+    const fetchMock = vi.fn((url: string) =>
+      Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            data: url.endsWith("/actions")
+              ? []
+              : {
+                  total_views: 10,
+                  unique_views: 6,
+                  total_clicks: 4,
+                  unique_clicks: 2,
+                  conversions: 0,
+                  conversion_value: 0,
+                },
+          }),
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <BusinessPageAnalyticsModal
+        isOpen
+        onClose={vi.fn()}
+        pageId="ignored-client-page-id"
+        pageName="Client page"
+        dataSource="client-linktree"
+        canClearAnalytics={false}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText("10")).toBeInTheDocument());
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/client-linktree-access/analytics/summary",
+      expect.objectContaining({ credentials: "include", cache: "no-store" }),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/client-linktree-access/analytics/actions",
+      expect.objectContaining({ credentials: "include", cache: "no-store" }),
+    );
+    expect(
+      screen.queryByRole("button", { name: "پاککردنەوەی داتاکان" }),
+    ).toBeNull();
+  });
 });

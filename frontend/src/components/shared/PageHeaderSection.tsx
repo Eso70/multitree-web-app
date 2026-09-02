@@ -7,10 +7,10 @@ import { PageHeader } from "./PageHeader";
 /**
  * `PageHeader` + a field grid, the shape every tabbed dashboard page
  * re-implements locally to render its active tab's content (see
- * BusinessSettingsPage's `SettingsSection`, BusinessAnalyticsPage's
- * `meta`-driven header). Centralized here so new tabbed pages (e.g. the
+ * BusinessSettingsPage's `SettingsSection`). Centralized here so new tabbed
+ * pages (e.g. the
  * advertising service tabs) share the exact same header icon/title sizing
- * as the Linktrees, Mini Website, and Analytics pages instead of growing
+ * as the Linktrees, Mini Website, and Settings pages instead of growing
  * their own header style.
  */
 export function PageHeaderSection({

@@ -9,6 +9,7 @@ import {
   useRef,
 } from "react";
 import { Loader2, Send } from "lucide-react";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 const MESSAGE_MAX_LENGTH = 5000;
 const COMPOSER_MAX_HEIGHT = 200;
@@ -61,21 +62,22 @@ export const ChatComposer = forwardRef<
         placeholder={placeholder}
         className="max-h-[200px] min-h-[24px] flex-1 resize-none overflow-y-auto bg-transparent px-2 py-1.5 text-sm leading-6 text-slate-700 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed dark:text-slate-200 dark:placeholder:text-slate-500"
       />
-      <button
-        type="button"
-        onClick={onSubmit}
-        disabled={!canSend}
-        aria-label="ناردن"
-        title="ناردن (Enter)"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full shadow-sm transition disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300 disabled:shadow-none dark:disabled:bg-white/5 dark:disabled:text-slate-600"
-        style={canSend ? { background: "var(--theme-css)", color: "var(--theme-ink)" } : undefined}
-      >
-        {sending ? (
-          <MotionSpinner><Loader2 className="h-4 w-4 "  /></MotionSpinner>
-        ) : (
-          <Send className="h-4 w-4" />
-        )}
-      </button>
+      <Tooltip content="ناردن (Enter)" side="top">
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={!canSend}
+          aria-label="ناردن"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full shadow-sm transition disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300 disabled:shadow-none dark:disabled:bg-white/5 dark:disabled:text-slate-600 cursor-pointer"
+          style={canSend ? { background: "var(--theme-css)", color: "var(--theme-ink)" } : undefined}
+        >
+          {sending ? (
+            <MotionSpinner><Loader2 className="h-4 w-4 "  /></MotionSpinner>
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
+        </button>
+      </Tooltip>
     </div>
   );
 });

@@ -3,7 +3,7 @@ import { join } from 'path';
 import { baselineDir, baselineFiles } from './baseline';
 
 /**
- * The numbered baseline was rebaselined on 2026-08-20 to include every dated
+ * The numbered baseline was rebaselined on 2026-08-24 to include every dated
  * forward migration then present. Those files were deleted because this
  * project explicitly recreates its disposable database from the baseline.
  *
@@ -145,6 +145,11 @@ describe('full_schema.sql baseline', () => {
   });
 
   describe('mini-website template retirement', () => {
+    it('does not seed Business mini-website creation access', () => {
+      expect(DATA).not.toContain("'business:mini-websites:create'");
+      expect(DATA).toContain("'platform:mini-websites:create'");
+    });
+
     it('leaves liquid-glass as the only permitted template', () => {
       expect(SCHEMA).toContain('mini_websites_template_key_check');
       expect(SCHEMA).toContain("template_key IN ('liquid-glass')");
@@ -172,18 +177,77 @@ describe('full_schema.sql baseline', () => {
     });
   });
 
+  describe('Branch Signal Linktree template', () => {
+    it('grants the premium template only to the Ultra baseline configuration', () => {
+      const grants = DATA.match(
+        /INSERT INTO public\.billing_plan_templates[^\n]*'branch-signal'[^\n]*/g,
+      );
+
+      expect(grants).toHaveLength(1);
+      expect(grants?.[0]).toContain("'3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd'");
+    });
+  });
+
+  describe('2026-08-24 CRM retirement', () => {
+    it('creates no CRM or mini-website lead-form tables', () => {
+      for (const retiredTable of [
+        'mini_website_lead_forms',
+        'crm_audience_export_members',
+        'crm_audience_exports',
+        'crm_lead_tags',
+        'crm_tags',
+        'crm_notes',
+        'crm_lead_events',
+        'crm_lead_status_history',
+        'crm_leads',
+        'crm_contacts',
+      ]) {
+        expect(SCHEMA).not.toContain(`CREATE TABLE public.${retiredTable}`);
+      }
+    });
+
+    it('registers no legacy lead-form public action', () => {
+      expect(SCHEMA).not.toContain("'leadForm'");
+      expect(DATA).not.toContain("'leadForm'");
+    });
+  });
+
+  describe('2026-08-24 Advanced Analytics retirement', () => {
+    it('keeps core rollups without advanced-only storage', () => {
+      expect(SCHEMA).not.toContain(
+        'CREATE TABLE public.analytics_dimension_daily',
+      );
+      expect(tableBlock('analytics_page_daily')).not.toMatch(
+        /\bnew_(?:visitors|clickers)\b/,
+      );
+      expect(tableBlock('analytics_action_daily')).not.toContain(
+        'new_clickers',
+      );
+    });
+
+    it('seeds no advanced permissions or billing entitlements', () => {
+      for (const retiredKey of [
+        'business:analytics:advanced-read',
+        'business:analytics:daily-read',
+        'business:analytics:range-read',
+        'feature.advanced_analytics',
+        'limit.analytics_range_days',
+      ]) {
+        expect(DATA).not.toContain(retiredKey);
+      }
+    });
+  });
+
   /**
-   * The folded migrations were deleted with the rebaseline: every database is
-   * recreated from this baseline, so the files had no upgrade path left to
-   * serve. The runner stays — `applyForwardMigrations` simply finds nothing
-   * until the next dated migration is added.
-   *
-   * A `.sql` file reappearing here is not a failure of this rebaseline; it is
-   * the next schema change, and it must be dated so it sorts after this
-   * baseline. This assertion exists to make that a deliberate act.
+   * Folded migrations were deleted with the rebaseline. New changes remain as
+   * dated forward migrations until the next deliberate rebaseline. Listing
+   * them explicitly prevents an accidental SQL file from silently entering
+   * the production upgrade sequence.
    */
-  it('has no dated forward migrations after the current rebaseline', () => {
-    expect(readdirSync(MIGRATIONS_DIR)).toEqual(['baseline']);
+  it('has only deliberate dated forward migrations after the current rebaseline', () => {
+    expect(readdirSync(MIGRATIONS_DIR).sort()).toEqual([
+      'baseline',
+    ]);
   });
 
   /**

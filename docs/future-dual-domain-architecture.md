@@ -15,16 +15,16 @@ keeping every business on a separate tenant domain.
 
 Example target:
 
-| Surface                        | URL                                              |
-| ------------------------------ | ------------------------------------------------ |
-| Public MultiTree website       | `https://multitree.com`                          |
-| Business signup                | `https://multitree.com/join`                     |
-| Platform administrator console | `https://multitree.com/<private-console-path>`   |
-| Google OAuth callback          | `https://multitree.com/api/auth/google/callback` |
-| Tenant apex                    | `https://sponsor.krd`                            |
-| Business public website        | `https://acme.sponsor.krd`                       |
-| Business login                 | `https://acme.sponsor.krd/business/login`        |
-| Business dashboard             | `https://acme.sponsor.krd/business`              |
+| Surface                        | URL                                                 |
+| ------------------------------ | --------------------------------------------------- |
+| Public MultiTree website       | `https://multitree.com`                             |
+| Business signup                | `https://multitree.com/join`                        |
+| Platform administrator console | `https://multitree.com/<private-console-path>`      |
+| Google OAuth callback          | `https://multitree.com/api/auth/google/callback`    |
+| Tenant apex                    | `https://sponsor.krd`                               |
+| Business public website        | `https://acme.sponsor.krd`                          |
+| Business login                 | `https://acme.sponsor.krd/business/workspace-entry` |
+| Business dashboard             | `https://acme.sponsor.krd/business`                 |
 
 `multitree.com` is the **platform domain**. `sponsor.krd` is the **tenant root
 domain**. A business subdomain remains globally unique within the tenant root.
@@ -148,8 +148,8 @@ Expected output:
 platformUrl('/join')
   -> https://multitree.com/join
 
-tenantUrl('acme', '/business/login')
-  -> https://acme.sponsor.krd/business/login
+tenantUrl('acme', '/business/workspace-entry')
+  -> https://acme.sponsor.krd/business/workspace-entry
 ```
 
 Only validated database subdomains may be passed to tenant URL builders. URL
@@ -164,14 +164,16 @@ and unexpected schemes.
 2. Google OAuth or email-code signup completes on the platform domain.
 3. The application is reviewed by a platform administrator.
 4. Approval assigns a business subdomain under `sponsor.krd`.
-5. The user opens `https://<name>.sponsor.krd/business/login`.
+5. The user opens
+   `https://<name>.sponsor.krd/business/workspace-entry`.
 
 Invitation, approval, expiration, and legal links must always use the platform
 base URL.
 
 ### Business Google sign-in
 
-1. Sign-in begins on `https://acme.sponsor.krd/business/login`.
+1. Sign-in begins on
+   `https://acme.sponsor.krd/business/workspace-entry`.
 2. The browser is redirected to Google.
 3. Google returns to the fixed callback on `multitree.com`.
 4. The backend verifies state, PKCE, nonce, identity, membership, and the exact

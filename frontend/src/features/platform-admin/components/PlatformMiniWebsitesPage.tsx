@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { DashboardSurface } from "@/components/shared/DashboardSurface";
-import {
-  SkeletonCardGrid,
-  SkeletonStatCards,
-} from "@/components/shared/Skeleton";
+import { SkeletonPageManagement } from "@/components/shared/SkeletonPageLayouts";
 import { MiniWebsitesPage } from "@/features/mini-website/MiniWebsitesPage";
 import { PLATFORM_MINI_WEBSITE_WORKSPACE } from "@/features/mini-website/workspace-config";
 import { apiRequest } from "@/lib/api/request";
@@ -46,14 +42,7 @@ export function PlatformMiniWebsitesPage() {
   }, []);
 
   if (!context) {
-    return (
-      <div className="space-y-8">
-        <SkeletonStatCards count={6} />
-        <DashboardSurface>
-          <SkeletonCardGrid count={6} />
-        </DashboardSurface>
-      </div>
-    );
+    return <SkeletonPageManagement />;
   }
 
   return (

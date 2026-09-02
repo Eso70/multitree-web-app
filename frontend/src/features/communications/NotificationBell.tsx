@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Bell, CheckCheck, ChevronRight, Inbox, Trash2, X } from "lucide-react";
 import { DashboardHeaderActionButton } from "@/components/shared/DashboardHeader";
 import { ManagementModal } from "@/components/shared/ManagementModal";
-import { SkeletonList } from "@/components/shared/Skeleton";
+import { Tooltip } from "@/components/shared/Tooltip";
+import { SkeletonNotificationList } from "@/components/shared/SkeletonCommunicationLayouts";
 import { formatNotificationDate } from "./format";
 import type { CommunicationNotification, NotificationInbox } from "./types";
 
@@ -105,23 +106,24 @@ export function NotificationBell({
         } as React.CSSProperties
       }
     >
-      <DashboardHeaderActionButton
-        onClick={() => {
-          const nextOpen = !open;
-          setOpen(nextOpen);
-          if (nextOpen) void onRefresh();
-        }}
-        aria-label="ئاگادارییەکان"
-        aria-expanded={open}
-        title="ئاگادارییەکان"
-      >
-        <Bell className="h-4 w-4 transition-transform group-hover:scale-110 sm:h-4 sm:w-4 md:h-5 md:w-5" />
-        {unreadTotal > 0 && (
-          <span className="absolute -right-1.5 -top-1.5 flex min-h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[9px] font-black text-white dark:border-[#161B22]">
-            {unreadTotal > 99 ? "99+" : unreadTotal}
-          </span>
-        )}
-      </DashboardHeaderActionButton>
+      <Tooltip content="ئاگادارییەکان" side="bottom">
+        <DashboardHeaderActionButton
+          onClick={() => {
+            const nextOpen = !open;
+            setOpen(nextOpen);
+            if (nextOpen) void onRefresh();
+          }}
+          aria-label="ئاگادارییەکان"
+          aria-expanded={open}
+        >
+          <Bell className="h-4 w-4 transition-transform group-hover:scale-110 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+          {unreadTotal > 0 && (
+            <span className="absolute -right-1.5 -top-1.5 flex min-h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[9px] font-black text-white dark:border-[#161B22]">
+              {unreadTotal > 99 ? "99+" : unreadTotal}
+            </span>
+          )}
+        </DashboardHeaderActionButton>
+      </Tooltip>
 
       {open && (
         <div className="fixed inset-x-3 top-20 z-50 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl duration-200 dark:border-white/10 dark:bg-[#1c222b] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-3 sm:w-[26rem]">
@@ -140,38 +142,49 @@ export function NotificationBell({
               </div>
             </div>
             <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => void onDeleteAll().catch(() => undefined)}
-                disabled={inbox.items.length === 0}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-rose-500 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent dark:text-rose-400 dark:hover:bg-rose-500/10 dark:hover:text-rose-300 dark:disabled:hover:bg-transparent"
-                title="سڕینەوەی هەموو ئاگادارییەکان"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200"
-                title="داخستن"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => void onMarkAllRead().catch(() => undefined)}
-                disabled={inbox.unreadCount === 0}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200 dark:disabled:hover:bg-transparent"
-                title="هەمووی خوێندراوەتەوە"
-              >
-                <CheckCheck className="h-4 w-4" />
-              </button>
+              <Tooltip content="سڕینەوەی هەموو ئاگادارییەکان" side="bottom">
+                <button
+                  type="button"
+                  onClick={() => void onDeleteAll().catch(() => undefined)}
+                  disabled={inbox.items.length === 0}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-rose-500 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent dark:text-rose-400 dark:hover:bg-rose-500/10 dark:hover:text-rose-300 dark:disabled:hover:bg-transparent cursor-pointer"
+                  title="سڕینەوەی هەموو ئاگادارییەکان"
+                  aria-label="سڕینەوەی هەموو ئاگادارییەکان"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </Tooltip>
+              <Tooltip content="داخستن" side="bottom">
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200 cursor-pointer"
+                  title="داخستن"
+                  aria-label="داخستن"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </Tooltip>
+              <Tooltip content="هەمووی خوێندراوەتەوە" side="bottom">
+                <button
+                  type="button"
+                  onClick={() => void onMarkAllRead().catch(() => undefined)}
+                  disabled={inbox.unreadCount === 0}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200 dark:disabled:hover:bg-transparent cursor-pointer"
+                  title="هەمووی خوێندراوەتەوە"
+                  aria-label="هەمووی خوێندراوەتەوە"
+                >
+                  <CheckCheck className="h-4 w-4" />
+                </button>
+              </Tooltip>
             </div>
           </div>
 
           <div className="custom-scrollbar max-h-[min(36rem,72vh)] overflow-y-auto">
             {loading ? (
-              <SkeletonList className="m-3" rows={4} />
+              <div className="m-3 overflow-hidden rounded-2xl border border-slate-100 dark:border-white/10">
+                <SkeletonNotificationList rows={4} />
+              </div>
             ) : hasContent ? (
               <div className="divide-y divide-slate-100 dark:divide-white/5">
                 {inbox.items.map((item) => (
@@ -229,17 +242,19 @@ export function NotificationBell({
                       {canOpenAction(item) && (
                         <ChevronRight className="mt-1.5 h-3.5 w-3.5 shrink-0 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100 dark:text-gray-600" />
                       )}
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void dismissNotification(item.id);
-                        }}
-                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-300 opacity-0 transition-colors group-hover:opacity-100 hover:bg-red-50 hover:text-red-400 dark:text-gray-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
-                        title="سڕینەوە"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <Tooltip content="سڕینەوە" side="top">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void dismissNotification(item.id);
+                          }}
+                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-300 opacity-0 transition-colors group-hover:opacity-100 hover:bg-red-50 hover:text-red-400 dark:text-gray-600 dark:hover:bg-red-500/10 dark:hover:text-red-400 cursor-pointer"
+                          aria-label="سڕینەوە"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </Tooltip>
                     </div>
                   </div>
                 ))}

@@ -3,6 +3,7 @@
 import { ArrowLeft, Loader2, Mail } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api/request";
+import { MotionSpinner } from "@/components/motion/MotionPrimitives";
 
 type EmailChallenge = {
   challengeId: string;
@@ -144,7 +145,9 @@ export function EmailCodeAuthenticationForm({
           className="flex h-12 w-full items-center justify-center rounded-xl bg-[var(--multitree-accent)] px-4 text-sm font-bold text-[var(--multitree-accent-ink)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <MotionSpinner>
+              <Loader2 className="h-4 w-4" />
+            </MotionSpinner>
           ) : (
             verifyActionLabel
           )}
@@ -191,7 +194,13 @@ export function EmailCodeAuthenticationForm({
         disabled={busy}
         className="flex h-12 w-full items-center justify-center rounded-xl bg-[var(--multitree-accent)] px-4 text-sm font-bold text-[var(--multitree-accent-ink)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : actionLabel}
+        {busy ? (
+          <MotionSpinner>
+            <Loader2 className="h-4 w-4" />
+          </MotionSpinner>
+        ) : (
+          actionLabel
+        )}
       </button>
     </form>
   );

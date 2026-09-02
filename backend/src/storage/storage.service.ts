@@ -330,6 +330,25 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
     return result.rows.map((row) => row.public_url);
   }
 
+  /** Verify that every submitted upload URL belongs to the expected tenant. */
+  async areBusinessAssetsOwned(
+    businessId: string,
+    ...values: unknown[]
+  ): Promise<boolean> {
+    if (!this.database) return false;
+    const urls = this.extractUploadedUrls(values);
+    if (!urls.length) return true;
+    const result = await this.database.query<{ total: string }>(
+      `SELECT COUNT(DISTINCT public_url)::text AS total
+         FROM uploaded_media_assets
+        WHERE owner_business_id=$1::uuid
+          AND scope='business'
+          AND public_url=ANY($2::text[])`,
+      [businessId, urls],
+    );
+    return Number(result.rows[0]?.total || 0) === urls.length;
+  }
+
   private async deleteIfUnreferenced(url: string): Promise<boolean> {
     if (!this.database || !this.keyFromUrl(url)) return false;
     const result = await this.database.query<{ referenced: boolean }>(

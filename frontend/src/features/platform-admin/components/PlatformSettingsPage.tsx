@@ -47,6 +47,8 @@ import { MULTITREE_LOGO, MULTITREE_LOGO_MARK } from "@/lib/brand/brand-assets";
 import { BusinessTikTokPixelConfigPage } from "@/features/analytics/components/BusinessTikTokPixelConfigPage";
 import { ThemeProvider } from "@/lib/contexts/ThemeProvider";
 import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
+import { SkeletonActivityList, SkeletonSessionList } from "@/components/shared/SkeletonCommunicationLayouts";
+import { SkeletonMediaSettings, SkeletonRetentionSettings } from "./PlatformSettingsSkeletons";
 
 type Tab = "general" | "security" | "retention" | "media" | "tiktok";
 
@@ -890,9 +892,7 @@ export function PlatformSettingsPage() {
               </div>
               <div className="space-y-3">
                 {isSecurityLoading && sessions.length === 0 ? (
-                  <p className="py-8 text-center text-xs text-slate-400">
-                    Loading sessions…
-                  </p>
+                  <SkeletonSessionList rows={3} />
                 ) : sessions.length === 0 ? (
                   <p className="py-8 text-center text-xs text-slate-400">
                     No active sessions found.
@@ -962,7 +962,9 @@ export function PlatformSettingsPage() {
               مێژووی چوونەژوورەوە
             </h3>
             <div className="mt-4 divide-y divide-slate-100 dark:divide-white/5">
-              {loginActivity.length === 0 ? (
+              {isSecurityLoading && loginActivity.length === 0 ? (
+                <SkeletonActivityList rows={4} />
+              ) : loginActivity.length === 0 ? (
                 <p className="py-6 text-center text-xs text-slate-400">
                   No recent login activity.
                 </p>
@@ -1004,9 +1006,7 @@ export function PlatformSettingsPage() {
           />
           <div className="mt-2 border-t border-slate-100 pt-5 dark:border-white/5">
             {isRetentionLoading && !retention ? (
-              <div className="py-14 text-center text-sm text-slate-400">
-                ڕێکخستنەکان بار دەکرێن…
-              </div>
+              <SkeletonRetentionSettings />
             ) : retention ? (
               <div className="space-y-6">
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -1160,9 +1160,7 @@ export function PlatformSettingsPage() {
           />
           <div className="mt-2 border-t border-slate-100 pt-5 dark:border-white/5">
             {isMediaLoading && !media ? (
-              <div className="py-14 text-center text-sm text-slate-400">
-                ڕێکخستنەکان بار دەکرێن…
-              </div>
+              <SkeletonMediaSettings />
             ) : media ? (
               <div className="space-y-6">
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

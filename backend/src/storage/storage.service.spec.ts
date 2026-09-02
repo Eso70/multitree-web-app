@@ -67,6 +67,27 @@ describe('StorageService', () => {
     expect(driver.objects.has('_legacy/flat/logo.png')).toBe(false);
   });
 
+  it('verifies submitted upload ownership without trusting the URL path', async () => {
+    const database = {
+      query: jest.fn().mockResolvedValue({ rows: [{ total: '1' }] }),
+    } as unknown as DatabaseService;
+    const managed = new StorageService(driver, database);
+
+    await expect(
+      managed.areBusinessAssetsOwned(
+        '22222222-2222-4222-8222-222222222222',
+        '/images/upload/businesses/some-path/profile.png',
+      ),
+    ).resolves.toBe(true);
+    expect(database.query).toHaveBeenCalledWith(
+      expect.stringContaining('owner_business_id=$1::uuid'),
+      [
+        '22222222-2222-4222-8222-222222222222',
+        ['/images/upload/businesses/some-path/profile.png'],
+      ],
+    );
+  });
+
   it('enforces the stored allowed-format policy', async () => {
     const database = {
       query: jest.fn().mockResolvedValue({

@@ -14,16 +14,21 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  X,
 } from "lucide-react";
 import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 import { TimeColumn } from "./TimeColumn";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 interface DateTimeInputProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
   hint?: string;
+  /** Earliest selectable date/datetime (ISO format matching the mode). */
   min?: string;
+  /** Latest selectable date/datetime (ISO format matching the mode). */
+  max?: string;
   disabled?: boolean;
   dateOnly?: boolean;
   required?: boolean;
@@ -39,7 +44,8 @@ interface DateTimeInputProps {
 const BUSINESS_ACCENT =
   "var(--business-website-color, var(--theme-primary, #64748b))";
 
-const monthNames = [
+// Full Kurdish month names for the calendar header / month selector.
+const MONTH_NAMES = [
   "کانوونی دووەم",
   "شوبات",
   "ئازار",
@@ -53,24 +59,25 @@ const monthNames = [
   "تشرینی دووەم",
   "کانوونی یەکەم",
 ];
-const weekdayNames = ["ی", "د", "س", "چ", "پ", "ه", "ش"];
+
+// 3-letter English abbreviations shown in the compact month picker grid.
+const MONTH_SHORT = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+const WEEKDAY_NAMES = ["ی", "د", "س", "چ", "پ", "ه", "ش"];
 
 function parseLocalDateTime(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
   if (!match) return null;
   const [, year, month, day, hour, minute] = match;
-  const date = new Date(
-    Number(year),
-    Number(month) - 1,
-    Number(day),
-    Number(hour),
-    Number(minute),
-  );
+  const date = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function formatLocalDateTime(date: Date) {
-  const pad = (value: number) => String(value).padStart(2, "0");
+  const pad = (v: number) => String(v).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
@@ -79,23 +86,18 @@ function parseLocalDate(value: string) {
   if (!match) return null;
   const [, year, month, day] = match;
   const date = new Date(Number(year), Number(month) - 1, Number(day));
-  if (
-    date.getFullYear() !== Number(year) ||
-    date.getMonth() !== Number(month) - 1 ||
-    date.getDate() !== Number(day)
-  )
-    return null;
+  if (date.getFullYear() !== Number(year) || date.getMonth() !== Number(month) - 1 || date.getDate() !== Number(day)) return null;
   return date;
 }
 
 function formatLocalDate(date: Date) {
-  const pad = (value: number) => String(value).padStart(2, "0");
+  const pad = (v: number) => String(v).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 function formatTypedDateTime(date: Date) {
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${pad(date.getFullYear() % 100)}/${pad(date.getMonth() + 1)}/${pad(date.getDate())}`;
+  const pad = (v: number) => String(v).padStart(2, "0");
+  return `${String(date.getFullYear()).slice(-2)}/${pad(date.getMonth() + 1)}/${pad(date.getDate())}`;
 }
 
 function parseTypedDateTime(value: string) {
@@ -107,40 +109,19 @@ function parseTypedDateTime(value: string) {
   const day = Number(dayText);
   if (month < 1 || month > 12 || day < 1) return null;
   const now = new Date();
-  const isToday =
-    year === now.getFullYear() &&
-    month === now.getMonth() + 1 &&
-    day === now.getDate();
-  const date = new Date(
-    year,
-    month - 1,
-    day,
-    isToday ? now.getHours() : 0,
-    isToday ? now.getMinutes() : 0,
-  );
-  if (
-    date.getFullYear() !== year ||
-    date.getMonth() !== month - 1 ||
-    date.getDate() !== day
-  )
-    return null;
+  const isToday = year === now.getFullYear() && month === now.getMonth() + 1 && day === now.getDate();
+  const date = new Date(year, month - 1, day, isToday ? now.getHours() : 0, isToday ? now.getMinutes() : 0);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
   return date;
 }
 
 function defaultDateTime() {
   const now = new Date();
-  return new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    now.getHours(),
-    now.getMinutes(),
-  );
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
 }
 
-function daysInMonth(shortYear: string, month: number) {
-  if (shortYear.length !== 2 || month < 1 || month > 12) return 31;
-  return new Date(2000 + Number(shortYear), month, 0).getDate();
+function daysInMonth(year: number, month: number) {
+  return new Date(year, month + 1, 0).getDate();
 }
 
 function formatMaskedDate(rawValue: string, previousValue: string) {
@@ -151,30 +132,25 @@ function formatMaskedDate(rawValue: string, previousValue: string) {
     const digits = parts[0].slice(0, 6);
     parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 6)];
   }
-
   let year = (parts[0] || "").slice(0, 2);
   const currentShortYear = new Date().getFullYear() % 100;
   if (year.length === 2 && Number(year) < currentShortYear) year = year[0];
   if (year.length < 2) return year;
   if (parts.length === 1) return deleting ? year : `${year}/`;
-
   let month = (parts[1] || "").slice(0, 2);
-  if (month.length === 1 && /^[2-9]$/.test(month) && !deleting)
-    month = `0${month}`;
+  if (month.length === 1 && /^[2-9]$/.test(month) && !deleting) month = `0${month}`;
   if (month.length === 2) {
-    const numericMonth = Number(month);
-    if (numericMonth < 1 || numericMonth > 12) month = month[0];
+    const n = Number(month);
+    if (n < 1 || n > 12) month = month[0];
   }
   if (month.length < 2) return `${year}/${month}`;
-  if (parts.length === 2)
-    return deleting ? `${year}/${month}` : `${year}/${month}/`;
-
+  if (parts.length === 2) return deleting ? `${year}/${month}` : `${year}/${month}/`;
   let day = (parts[2] || "").slice(0, 2);
   if (day.length === 1 && /^[4-9]$/.test(day) && !deleting) day = `0${day}`;
   if (day.length === 2) {
-    const maxDay = daysInMonth(year, Number(month));
-    const numericDay = Number(day);
-    if (numericDay < 1 || numericDay > maxDay) day = day[0];
+    const maxDay = daysInMonth(2000 + Number(year), Number(month) - 1);
+    const n = Number(day);
+    if (n < 1 || n > maxDay) day = day[0];
   }
   return `${year}/${month}/${day}`;
 }
@@ -183,13 +159,15 @@ function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function sameDay(first: Date, second: Date) {
-  return (
-    first.getFullYear() === second.getFullYear() &&
-    first.getMonth() === second.getMonth() &&
-    first.getDate() === second.getDate()
-  );
+function sameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
+
+// Year range: 10 years back so analytics/historical dates are reachable.
+const THIS_YEAR = new Date().getFullYear();
+const YEAR_START = THIS_YEAR - 10;
+const YEAR_END = THIS_YEAR + 30;
+const ALL_YEARS = Array.from({ length: YEAR_END - YEAR_START + 1 }, (_, i) => YEAR_START + i);
 
 export function DateTimeInput({
   label,
@@ -197,6 +175,7 @@ export function DateTimeInput({
   onChange,
   hint,
   min,
+  max,
   disabled = false,
   dateOnly = false,
   required = false,
@@ -207,53 +186,57 @@ export function DateTimeInput({
   const errorId = useId();
   const triggerRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLElement>(null);
+  const yearScrollRef = useRef<HTMLDivElement>(null);
+
   const parseValue = (candidate: string) =>
     dateOnly ? parseLocalDate(candidate) : parseLocalDateTime(candidate);
+
   const initialValue = parseValue(value);
   const [inputValue, setInputValue] = useState(() =>
     initialValue ? formatTypedDateTime(initialValue) : "",
   );
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [headerSelector, setHeaderSelector] = useState<"month" | "year" | null>(
-    null,
-  );
+  const [headerSelector, setHeaderSelector] = useState<"month" | "year" | null>(null);
   const [pickerPosition, setPickerPosition] = useState<{
     left: number;
     width: number;
     top?: number;
     bottom?: number;
   } | null>(null);
-  const [draft, setDraft] = useState<Date>(
-    () => parseValue(value) || defaultDateTime(),
-  );
+  const [draft, setDraft] = useState<Date>(() => parseValue(value) || defaultDateTime());
   const [visibleMonth, setVisibleMonth] = useState<Date>(() => {
     const initial = parseValue(value) || defaultDateTime();
     return new Date(initial.getFullYear(), initial.getMonth(), 1);
   });
 
   const minimum = min ? parseValue(min) : null;
+  const maximum = max ? parseValue(max) : null;
 
-  useModalKeyboard({
-    isOpen,
-    onEscape: () => setIsOpen(false),
-    escapeEnabled: true,
-  });
+  useModalKeyboard({ isOpen, onEscape: () => setIsOpen(false), escapeEnabled: true });
+
+  // Auto-scroll year grid to the selected year when panel opens.
+  useEffect(() => {
+    if (headerSelector === "year" && yearScrollRef.current) {
+      const selected = yearScrollRef.current.querySelector<HTMLElement>("[data-selected='true']");
+      selected?.scrollIntoView({ block: "center", behavior: "instant" });
+    }
+  }, [headerSelector]);
 
   const updatePickerPosition = useCallback(() => {
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const gap = 6;
+    const gap = 8;
     const viewportPadding = 8;
     const width = Math.min(
-      dateOnly ? 360 : 540,
+      dateOnly ? 308 : 500,
       window.innerWidth - viewportPadding * 2,
-      Math.max(dateOnly ? 320 : 500, rect.width),
+      Math.max(dateOnly ? 280 : 460, rect.width),
     );
     const left = Math.min(
       Math.max(viewportPadding, rect.left),
       window.innerWidth - width - viewportPadding,
     );
-    const estimatedHeight = 390;
+    const estimatedHeight = 380;
     const openAbove =
       window.innerHeight - rect.bottom < estimatedHeight + gap &&
       rect.top > estimatedHeight + gap;
@@ -271,10 +254,7 @@ export function DateTimeInput({
     updatePickerPosition();
     const closeOnOutsideClick = (event: MouseEvent) => {
       const target = event.target as Node;
-      if (
-        !triggerRef.current?.contains(target) &&
-        !pickerRef.current?.contains(target)
-      ) {
+      if (!triggerRef.current?.contains(target) && !pickerRef.current?.contains(target)) {
         setIsOpen(false);
       }
     };
@@ -289,10 +269,7 @@ export function DateTimeInput({
   }, [isOpen, updatePickerPosition]);
 
   const openPicker = () => {
-    const next =
-      parseTypedDateTime(inputValue) ||
-      parseValue(value) ||
-      defaultDateTime();
+    const next = parseTypedDateTime(inputValue) || parseValue(value) || defaultDateTime();
     setDraft(next);
     setVisibleMonth(new Date(next.getFullYear(), next.getMonth(), 1));
     setHeaderSelector(null);
@@ -304,21 +281,39 @@ export function DateTimeInput({
     const year = visibleMonth.getFullYear();
     const month = visibleMonth.getMonth();
     const firstWeekday = new Date(year, month, 1).getDay();
-    return Array.from(
-      { length: 42 },
-      (_, index) => new Date(year, month, index - firstWeekday + 1),
-    );
+    return Array.from({ length: 42 }, (_, i) => new Date(year, month, i - firstWeekday + 1));
   }, [visibleMonth]);
 
   const hour12 = draft.getHours() % 12 || 12;
   const period = draft.getHours() >= 12 ? "PM" : "AM";
-  const currentYear = new Date().getFullYear();
-  const atFirstAllowedMonth =
-    visibleMonth.getFullYear() === currentYear && visibleMonth.getMonth() === 0;
-  const atLastAllowedMonth =
-    visibleMonth.getFullYear() === 2099 && visibleMonth.getMonth() === 11;
+
+  const atFirstAllowedMonth = visibleMonth.getFullYear() <= YEAR_START && visibleMonth.getMonth() === 0;
+  const atLastAllowedMonth = visibleMonth.getFullYear() >= YEAR_END && visibleMonth.getMonth() === 11;
+
+  /** True when every day in the given month falls outside [min, max]. */
+  const isMonthDisabled = (year: number, monthIdx: number): boolean => {
+    if (minimum) {
+      const lastDay = new Date(year, monthIdx + 1, 0);
+      if (startOfDay(lastDay) < startOfDay(minimum)) return true;
+    }
+    if (maximum) {
+      const firstDay = new Date(year, monthIdx, 1);
+      if (startOfDay(firstDay) > startOfDay(maximum)) return true;
+    }
+    return false;
+  };
+
+  /** True when the entire year falls outside [min, max]. */
+  const isYearDisabled = (year: number): boolean => {
+    if (minimum && year < minimum.getFullYear()) return true;
+    if (maximum && year > maximum.getFullYear()) return true;
+    return false;
+  };
+
   const commit = (candidate: Date) => {
-    const next = minimum && candidate < minimum ? new Date(minimum) : candidate;
+    let next = candidate;
+    if (minimum && next < minimum) next = new Date(minimum);
+    if (maximum && next > maximum) next = new Date(maximum);
     setDraft(next);
     setInputValue(formatTypedDateTime(next));
     setValidationError(null);
@@ -333,20 +328,21 @@ export function DateTimeInput({
     }
     const parsed = parseTypedDateTime(inputValue);
     if (!parsed) {
-      setValidationError(
-        "بەروارەکە بە شێوەی ساڵ/مانگ/ڕۆژ بنووسە؛ بۆ نموونە 26/03/09.",
-      );
+      setValidationError("بەروارەکە بە شێوەی ساڵ/مانگ/ڕۆژ بنووسە؛ بۆ نموونە 26/03/09.");
       return false;
     }
     if (minimum && parsed < minimum) {
-      setValidationError(
-        `بەروارەکە نابێت پێش ${formatTypedDateTime(minimum)} بێت.`,
-      );
+      setValidationError(`بەروارەکە نابێت پێش ${formatTypedDateTime(minimum)} بێت.`);
+      return false;
+    }
+    if (maximum && parsed > maximum) {
+      setValidationError(`بەروارەکە نابێت لە ${formatTypedDateTime(maximum)} دواتر بێت.`);
       return false;
     }
     commit(parsed);
     return true;
   };
+
   const setHour = (hour: number) => {
     const next = new Date(draft);
     next.setHours((hour % 12) + (period === "PM" ? 12 : 0));
@@ -365,16 +361,20 @@ export function DateTimeInput({
   };
 
   const chooseDay = (day: Date) => {
-    commit(
-      new Date(
-        day.getFullYear(),
-        day.getMonth(),
-        day.getDate(),
-        dateOnly ? 0 : draft.getHours(),
-        dateOnly ? 0 : draft.getMinutes(),
-      ),
-    );
+    commit(new Date(
+      day.getFullYear(), day.getMonth(), day.getDate(),
+      dateOnly ? 0 : draft.getHours(),
+      dateOnly ? 0 : draft.getMinutes(),
+    ));
   };
+
+  const todayDate = new Date();
+  const isTodayDisabled =
+    (!!minimum && startOfDay(todayDate) < startOfDay(minimum)) ||
+    (!!maximum && startOfDay(todayDate) > startOfDay(maximum));
+
+  // Highlight the committed value, not the draft.
+  const selectedDate = parseValue(value);
 
   return (
     <div className="block">
@@ -388,7 +388,11 @@ export function DateTimeInput({
       )}
       <div
         ref={triggerRef}
-        className={`flex h-11 w-full items-center rounded-xl border bg-white transition focus-within:ring-2 disabled:opacity-50 dark:bg-[#161B22] ${validationError ? "border-red-400 focus-within:border-red-400 focus-within:ring-red-500/15" : "border-slate-200 hover:border-slate-300 focus-within:border-[var(--date-accent)] focus-within:ring-[color-mix(in_srgb,var(--date-accent)_20%,transparent)] dark:border-white/10"}`}
+        className={`flex h-11 w-full items-center rounded-xl border bg-white transition focus-within:ring-2 dark:bg-[#161B22] ${
+          validationError
+            ? "border-red-400 focus-within:border-red-400 focus-within:ring-red-500/15"
+            : "border-slate-200 hover:border-slate-300 focus-within:border-[var(--date-accent)] focus-within:ring-[color-mix(in_srgb,var(--date-accent)_20%,transparent)] dark:border-white/10"
+        }`}
         style={{ "--date-accent": accent } as React.CSSProperties}
       >
         <input
@@ -396,22 +400,17 @@ export function DateTimeInput({
           value={inputValue}
           disabled={disabled}
           onChange={(event) => {
-            setInputValue((current) =>
-              formatMaskedDate(event.target.value, current),
-            );
+            setInputValue((current) => formatMaskedDate(event.target.value, current));
             setValidationError(null);
           }}
           onBlur={validateTypedValue}
           onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              validateTypedValue();
-            }
+            if (event.key === "Enter") { event.preventDefault(); validateTypedValue(); }
           }}
           aria-label={label}
           aria-invalid={!!validationError}
           aria-describedby={validationError ? errorId : undefined}
-          placeholder="YY/MM/DD — بۆ نموونە 26/03/09"
+          placeholder="YY/MM/DD"
           maxLength={8}
           inputMode="numeric"
           dir="ltr"
@@ -430,11 +429,7 @@ export function DateTimeInput({
         </button>
       </div>
       {validationError && (
-        <span
-          id={errorId}
-          role="alert"
-          className="mt-1.5 block text-[10px] font-semibold leading-4 text-red-500"
-        >
+        <span id={errorId} role="alert" className="mt-1.5 block text-[10px] font-semibold leading-4 text-red-500">
           {validationError}
         </span>
       )}
@@ -444,185 +439,196 @@ export function DateTimeInput({
         </span>
       )}
 
-      {isOpen &&
-        pickerPosition &&
+      {isOpen && pickerPosition &&
         createPortal(
           <section
             ref={pickerRef}
             role="dialog"
             aria-label={label}
-            className="theme-custom-scrollbar fixed z-[170] max-h-[calc(100vh-1rem)] overflow-y-auto rounded-2xl border bg-white shadow-2xl    duration-150 dark:bg-[#1c222b]"
-            style={
-              {
-                ...pickerPosition,
-                "--date-accent": accent,
-                borderColor: `color-mix(in srgb, ${accent} 24%, transparent)`,
-              } as React.CSSProperties
-            }
+            className="theme-custom-scrollbar fixed z-[170] max-h-[calc(100vh-1rem)] overflow-y-auto rounded-2xl border bg-white shadow-2xl dark:bg-[#1c222b]"
+            style={{
+              ...pickerPosition,
+              "--date-accent": accent,
+              borderColor: `color-mix(in srgb, ${accent} 22%, transparent)`,
+              boxShadow: "0 24px 64px rgba(0,0,0,0.14), 0 4px 16px rgba(0,0,0,0.08)",
+            } as React.CSSProperties}
             dir="ltr"
           >
-            <div className={dateOnly ? "block" : "grid grid-cols-[minmax(0,1fr)_minmax(125px,0.62fr)]"}>
-              <div className={`relative min-w-0 p-4 ${dateOnly ? "" : "border-r border-slate-100 dark:border-white/5"}`}>
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-1">
+            <div className={dateOnly ? "block" : "grid grid-cols-[minmax(0,1fr)_minmax(130px,0.58fr)]"}>
+
+              {/* ── Calendar panel ── */}
+              <div className="relative min-w-0">
+
+                {/* Header */}
+                <div className="flex items-center gap-1 border-b border-slate-100 px-2.5 py-2 dark:border-white/[0.07]">
+                  <div className="flex min-w-0 flex-1 items-center">
                     <button
                       type="button"
-                      onClick={() =>
-                        setHeaderSelector((current) =>
-                          current === "month" ? null : "month",
-                        )
-                      }
-                      className="flex min-w-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-black text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/5"
+                      onClick={() => setHeaderSelector((c) => c === "month" ? null : "month")}
+                      className="flex min-w-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/[0.07]"
                     >
-                      <span className="truncate">
-                        {monthNames[visibleMonth.getMonth()]}
-                      </span>
-                      <ChevronDown className="h-3 w-3 shrink-0 text-slate-400" />
+                      <span className="truncate">{MONTH_NAMES[visibleMonth.getMonth()]}</span>
+                      <ChevronDown className={`h-3 w-3 shrink-0 text-slate-400 transition-transform duration-200 ${headerSelector === "month" ? "rotate-180" : ""}`} />
                     </button>
                     <button
                       type="button"
-                      onClick={() =>
-                        setHeaderSelector((current) =>
-                          current === "year" ? null : "year",
-                        )
-                      }
-                      className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-black text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/5"
+                      onClick={() => setHeaderSelector((c) => c === "year" ? null : "year")}
+                      className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/[0.07]"
                     >
-                      {String(visibleMonth.getFullYear() % 100).padStart(
-                        2,
-                        "0",
-                      )}
-                      <ChevronDown className="h-3 w-3 text-slate-400" />
+                      {/* Full 4-digit year */}
+                      {visibleMonth.getFullYear()}
+                      <ChevronDown className={`h-3 w-3 text-slate-400 transition-transform duration-200 ${headerSelector === "year" ? "rotate-180" : ""}`} />
                     </button>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     <button
                       type="button"
                       disabled={atFirstAllowedMonth}
-                      onClick={() =>
-                        setVisibleMonth(
-                          (current) =>
-                            new Date(
-                              current.getFullYear(),
-                              current.getMonth() - 1,
-                              1,
-                            ),
-                        )
-                      }
+                      onClick={() => setVisibleMonth((c) => new Date(c.getFullYear(), c.getMonth() - 1, 1))}
                       aria-label="مانگی پێشوو"
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-white/5"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-white/[0.07]"
                     >
                       <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
                     <button
                       type="button"
                       disabled={atLastAllowedMonth}
-                      onClick={() =>
-                        setVisibleMonth(
-                          (current) =>
-                            new Date(
-                              current.getFullYear(),
-                              current.getMonth() + 1,
-                              1,
-                            ),
-                        )
-                      }
+                      onClick={() => setVisibleMonth((c) => new Date(c.getFullYear(), c.getMonth() + 1, 1))}
                       aria-label="مانگی داهاتوو"
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-white/5"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-white/[0.07]"
                     >
                       <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsOpen(false)}
+                      aria-label="داخستن"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/[0.07] dark:hover:text-slate-300"
+                    >
+                      <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>
 
+                {/* Month / Year overlay */}
                 {headerSelector && (
                   <div
-                    className="theme-custom-scrollbar absolute left-4 right-4 top-14 z-20 max-h-52 overflow-y-auto rounded-xl border bg-white p-2 shadow-xl dark:bg-[#1c222b]"
-                    style={{
-                      borderColor: `color-mix(in srgb, ${accent} 22%, transparent)`,
-                    }}
+                    className="absolute left-0 right-0 top-[45px] z-20 border-b bg-white/98 shadow-lg backdrop-blur-sm dark:bg-[#1c222b]/98"
+                    style={{ borderColor: `color-mix(in srgb, ${accent} 18%, transparent)` }}
                   >
                     {headerSelector === "month" ? (
-                      <div className="grid grid-cols-2 gap-1">
-                        {monthNames.map((month, index) => (
-                          <button
-                            key={month}
-                            type="button"
-                            disabled={
-                              visibleMonth.getFullYear() === currentYear &&
-                              index < new Date().getMonth()
-                            }
-                            onClick={() => {
-                              setVisibleMonth(
-                                (current) =>
-                                  new Date(current.getFullYear(), index, 1),
-                              );
-                              setHeaderSelector(null);
-                            }}
-                            className={`rounded-lg px-2 py-2 text-left text-[10px] font-bold transition disabled:cursor-not-allowed disabled:opacity-30 ${visibleMonth.getMonth() === index ? "bg-[var(--date-accent)] text-[var(--theme-ink,#ffffff)]" : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/5"}`}
-                          >
-                            {month}
-                          </button>
-                        ))}
+                      <div className="grid grid-cols-4 gap-1 p-2.5">
+                        {MONTH_NAMES.map((name, i) => {
+                          const dis = isMonthDisabled(visibleMonth.getFullYear(), i);
+                          const sel = visibleMonth.getMonth() === i;
+                          return (
+                            <Tooltip key={name} content={name} side="top">
+                              <button
+                                type="button"
+                                disabled={dis}
+                                aria-label={name}
+                                onClick={() => {
+                                  setVisibleMonth((c) => new Date(c.getFullYear(), i, 1));
+                                  setHeaderSelector(null);
+                                }}
+                                className={`rounded-lg px-1 py-2 text-center text-[10px] font-bold transition disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer ${
+                                  sel
+                                    ? "text-white shadow-sm"
+                                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/[0.07]"
+                                }`}
+                                style={sel ? { background: "var(--date-accent)" } : undefined}
+                              >
+                                {MONTH_SHORT[i]}
+                              </button>
+                            </Tooltip>
+                          );
+                        })}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-3 gap-1">
-                        {Array.from(
-                          { length: 2100 - currentYear },
-                          (_, index) => currentYear + index,
-                        ).map((year) => (
-                          <button
-                            key={year}
-                            type="button"
-                            onClick={() => {
-                              setVisibleMonth(
-                                (current) =>
-                                  new Date(
-                                    year,
-                                    year === currentYear
-                                      ? Math.max(
-                                          current.getMonth(),
-                                          new Date().getMonth(),
-                                        )
-                                      : current.getMonth(),
-                                    1,
-                                  ),
-                              );
-                              setHeaderSelector(null);
-                            }}
-                            className={`rounded-lg px-2 py-2 text-center text-[10px] font-bold transition ${visibleMonth.getFullYear() === year ? "bg-[var(--date-accent)] text-[var(--theme-ink,#ffffff)]" : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/5"}`}
-                          >
-                            {String(year % 100).padStart(2, "0")}
-                          </button>
-                        ))}
+                      <div ref={yearScrollRef} className="theme-custom-scrollbar max-h-44 overflow-y-auto p-2.5">
+                        <div className="grid grid-cols-4 gap-1">
+                          {ALL_YEARS.map((year) => {
+                            const dis = isYearDisabled(year);
+                            const sel = visibleMonth.getFullYear() === year;
+                            const isCurrent = year === THIS_YEAR;
+                            return (
+                              <button
+                                key={year}
+                                type="button"
+                                data-selected={sel}
+                                disabled={dis}
+                                onClick={() => {
+                                  setVisibleMonth((c) => new Date(year, c.getMonth(), 1));
+                                  setHeaderSelector(null);
+                                }}
+                                className={`rounded-lg px-1 py-2 text-center text-[10px] font-bold transition disabled:cursor-not-allowed disabled:opacity-30 ${
+                                  sel
+                                    ? "text-white shadow-sm"
+                                    : isCurrent
+                                    ? ""
+                                    : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/[0.07]"
+                                }`}
+                                style={
+                                  sel
+                                    ? { background: "var(--date-accent)" }
+                                    : isCurrent
+                                    ? {
+                                        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${accent} 40%, transparent)`,
+                                        color: "var(--date-accent)",
+                                      }
+                                    : undefined
+                                }
+                              >
+                                {year}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </div>
                 )}
 
-                <div className="mt-3 grid grid-cols-7 gap-1 text-center">
-                  {weekdayNames.map((day, index) => (
-                    <span
-                      key={`${day}-${index}`}
-                      className="py-1 text-[9px] font-bold text-slate-400"
-                    >
+                {/* Weekday headers */}
+                <div className="grid grid-cols-7 px-2.5 pt-3 pb-1">
+                  {WEEKDAY_NAMES.map((day, i) => (
+                    <span key={`${day}-${i}`} className="flex h-7 items-center justify-center text-[9px] font-bold text-slate-400 dark:text-slate-500">
                       {day}
                     </span>
                   ))}
+                </div>
+
+                {/* Calendar days */}
+                <div className="grid grid-cols-7 gap-y-0.5 px-2.5 pb-2">
                   {calendarDays.map((day) => {
-                    const isSelected = sameDay(day, draft);
-                    const isToday = sameDay(day, new Date());
-                    const isCurrentMonth =
-                      day.getMonth() === visibleMonth.getMonth();
+                    const isSelected = !!selectedDate && sameDay(day, selectedDate);
+                    const isToday = sameDay(day, todayDate);
+                    const isCurrentMonth = day.getMonth() === visibleMonth.getMonth();
                     const isDisabled =
-                      !!minimum && startOfDay(day) < startOfDay(minimum);
+                      (!!minimum && startOfDay(day) < startOfDay(minimum)) ||
+                      (!!maximum && startOfDay(day) > startOfDay(maximum));
                     return (
                       <button
                         key={day.toISOString()}
                         type="button"
                         disabled={isDisabled}
                         onClick={() => chooseDay(day)}
-                        className={`flex h-8 items-center justify-center rounded-lg text-[11px] font-bold transition disabled:cursor-not-allowed disabled:opacity-25 ${isSelected ? "bg-[var(--date-accent)] text-[var(--theme-ink,#ffffff)] shadow-sm" : isToday ? "ring-1 ring-inset ring-[var(--date-accent)] text-[var(--date-accent)]" : isCurrentMonth ? "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5" : "text-slate-300 hover:bg-slate-50 dark:text-slate-600 dark:hover:bg-white/[0.03]"}`}
+                        className={`flex h-8 items-center justify-center rounded-lg text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-20 ${
+                          isSelected
+                            ? "font-bold text-white shadow-sm"
+                            : isToday && isCurrentMonth
+                            ? "font-bold"
+                            : isCurrentMonth
+                            ? "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/[0.07]"
+                            : "text-slate-300 hover:bg-slate-50 dark:text-slate-600 dark:hover:bg-white/[0.03]"
+                        }`}
+                        style={
+                          isSelected
+                            ? { background: "var(--date-accent)" }
+                            : isToday && isCurrentMonth
+                            ? { color: "var(--date-accent)" }
+                            : undefined
+                        }
                       >
                         {day.getDate()}
                       </button>
@@ -630,7 +636,8 @@ export function DateTimeInput({
                   })}
                 </div>
 
-                <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-white/5">
+                {/* Footer */}
+                <div className="flex items-center justify-between border-t border-slate-100 px-2.5 py-2 dark:border-white/[0.07]">
                   <button
                     type="button"
                     onClick={() => {
@@ -639,53 +646,52 @@ export function DateTimeInput({
                       setValidationError(null);
                       setIsOpen(false);
                     }}
-                    className="rounded-lg px-2 py-1.5 text-[10px] font-bold text-[var(--date-accent)] transition hover:bg-[color-mix(in_srgb,var(--date-accent)_10%,transparent)]"
+                    className="rounded-lg px-2.5 py-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/[0.07] dark:hover:text-slate-300"
                   >
                     پاککردنەوە
                   </button>
                   <button
                     type="button"
+                    disabled={isTodayDisabled}
                     onClick={() => {
                       const now = new Date();
                       commit(now);
-                      setVisibleMonth(
-                        new Date(now.getFullYear(), now.getMonth(), 1),
-                      );
+                      setVisibleMonth(new Date(now.getFullYear(), now.getMonth(), 1));
                     }}
-                    className="rounded-lg px-2 py-1.5 text-[10px] font-bold text-[var(--date-accent)] transition hover:bg-[color-mix(in_srgb,var(--date-accent)_10%,transparent)]"
+                    className="rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition disabled:cursor-not-allowed disabled:opacity-40 hover:bg-[color-mix(in_srgb,var(--date-accent)_10%,transparent)]"
+                    style={{ color: "var(--date-accent)" }}
                   >
                     ئەمڕۆ
                   </button>
                 </div>
               </div>
 
-              {!dateOnly && <div className="grid min-w-0 grid-cols-3 gap-2 bg-slate-50/60 p-3 dark:bg-black/10">
-                <TimeColumn
-                  accent={accent}
-                  accentInk="var(--theme-ink, #ffffff)"
-                  selected={String(hour12).padStart(2, "0")}
-                  values={Array.from({ length: 12 }, (_, index) =>
-                    String(index + 1).padStart(2, "0"),
-                  )}
-                  onSelect={(next) => setHour(Number(next))}
-                />
-                <TimeColumn
-                  accent={accent}
-                  accentInk="var(--theme-ink, #ffffff)"
-                  selected={String(draft.getMinutes()).padStart(2, "0")}
-                  values={Array.from({ length: 60 }, (_, index) =>
-                    String(index).padStart(2, "0"),
-                  )}
-                  onSelect={(next) => setMinute(Number(next))}
-                />
-                <TimeColumn
-                  accent={accent}
-                  accentInk="var(--theme-ink, #ffffff)"
-                  selected={period}
-                  values={["AM", "PM"]}
-                  onSelect={(next) => setPeriod(next as "AM" | "PM")}
-                />
-              </div>}
+              {/* ── Time panel (datetime mode only) ── */}
+              {!dateOnly && (
+                <div className="grid min-w-0 grid-cols-3 gap-2 border-l border-slate-100 bg-slate-50/60 p-3 dark:border-white/[0.07] dark:bg-black/10">
+                  <TimeColumn
+                    accent={accent}
+                    accentInk="var(--theme-ink, #ffffff)"
+                    selected={String(hour12).padStart(2, "0")}
+                    values={Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"))}
+                    onSelect={(next) => setHour(Number(next))}
+                  />
+                  <TimeColumn
+                    accent={accent}
+                    accentInk="var(--theme-ink, #ffffff)"
+                    selected={String(draft.getMinutes()).padStart(2, "0")}
+                    values={Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"))}
+                    onSelect={(next) => setMinute(Number(next))}
+                  />
+                  <TimeColumn
+                    accent={accent}
+                    accentInk="var(--theme-ink, #ffffff)"
+                    selected={period}
+                    values={["AM", "PM"]}
+                    onSelect={(next) => setPeriod(next as "AM" | "PM")}
+                  />
+                </div>
+              )}
             </div>
           </section>,
           document.body,
@@ -694,8 +700,6 @@ export function DateTimeInput({
   );
 }
 
-export function DateInput(
-  props: Omit<DateTimeInputProps, "dateOnly">,
-) {
+export function DateInput(props: Omit<DateTimeInputProps, "dateOnly">) {
   return <DateTimeInput {...props} dateOnly />;
 }

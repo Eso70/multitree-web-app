@@ -16,6 +16,7 @@ import { DetailViewModal } from "@/components/shared/DetailViewModal";
 import { ModalWizardActions } from "@/components/shared/ModalWizardActions";
 import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 import { RequiredMark } from "@/components/shared/RequiredMark";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { modalInputClass } from "@/features/link-editor/modal-input-styles";
 import type {
   Permission,
@@ -184,57 +185,60 @@ export function PermissionProfiles({
                 <td className="px-3 py-3">{profile.permissionCount}</td>
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => void loadProfile(profile, "view")}
-                      disabled={loadingAction !== null}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-sky-600 transition hover:bg-sky-50 disabled:opacity-50 dark:hover:bg-sky-500/10"
-                      title="بینین"
-                      aria-label={`بینینی ${profile.name}`}
-                    >
-                      {loadingAction === `view:${profile.id}` ? (
-                        <MotionSpinner><Loader2 className="h-4 w-4 "  /></MotionSpinner>
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void loadProfile(profile, "edit")}
-                      disabled={loadingAction !== null}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-violet-600 transition hover:bg-violet-50 disabled:opacity-50 dark:hover:bg-violet-500/10"
-                      title="دەستکاریکردن"
-                      aria-label={`دەستکاریکردنی ${profile.name}`}
-                    >
-                      {loadingAction === `edit:${profile.id}` ? (
-                        <MotionSpinner><Loader2 className="h-4 w-4 "  /></MotionSpinner>
-                      ) : (
-                        <Pencil className="h-4 w-4" />
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (profile.isDefault) {
-                          toast.error(
-                            "پڕۆفایلی بنەڕەتی ناتوانرێت بسڕدرێتەوە.",
-                          );
-                          return;
-                        }
-                        if (profile.subscriberCount > 0) {
-                          toast.error(
-                            "ئەم پڕۆفایلە لەلایەن بزنسێکەوە بەکاردێت و ناتوانرێت بسڕدرێتەوە.",
-                          );
-                          return;
-                        }
-                        setDeletingProfile(profile);
-                      }}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-red-600 transition hover:bg-red-50 dark:hover:bg-red-500/10"
-                      title="سڕینەوە"
-                      aria-label={`سڕینەوەی ${profile.name}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <Tooltip content="بینین" side="top">
+                      <button
+                        type="button"
+                        onClick={() => void loadProfile(profile, "view")}
+                        disabled={loadingAction !== null}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-sky-600 transition hover:bg-sky-50 disabled:opacity-50 dark:hover:bg-sky-500/10 cursor-pointer"
+                        aria-label={`بینینی ${profile.name}`}
+                      >
+                        {loadingAction === `view:${profile.id}` ? (
+                          <MotionSpinner><Loader2 className="h-4 w-4 "  /></MotionSpinner>
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </Tooltip>
+                    <Tooltip content="دەستکاریکردن" side="top">
+                      <button
+                        type="button"
+                        onClick={() => void loadProfile(profile, "edit")}
+                        disabled={loadingAction !== null}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-violet-600 transition hover:bg-violet-50 disabled:opacity-50 dark:hover:bg-violet-500/10 cursor-pointer"
+                        aria-label={`دەستکاریکردنی ${profile.name}`}
+                      >
+                        {loadingAction === `edit:${profile.id}` ? (
+                          <MotionSpinner><Loader2 className="h-4 w-4 "  /></MotionSpinner>
+                        ) : (
+                          <Pencil className="h-4 w-4" />
+                        )}
+                      </button>
+                    </Tooltip>
+                    <Tooltip content="سڕینەوە" side="top">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (profile.isDefault) {
+                            toast.error(
+                              "پڕۆفایلی بنەڕەتی ناتوانرێت بسڕدرێتەوە.",
+                            );
+                            return;
+                          }
+                          if (profile.subscriberCount > 0) {
+                            toast.error(
+                              "ئەم پڕۆفایلە لەلایەن بزنسێکەوە بەکاردێت و ناتوانرێت بسڕدرێتەوە.",
+                            );
+                            return;
+                          }
+                          setDeletingProfile(profile);
+                        }}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-red-600 transition hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"
+                        aria-label={`سڕینەوەی ${profile.name}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </Tooltip>
                   </div>
                 </td>
               </tr>

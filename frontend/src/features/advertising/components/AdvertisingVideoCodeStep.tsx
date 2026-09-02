@@ -5,6 +5,7 @@ import { ClipboardPaste } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PhoneMockup } from "@/components/shared/PhoneMockup";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { AdvertisingVideoPlayer } from "./AdvertisingVideoPlayer";
 
 /** TikTok Spark Ads video (authorization) code: "#" + 63 base64 characters + "=" padding. */
@@ -97,15 +98,16 @@ export function AdvertisingVideoCodeStep({
                   : "border-black/10 focus:border-cyan-400 focus:ring-cyan-400/20 dark:border-white/10",
               )}
             />
-            <button
-              type="button"
-              onClick={pasteCode}
-              aria-label="لکردنی کۆد لە کلیپبۆرد"
-              title="لکردن"
-              className="absolute inset-y-0 end-1.5 my-auto flex h-8 w-8 items-center justify-center rounded-lg text-black/40 transition-colors hover:bg-black/[0.06] hover:text-black/70 dark:text-white/40 dark:hover:bg-white/[0.1] dark:hover:text-white/80"
-            >
-              <ClipboardPaste className="h-4 w-4" />
-            </button>
+            <Tooltip content="لێکردنەوەی کۆد لە کلیپبۆرد" side="top">
+              <button
+                type="button"
+                onClick={pasteCode}
+                aria-label="لێکردنی کۆد لە کلیپبۆرد"
+                className="absolute inset-y-0 end-1.5 my-auto flex h-8 w-8 items-center justify-center rounded-lg text-black/40 transition-colors hover:bg-black/[0.06] hover:text-black/70 dark:text-white/40 dark:hover:bg-white/[0.1] dark:hover:text-white/80 cursor-pointer"
+              >
+                <ClipboardPaste className="h-4 w-4" />
+              </button>
+            </Tooltip>
           </div>
           {isInvalid && (
             <p className="mt-1 text-[11px] font-bold text-red-500 dark:text-red-400" dir="auto">

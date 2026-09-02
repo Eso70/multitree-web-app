@@ -6,12 +6,13 @@ import {
   type LinktreeMetaBadgesProps,
   type PageListTrafficLabels,
 } from "@/components/business/LinktreeMeta";
+import { ANALYTICS_TERMS } from "@/components/shared/analytics-terminology";
 import { MINI_WEBSITE_TEMPLATE_OPTIONS } from "@/components/templates/mini-website";
 import { getRecordAgeBadge } from "@/lib/utils/record-age";
 
 export const MINI_WEBSITE_TRAFFIC_LABELS: PageListTrafficLabels = {
   column: "ترافیک",
-  views: "بینەری تاک",
+  views: ANALYTICS_TERMS.uniqueViewer,
   interactions: "کۆی کردار",
 };
 

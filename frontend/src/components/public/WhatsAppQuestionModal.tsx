@@ -3,6 +3,7 @@
 import { memo, useCallback, useEffect } from "react";
 import { X, MessageCircle } from "lucide-react";
 import { useModalKeyboard } from "@/hooks/useModalKeyboard";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 // Export the question interface for use in other components
 export interface WhatsAppQuestion {
@@ -115,15 +116,16 @@ export const WhatsAppQuestionModal = memo(function WhatsAppQuestionModal({
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="shrink-0 p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200 active:scale-95"
-              aria-label="داخستن"
-              title="داخستن"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <Tooltip content="داخستن" side="bottom">
+              <button
+                type="button"
+                onClick={onClose}
+                className="shrink-0 p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200 active:scale-95 cursor-pointer"
+                aria-label="داخستن"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </Tooltip>
           </div>
         </div>
 

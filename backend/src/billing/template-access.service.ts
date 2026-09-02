@@ -10,16 +10,24 @@ export class TemplateAccessService {
   ) {}
 
   async getEffectiveKeys(businessId: string): Promise<string[]> {
-    const cacheKey = `templates:v2:business:${businessId}`;
+    const cacheKey = `templates:v3:business:${businessId}`;
     const cached = await this.redis.get<{ keys: string[] }>(cacheKey);
     if (cached?.keys) return cached.keys;
     const result = await this.database.query<{ template_key: string }>(
       `SELECT template.template_key
          FROM business_subscriptions subscription
+         JOIN billing_plan_configurations configuration
+           ON configuration.id = subscription.plan_configuration_id
+         JOIN billing_plans plan
+           ON plan.id = configuration.plan_id
          JOIN billing_plan_templates template
            ON template.plan_configuration_id =
               subscription.plan_configuration_id
          WHERE subscription.business_id = $1::uuid
+           AND (
+             template.template_key <> 'branch-signal'
+             OR LOWER(plan.code) = 'ultra'
+           )
          ORDER BY template.template_key`,
       [businessId],
     );
@@ -37,6 +45,6 @@ export class TemplateAccessService {
   }
 
   async invalidate(businessId: string): Promise<void> {
-    await this.redis.del(`templates:v2:business:${businessId}`);
+    await this.redis.del(`templates:v3:business:${businessId}`);
   }
 }

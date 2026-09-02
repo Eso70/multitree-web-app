@@ -12,14 +12,11 @@ export type StatCardColor =
   | "slate"
   | "pink"
   | "cyan"
-  | "amber";
+  | "amber"
+  | "theme";
 
 export type StatCardVariant =
-  | "standard"
-  | "funnel"
-  | "live"
-  | "comparison"
-  | "story";
+  "standard" | "funnel" | "live" | "comparison" | "story";
 
 export interface StatCardProps {
   action?: ReactNode;
@@ -37,8 +34,7 @@ export interface StatCardProps {
 }
 
 const colorClasses: Record<StatCardColor, string> = {
-  blue:
-    "bg-linear-to-br from-sky-50/70 to-blue-50/70 border-sky-100 text-sky-700 dark:from-sky-950/20 dark:to-blue-950/20 dark:border-sky-900/30 dark:text-sky-400",
+  blue: "bg-linear-to-br from-sky-50/70 to-blue-50/70 border-sky-100 text-sky-700 dark:from-sky-950/20 dark:to-blue-950/20 dark:border-sky-900/30 dark:text-sky-400",
   green:
     "bg-linear-to-br from-emerald-50/70 to-green-50/70 border-emerald-100 text-emerald-700 dark:from-emerald-950/20 dark:to-green-950/20 dark:border-emerald-900/30 dark:text-emerald-400",
   purple:
@@ -47,17 +43,16 @@ const colorClasses: Record<StatCardColor, string> = {
     "bg-linear-to-br from-orange-50/70 to-amber-50/70 border-orange-100 text-orange-700 dark:from-orange-950/20 dark:to-amber-950/20 dark:border-orange-900/30 dark:text-orange-400",
   slate:
     "bg-linear-to-br from-slate-50/70 to-gray-50/70 border-slate-100 text-slate-700 dark:from-slate-800/20 dark:to-slate-900/20 dark:border-slate-800/30 dark:text-slate-400",
-  pink:
-    "bg-linear-to-br from-pink-50/70 to-rose-50/70 border-pink-100 text-pink-700 dark:from-pink-950/20 dark:to-rose-950/20 dark:border-pink-900/30 dark:text-pink-400",
-  cyan:
-    "bg-linear-to-br from-cyan-50/70 to-teal-50/70 border-cyan-100 text-cyan-700 dark:from-cyan-950/20 dark:to-teal-950/20 dark:border-cyan-900/30 dark:text-cyan-400",
+  pink: "bg-linear-to-br from-pink-50/70 to-rose-50/70 border-pink-100 text-pink-700 dark:from-pink-950/20 dark:to-rose-950/20 dark:border-pink-900/30 dark:text-pink-400",
+  cyan: "bg-linear-to-br from-cyan-50/70 to-teal-50/70 border-cyan-100 text-cyan-700 dark:from-cyan-950/20 dark:to-teal-950/20 dark:border-cyan-900/30 dark:text-cyan-400",
   amber:
     "bg-linear-to-br from-amber-50/70 to-yellow-50/70 border-amber-100 text-amber-700 dark:from-amber-950/20 dark:to-yellow-950/20 dark:border-amber-900/30 dark:text-amber-400",
+  theme:
+    "bg-[color-mix(in_srgb,var(--theme-primary)_7%,white)] border-[color-mix(in_srgb,var(--theme-primary)_18%,white)] text-[var(--theme-primary)] dark:bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)] dark:border-[color-mix(in_srgb,var(--theme-primary)_24%,transparent)] dark:text-[var(--theme-primary)]",
 };
 
 const iconBgClasses: Record<StatCardColor, string> = {
-  blue:
-    "bg-linear-to-br from-sky-100 to-blue-100 border-sky-200 dark:from-sky-900/30 dark:to-blue-900/30 dark:border-sky-800/30",
+  blue: "bg-linear-to-br from-sky-100 to-blue-100 border-sky-200 dark:from-sky-900/30 dark:to-blue-900/30 dark:border-sky-800/30",
   green:
     "bg-linear-to-br from-emerald-100 to-green-100 border-emerald-200 dark:from-emerald-900/30 dark:to-green-900/30 dark:border-emerald-800/30",
   purple:
@@ -66,12 +61,12 @@ const iconBgClasses: Record<StatCardColor, string> = {
     "bg-linear-to-br from-orange-100 to-amber-100 border-orange-200 dark:from-orange-900/30 dark:to-amber-900/30 dark:border-orange-800/30",
   slate:
     "bg-linear-to-br from-slate-100 to-gray-100 border-slate-200 dark:from-slate-800/30 dark:to-slate-900/30 dark:border-slate-700/30",
-  pink:
-    "bg-linear-to-br from-pink-100 to-rose-100 border-pink-200 dark:from-pink-900/30 dark:to-rose-900/30 dark:border-pink-800/30",
-  cyan:
-    "bg-linear-to-br from-cyan-100 to-teal-100 border-cyan-200 dark:from-cyan-900/30 dark:to-teal-900/30 dark:border-cyan-800/30",
+  pink: "bg-linear-to-br from-pink-100 to-rose-100 border-pink-200 dark:from-pink-900/30 dark:to-rose-900/30 dark:border-pink-800/30",
+  cyan: "bg-linear-to-br from-cyan-100 to-teal-100 border-cyan-200 dark:from-cyan-900/30 dark:to-teal-900/30 dark:border-cyan-800/30",
   amber:
     "bg-linear-to-br from-amber-100 to-yellow-100 border-amber-200 dark:from-amber-900/30 dark:to-yellow-900/30 dark:border-amber-800/30",
+  theme:
+    "bg-[color-mix(in_srgb,var(--theme-primary)_14%,white)] border-[color-mix(in_srgb,var(--theme-primary)_22%,white)] dark:bg-[color-mix(in_srgb,var(--theme-primary)_16%,transparent)] dark:border-[color-mix(in_srgb,var(--theme-primary)_28%,transparent)]",
 };
 
 const iconColorClasses: Record<StatCardColor, string> = {
@@ -83,6 +78,7 @@ const iconColorClasses: Record<StatCardColor, string> = {
   pink: "text-pink-500 dark:text-pink-400",
   cyan: "text-cyan-500 dark:text-cyan-400",
   amber: "text-amber-500 dark:text-amber-400",
+  theme: "text-[var(--theme-primary)]",
 };
 
 const funnelSurfaceClasses: Record<StatCardColor, string> = {
@@ -99,6 +95,8 @@ const funnelSurfaceClasses: Record<StatCardColor, string> = {
   cyan: "border-cyan-200 bg-cyan-50/50 dark:border-cyan-500/20 dark:bg-cyan-500/[0.05]",
   amber:
     "border-amber-200 bg-amber-50/50 dark:border-amber-500/20 dark:bg-amber-500/[0.05]",
+  theme:
+    "border-[color-mix(in_srgb,var(--theme-primary)_22%,white)] bg-[color-mix(in_srgb,var(--theme-primary)_7%,white)] dark:border-[color-mix(in_srgb,var(--theme-primary)_25%,transparent)] dark:bg-[color-mix(in_srgb,var(--theme-primary)_8%,transparent)]",
 };
 
 const funnelIconClasses: Record<StatCardColor, string> = {
@@ -113,6 +111,8 @@ const funnelIconClasses: Record<StatCardColor, string> = {
   pink: "bg-pink-100 text-pink-600 dark:bg-pink-500/15 dark:text-pink-300",
   cyan: "bg-cyan-100 text-cyan-600 dark:bg-cyan-500/15 dark:text-cyan-300",
   amber: "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
+  theme:
+    "bg-[color-mix(in_srgb,var(--theme-primary)_14%,white)] text-[var(--theme-primary)] dark:bg-[color-mix(in_srgb,var(--theme-primary)_16%,transparent)]",
 };
 
 const funnelValueClasses: Record<StatCardColor, string> = {
@@ -124,6 +124,7 @@ const funnelValueClasses: Record<StatCardColor, string> = {
   pink: "text-pink-700 dark:text-pink-300",
   cyan: "text-cyan-700 dark:text-cyan-300",
   amber: "text-amber-700 dark:text-amber-300",
+  theme: "text-[var(--theme-primary)]",
 };
 
 function displayValue(value: number | string): string {
@@ -169,7 +170,9 @@ export const StatCard = memo(function StatCard({
           </span>
         ) : null}
         <div className="mt-5">
-          <p className={`text-3xl font-black leading-none ${funnelValueClasses[color]}`}>
+          <p
+            className={`text-3xl font-black leading-none ${funnelValueClasses[color]}`}
+          >
             {displayValue(value)}
           </p>
           <p className="mt-1 text-sm font-bold text-slate-700 dark:text-slate-200">
@@ -261,7 +264,9 @@ export const StatCard = memo(function StatCard({
           : "overflow-hidden rounded-xl p-3 sm:rounded-2xl sm:p-5 md:p-6"
       } ${colorClasses[color]} border backdrop-blur-sm transition-all duration-300 hover:shadow-lg ${className}`}
     >
-      {action && <div className="absolute right-1.5 top-1.5 z-10">{action}</div>}
+      {action && (
+        <div className="absolute right-1.5 top-1.5 z-10">{action}</div>
+      )}
       <div
         className={`relative flex items-center ${
           compact
@@ -323,7 +328,9 @@ export const StatCard = memo(function StatCard({
 function ValueTooltip({ value }: { value: string }) {
   return (
     <div className="pointer-events-none invisible absolute start-0 top-full z-50 mt-1 w-max max-w-[280px] translate-y-1 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-start text-[11px] font-medium leading-4 text-slate-700 opacity-0 shadow-xl transition duration-150 group-hover/value:visible group-hover/value:translate-y-0 group-hover/value:opacity-100 dark:border-white/10 dark:bg-slate-800/90 dark:text-slate-200">
-      <span className="block break-words [overflow-wrap:anywhere]">{value}</span>
+      <span className="block break-words [overflow-wrap:anywhere]">
+        {value}
+      </span>
     </div>
   );
 }
@@ -342,7 +349,9 @@ function CompactTextWithTooltip({
         className="pointer-events-none invisible absolute start-0 top-full z-50 mt-1 w-max max-w-[260px] translate-y-1 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-start text-[11px] font-medium leading-4 text-slate-700 opacity-0 shadow-xl transition duration-150 group-hover/compact-text:visible group-hover/compact-text:translate-y-0 group-hover/compact-text:opacity-100 dark:border-white/10 dark:bg-slate-800/90 dark:text-slate-200"
         role="tooltip"
       >
-        <span className="block break-words [overflow-wrap:anywhere]">{text}</span>
+        <span className="block break-words [overflow-wrap:anywhere]">
+          {text}
+        </span>
       </div>
     </div>
   );

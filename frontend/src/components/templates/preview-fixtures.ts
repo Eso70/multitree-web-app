@@ -16,6 +16,12 @@ export const LINKTREE_TEMPLATE_PREVIEW_THEMES: Record<
   frost: { from: "#000000", via: "#000000", to: "#000000", isSolid: true },
   aurora: { from: "#000000", via: "#000000", to: "#000000", isSolid: true },
   serenity: { from: "#ffffff", via: "#ffffff", to: "#ffffff", isSolid: true },
+  "branch-signal": {
+    from: "#111714",
+    via: "#080b09",
+    to: "#050706",
+    isSolid: false,
+  },
 };
 
 function normalizedPhone(value?: string | null) {

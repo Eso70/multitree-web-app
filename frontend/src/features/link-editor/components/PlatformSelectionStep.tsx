@@ -5,6 +5,7 @@ import { Check } from "lucide-react";
 import { SOCIAL_PLATFORMS } from "../modal-constants";
 import type { SocialLink } from "@/features/link-editor/types";
 import { PlatformBadge } from "@/lib/brand/PlatformVisuals";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 interface PlatformSelectionStepProps {
   socialLinks: SocialLink[];
@@ -25,44 +26,51 @@ const PlatformButton = memo(
     onToggle: () => void;
   }) {
     return (
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-pressed={isSelected}
-        className={`relative flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all duration-200 ${
-          isSelected
-            ? "scale-[1.02] shadow-sm ring-2 ring-[color:var(--theme-primary)]/15"
-            : "border-gray-300 bg-white hover:border-gray-400 hover:bg-gray-50"
-        }`}
-        style={
-          isSelected
-            ? {
-                borderColor: "var(--theme-primary, #64748b)",
-                backgroundColor:
-                  "color-mix(in srgb, var(--theme-primary, #64748b) 10%, transparent)",
-              }
-            : undefined
+      <Tooltip
+        content={
+          isSelected ? `لابردنی ${platform.name}` : `دیاریکردنی ${platform.name}`
         }
+        side="top"
       >
-        {isSelected && (
-          <span
-            className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full text-white"
-            style={{ background: "var(--theme-primary, #64748b)" }}
-          >
-            <Check className="h-3.5 w-3.5" strokeWidth={3} />
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-pressed={isSelected}
+          className={`relative flex w-full flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all duration-200 cursor-pointer ${
+            isSelected
+              ? "scale-[1.02] shadow-sm ring-2 ring-[color:var(--theme-primary)]/15"
+              : "border-gray-300 bg-white hover:border-gray-400 hover:bg-gray-50"
+          }`}
+          style={
+            isSelected
+              ? {
+                  borderColor: "var(--theme-primary, #64748b)",
+                  backgroundColor:
+                    "color-mix(in srgb, var(--theme-primary, #64748b) 10%, transparent)",
+                }
+              : undefined
+          }
+        >
+          {isSelected && (
+            <span
+              className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full text-white"
+              style={{ background: "var(--theme-primary, #64748b)" }}
+            >
+              <Check className="h-3.5 w-3.5" strokeWidth={3} />
+            </span>
+          )}
+          {/* Fixed box so every platform tile is the same size, whether the brand is
+            a glyph on a fill or a full-color mark that fills the chip itself. */}
+          <PlatformBadge
+            platform={platform.id}
+            className="h-12 w-12 rounded-lg"
+            iconClassName="h-6 w-6"
+          />
+          <span className="text-xs font-medium text-gray-900">
+            {platform.name}
           </span>
-        )}
-        {/* Fixed box so every platform tile is the same size, whether the brand is
-          a glyph on a fill or a full-color mark that fills the chip itself. */}
-        <PlatformBadge
-          platform={platform.id}
-          className="h-12 w-12 rounded-lg"
-          iconClassName="h-6 w-6"
-        />
-        <span className="text-xs font-medium text-gray-900">
-          {platform.name}
-        </span>
-      </button>
+        </button>
+      </Tooltip>
     );
   },
   (prevProps, nextProps) => {

@@ -40,7 +40,6 @@ import {
   MiniWebsitePaymentFields,
   MiniWebsiteProcessFields,
 } from "./MiniWebsiteExtraSectionsStep";
-import { MiniWebsiteLeadFormFields } from "./MiniWebsiteLeadFormStep";
 import { MiniWebsitePricingFields } from "./MiniWebsitePricingStep";
 import { MiniWebsiteOwnedPropertiesFields } from "./MiniWebsiteOwnedPropertiesStep";
 import { MiniWebsiteEducationFields } from "./MiniWebsiteEducationStep";
@@ -820,13 +819,6 @@ export function MiniWebsiteEditorModal({
                     )}
                     {section.key === "experience" && (
                       <MiniWebsiteExperienceFields
-                        draft={draft}
-                        onChange={setDraft}
-                        errors={displayErrors}
-                      />
-                    )}
-                    {section.key === "leadForm" && (
-                      <MiniWebsiteLeadFormFields
                         draft={draft}
                         onChange={setDraft}
                         errors={displayErrors}

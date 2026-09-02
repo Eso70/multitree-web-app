@@ -80,20 +80,19 @@ describe("BusinessPageAnalyticsModal for a Creator workspace", () => {
     expect(requested).toContain(
       "/api/creator/linktrees/creator-page-id/analytics/actions",
     );
-    expect(
-      requested.some((url) => url.startsWith("/api/analytics/v2")),
-    ).toBe(false);
+    expect(requested.some((url) => url.startsWith("/api/analytics/v2"))).toBe(
+      false,
+    );
 
     // The business stat cards, not the summary four.
     expect(screen.getByText("کۆی بینینەکان")).toBeInTheDocument();
-    expect(screen.getByText("کرتەکەری تاک")).toBeInTheDocument();
+    expect(screen.getByText("کلیککەری تاک")).toBeInTheDocument();
     expect(screen.getByText("گۆڕانەکان")).toBeInTheDocument();
     expect(screen.getByText(/دوگمەکان/)).toBeInTheDocument();
     expect(screen.getByText("هەموو داتاکان")).toBeInTheDocument();
   });
 
-  /** `/business/analytics` is a business-only route. */
-  it("hides advanced analytics, which a Creator has no route for", async () => {
+  it("keeps all analytics inside the shared per-page modal", async () => {
     stubFetch();
 
     render(

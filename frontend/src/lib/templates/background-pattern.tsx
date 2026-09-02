@@ -33,8 +33,8 @@ export const BACKGROUND_PATTERN_OPTIONS: ReadonlyArray<{
 
 export function backgroundPatternLabel(value: BackgroundPatternStyle): string {
   return (
-    BACKGROUND_PATTERN_OPTIONS.find((option) => option.value === value)?.label ??
-    BACKGROUND_PATTERN_OPTIONS[0].label
+    BACKGROUND_PATTERN_OPTIONS.find((option) => option.value === value)
+      ?.label ?? BACKGROUND_PATTERN_OPTIONS[0].label
   );
 }
 
@@ -119,6 +119,7 @@ export function BackgroundPattern({
     <svg
       aria-hidden="true"
       className={className}
+      data-background-pattern={style}
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
@@ -139,7 +140,13 @@ export function BackgroundPattern({
             />
           ) : null}
           {style === "dots" ? (
-            <circle cx="2" cy="2" fill={accent} fillOpacity={opacity(0.28)} r="1.6" />
+            <circle
+              cx="2"
+              cy="2"
+              fill={accent}
+              fillOpacity={opacity(0.28)}
+              r="1.6"
+            />
           ) : null}
           {style === "grid45" ? (
             <path

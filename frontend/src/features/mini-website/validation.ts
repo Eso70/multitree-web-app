@@ -1,9 +1,5 @@
 import { validateSingleLink } from "@/features/link-editor/components/validation";
-import {
-  MINI_WEBSITE_LEAD_MAPPING_TYPES,
-  MINI_WEBSITE_MAX_LEAD_FIELDS,
-  MINI_WEBSITE_MAX_YOUTUBE_VIDEOS,
-} from "@linktree/types";
+import { MINI_WEBSITE_MAX_YOUTUBE_VIDEOS } from "@linktree/types";
 import { hasOpenDay, normalizeWeek } from "./hours";
 import { buildActionHref } from "./service-action";
 import { buildBookingHref } from "./booking-action";
@@ -694,68 +690,6 @@ function validateExperience(
 }
 
 /**
- * The lead form, validated only when that section is switched on.
- *
- * The rules here are about whether a submission can be acted on, not about
- * taste. A form with no required way to reply produces contacts the business
- * can never follow up, and a required consent tick with no policy on the page
- * asks the visitor to agree to a promise that was never written down.
- */
-function validateLeadForm(
-  draft: MiniWebsiteDraft,
-): MiniWebsiteValidationErrors {
-  if (!isSectionEnabled(draft, "leadForm")) return {};
-  const errors: MiniWebsiteValidationErrors = {};
-  const { fields } = draft.leadForm;
-  if (!fields.length) {
-    errors.leadForm = "لانی‌کەم یەک پرسیار زیاد بکە.";
-    return errors;
-  }
-  if (fields.length > MINI_WEBSITE_MAX_LEAD_FIELDS) {
-    errors.leadForm = `زۆرترین ژمارەی پرسیارەکان ${MINI_WEBSITE_MAX_LEAD_FIELDS} دانەیە.`;
-  }
-
-  const claimed = new Set<string>();
-  fields.forEach((field, index) => {
-    if (!field.label.trim()) {
-      errors[`leadField.${index}`] = "ناونیشانی پرسیار پێویستە.";
-      return;
-    }
-    if (field.type === "select" && !field.options.filter(Boolean).length) {
-      errors[`leadField.${index}`] = "بۆ لیستی هەڵبژاردن، هەڵبژاردەکان بنووسە.";
-      return;
-    }
-    if (field.mapping === "none") return;
-    if (!MINI_WEBSITE_LEAD_MAPPING_TYPES[field.mapping].includes(field.type)) {
-      errors[`leadField.${index}`] =
-        "جۆری پرسیارەکە لەگەڵ بەشی CRM ـەکەی ناگونجێت.";
-      return;
-    }
-    if (claimed.has(field.mapping)) {
-      errors[`leadField.${index}`] =
-        "هەر بەشێکی CRM تەنها بۆ یەک پرسیار دەبێت.";
-      return;
-    }
-    claimed.add(field.mapping);
-  });
-
-  if (
-    !fields.some(
-      (field) =>
-        field.required &&
-        (field.mapping === "email" || field.mapping === "phone"),
-    )
-  ) {
-    errors.leadForm =
-      "پێویستە یەک پرسیاری داوایکراو بۆ ئیمەیل یان ژمارەی مۆبایل هەبێت.";
-  }
-  if (draft.leadForm.consentRequired && !draft.leadForm.consentText.trim()) {
-    errors.leadFormConsent = "دەقی ڕەزامەندی بنووسە.";
-  }
-  return errors;
-}
-
-/**
  * Pricing tiers, validated only when that section is switched on.
  *
  * A table with one tier is a price tag: the section exists so a visitor can
@@ -831,7 +765,6 @@ function validateSocialLinks(
     ...validateOwnedProperties(draft),
     ...validateEducation(draft),
     ...validateExperience(draft),
-    ...validateLeadForm(draft),
     ...validatePlans(draft),
   };
   if (!isSectionEnabled(draft, "socials")) return errors;
@@ -889,7 +822,6 @@ export function validateCompleteMiniWebsite(
     ...validateOwnedProperties(draft),
     ...validateEducation(draft),
     ...validateExperience(draft),
-    ...validateLeadForm(draft),
     ...validatePlans(draft),
   };
 }

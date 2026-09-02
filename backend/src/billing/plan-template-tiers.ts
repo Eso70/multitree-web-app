@@ -11,7 +11,22 @@ export const PRO_TEMPLATE_KEYS = [
   'serenity',
 ] as const;
 
-export const ULTRA_TEMPLATE_KEYS = [...PRO_TEMPLATE_KEYS] as const;
+export const ULTRA_TEMPLATE_KEYS = [
+  ...PRO_TEMPLATE_KEYS,
+  'branch-signal',
+] as const;
+
+export const ULTRA_ONLY_TEMPLATE_KEYS = ['branch-signal'] as const;
+
+export function isTemplateAllowedForPlanCode(
+  templateKey: string,
+  planCode: string,
+): boolean {
+  return (
+    !ULTRA_ONLY_TEMPLATE_KEYS.some((key) => key === templateKey) ||
+    planCode.trim().toLowerCase() === 'ultra'
+  );
+}
 
 export function getDefaultTemplateKeys(planCode: string): readonly string[] {
   switch (planCode.trim().toLowerCase()) {

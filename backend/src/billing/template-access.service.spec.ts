@@ -19,9 +19,17 @@ describe('TemplateAccessService', () => {
       'aurora',
     ]);
     expect(redis.set).toHaveBeenCalledWith(
-      'templates:v2:business:business-id',
+      'templates:v3:business:business-id',
       { keys: ['spectrum', 'aurora'] },
       60,
+    );
+    expect(database.query).toHaveBeenCalledWith(
+      expect.stringContaining("template.template_key <> 'branch-signal'"),
+      ['business-id'],
+    );
+    expect(database.query).toHaveBeenCalledWith(
+      expect.stringContaining("LOWER(plan.code) = 'ultra'"),
+      ['business-id'],
     );
   });
 

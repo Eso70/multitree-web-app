@@ -3,6 +3,15 @@ import { REQUIRED_CAPABILITIES } from '../auth/require-capabilities.decorator';
 import { MiniWebsitesController } from './mini-websites.controller';
 
 describe('MiniWebsitesController authorization', () => {
+  it('has no Business creation handler', () => {
+    expect(
+      Object.prototype.hasOwnProperty.call(
+        MiniWebsitesController.prototype,
+        'create',
+      ),
+    ).toBe(false);
+  });
+
   it('authorizes editing with the Mini Website permission instead of Linktree field permissions', () => {
     const updateHandler = Object.getOwnPropertyDescriptor(
       MiniWebsitesController.prototype,

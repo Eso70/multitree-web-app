@@ -1,13 +1,8 @@
 import type { PublicPageAnalytics } from "@linktree/types";
 import type { SocialLink } from "@/features/link-editor/types";
 import {
-  createMiniWebsiteLeadForm,
   createMiniWebsiteWeekHours,
   type MiniWebsiteBackgroundStyle,
-  type MiniWebsiteLeadField,
-  type MiniWebsiteLeadFieldMapping,
-  type MiniWebsiteLeadFieldType,
-  type MiniWebsiteLeadForm,
   type MiniWebsitePlan,
   type MiniWebsiteBeforeAfter,
   type MiniWebsiteAdvantage,
@@ -56,10 +51,6 @@ import {
 export type {
   MiniWebsiteBeforeAfter,
   MiniWebsiteBackgroundStyle,
-  MiniWebsiteLeadField,
-  MiniWebsiteLeadFieldMapping,
-  MiniWebsiteLeadFieldType,
-  MiniWebsiteLeadForm,
   MiniWebsitePlan,
   MiniWebsiteAdvantage,
   MiniWebsiteImpactStat,
@@ -223,11 +214,6 @@ export interface MiniWebsite {
   education: MiniWebsiteEducation[];
   /** Current and past positions in résumé order. */
   experience: MiniWebsiteExperience[];
-  /**
-   * The enquiry form visitors fill in. The only section whose content is
-   * written by the public: each submission becomes a CRM contact and lead.
-   */
-  leadForm: MiniWebsiteLeadForm;
   /** Priced tiers, compared side by side. */
   plans: MiniWebsitePlan[];
   content: MiniWebsiteContent;
@@ -286,7 +272,6 @@ export const MINI_WEBSITE_SECTIONS: Array<{
   { key: "serviceAreas", label: "زمانەکان" },
   { key: "hours", label: "کاتی کارکردن" },
   { key: "faq", label: "پرسیارە دووبارەکان" },
-  { key: "leadForm", label: "فۆرمی داواکاری و پەیوەندی" },
   { key: "pricing", label: "پلان و پاکێجەکان" },
   { key: "location", label: "شوێن و نەخشە" },
 ];
@@ -345,7 +330,6 @@ export const createMiniWebsiteDraft = (input?: {
   ownedProperties: [],
   education: [],
   experience: [],
-  leadForm: createMiniWebsiteLeadForm(),
   plans: [],
   content: {
     heroBackgroundType: "color",

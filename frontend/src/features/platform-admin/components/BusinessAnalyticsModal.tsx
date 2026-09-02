@@ -1,6 +1,10 @@
 "use client";
 
-import { MotionPulse, MotionSpinner } from "@/components/motion/MotionPrimitives";
+import {
+  MotionPulse,
+  MotionSpinner,
+} from "@/components/motion/MotionPrimitives";
+import { SkeletonBusinessAnalyticsContent } from "@/components/shared/SkeletonModalLayouts";
 
 import {
   memo,
@@ -25,7 +29,9 @@ import {
 import { flushNow } from "@/lib/utils/client-queue";
 import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 import { toast } from "sonner";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { AnalyticsSummaryCards } from "@/features/analytics/components/AnalyticsSummaryCards";
+import { ANALYTICS_TERMS } from "@/components/shared/analytics-terminology";
 import { analyticsModalScrollbarStyles } from "@/features/analytics/modalStyles";
 import type { BusinessLinktreeAnalyticsSummary } from "@linktree/types";
 
@@ -119,9 +125,9 @@ const LinktreeAvatar = memo(function LinktreeAvatar({
   return (
     <div
       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white shadow-sm"
-      style={{ backgroundColor: backgroundColor || '#64748b' }}
+      style={{ backgroundColor: backgroundColor || "#64748b" }}
     >
-      {name?.charAt(0)?.toUpperCase() || '?'}
+      {name?.charAt(0)?.toUpperCase() || "?"}
     </div>
   );
 });
@@ -141,7 +147,9 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
   businessName,
   businessDefaultAvatar,
 }: BusinessAnalyticsModalProps) {
-  const [linktrees, setLinktrees] = useState<BusinessLinktreeAnalyticsSummary[]>([]);
+  const [linktrees, setLinktrees] = useState<
+    BusinessLinktreeAnalyticsSummary[]
+  >([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -158,11 +166,19 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
     setIsTransferring(true);
     setError(null);
     try {
-      const response = await fetch(`/api/platform/businesses/${businessId}/linktrees-export`, { credentials: "include" });
-      if (!response.ok) throw new Error((await response.json().catch(() => null))?.message || "Export failed");
+      const response = await fetch(
+        `/api/platform/businesses/${businessId}/linktrees-export`,
+        { credentials: "include" },
+      );
+      if (!response.ok)
+        throw new Error(
+          (await response.json().catch(() => null))?.message || "Export failed",
+        );
       const blob = await response.blob();
       const disposition = response.headers.get("content-disposition") || "";
-      const filename = disposition.match(/filename="?([^";]+)"?/i)?.[1] || `${businessName}-linktrees.multitree.json`;
+      const filename =
+        disposition.match(/filename="?([^";]+)"?/i)?.[1] ||
+        `${businessName}-linktrees.multitree.json`;
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
@@ -186,49 +202,60 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
     try {
       const form = new FormData();
       form.append("file", file);
-      const response = await fetch(`/api/platform/businesses/${businessId}/linktrees-import`, {
-        method: "POST", credentials: "include", body: form,
-      });
+      const response = await fetch(
+        `/api/platform/businesses/${businessId}/linktrees-import`,
+        {
+          method: "POST",
+          credentials: "include",
+          body: form,
+        },
+      );
       const result = await response.json().catch(() => null);
-      if (!response.ok || result?.success === false) throw new Error(result?.message || "Import failed");
+      if (!response.ok || result?.success === false)
+        throw new Error(result?.message || "Import failed");
       await fetchData(true);
       toast.success("لینکترییەکان بە سەرکەوتوویی هاوردە کران");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Import failed";
       setError(message);
-      toast.error("هاوردەکردنی لینکترییەکان سەرکەوتوو نەبوو", { description: message });
+      toast.error("هاوردەکردنی لینکترییەکان سەرکەوتوو نەبوو", {
+        description: message,
+      });
     } finally {
       setIsTransferring(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  const fetchData = useCallback(async (bypassCache = false) => {
-    const requestId = ++requestRef.current;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const { fetchWithCache } = await import('@/lib/utils/cache');
-      const url = bypassCache
-        ? `/api/platform/businesses/${businessId}/linktrees?_t=${Date.now()}`
-        : `/api/platform/businesses/${businessId}/linktrees`;
-      const result = await fetchWithCache<BusinessLinktreeAnalyticsSummary[]>(
-        url,
-        undefined,
-        `business-linktrees:${businessId}`,
-        bypassCache
-      );
-      if (requestId !== requestRef.current) return;
-      setLinktrees(Array.isArray(result) ? result : []);
-      setLastUpdated(new Date());
-    } catch (err) {
-      if (requestId !== requestRef.current) return;
-      setError(err instanceof Error ? err.message : "داتاکان بار نەکران");
-      console.error("Error fetching business linktrees:", err);
-    } finally {
-      if (requestId === requestRef.current) setIsLoading(false);
-    }
-  }, [businessId]);
+  const fetchData = useCallback(
+    async (bypassCache = false) => {
+      const requestId = ++requestRef.current;
+      setIsLoading(true);
+      setError(null);
+      try {
+        const { fetchWithCache } = await import("@/lib/utils/cache");
+        const url = bypassCache
+          ? `/api/platform/businesses/${businessId}/linktrees?_t=${Date.now()}`
+          : `/api/platform/businesses/${businessId}/linktrees`;
+        const result = await fetchWithCache<BusinessLinktreeAnalyticsSummary[]>(
+          url,
+          undefined,
+          `business-linktrees:${businessId}`,
+          bypassCache,
+        );
+        if (requestId !== requestRef.current) return;
+        setLinktrees(Array.isArray(result) ? result : []);
+        setLastUpdated(new Date());
+      } catch (err) {
+        if (requestId !== requestRef.current) return;
+        setError(err instanceof Error ? err.message : "داتاکان بار نەکران");
+        console.error("Error fetching business linktrees:", err);
+      } finally {
+        if (requestId === requestRef.current) setIsLoading(false);
+      }
+    },
+    [businessId],
+  );
 
   useEffect(() => {
     if (isOpen && businessId) fetchData();
@@ -253,7 +280,10 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
 
   const totals = useMemo(() => {
     const totalViews = linktrees.reduce((sum, lt) => sum + lt.unique_views, 0);
-    const totalClicks = linktrees.reduce((sum, lt) => sum + lt.unique_clicks, 0);
+    const totalClicks = linktrees.reduce(
+      (sum, lt) => sum + lt.unique_clicks,
+      0,
+    );
     return { totalViews, totalClicks };
   }, [linktrees]);
 
@@ -278,17 +308,23 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
   }, [linktrees, sortMode, searchQuery]);
 
   const getStatusBadge = (status: string) => {
-    if (status === "active") return "bg-emerald-100 dark:bg-emerald-400/15 text-emerald-600 dark:text-emerald-300";
+    if (status === "active")
+      return "bg-emerald-100 dark:bg-emerald-400/15 text-emerald-600 dark:text-emerald-300";
     return "bg-rose-100 dark:bg-rose-400/15 text-rose-600 dark:text-rose-300";
   };
 
-  const avatarSrc = useCallback((lt: BusinessLinktreeAnalyticsSummary) => {
-    return lt.image || businessDefaultAvatar || null;
-  }, [businessDefaultAvatar]);
+  const avatarSrc = useCallback(
+    (lt: BusinessLinktreeAnalyticsSummary) => {
+      return lt.image || businessDefaultAvatar || null;
+    },
+    [businessDefaultAvatar],
+  );
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: analyticsModalScrollbarStyles }} />
+      <style
+        dangerouslySetInnerHTML={{ __html: analyticsModalScrollbarStyles }}
+      />
       <div
         className="modal-ltr fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/40 dark:bg-black/60 backdrop-blur-md overflow-y-auto"
         onMouseDown={handleBackdropMouseDown}
@@ -303,16 +339,22 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
           className="relative w-full max-w-4xl my-4 sm:my-8 rounded-2xl overflow-hidden shadow-2xl outline-none
           bg-white dark:bg-[#161B22]
           border border-gray-100/80 dark:border-white/8
-        ">
-          <div className="relative p-5 sm:p-6 border-b
+        "
+        >
+          <div
+            className="relative p-5 sm:p-6 border-b
             border-gray-100/80 dark:border-white/8
             bg-gradient-to-r from-white to-slate-50/30
             dark:from-[#161B22] dark:to-slate-800/5
-          ">
+          "
+          >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 rounded-xl shadow-sm" style={{ background: 'var(--theme-primary, #64748b)' }}>
+                  <div
+                    className="p-2.5 rounded-xl shadow-sm"
+                    style={{ background: "var(--theme-primary, #64748b)" }}
+                  >
                     <BarChart3 className="h-5 w-5 text-white" />
                   </div>
                   <div>
@@ -331,10 +373,13 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
                   <div className="flex items-center gap-2 mt-2 text-xs text-slate-400 dark:text-gray-500">
                     <MotionPulse
                       className="h-1.5 w-1.5 rounded-full shadow-sm"
-                      style={{ backgroundColor: "var(--theme-primary, #64748b)" }}
+                      style={{
+                        backgroundColor: "var(--theme-primary, #64748b)",
+                      }}
                     />
                     <span className="font-kurdish">
-                      دواین نوێکردنەوە: {new Intl.DateTimeFormat("ku", {
+                      دواین نوێکردنەوە:{" "}
+                      {new Intl.DateTimeFormat("ku", {
                         hour: "2-digit",
                         minute: "2-digit",
                         second: "2-digit",
@@ -350,71 +395,77 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
                   type="file"
                   accept=".json,.multitree.json,application/json"
                   className="hidden"
-                  onChange={(event) => event.target.files?.[0] && handleImport(event.target.files[0])}
+                  onChange={(event) =>
+                    event.target.files?.[0] &&
+                    handleImport(event.target.files[0])
+                  }
                 />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isTransferring}
-                  className={`${HEADER_ICON_BUTTON} ${HEADER_NEUTRAL}`}
-                  aria-label="هاوردەکردنی لینکترییەکان"
-                  title="هاوردەکردنی لینکترییەکان"
-                >
-                  <Upload className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleExport}
-                  disabled={isTransferring}
-                  aria-busy={isTransferring}
-                  className={`${HEADER_ICON_BUTTON} ${HEADER_NEUTRAL}`}
-                  aria-label="هەناردەکردنی لینکترییەکان"
-                  title="هەناردەکردنی لینکترییەکان"
-                >
-                  {isTransferring ? (
-                    <MotionSpinner>
-                      <Loader2 className="h-4 w-4" />
+                <Tooltip content="هاوردەکردنی لینکترییەکان" side="bottom">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isTransferring}
+                    className={`${HEADER_ICON_BUTTON} ${HEADER_NEUTRAL}`}
+                    aria-label="هاوردەکردنی لینکترییەکان"
+                  >
+                    <Upload className="h-4 w-4" />
+                  </button>
+                </Tooltip>
+                <Tooltip content="هەناردەکردنی لینکترییەکان" side="bottom">
+                  <button
+                    type="button"
+                    onClick={handleExport}
+                    disabled={isTransferring}
+                    aria-busy={isTransferring}
+                    className={`${HEADER_ICON_BUTTON} ${HEADER_NEUTRAL}`}
+                    aria-label="هەناردەکردنی لینکترییەکان"
+                  >
+                    {isTransferring ? (
+                      <MotionSpinner>
+                        <Loader2 className="h-4 w-4" />
+                      </MotionSpinner>
+                    ) : (
+                      <Download className="h-4 w-4" />
+                    )}
+                  </button>
+                </Tooltip>
+                <Tooltip content="نوێکردنەوە" side="bottom">
+                  <button
+                    type="button"
+                    onClick={() => void handleRefresh()}
+                    disabled={isLoading}
+                    aria-busy={isLoading}
+                    className={`${HEADER_ICON_BUTTON} ${HEADER_NEUTRAL}`}
+                    aria-label="نوێکردنەوە"
+                  >
+                    <MotionSpinner active={isLoading}>
+                      <RefreshCw className="h-4 w-4" />
                     </MotionSpinner>
-                  ) : (
-                    <Download className="h-4 w-4" />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleRefresh()}
-                  disabled={isLoading}
-                  aria-busy={isLoading}
-                  className={`${HEADER_ICON_BUTTON} ${HEADER_NEUTRAL}`}
-                  aria-label="نوێکردنەوە"
-                  title="نوێکردنەوە"
-                >
-                  <MotionSpinner active={isLoading}>
-                    <RefreshCw className="h-4 w-4" />
-                  </MotionSpinner>
-                </button>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className={`${HEADER_ICON_BUTTON} ${HEADER_NEUTRAL}`}
-                  aria-label="داخستن"
-                  title="داخستن"
-                >
-                  <X className="h-4 w-4 transition-transform group-hover:rotate-90" />
-                </button>
+                  </button>
+                </Tooltip>
+                <Tooltip content="داخستن" side="bottom">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className={`${HEADER_ICON_BUTTON} ${HEADER_NEUTRAL}`}
+                    aria-label="داخستن"
+                  >
+                    <X className="h-4 w-4 transition-transform group-hover:rotate-90" />
+                  </button>
+                </Tooltip>
               </div>
             </div>
           </div>
 
-          <div className="p-4 sm:p-5 md:p-6 overflow-y-auto
+          <div
+            className="p-4 sm:p-5 md:p-6 overflow-y-auto
             max-h-[calc(100vh-180px)] sm:max-h-[calc(100vh-200px)] md:max-h-[calc(100vh-220px)]
             custom-scrollbar
             bg-white dark:bg-[#161B22]
-          ">
+          "
+          >
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-16 gap-4">
-                <MotionSpinner><Loader2 className="h-10 w-10 " style={{ color: 'var(--theme-primary, #64748b)' }}  /></MotionSpinner>
-                <p className="text-sm text-slate-400 dark:text-gray-500 font-kurdish">داتاکان بار دەکرێن...</p>
-              </div>
+              <SkeletonBusinessAnalyticsContent />
             ) : error ? (
               <div className="flex flex-col items-center justify-center py-16 gap-4">
                 <p className="text-sm text-red-600 font-kurdish">{error}</p>
@@ -422,7 +473,7 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
                   type="button"
                   onClick={() => void fetchData(true)}
                   className="px-4 py-2.5 rounded-xl text-white font-kurdish shadow-lg hover:shadow-xl transition-all hover:opacity-90 cursor-pointer"
-                  style={{ background: 'var(--theme-css, #64748b)' }}
+                  style={{ background: "var(--theme-css, #64748b)" }}
                 >
                   هەوڵ بدەوە
                 </button>
@@ -432,8 +483,8 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
                 <AnalyticsSummaryCards
                   views={totals.totalViews}
                   clicks={totals.totalClicks}
-                  viewsLabel="کۆی بینینەکان"
-                  clicksLabel="کۆی کلیکەکان"
+                  viewsLabel={ANALYTICS_TERMS.totalViews}
+                  clicksLabel={ANALYTICS_TERMS.totalClicks}
                 />
 
                 {/* Search + Filters */}
@@ -446,7 +497,11 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="گەڕان بە ناوی لینک..."
                       className="w-full pr-9 pl-3 py-2 text-sm rounded-xl border bg-white dark:bg-[#161B22] border-slate-100 dark:border-white/8 text-slate-700 dark:text-gray-200 placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 transition-all"
-                      style={{ '--tw-ring-color': 'var(--theme-primary, #64748b)' } as React.CSSProperties}
+                      style={
+                        {
+                          "--tw-ring-color": "var(--theme-primary, #64748b)",
+                        } as React.CSSProperties
+                      }
                     />
                   </div>
                   <div className="flex gap-1.5">
@@ -461,10 +516,14 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
                             ? "text-white shadow-sm"
                             : "bg-white dark:bg-[#161B22] border-slate-100 dark:border-white/8 text-slate-500 dark:text-gray-400 hover:border-slate-200 dark:hover:border-white/20"
                         }`}
-                        style={sortMode === value ? {
-                          background: 'var(--theme-primary, #64748b)',
-                          borderColor: 'var(--theme-primary, #64748b)',
-                        } : undefined}
+                        style={
+                          sortMode === value
+                            ? {
+                                background: "var(--theme-primary, #64748b)",
+                                borderColor: "var(--theme-primary, #64748b)",
+                              }
+                            : undefined
+                        }
                       >
                         {label}
                       </button>
@@ -476,13 +535,18 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
                   <div className="flex flex-col items-center justify-center py-12 gap-3 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
                     <Globe className="h-10 w-10 text-slate-300 dark:text-gray-600" />
                     <p className="text-sm text-slate-400 dark:text-gray-500 font-kurdish">
-                      {linktrees.length === 0 ? "هیچ لینکترییەک نەدۆزرایەوە" : "هیچ هاوتابوونێک نەدۆزرایەوە"}
+                      {linktrees.length === 0
+                        ? "هیچ لینکترییەک نەدۆزرایەوە"
+                        : "هیچ هاوتابوونێک نەدۆزرایەوە"}
                     </p>
                   </div>
                 ) : (
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="p-1.5 rounded-lg shadow-sm" style={{ background: 'var(--theme-primary, #64748b)' }}>
+                      <div
+                        className="p-1.5 rounded-lg shadow-sm"
+                        style={{ background: "var(--theme-primary, #64748b)" }}
+                      >
                         <Globe className="h-3.5 w-3.5 text-white" />
                       </div>
                       <h3 className="text-sm font-semibold text-slate-700 dark:text-gray-200 font-kurdish">
@@ -497,7 +561,13 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
 
                     <div className="rounded-2xl border border-slate-100 dark:border-white/8 divide-y divide-slate-100 dark:divide-white/5 overflow-hidden">
                       {filteredLinktrees.map((lt) => {
-                        const ctr = lt.unique_views > 0 ? ((lt.unique_clicks / lt.unique_views) * 100).toFixed(1) : "0.0";
+                        const ctr =
+                          lt.unique_views > 0
+                            ? (
+                                (lt.unique_clicks / lt.unique_views) *
+                                100
+                              ).toFixed(1)
+                            : "0.0";
                         return (
                           <div
                             key={lt.id}
@@ -519,8 +589,12 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
                                       سەرەکی
                                     </span>
                                   )}
-                                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusBadge(lt.status)}`}>
-                                    {lt.status === "active" ? "چالاک" : "ناچالاک"}
+                                  <span
+                                    className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusBadge(lt.status)}`}
+                                  >
+                                    {lt.status === "active"
+                                      ? "چالاک"
+                                      : "ناچالاک"}
                                   </span>
                                 </div>
                                 {lt.subtitle && (
@@ -533,19 +607,28 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
                                 <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
                                   {lt.unique_views.toLocaleString()}
                                 </p>
-                                <p className="text-[10px] text-slate-400 dark:text-gray-500">بینین</p>
+                                <p className="text-[10px] text-slate-400 dark:text-gray-500">
+                                  بینین
+                                </p>
                               </div>
                               <div className="text-center">
                                 <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
                                   {lt.unique_clicks.toLocaleString()}
                                 </p>
-                                <p className="text-[10px] text-slate-400 dark:text-gray-500">کلیک</p>
+                                <p className="text-[10px] text-slate-400 dark:text-gray-500">
+                                  کلیک
+                                </p>
                               </div>
                               <div className="text-center">
-                                <p className="text-sm font-bold" style={{ color: "var(--theme-primary)" }}>
+                                <p
+                                  className="text-sm font-bold"
+                                  style={{ color: "var(--theme-primary)" }}
+                                >
                                   {ctr}%
                                 </p>
-                                <p className="text-[10px] text-slate-400 dark:text-gray-500">CTR</p>
+                                <p className="text-[10px] text-slate-400 dark:text-gray-500">
+                                  CTR
+                                </p>
                               </div>
                             </div>
                           </div>

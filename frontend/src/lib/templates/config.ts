@@ -16,37 +16,50 @@ export const TEMPLATE_OPTIONS = [
   {
     id: "spectrum",
     name: "Spectrum",
-    description: "Vibrant pill-shaped buttons with colorful gradients and smooth animations.",
+    description:
+      "Vibrant pill-shaped buttons with colorful gradients and smooth animations.",
     previewGradient: "from-blue-400 via-purple-500 to-pink-500",
     accentHex: "#8b5cf6",
   },
   {
     id: "spotlight",
     name: "Spotlight",
-    description: "Classic stacked layout with direct buttons and no extra chrome.",
+    description:
+      "Classic stacked layout with direct buttons and no extra chrome.",
     previewGradient: "from-slate-950 via-slate-900 to-indigo-800",
     accentHex: "#818cf8",
   },
   {
     id: "frost",
     name: "Frost",
-    description: "Clean frosted glass design with outlined buttons and modern aesthetics.",
+    description:
+      "Clean frosted glass design with outlined buttons and modern aesthetics.",
     previewGradient: "from-blue-500 via-cyan-400 to-teal-500",
     accentHex: "#06b6d4",
   },
   {
     id: "aurora",
     name: "Aurora",
-    description: "Beautiful aurora-inspired gradient pills with smooth transitions and elegant styling.",
+    description:
+      "Beautiful aurora-inspired gradient pills with smooth transitions and elegant styling.",
     previewGradient: "from-purple-500 via-pink-500 to-orange-500",
     accentHex: "#ec4899",
   },
   {
     id: "serenity",
     name: "Serenity",
-    description: "Simple and soft card-based design with gentle floating elements, clean layout, and smooth animations.",
+    description:
+      "Simple and soft card-based design with gentle floating elements, clean layout, and smooth animations.",
     previewGradient: "from-pink-100 via-rose-100 to-orange-100",
     accentHex: "#f472b6",
+  },
+  {
+    id: "branch-signal",
+    name: "Branch Signal",
+    description:
+      "A premium dark signal tree that connects every link back to the profile through a tenant-colored branching network.",
+    previewGradient: "from-[#111714] via-[#080b09] to-[#050706]",
+    accentHex: "#b6f20d",
   },
 ] as const satisfies readonly TemplateOption[];
 
@@ -60,18 +73,21 @@ export function isTemplateKey(value: string): value is TemplateKey {
 /** Human-readable template name for a persisted key, or null when unknown. */
 export function getTemplateName(templateKey?: string | null): string | null {
   if (!templateKey) return null;
-  return TEMPLATE_OPTIONS.find((option) => option.id === templateKey)?.name ?? null;
+  return (
+    TEMPLATE_OPTIONS.find((option) => option.id === templateKey)?.name ?? null
+  );
 }
 
 export function normalizeTemplateConfig(
   templateKey?: string | null,
-  templateConfig?: Record<string, unknown> | null
+  templateConfig?: Record<string, unknown> | null,
 ): Record<string, unknown> {
   const config = {
     ...(templateConfig ?? {}),
   } as Record<string, unknown>;
 
-  const existingKey = typeof config.templateKey === "string" ? config.templateKey : undefined;
+  const existingKey =
+    typeof config.templateKey === "string" ? config.templateKey : undefined;
 
   const resolvedKey = (() => {
     if (templateKey && isTemplateKey(templateKey)) {

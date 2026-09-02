@@ -10,7 +10,6 @@ export { CardRecordsSection } from "./CardRecordsSection";
 export { CoverageSection } from "./CoverageSection";
 export { GallerySection } from "./GallerySection";
 export { HoursSection } from "./HoursSection";
-export { LeadFormSection } from "./LeadFormSection";
 export { LinkRecordsSection } from "./LinkRecordsSection";
 export { LocationSection } from "./LocationSection";
 export { SocialSection } from "./SocialSection";

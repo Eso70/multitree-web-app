@@ -44,7 +44,6 @@ const ACTION_TYPE_BY_SECTION: Record<string, string> = {
   credential: 'link',
   process: 'link',
   location: 'link',
-  leadForm: 'form',
 };
 
 /**
@@ -199,7 +198,6 @@ interface ContentLike {
   certificates: Array<{ id: string; title: string; verificationUrl: string }>;
   processSteps: Array<{ id: string; title: string; actionUrl: string }>;
   locations: Array<{ name: string; city: string; mapUrl: string }>;
-  leadForm: { title: string; fields: Array<unknown> };
   sections: Array<{ key: string; enabled: boolean }>;
 }
 
@@ -310,9 +308,8 @@ export function buildMiniWebsiteActions(
   if (on.has('youtubeVideos'))
     for (const video of content.youtubeVideos)
       add('video', video.id, video.title, video.url);
-  // Stories are often image-only, with no destination of its own — the same
-  // reason `leadForm` below is pushed directly rather than through `add`,
-  // which skips anything without one. A story is still worth its own row:
+  // Stories are often image-only, with no destination of their own. A story is
+  // still worth its own row:
   // it is what lets each one report its own view count instead of all of
   // them reporting as one generic external click.
   if (on.has('stories'))
@@ -352,19 +349,6 @@ export function buildMiniWebsiteActions(
         location.name || location.city || 'شوێن',
         location.mapUrl,
       );
-    });
-
-  // The form has no destination of its own — it posts back to us — so it is
-  // registered explicitly rather than through `add`, which skips empty links.
-  if (on.has('leadForm') && content.leadForm.fields.length)
-    actions.push({
-      actionKey: 'mini:leadForm',
-      actionType: 'form',
-      label: content.leadForm.title || 'فۆرمی داواکاری',
-      destination: null,
-      tiktokEvent: 'Lead',
-      displayOrder: actions.length,
-      metadata: { section: 'leadForm', kind: 'leadForm' },
     });
 
   for (const page of MINI_WEBSITE_PAGE_ACTIONS)

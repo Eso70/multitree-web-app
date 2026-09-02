@@ -20,9 +20,7 @@ export function useTemplateAccess(enabled = true) {
         setLoadedKeys(
           Array.isArray(keys)
             ? new Set(
-                keys.filter(
-                  (key): key is string => typeof key === "string",
-                ),
+                keys.filter((key): key is string => typeof key === "string"),
               )
             : new Set(),
         );

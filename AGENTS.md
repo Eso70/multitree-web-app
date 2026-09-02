@@ -282,12 +282,7 @@ The repository uses one consolidated schema baseline for fresh installs,
 split across numbered parts in `backend/src/database/migrations/baseline/`
 (`00_settings_and_extensions.sql` through `99_data.sql`).
 `src/database/baseline.ts` owns which parts exist and the order they apply in.
-Never edit that baseline for a schema change. Every schema change must be
-delivered as a new dated forward migration file in
-`backend/src/database/migrations/` (for example
-`2026-08-10_add_tiktok_consent.sql`) so existing databases can be upgraded
-in place. Reset only disposable databases, and use an explicitly reviewed
-backup and replacement procedure for valuable environments.
+
 
 Never modify production schemas manually.
 

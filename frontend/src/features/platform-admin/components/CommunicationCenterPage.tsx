@@ -45,6 +45,7 @@ import type {
   Conversation,
 } from "@/features/communications/types";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 type CenterTab =
   | "overview"
@@ -359,36 +360,39 @@ export function CommunicationCenterPage() {
           icon={contentMeta.icon}
           action={
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => void load()}
-                disabled={loading}
-                className="group flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:shadow disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
-                aria-label="نوێکردنەوە"
-              >
-                <MotionSpinner active={loading}><RefreshCw
-                  className="h-4 w-4 -transform"
-                 /></MotionSpinner>
-              </button>
+              <Tooltip content="نوێکردنەوە" side="bottom">
+                <button
+                  type="button"
+                  onClick={() => void load()}
+                  disabled={loading}
+                  className="group flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:shadow disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 cursor-pointer"
+                  aria-label="نوێکردنەوە"
+                >
+                  <MotionSpinner active={loading}><RefreshCw
+                    className="h-4 w-4 -transform"
+                   /></MotionSpinner>
+                </button>
+              </Tooltip>
               {tab === "announcements" && (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => setAnnouncementSearchOpen(true)}
-                    className={`group relative flex h-10 min-w-10 flex-1 items-center justify-between rounded-xl border px-3.5 shadow-sm transition-all hover:shadow sm:w-48 sm:flex-none ${
-                      announcementSearchOpen || announcementFilterCount > 0
-                        ? "sa-soft sa-soft-border"
-                        : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50/50 hover:text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
-                    }`}
-                    title="گەڕان و پاڵاوتن (Ctrl+K)"
-                    aria-label="گەڕان و پاڵاوتن"
-                  >
-                    <div className="flex min-w-0 items-center gap-2">
-                      <SlidersHorizontal className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:scale-110 dark:text-gray-500" />
-                      <span className="truncate text-xs font-semibold">
-                        گەڕان و پاڵاوتن
-                      </span>
-                    </div>
+                  <Tooltip content="گەڕان و پاڵاوتن (Ctrl+K)" side="top">
+                    <button
+                      type="button"
+                      onClick={() => setAnnouncementSearchOpen(true)}
+                      className={`group relative flex h-10 min-w-10 flex-1 items-center justify-between rounded-xl border px-3.5 shadow-sm transition-all hover:shadow sm:w-48 sm:flex-none cursor-pointer ${
+                        announcementSearchOpen || announcementFilterCount > 0
+                          ? "sa-soft sa-soft-border"
+                          : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50/50 hover:text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
+                      }`}
+                      title="گەڕان و پاڵاوتن (Ctrl+K)"
+                      aria-label="گەڕان و پاڵاوتن"
+                    >
+                      <div className="flex min-w-0 items-center gap-2">
+                        <SlidersHorizontal className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:scale-110 dark:text-gray-500" />
+                        <span className="truncate text-xs font-semibold">
+                          گەڕان و پاڵاوتن
+                        </span>
+                      </div>
                     {announcementFilterCount > 0 ? (
                       <span className="sa-gradient flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[9px] font-bold text-white">
                         {announcementFilterCount}
@@ -399,16 +403,18 @@ export function CommunicationCenterPage() {
                       </kbd>
                     )}
                   </button>
+                </Tooltip>
                   {announcementFilterCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={clearAnnouncementFilters}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-500 shadow-sm transition hover:border-red-300 hover:bg-red-100 hover:text-red-600 hover:shadow dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/35 dark:hover:text-red-300"
-                      title="پاککردنەوەی پاڵاوتنەکان"
-                      aria-label="پاککردنەوەی پاڵاوتنەکان"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+                    <Tooltip content="پاککردنەوەی پاڵاوتنەکان" side="bottom">
+                      <button
+                        type="button"
+                        onClick={clearAnnouncementFilters}
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-500 shadow-sm transition hover:border-red-300 hover:bg-red-100 hover:text-red-600 hover:shadow dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/35 dark:hover:text-red-300 cursor-pointer"
+                        aria-label="پاککردنەوەی پاڵاوتنەکان"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </Tooltip>
                   )}
                 </>
               )}
@@ -491,16 +497,17 @@ export function CommunicationCenterPage() {
             <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
               پاڵاوتنی ورد
             </p>
-            <button
-              type="button"
-              onClick={clearAnnouncementFilters}
-              disabled={announcementFilterCount === 0}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-500 transition hover:border-red-300 hover:bg-red-100 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/35 dark:hover:text-red-300"
-              title="پاککردنەوەی هەموو"
-              aria-label="پاککردنەوەی هەموو"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <Tooltip content="پاککردنەوەی هەموو" side="bottom">
+              <button
+                type="button"
+                onClick={clearAnnouncementFilters}
+                disabled={announcementFilterCount === 0}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-500 transition hover:border-red-300 hover:bg-red-100 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/35 dark:hover:text-red-300 cursor-pointer"
+                aria-label="پاککردنەوەی هەموو"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </Tooltip>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <CustomSelect

@@ -95,7 +95,7 @@ NestJS 11 on the Fastify adapter (not Express). See
 [docs/architecture.md](architecture.md#backend-boundaries) for module
 ownership and boundaries, and [docs/security.md](security.md) for
 authentication, authorization, and every other security control. This file
-covers the analytics/CRM/activity pipeline, upload storage, environment
+covers the analytics/activity pipeline, upload storage, environment
 configuration, and backend commands.
 
 ## Default linktree page seeding
@@ -163,10 +163,10 @@ business dashboard's pages list (`GET /linktrees`, which had no analytics at
 all, so the cards could not show traffic) and the platform admin's business
 analytics modal. Both go through the repository now.
 
-Uniques are counted from `analytics_events`, not from
-`analytics_page_daily.new_visitors`: that column marks only a visitor's
-first-ever event, so a returning visitor would be undercounted in a lifetime
-total. `total_clicks` does come from the rollup, which is what it is for.
+Uniques are counted from `analytics_events`. Daily rollups intentionally hold
+only additive view, click, and conversion totals. `total_clicks` comes from the
+rollup, while exact unique counts come from distinct visitor IDs in the event
+log.
 
 `getAllLinktrees` attaches the totals with one aggregate for the whole list
 rather than a query per card, and defaults a page with no traffic to zeroes so
@@ -238,9 +238,7 @@ and mini-website-only clear-all analytics.
 
 `GET /api/public/mini-websites/platform/:slug` is root-domain only and resolves
 only `businesses.account_type='platform'`. The same public renderer and tracker
-serve tenant and platform pages. Platform lead submissions use the same
-validated lead-form and analytics/CRM pipeline under the internal workspace,
-through the separately rate-limited root-domain endpoint.
+serve tenant and platform pages.
 
 ## Request validation boundaries
 
@@ -325,7 +323,7 @@ non-empty logo records and exposes only the already-derived safe public URL;
 draft, paused, archived, cross-tenant, disabled, or image-less records never
 reach the homepage.
 
-## Public analytics, CRM, and activity
+## Public analytics and activity
 
 Public clients can submit batches of up to 50 idempotent events. Supported
 event names are:
@@ -353,7 +351,7 @@ custom
 ```
 
 The unified analytics pipeline stores visitors, sessions, events, public
-pages, public actions, daily page/action/dimension rollups, attribution
+pages, public actions, daily page/action rollups, attribution
 fields, conversion values, consent state, and bot classification.
 
 Of those, `CONVERSION_EVENTS` decides which count as a conversion in a
@@ -371,9 +369,6 @@ applied at ingest, so rollup rows written before a change to it keep their
 original numbers and a date range spanning the change is not comparable to one
 before it.
 
-Form submissions and lead events populate the CRM model. Analytics and CRM
-reads remain business scoped.
-
 Outbound registered HTTP(S) actions use
 `GET /api/public/analytics/open/:pageId/:actionId` as a first-party navigation
 handoff. The destination is resolved from `public_page_actions`; the endpoint
@@ -383,17 +378,6 @@ TikTok in-app WebView from losing the internal click when it suspends the page
 to open WhatsApp. Analytics failures after destination resolution fail open so
 the visitor still reaches the business. Native application schemes retain the
 immediate-beacon and durable-queue path.
-
-The business Dashboard reads its CRM workload through
-`GET /api/analytics/v2/crm/summary`. This endpoint aggregates status counts
-across every public page owned by the authenticated tenant and uses the same
-`business:analytics:details-read` capability as page-scoped CRM summaries. It
-does not return contact details or lead records. Its optional `from` and `to`
-date bounds filter leads by creation time. The Dashboard also sends those same
-bounds to `GET /api/analytics/v2/pages` and
-`GET /api/analytics/v2/tiktok/health`, keeping all time-based overview results
-on one range while page publication state and active Pixel connections remain
-current-state facts.
 
 TikTok Pixel IDs are exposed to two public surfaces only — the public linktree
 page and the public mini website page — resolved by
@@ -607,3 +591,17 @@ analytics store.
 Default local address: `http://localhost:4000`. See
 [docs/testing.md](testing.md) for the combined verification workflow and
 [docs/deployment.md](deployment.md) for running the built backend under PM2.
+
+## Client Linktree access
+
+`ClientLinktreeAccessModule` orchestrates restricted guest invitations while
+delegating actual page creation to `LinktreesService`. Business routes reuse
+the existing Linktree read/create/update capabilities. Guest routes derive the
+business and invitation only from a hashed HttpOnly session, expose no tenant
+selector, and return the current plan's effective template keys. Submission,
+manual expiry, and session revocation share an advisory lock; the database
+uniqueness constraint provides the final exactly-once boundary. Guest uploads
+reuse the shared media policy and require database-confirmed tenant ownership;
+guest analytics resolve the only permitted page from the invitation rather
+than a request parameter. See
+`docs/new-feature-client-linktree-access.md`.

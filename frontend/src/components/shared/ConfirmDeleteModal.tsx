@@ -5,6 +5,7 @@ import { MotionSpinner } from "@/components/motion/MotionPrimitives";
 import { memo } from "react";
 import { createPortal } from "react-dom";
 import { CheckCircle2, Loader2, Trash2, X } from "lucide-react";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 
 interface ConfirmDeleteModalProps {
@@ -64,33 +65,27 @@ export const ConfirmDeleteModal = memo(function ConfirmDeleteModal({
       className={`modal-ltr fixed inset-0 ${zIndexClassName} flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm`}
       onClick={handleBackdropClick}
       dir="ltr"
-      data-multitree-theme
-      style={
-        {
-          "--theme-primary": "var(--multitree-accent)",
-          "--theme-css": "var(--multitree-accent)",
-        } as React.CSSProperties
-      }
     >
       <div
         className="w-full max-w-md rounded-2xl overflow-hidden shadow-2xl
           bg-white dark:bg-[#161B22]
           border border-slate-200 dark:border-white/10
-          selection:bg-lime-500/30 dark:selection:bg-lime-500/40
         "
       >
         <div className="p-5 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
           <h3 className="text-lg font-bold text-slate-850 dark:text-gray-100 font-kurdish">
             {title}
           </h3>
-          <button
-            onClick={onClose}
-            disabled={isDeleting}
-            className="p-2 rounded-lg text-slate-400 hover:text-slate-655 dark:hover:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer disabled:opacity-50"
-            aria-label="داخستن"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <Tooltip content="داخستن" side="bottom">
+            <button
+              onClick={onClose}
+              disabled={isDeleting}
+              className="p-2 rounded-lg text-slate-400 hover:text-slate-655 dark:hover:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer disabled:opacity-50"
+              aria-label="داخستن"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </Tooltip>
         </div>
 
         <div className="p-5 flex flex-col gap-4">

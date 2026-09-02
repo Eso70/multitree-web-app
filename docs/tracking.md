@@ -60,7 +60,7 @@ TikTok Pixel and Events API delivery starts automatically on every allowlisted
 public marketing surface when its owner has an active pixel configuration.
 There is no visitor-facing marketing-cookie prompt and no consent cookie or
 local-storage gate. The legacy `consentState` transport/database field remains
-for backward compatibility and first-party CRM records, but it does not decide
+for backward compatibility, but it does not decide
 whether an otherwise eligible marketing event reaches TikTok.
 
 ---
@@ -264,8 +264,6 @@ tracker.trackEngagement("action_open", {
   once: true,
 });
 
-// A conversion the server records from its own endpoint: pixel half only.
-tracker.trackServerConversion("mini:leadForm", eventId);
 ```
 
 Anchors carrying `data-mini-action` are picked up automatically by
@@ -277,11 +275,11 @@ against.
 
 ### 3. If the server also records the event
 
-Some conversions are created by a server endpoint rather than by a click — the
-mini website's lead form is the one today. The browser mints the id, fires the
-pixel with `trackServerConversion`, and posts the id to the endpoint; the
-endpoint ingests under that id with `browserDispatched: true` and the matching
-`browserEventName`. Both halves then collapse into one conversion.
+If a future conversion is created by a server endpoint rather than by a click,
+the browser must mint the event id, fire the Pixel with
+`trackServerConversion`, and send that id to the endpoint. The endpoint must
+ingest under the same id with `browserDispatched: true` and the matching
+`browserEventName`, so TikTok can collapse both halves into one conversion.
 
 Queueing an event from the browser as well would double-count it internally,
 which is why `trackServerConversion` fires the pixel and nothing else.

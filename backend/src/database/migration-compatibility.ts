@@ -40,7 +40,6 @@ export const REQUIRED_TABLES = [
   'mini_website_locations',
   'mini_website_hours',
   'mini_website_items',
-  'mini_website_lead_forms',
   'mini_website_versions',
   'advertising_pages',
   'advertising_sections',
@@ -146,7 +145,6 @@ export async function assertSupportedSchema(client: PoolClient): Promise<void> {
   );
 
   const catalog = await client.query<{
-    mini_website_create_permission: boolean;
     public_page_entitlement: boolean;
     advertising_permissions: boolean;
     advertising_entitlement: boolean;
@@ -156,12 +154,6 @@ export async function assertSupportedSchema(client: PoolClient): Promise<void> {
     platform_workspace: boolean;
   }>(`
     SELECT
-      EXISTS (
-        SELECT 1
-          FROM auth_permissions
-         WHERE permission_key = 'business:mini-websites:create'
-           AND status = 'active'
-      ) AS mini_website_create_permission,
       EXISTS (
         SELECT 1
           FROM billing_entitlements
@@ -223,9 +215,6 @@ export async function assertSupportedSchema(client: PoolClient): Promise<void> {
   `);
   const catalogState = catalog.rows[0];
   const missingCatalogEntries = [
-    !catalogState?.mini_website_create_permission
-      ? 'business:mini-websites:create'
-      : null,
     !catalogState?.public_page_entitlement
       ? 'limit.linktrees public-page definition'
       : null,

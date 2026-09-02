@@ -30,6 +30,7 @@ import { StatCard } from "@/components/shared/StatCard";
 import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
 import { DetailViewModal } from "@/components/shared/DetailViewModal";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 type Effect = "deny" | "allow";
 type Scope =
@@ -624,40 +625,59 @@ function RulesTable({
               </td>
               <td className="px-3 py-3">
                 <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => onView(rule)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-sky-600 transition hover:bg-sky-50 dark:hover:bg-sky-500/10"
-                    title="بینینی ڕێسا"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onEdit(rule)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-violet-600 transition hover:bg-violet-50 dark:hover:bg-violet-500/10"
-                    title="دەستکاریکردنی"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onToggle(rule)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-amber-600 transition hover:bg-amber-50 dark:hover:bg-amber-500/10"
-                    title={
+                  <Tooltip content="بینینی ڕێسا" side="top">
+                    <button
+                      type="button"
+                      onClick={() => onView(rule)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-sky-600 transition hover:bg-sky-50 dark:hover:bg-sky-500/10 cursor-pointer"
+                      title="بینینی ڕێسا"
+                      aria-label="بینینی ڕێسا"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip content="دەستکاریکردنی" side="top">
+                    <button
+                      type="button"
+                      onClick={() => onEdit(rule)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-violet-600 transition hover:bg-violet-50 dark:hover:bg-violet-500/10 cursor-pointer"
+                      title="دەستکاریکردنی"
+                      aria-label="دەستکاریکردنی ڕێسا"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip
+                    content={
                       rule.status === "active" ? "ناچالاککردن" : "چالاککردن"
                     }
+                    side="top"
                   >
-                    <Power className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete(rule)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-red-600 transition hover:bg-red-50 dark:hover:bg-red-500/10"
-                    title="سڕینەوە"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => onToggle(rule)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-amber-600 transition hover:bg-amber-50 dark:hover:bg-amber-500/10 cursor-pointer"
+                      title={
+                        rule.status === "active" ? "ناچالاککردن" : "چالاککردن"
+                      }
+                      aria-label={
+                        rule.status === "active" ? "ناچالاککردن" : "چالاککردن"
+                      }
+                    >
+                      <Power className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip content="سڕینەوە" side="top">
+                    <button
+                      type="button"
+                      onClick={() => onDelete(rule)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-red-600 transition hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"
+                      title="سڕینەوە"
+                      aria-label="سڕینەوەی ڕێسا"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
                 </div>
               </td>
             </tr>

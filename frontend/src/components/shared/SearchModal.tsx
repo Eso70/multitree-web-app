@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Search, X } from "lucide-react";
 import { MotionReveal } from "@/components/motion/MotionPrimitives";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -85,27 +86,29 @@ export function SearchModal({
           />
           <div className="absolute left-4 flex items-center gap-1.5">
             {searchQuery && (
+              <Tooltip content="پاککردنەوەی گەڕان" side="bottom">
+                <button
+                  type="button"
+                  onClick={() => onSearchQueryChange("")}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/5 dark:hover:text-slate-200 cursor-pointer"
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </Tooltip>
+            )}
+            <Tooltip content="جێبەجێکردن و داخستن" side="bottom">
               <button
                 type="button"
-                onClick={() => onSearchQueryChange("")}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/5 dark:hover:text-slate-200"
-                aria-label="Clear search"
-                title="Clear search"
+                onClick={onClose}
+                className="rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-650 dark:hover:bg-white/5 dark:hover:text-gray-300 cursor-pointer"
+                aria-label="Apply and close"
               >
-                <X className="h-4 w-4" />
+                <kbd className="block rounded border border-gray-200 px-2 py-1 font-sans text-[9px] font-bold text-slate-400 dark:border-white/10 dark:text-gray-500">
+                  Enter
+                </kbd>
               </button>
-            )}
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-650 dark:hover:bg-white/5 dark:hover:text-gray-300"
-              aria-label="Apply and close"
-              title="Apply and close"
-            >
-              <kbd className="block rounded border border-gray-200 px-2 py-1 font-sans text-[9px] font-bold text-slate-400 dark:border-white/10 dark:text-gray-500">
-                Enter
-              </kbd>
-            </button>
+            </Tooltip>
           </div>
         </div>
 

@@ -18,6 +18,7 @@ describe('PlatformLinktreesService', () => {
   const linktrees = {
     getAllLinktrees: jest.fn(),
     createLinktree: jest.fn(),
+    duplicateLinktree: jest.fn(),
     getLinktreeById: jest.fn(),
     updateLinktree: jest.fn(),
     syncSubmittedLinks: jest.fn(),
@@ -186,5 +187,36 @@ describe('PlatformLinktreesService', () => {
     expect(linktrees.getAllLinktrees).toHaveBeenCalledWith(workspaceId);
     expect(analytics.clear).toHaveBeenNthCalledWith(1, workspaceId, 'page-1');
     expect(analytics.clear).toHaveBeenNthCalledWith(2, workspaceId, 'page-2');
+  });
+
+  it('duplicates through the shared Linktree service with platform policy', async () => {
+    const input = { name: 'Campaign Copy', slug: 'campaign-copy' };
+    (linktrees.duplicateLinktree as jest.Mock).mockResolvedValue({
+      uid: 'random-id-copy',
+      seo_name: 'campaign-copy',
+    });
+
+    await service.duplicate('page-id', input);
+
+    expect(linktrees.duplicateLinktree).toHaveBeenCalledWith(
+      'page-id',
+      workspaceId,
+      input,
+      'platform',
+    );
+    expect(redis.del).toHaveBeenCalledWith('cache:platform-linktree:random-id-copy');
+    expect(redis.del).toHaveBeenCalledWith('cache:platform-linktree:campaign-copy');
+  });
+
+  it('reports a lost root-slug race on duplicate as a conflict', async () => {
+    (linktrees.duplicateLinktree as jest.Mock).mockRejectedValue({
+      code: '23505',
+      constraint: 'root_public_slugs_pkey',
+    });
+
+    await expect(
+      service.duplicate('page-id', { name: 'Campaign', slug: 'taken' }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(redis.del).not.toHaveBeenCalled();
   });
 });

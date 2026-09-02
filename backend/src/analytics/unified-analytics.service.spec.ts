@@ -1,40 +1,11 @@
 import { mockArg } from '../common/test-utils';
 import { ConfigService } from '@nestjs/config';
-import { SecretCryptoService } from '../auth/secret-crypto.service';
 import { DatabaseService } from '../database/database.service';
 import {
   UnifiedAnalyticsService,
-  automaticCrmStatus,
-  crmProspectLockKey,
   forwardsToTikTok,
   isAnalyticsBotUserAgent,
 } from './unified-analytics.service';
-
-describe('automaticCrmStatus', () => {
-  it('keeps passive visitors new and advances direct contact actions', () => {
-    expect(automaticCrmStatus('page_view')).toBe('new');
-    expect(automaticCrmStatus('button_click')).toBe('new');
-    expect(automaticCrmStatus('whatsapp_click')).toBe('contacted');
-    expect(automaticCrmStatus('call_click')).toBe('contacted');
-    expect(automaticCrmStatus('email_click')).toBe('contacted');
-  });
-
-  it('qualifies strong intent and marks completed orders as won', () => {
-    expect(automaticCrmStatus('form_submit', true)).toBe('qualified');
-    expect(automaticCrmStatus('booking_started')).toBe('qualified');
-    expect(automaticCrmStatus('checkout_started')).toBe('qualified');
-    expect(automaticCrmStatus('order_completed')).toBe('won');
-  });
-
-  it('keeps the same visitor independent on each public page', () => {
-    const firstPage = crmProspectLockKey('business-1', 'page-1', 'visitor-1');
-    const secondPage = crmProspectLockKey('business-1', 'page-2', 'visitor-1');
-
-    expect(firstPage).not.toBe(secondPage);
-    expect(firstPage).toBe('crm:business-1:page-1:visitor-1');
-    expect(secondPage).toBe('crm:business-1:page-2:visitor-1');
-  });
-});
 
 /**
  * The event name the outbox records for a browser-dispatched event.
@@ -248,7 +219,6 @@ function buildService(database: unknown = {}) {
   return new UnifiedAnalyticsService(
     database as DatabaseService,
     config as unknown as ConfigService,
-    {} as unknown as SecretCryptoService,
   );
 }
 
@@ -305,25 +275,11 @@ describe('tracked redirect destinations', () => {
   });
 });
 
-describe('unique view/click rollups', () => {
-  /**
-   * A visitor returning on a later day is still the same visitor, not a new
-   * one — the daily rollup this feeds is only meant to bucket *when* the
-   * count landed, not to reset who counts as unique. Scoping the "have they
-   * been seen before" check to "today" (as it used to) double-counts anyone
-   * who comes back on a different day.
-   */
-  it("checks a visitor's whole history rather than just today", async () => {
+describe('analytics rollups', () => {
+  it('writes only additive totals and leaves exact uniques to the event log', async () => {
     const service = buildService();
     const client = {
-      query: jest
-        .fn()
-        .mockResolvedValueOnce({
-          rows: [
-            { first_view: true, first_click: false, first_action_click: false },
-          ],
-        })
-        .mockResolvedValue({ rows: [] }),
+      query: jest.fn().mockResolvedValue({ rows: [] }),
     };
 
     await (
@@ -340,8 +296,6 @@ describe('unique view/click rollups', () => {
               slug: string;
             };
             action: null;
-            visitorId: string;
-            databaseEventId: string;
             eventName: 'page_view';
             occurredAt: string;
             conversionValue: number;
@@ -358,37 +312,21 @@ describe('unique view/click rollups', () => {
         slug: 'page',
       },
       action: null,
-      visitorId: 'visitor-1',
-      databaseEventId: 'event-1',
       eventName: 'page_view',
       occurredAt: '2026-07-31T00:00:00.000Z',
       conversionValue: 0,
     });
 
-    const uniquenessQuery = mockArg<string>(client.query, 0, 0);
-    expect(uniquenessQuery).not.toMatch(/AT TIME ZONE/);
-    expect(uniquenessQuery).toContain('event.visitor_id = $2');
-
-    // The rollup column is `new_visitors`/`new_clickers` (a "first-ever,
-    // credited to that day" acquisition metric), not `unique_visitors`/
-    // `unique_clickers` — reporting reads uniques from the event log
-    // directly instead (see getSummary, getActions, getPages).
-    const pageDailyInsert = mockArg<string>(client.query, 1, 0);
-    expect(pageDailyInsert).toContain('new_visitors');
-    expect(pageDailyInsert).toContain('new_clickers');
+    expect(client.query).toHaveBeenCalledTimes(1);
+    const pageDailyInsert = mockArg<string>(client.query, 0, 0);
+    expect(pageDailyInsert).not.toContain('new_visitors');
+    expect(pageDailyInsert).not.toContain('new_clickers');
     expect(pageDailyInsert).not.toContain('unique_visitors');
     expect(pageDailyInsert).not.toContain('unique_clickers');
   });
 });
 
 describe('getSummary uniques', () => {
-  /**
-   * The daily rollup's `unique_visitors`/`unique_clickers` only mark a
-   * visitor's first-ever event, so summing it over a date range answers
-   * "new visitors in range", not "active unique visitors in range" — this
-   * is what regresses if `getSummary` ever goes back to reading uniques
-   * from `analytics_page_daily` instead of the event log directly.
-   */
   it('reads unique views/clickers from analytics_events, not the daily rollup', async () => {
     const database = {
       query: jest
@@ -405,17 +343,6 @@ describe('getSummary uniques', () => {
         })
         .mockResolvedValueOnce({
           rows: [{ unique_views: '37', unique_clickers: '12' }],
-        })
-        .mockResolvedValueOnce({
-          rows: [
-            {
-              new_visitors: '10',
-              returning_visitors: '27',
-              total_sessions: '50',
-              bounced_sessions: '5',
-              avg_engagement_seconds: '42',
-            },
-          ],
         }),
     };
     const service = buildService(database);
@@ -434,12 +361,10 @@ describe('getSummary uniques', () => {
   });
 });
 
-describe('getDaily/getTimeline uniques', () => {
+describe('getDaily uniques', () => {
   /**
    * A per-day trend point needs "how many distinct people were active that
-   * day", computed live per day from the event log — not the rollup's
-   * new_visitors/new_clickers, which only mark a visitor's first-ever event
-   * (a different, "new acquisition" metric — see updateRollups).
+   * day", computed live per day from the event log.
    */
   it('computes getDaily uniques from the event log, not the daily rollup', async () => {
     const database = {
@@ -456,21 +381,5 @@ describe('getDaily/getTimeline uniques', () => {
     expect(query).toContain('COUNT(DISTINCT event.visitor_id)');
     expect(query).toContain('AT TIME ZONE page.timezone');
     expect(query).toContain('target.local_today');
-  });
-
-  it('computes getTimeline uniques from the event log, not the daily rollup', async () => {
-    const database = {
-      query: jest.fn().mockResolvedValueOnce({ rows: [] }),
-    };
-    const service = buildService(database);
-
-    await service.getTimeline('business-1', 30, {});
-
-    const query = mockArg<string>(database.query, 0, 0);
-    expect(query).not.toContain('daily.unique_visitors');
-    expect(query).not.toContain('daily.unique_clickers');
-    expect(query).toContain('day_uniques AS');
-    expect(query).toContain('COUNT(DISTINCT event.visitor_id)');
-    expect(query).toContain('scope.local_today');
   });
 });

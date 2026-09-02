@@ -278,6 +278,11 @@ in the platform-admin one a pinned-row test that returned `-1` whenever `a` was
 pinned without looking at `b` — not a valid comparator, and self-contradicting
 for a pair of pinned rows. Extracting it makes both testable.
 
+Analytics surfaces use one Sorani vocabulary from
+`components/shared/analytics-terminology.ts`: `بینین` for views and `کلیک` for
+clicks. Totals and unique-person labels must reuse that contract; do not mix in
+alternatives such as `کرتە` for the same event.
+
 ---
 
 ## Modal forms and shared fields
@@ -623,6 +628,14 @@ table, form, modal, or management-page footprint and use the shared
 `components/shared/Skeleton.tsx` compositions. Do not replace already visible
 content with a skeleton during a background refresh.
 
+Skeleton parity is a UI contract: reserve the same header actions, statistic
+count and variants, tabs, responsive table columns or cards, form fields,
+modal frame, and list density that will replace it. Do not render speculative
+sections, generic cards, or fewer controls than the resolved state. When a
+resolved layout changes, update its shared skeleton and parity test in the same
+change. Full-page, embedded-panel, and modal fallbacks may need separate shell
+compositions even when they share the same data body.
+
 Use a compact spinner or progress treatment only for an explicit operation
 whose result is not replacement content, including save, upload, destructive
 confirmation, refresh, link resolution, and location lookup. Keep the affected
@@ -633,14 +646,31 @@ provide success or failure feedback. They must preserve navigation and local UI
 state and must never overwrite unsaved form or editor input.
 
 Data-heavy dashboard routes must reserve the complete visible page structure,
-not only their metric cards. Use `SkeletonDashboardPage` with the matching
-analytics, table, or form body for lazy-route and initial-request loading.
-Nested lists such as sessions, messages, and notification inboxes use
-`SkeletonList` locally without replacing already loaded surrounding settings.
-Template catalogs use `SkeletonTemplatePage`; deferred phone and monitor
-previews use the base shared `Skeleton` rather than standalone pulse markup.
+not only their metric cards. Compose `SkeletonDashboardShell` with the exact
+page skeleton from `SkeletonPageLayouts`, and use the corresponding modal or
+communication composition for lazy-route and initial-request loading. Nested
+sessions, activity, messages, chats, search results, and notification inboxes
+use their dedicated row skeleton locally without replacing already loaded
+surrounding settings. Template catalogs use `SkeletonTemplatePage`; deferred
+phone and monitor previews use the base shared `Skeleton` rather than
+standalone pulse markup.
 An intentionally empty preview is a stable product state and must not animate
 like loading or announce itself as pending.
+
+Authentication route transitions use `SkeletonAuthenticationPage`, which
+reserves the shared split-screen shell and sign-in card instead of flashing the
+public-home skeleton. Short indeterminate operations such as invitation-link
+validation and authentication handoff exchange use the shared `LoadingState`.
+It supplies one accessible announcement, consistent dark-mode contrast, and
+reduced-motion-safe animation. Do not use it for predictable replacement
+content; use the matching skeleton composition in that case.
+
+Every public route owns a route-level skeleton. Marketing pages preserve the
+shared navbar plus their actual cards, pricing, article, form, or template body.
+The root loading boundary detects platform versus business hosts so tenant
+requests receive the business landing composition. Public Linktree,
+mini-website, invitation, and results routes reserve their own renderer or
+branded client-access shell.
 
 ## Dashboard notification bell
 
@@ -727,8 +757,8 @@ states, and availability checks, while providing their own API endpoint set.
 The platform-admin list also reuses `LinktreesGrid` and `LinktreesTable`; its
 public path prefix is `/linktree` on the root domain. Its `ئامار` action opens
 the shared business page analytics modal in summary-only mode, loading current
-lifetime totals through the platform-scoped API; advanced analytics and action
-details remain hidden, while the standard loading skeleton, refresh, and
+lifetime totals through the platform-scoped API; action details remain hidden,
+while the standard loading skeleton, refresh, and
 clear-analytics confirmation stay consistent with business pages.
 The list-level clear-all action uses the same shared rose analytics button and
 confirmation modal as the business Linktree list; it is disabled when no
@@ -736,11 +766,12 @@ platform Linktree analytics exist.
 
 ### Platform mini websites
 
-The platform mini-website page renders the same `MiniWebsitesPage` manager as
-the business dashboard. Platform customization is limited to workspace
+The Platform and Creator mini-website pages render the same
+`MiniWebsitesPage` manager. Platform customization is limited to workspace
 branding, guarded API endpoints, root `/bio` links, internal template policy,
-and platform analytics ownership. Do not fork editor steps, cards, grid/table
-views, skeletons, dialogs, uploads, or the public renderer.
+and platform analytics ownership. The Business dashboard exposes no Mini
+Website navigation item or route on any plan. Do not fork editor steps, cards,
+grid/table views, skeletons, dialogs, uploads, or the public renderer.
 
 Mini-website lists use the complete shared Linktree grid/table presentation:
 card density, image treatment, metadata rows, traffic blocks, actions,
@@ -750,9 +781,22 @@ mini-website traffic labels describe the second metric as total actions rather
 than Linktree clickers. Domain wording must be configured without forking the
 shared list layout.
 
-- 12 selectable templates
+- 6 selectable Linktree templates
 - Registered through the template registry
 - Availability depends on the business subscription
+
+Every Linktree template presents the owner-editable button title as its primary
+label and the catalog-owned English platform name as a smaller secondary label.
+The secondary label is static UI metadata and must not use the editable link
+description.
+
+Branch Signal (`branch-signal`) is the Ultra-only premium network template. It
+must support every shared Linktree background color, gradient, uploaded image,
+and pattern, with readable text derived from the selected surface. Soft
+tenant-colored paths connect alternating dark cards directly. Platform colors
+stay inside icon tiles, while the tenant accent owns the network, card edge,
+arrow, glow, and footer. It must not add share, theme, navigation, badge, or
+header controls that are not part of the Linktree data contract.
 
 ### Mini Websites
 

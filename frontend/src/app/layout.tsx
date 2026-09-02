@@ -17,6 +17,7 @@ const criticalCursor =
 
 const multiTreeThemeStyle = {
   "--multitree-accent": MULTITREE_ACCENT_COLOR,
+  "--multitree-brand-accent": MULTITREE_ACCENT_COLOR,
 } as CSSProperties;
 
 export const metadata: Metadata = {

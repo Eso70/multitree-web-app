@@ -9,6 +9,7 @@ import { ModalWizardProgress } from "@/components/shared/ModalWizardProgress";
 import { apiRequest } from "@/lib/api/request";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { formatDateTime } from "@/lib/utils/format-date-time";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 type InvitationStep = "details" | "result";
 
@@ -80,20 +81,22 @@ export function InvitationCreator({
 
   return (
     <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Invite"
-        title="بانگهێشتنامەی نوێ"
-        className={`group flex h-10 items-center justify-center gap-2 rounded-xl border border-transparent bg-[var(--multitree-accent)] text-[var(--multitree-accent-ink)] shadow-sm transition-all hover:brightness-95 hover:shadow ${showLabel ? "w-10 px-0 sm:w-auto sm:px-3.5" : "w-10"}`}
-      >
-        <Link2 className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
-        {showLabel ? (
-          <span className="hidden text-xs font-bold sm:inline">
-            بانگهێشتنامەی نوێ
-          </span>
-        ) : null}
-      </button>
+      <Tooltip content="بانگهێشتنامەی نوێ" side="bottom">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Invite"
+          title="بانگهێشتنامەی نوێ"
+          className={`group flex h-10 items-center justify-center gap-2 rounded-xl border border-transparent bg-[var(--multitree-accent)] text-[var(--multitree-accent-ink)] shadow-sm transition-all hover:brightness-95 hover:shadow cursor-pointer ${showLabel ? "w-10 px-0 sm:w-auto sm:px-3.5" : "w-10"}`}
+        >
+          <Link2 className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
+          {showLabel ? (
+            <span className="hidden text-xs font-bold sm:inline">
+              بانگهێشتنامەی نوێ
+            </span>
+          ) : null}
+        </button>
+      </Tooltip>
 
       <ManagementModal
         isOpen={open}

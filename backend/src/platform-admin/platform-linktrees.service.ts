@@ -3,6 +3,7 @@ import { rootPublicLinktreeCacheKeys } from '../common/root-public-cache';
 import { rethrowRootSlugConflict } from '../common/root-slug-conflict';
 import { RedisService } from '../redis/redis.service';
 import { CreateLinktreeDto } from '../linktrees/dto/create-linktree.dto';
+import { DuplicateLinktreeDto } from '../linktrees/dto/duplicate-linktree.dto';
 import { LinktreesService } from '../linktrees/linktrees.service';
 import { PlatformContentWorkspaceService } from '../platform-workspace/platform-content-workspace.service';
 import { UnifiedAnalyticsService } from '../analytics/unified-analytics.service';
@@ -109,6 +110,23 @@ export class PlatformLinktreesService {
     }
     await this.invalidate(created.uid, created.seo_name);
     return created;
+  }
+
+  async duplicate(id: string, dto?: DuplicateLinktreeDto) {
+    const businessId = await this.workspaceId();
+    let duplicated;
+    try {
+      duplicated = await this.linktrees.duplicateLinktree(
+        id,
+        businessId,
+        dto,
+        'platform',
+      );
+    } catch (error) {
+      rethrowRootSlugConflict(error);
+    }
+    await this.invalidate(duplicated.uid, duplicated.seo_name);
+    return duplicated;
   }
 
   async update(id: string, data: CreateLinktreeDto) {

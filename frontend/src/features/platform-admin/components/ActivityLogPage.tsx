@@ -24,6 +24,7 @@ import {
   CustomSelect,
   type CustomSelectOption,
 } from "@/components/shared/CustomSelect";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchModal } from "@/components/shared/SearchModal";
@@ -39,6 +40,7 @@ import {
 } from "./audit-log/presentation";
 import { processAppearance } from "./audit-log/processAppearance";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
+import { SkeletonSearchResultList } from "@/components/shared/SkeletonCommunicationLayouts";
 
 const sortOptions: CustomSelectOption<AuditLogSort>[] = [
   { value: "newest", label: "نوێترین یەکەم" },
@@ -51,7 +53,9 @@ const sortOptions: CustomSelectOption<AuditLogSort>[] = [
   { value: "slowest-first", label: "هێواشترین داواکاری یەکەم" },
 ];
 
-sortOptions.splice(sortOptions.length - 1, 0,
+sortOptions.splice(
+  sortOptions.length - 1,
+  0,
   { value: "clicks-first", label: "Clicks first" },
   { value: "requests-first", label: "Requests first" },
   { value: "integrations-first", label: "TikTok Events API first" },
@@ -78,7 +82,9 @@ const kindOptions: CustomSelectOption<string>[] = [
   { value: "audit", label: "ڕووداوی چاودێری" },
 ];
 
-kindOptions.splice(1, 0,
+kindOptions.splice(
+  1,
+  0,
   { value: "view", label: "Public linktree views" },
   { value: "click", label: "Public link clicks" },
   { value: "tiktok-pixel", label: "TikTok Pixel events" },
@@ -268,17 +274,19 @@ export function ActivityLogPage() {
           icon={ShieldCheck}
           action={
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={refresh}
-                disabled={isRefreshing}
-                className="group flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:shadow disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
-                title="نوێکردنەوە"
-              >
-                <MotionSpinner active={isRefreshing}><RefreshCw
-                  className="h-4 w-4 -transform"
-                 /></MotionSpinner>
-              </button>
+              <Tooltip content="نوێکردنەوە" side="bottom">
+                <button
+                  type="button"
+                  onClick={refresh}
+                  disabled={isRefreshing}
+                  className="group flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:shadow disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 cursor-pointer"
+                  aria-label="نوێکردنەوە"
+                >
+                  <MotionSpinner active={isRefreshing}>
+                    <RefreshCw className="h-4 w-4 -transform" />
+                  </MotionSpinner>
+                </button>
+              </Tooltip>
               <button
                 type="button"
                 onClick={() => setIsSearchModalOpen(true)}
@@ -307,15 +315,16 @@ export function ActivityLogPage() {
                 )}
               </button>
               {hasAdvancedCriteria && (
-                <button
-                  type="button"
-                  onClick={clearAdvancedCriteria}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-500 shadow-sm transition hover:border-red-300 hover:bg-red-100 hover:text-red-600 hover:shadow dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/35 dark:hover:text-red-300"
-                  title="پاککردنەوەی پاڵاوتنەکان"
-                  aria-label="پاککردنەوەی پاڵاوتنەکان"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                <Tooltip content="پاککردنەوەی پاڵاوتنەکان" side="bottom">
+                  <button
+                    type="button"
+                    onClick={clearAdvancedCriteria}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-500 shadow-sm transition hover:border-red-300 hover:bg-red-100 hover:text-red-600 hover:shadow dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/35 dark:hover:text-red-300 cursor-pointer"
+                    aria-label="پاککردنەوەی پاڵاوتنەکان"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </Tooltip>
               )}
               <button
                 type="button"
@@ -390,16 +399,17 @@ export function ActivityLogPage() {
             <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
               پاڵاوتن و ڕیزکردنی ورد
             </p>
-            <button
-              type="button"
-              onClick={clearAdvancedCriteria}
-              disabled={!hasAdvancedCriteria}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-500 transition hover:border-red-300 hover:bg-red-100 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/35 dark:hover:text-red-300"
-              title="پاککردنەوەی هەموو"
-              aria-label="پاککردنەوەی هەموو"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <Tooltip content="پاککردنەوەی هەموو" side="bottom">
+              <button
+                type="button"
+                onClick={clearAdvancedCriteria}
+                disabled={!hasAdvancedCriteria}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-500 transition hover:border-red-300 hover:bg-red-100 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/35 dark:hover:text-red-300 cursor-pointer"
+                aria-label="پاککردنەوەی هەموو"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </Tooltip>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <CustomSelect
@@ -488,9 +498,7 @@ export function ActivityLogPage() {
               <span>بگەڕێ یان پاڵاوتن و ڕیزکردنێک هەڵبژێرە.</span>
             </div>
           ) : isLoading ? (
-            <div className="py-8 text-center text-sm text-slate-400">
-              گەڕان...
-            </div>
+            <SkeletonSearchResultList />
           ) : !data?.items.length ? (
             <div className="py-8 text-center text-sm text-slate-400 dark:text-gray-500">
               هیچ ئەنجامێک نەدۆزرایەوە بۆ &quot;{searchQuery}&quot;

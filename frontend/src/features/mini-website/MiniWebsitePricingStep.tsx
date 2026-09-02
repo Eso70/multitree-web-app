@@ -17,12 +17,26 @@ import {
   DescriptionField,
   TextField,
 } from "./MiniWebsiteCollectionEditor";
-import {
-  ACTION_TYPE_LABELS,
-  parseLeadFieldOptions,
-} from "./lead-form-options";
 import type { MiniWebsiteDraft } from "./types";
 import type { MiniWebsiteValidationErrors } from "./validation";
+
+const ACTION_TYPE_LABELS: Record<MiniWebsiteActionType, string> = {
+  none: "بێ دوگمە",
+  link: "لینک",
+  whatsapp: "واتساپ",
+  phone: "پەیوەندی تەلەفۆنی",
+};
+
+function parsePlanFeatures(value: string, max: number): string[] {
+  return Array.from(
+    new Set(
+      value
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean),
+    ),
+  ).slice(0, max);
+}
 
 export function MiniWebsitePricingFields({
   draft,
@@ -101,7 +115,7 @@ export function MiniWebsitePricingFields({
               value={plan.features.join("\n")}
               onChange={(value) =>
                 patch({
-                  features: parseLeadFieldOptions(
+                  features: parsePlanFeatures(
                     value,
                     MINI_WEBSITE_MAX_PLAN_FEATURES,
                   ),

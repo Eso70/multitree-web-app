@@ -4,13 +4,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CheckCircle2, Clock3, Loader2, ShieldCheck } from "lucide-react";
 import { apiRequest } from "@/lib/api/request";
-import { getSubdomainLoginUrl } from "@/lib/utils/app-url";
+import { getBusinessWorkspaceEntryUrl } from "@/lib/utils/app-url";
 import { AuthenticationCard } from "@/components/shared/AuthenticationCard";
 import { AuthenticationShell } from "@/components/shared/AuthenticationShell";
 import { AuthenticationRefreshButton } from "@/components/shared/AuthenticationRefreshButton";
 import { EditorField } from "@/components/shared/EditorField";
 import { InlineRequestError } from "@/components/shared/InlineRequestError";
 import { MotionSpinner } from "@/components/motion/MotionPrimitives";
+import { LoadingState } from "@/components/shared/LoadingState";
 import { modalInputClass } from "@/features/link-editor/modal-input-styles";
 import { toast } from "sonner";
 import {
@@ -138,12 +139,10 @@ export function BusinessSignupWizard() {
           description={loading ? "زانیارییەکانت بار دەکرێن" : error}
         >
           {loading ? (
-            <div className="flex min-h-40 items-center justify-center gap-3 text-sm text-slate-500">
-              <MotionSpinner>
-                <Loader2 className="h-6 w-6" />
-              </MotionSpinner>
-              Loading...
-            </div>
+            <LoadingState
+              title="زانیارییەکانت بار دەکرێن"
+              description="داواکارییە پارێزراوەکەت ئامادە دەکەین."
+            />
           ) : null}
         </AuthenticationCard>
       </AuthenticationShell>
@@ -195,9 +194,9 @@ export function BusinessSignupWizard() {
             <button
               type="button"
               onClick={() => {
-                window.location.href = getSubdomainLoginUrl(
-                  application.requestedSubdomain || undefined,
-                );
+                const subdomain = application.requestedSubdomain;
+                if (!subdomain) return;
+                window.location.href = getBusinessWorkspaceEntryUrl(subdomain);
               }}
               className="mt-4 h-12 w-full rounded-xl bg-[var(--multitree-accent)] text-sm font-bold text-[var(--multitree-accent-ink)]"
             >
@@ -304,7 +303,9 @@ export function BusinessSignupWizard() {
             className="flex h-12 w-full items-center justify-center rounded-xl bg-[var(--multitree-accent)] px-5 text-sm font-bold text-[var(--multitree-accent-ink)] transition hover:brightness-95 disabled:opacity-50"
           >
             {busy ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <MotionSpinner>
+                <Loader2 className="h-5 w-5" />
+              </MotionSpinner>
             ) : (
               "ناردنی داواکاری"
             )}

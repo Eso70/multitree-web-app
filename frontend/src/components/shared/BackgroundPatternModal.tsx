@@ -4,6 +4,7 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "motion/react";
 import { Check, Sparkles, X } from "lucide-react";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 import {
   BACKGROUND_PATTERN_OPTIONS,
@@ -29,20 +30,21 @@ const BackgroundPatternCard = memo(function BackgroundPatternCard({
   onSelect: () => void;
 }) {
   return (
-    <motion.button
-      animate={{ scale: isSelected ? 1.05 : 1 }}
-      aria-checked={isSelected}
-      aria-label={option.label}
-      className={`group relative aspect-4/3 w-full overflow-hidden rounded-xl border-2 ${
-        isSelected
-          ? "shadow-lg"
-          : "border-slate-200 hover:border-brand-500/40 hover:shadow-md"
-      }`}
-      onClick={onSelect}
-      role="radio"
-      style={
-        isSelected
-          ? ({
+    <Tooltip content={option.label} side="top">
+      <motion.button
+        animate={{ scale: isSelected ? 1.05 : 1 }}
+        aria-checked={isSelected}
+        aria-label={option.label}
+        className={`group relative aspect-4/3 w-full overflow-hidden rounded-xl border-2 cursor-pointer ${
+          isSelected
+            ? "shadow-lg"
+            : "border-slate-200 hover:border-brand-500/40 hover:shadow-md"
+        }`}
+        onClick={onSelect}
+        role="radio"
+        style={
+          isSelected
+            ? ({
               borderColor: "var(--theme-primary, #64748b)",
               "--tw-ring-color":
                 "color-mix(in srgb, var(--theme-primary, #64748b) 30%, transparent)",
@@ -85,7 +87,8 @@ const BackgroundPatternCard = memo(function BackgroundPatternCard({
           <Check className="h-2 w-2 text-white sm:h-2.5 sm:w-2.5" strokeWidth={3} />
         </div>
       )}
-    </motion.button>
+      </motion.button>
+    </Tooltip>
   );
 });
 
@@ -181,14 +184,16 @@ export const BackgroundPatternModal = memo(
                 </div>
               </div>
 
-              <button
-                aria-label="Close"
-                className="shrink-0 rounded-xl border border-slate-100 bg-linear-to-br from-slate-50 to-gray-50 p-1.5 text-slate-500 shadow-sm transition-all duration-300 hover:from-slate-100 hover:to-gray-100 hover:text-slate-700 hover:shadow sm:p-2"
-                onClick={onClose}
-                type="button"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <Tooltip content="داخستن" side="bottom">
+                <button
+                  aria-label="Close"
+                  className="shrink-0 rounded-xl border border-slate-100 bg-linear-to-br from-slate-50 to-gray-50 p-1.5 text-slate-500 shadow-sm transition-all duration-300 hover:from-slate-100 hover:to-gray-100 hover:text-slate-700 hover:shadow sm:p-2 cursor-pointer"
+                  onClick={onClose}
+                  type="button"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </Tooltip>
             </div>
           </div>
 

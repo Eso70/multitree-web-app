@@ -73,8 +73,6 @@ export type WebsiteRow = {
   owned_properties?: unknown;
   education?: unknown;
   experience?: unknown;
-  lead_form?: unknown;
-  lead_fields?: unknown;
   plans?: unknown;
 };
 
@@ -378,27 +376,6 @@ export const CONTENT_SELECT = `
      FROM mini_website_items item
     WHERE item.mini_website_id = website.id
       AND item.section_key = 'experience') AS experience,
-  (SELECT json_build_object(
-            'title', form.title,
-            'description', form.description,
-            'submitLabel', form.submit_label,
-            'successMessage', form.success_message,
-            'consentText', form.consent_text,
-            'consentRequired', form.consent_required)
-     FROM mini_website_lead_forms form
-    WHERE form.mini_website_id = website.id) AS lead_form,
-  (SELECT COALESCE(json_agg(json_build_object(
-            'id', item.item_key,
-            'label', item.title,
-            'helpText', item.subtitle,
-            'type', item.role,
-            'mapping', item.issuer,
-            'placeholder', item.action_label,
-            'required', item.required,
-            'options', item.options) ORDER BY item.position), '[]'::json)
-     FROM mini_website_items item
-    WHERE item.mini_website_id = website.id
-      AND item.section_key = 'leadForm') AS lead_fields,
   (SELECT COALESCE(json_agg(json_build_object(
             'id', item.item_key,
             'name', item.title,

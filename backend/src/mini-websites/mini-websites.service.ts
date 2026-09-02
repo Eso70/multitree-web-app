@@ -30,9 +30,6 @@ import type {
   MiniWebsiteImpactStat,
   MiniWebsiteProcessStep,
   MiniWebsiteItemPixelEvent,
-  MiniWebsiteLeadField,
-  MiniWebsiteLeadFieldMapping,
-  MiniWebsiteLeadForm,
   MiniWebsitePlan,
   MiniWebsiteLocation,
   MiniWebsiteSection,
@@ -64,12 +61,7 @@ import { buildMiniWebsiteActions } from './mini-website-actions';
 import type { SaveMiniWebsiteDto } from './dto/mini-website.dto';
 import {
   MINI_WEBSITE_BACKGROUND_STYLES,
-  MINI_WEBSITE_LEAD_FIELD_MAPPINGS,
-  MINI_WEBSITE_LEAD_FIELD_TYPES,
-  MINI_WEBSITE_LEAD_MAPPING_TYPES,
-  MINI_WEBSITE_MAX_LEAD_FIELDS,
   MINI_WEBSITE_VISUAL_TEMPLATE_DEFAULT,
-  MINI_WEBSITE_MAX_LEAD_FIELD_OPTIONS,
   MINI_WEBSITE_MAX_PLANS,
   MINI_WEBSITE_MAX_PLAN_FEATURES,
   MINI_WEBSITE_MAX_PAYMENT_METHODS,
@@ -185,7 +177,6 @@ type NormalizedMiniWebsite = {
   ownedProperties: MiniWebsiteOwnedProperty[];
   education: MiniWebsiteEducation[];
   experience: MiniWebsiteExperience[];
-  leadForm: MiniWebsiteLeadForm;
   plans: MiniWebsitePlan[];
   socialLinks: NormalizedSocialLink[];
   content: {
@@ -247,7 +238,6 @@ type MiniWebsiteInput = {
   ownedProperties?: unknown;
   education?: unknown;
   experience?: unknown;
-  leadForm?: unknown;
   plans?: unknown;
 };
 
@@ -300,7 +290,6 @@ interface StoredContent {
   ownedProperties: MiniWebsiteOwnedProperty[];
   education: MiniWebsiteEducation[];
   experience: MiniWebsiteExperience[];
-  leadForm: MiniWebsiteLeadForm;
   plans: MiniWebsitePlan[];
 }
 
@@ -347,7 +336,6 @@ export const OFFERED_SECTION_KEYS: readonly MiniWebsiteSectionKey[] = [
   'serviceAreas',
   'hours',
   'faq',
-  'leadForm',
   'pricing',
   'location',
 ];
@@ -446,8 +434,6 @@ const EXPERIENCE_STATUSES: readonly MiniWebsiteExperienceStatus[] = [
   'current',
   'completed',
 ];
-const MAX_LEAD_FIELDS = MINI_WEBSITE_MAX_LEAD_FIELDS;
-const MAX_LEAD_FIELD_OPTIONS = MINI_WEBSITE_MAX_LEAD_FIELD_OPTIONS;
 const MAX_PLANS = MINI_WEBSITE_MAX_PLANS;
 const MAX_PLAN_FEATURES = MINI_WEBSITE_MAX_PLAN_FEATURES;
 const LOCATION_RADIUS_MIN = 100;
@@ -627,7 +613,6 @@ export class MiniWebsitesService {
       ownedProperties: data.ownedProperties ?? current.ownedProperties,
       education: data.education ?? current.education,
       experience: data.experience ?? current.experience,
-      leadForm: data.leadForm ?? current.leadForm,
       plans: data.plans ?? current.plans,
     });
     this.validate(merged, existingImages);
@@ -1340,45 +1325,6 @@ export class MiniWebsitesService {
     await this.writeItems(
       client,
       websiteId,
-      'leadForm',
-      payload.leadForm.fields.map((field) => ({
-        key: field.id,
-        title: field.label,
-        subtitle: field.helpText,
-        role: field.type,
-        issuer: field.mapping,
-        actionLabel: field.placeholder,
-        required: field.required,
-        options: field.options,
-      })),
-    );
-    // Upserted rather than rewritten: the settings are one row that belongs to
-    // the page for as long as the page exists, and a delete-then-insert would
-    // churn its primary key on every save for no gain.
-    await client.query(
-      `INSERT INTO mini_website_lead_forms
-         (mini_website_id,title,description,submit_label,success_message,consent_text,consent_required)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)
-       ON CONFLICT (mini_website_id) DO UPDATE SET
-         title=EXCLUDED.title,
-         description=EXCLUDED.description,
-         submit_label=EXCLUDED.submit_label,
-         success_message=EXCLUDED.success_message,
-         consent_text=EXCLUDED.consent_text,
-         consent_required=EXCLUDED.consent_required`,
-      [
-        websiteId,
-        payload.leadForm.title,
-        payload.leadForm.description,
-        payload.leadForm.submitLabel,
-        payload.leadForm.successMessage,
-        payload.leadForm.consentText,
-        payload.leadForm.consentRequired,
-      ],
-    );
-    await this.writeItems(
-      client,
-      websiteId,
       'pricing',
       payload.plans.map((plan) => ({
         key: plan.id,
@@ -1623,10 +1569,6 @@ export class MiniWebsitesService {
         ownedProperties: this.normalizeOwnedProperties(row.owned_properties),
         education: this.normalizeEducation(row.education),
         experience: this.normalizeExperience(row.experience),
-        // Settings and questions are stored apart — one row per page, one row
-        // per question — and are put back together here so a client still
-        // receives the single form object it edits.
-        leadForm: this.readLeadForm(row.lead_form, row.lead_fields),
         plans: this.normalizePlans(row.plans),
         content,
         views: Number(row.views || 0),
@@ -2675,99 +2617,6 @@ export class MiniWebsitesService {
   }
 
   /**
-   * Clamps the lead form's questions into a storable shape.
-   *
-   * A field's mapping is checked against its type rather than trusted, because
-   * the mapping is what decides which encrypted CRM contact column an answer is
-   * written to. A `select` that claimed to be an email address would put an
-   * arbitrary chosen option into the column a TikTok custom audience is later
-   * hashed from, so a mismatched pair is demoted to an ordinary answer instead
-   * of being rejected — the question itself is still a reasonable one to ask.
-   *
-   * Each of the three mappings is also allowed at most once: two fields both
-   * claiming to be the phone number leave no answer as to which one the contact
-   * record should keep.
-   */
-  private normalizeLeadFields(value: unknown): MiniWebsiteLeadField[] {
-    const seen = new Set<string>();
-    const claimed = new Set<MiniWebsiteLeadFieldMapping>();
-    const fields: MiniWebsiteLeadField[] = [];
-    for (const source of toRecordArray(value)) {
-      const label = toText(source.label).trim().slice(0, 120);
-      if (!label) continue;
-      const id =
-        toText(source.id).trim().slice(0, 120) || `lead-field-${fields.length}`;
-      if (seen.has(id)) continue;
-      const type =
-        MINI_WEBSITE_LEAD_FIELD_TYPES.find(
-          (candidate) => candidate === source.type,
-        ) ?? 'text';
-      const requested =
-        MINI_WEBSITE_LEAD_FIELD_MAPPINGS.find(
-          (candidate) => candidate === source.mapping,
-        ) ?? 'none';
-      const mapping: MiniWebsiteLeadFieldMapping =
-        requested !== 'none' &&
-        !claimed.has(requested) &&
-        MINI_WEBSITE_LEAD_MAPPING_TYPES[requested].includes(type)
-          ? requested
-          : 'none';
-      if (mapping !== 'none') claimed.add(mapping);
-      const options =
-        type === 'select'
-          ? Array.from(
-              new Set(
-                (Array.isArray(source.options) ? source.options : [])
-                  .map((option) => toText(option).trim().slice(0, 120))
-                  .filter(Boolean),
-              ),
-            ).slice(0, MAX_LEAD_FIELD_OPTIONS)
-          : [];
-      seen.add(id);
-      fields.push({
-        id,
-        label,
-        placeholder: toText(source.placeholder).trim().slice(0, 120),
-        helpText: toText(source.helpText).trim().slice(0, 240),
-        type,
-        mapping,
-        required: source.required === true,
-        options,
-      });
-      if (fields.length === MAX_LEAD_FIELDS) break;
-    }
-    return fields;
-  }
-
-  /**
-   * Rebuilds a saved form from its two halves — the settings row and the
-   * question rows.
-   *
-   * Public so the submission path validates against exactly the same shape the
-   * editor and the renderer were given, rather than against a second reading of
-   * the same rows that could drift from this one.
-   */
-  readLeadForm(settings: unknown, fields: unknown): MiniWebsiteLeadForm {
-    return this.normalizeLeadForm({ ...toRecord(settings), fields });
-  }
-
-  private normalizeLeadForm(value: unknown): MiniWebsiteLeadForm {
-    const source = toRecord(value);
-    const consentText = toText(source.consentText).trim().slice(0, 600);
-    return {
-      title: toText(source.title).trim().slice(0, 160),
-      description: toText(source.description).trim().slice(0, 600),
-      submitLabel: toText(source.submitLabel).trim().slice(0, 80),
-      successMessage: toText(source.successMessage).trim().slice(0, 400),
-      consentText,
-      // Consent cannot be required without a sentence to consent to, so the
-      // flag follows the text rather than being storable on its own.
-      consentRequired: Boolean(consentText) && source.consentRequired === true,
-      fields: this.normalizeLeadFields(source.fields),
-    };
-  }
-
-  /**
    * Clamps the pricing tiers into a storable shape.
    *
    * At most one tier may be the recommended one: two cards both claiming to be
@@ -2957,7 +2806,6 @@ export class MiniWebsitesService {
       ownedProperties: this.normalizeOwnedProperties(data.ownedProperties),
       education: this.normalizeEducation(data.education),
       experience: this.normalizeExperience(data.experience),
-      leadForm: this.normalizeLeadForm(data.leadForm),
       plans: this.normalizePlans(data.plans),
       socialLinks: toRecordArray(data.socialLinks)
         .slice(0, 32)
@@ -3193,31 +3041,6 @@ export class MiniWebsitesService {
         throw new BadRequestException(
           'Experience end date cannot precede start date',
         );
-    }
-    if (sectionOn('leadForm')) {
-      const fields = data.leadForm.fields;
-      if (!fields.length)
-        throw new BadRequestException('Add at least one form question');
-      // A submission the business cannot reply to is not a lead. One of the two
-      // reachable identities has to be asked for, and asked for every time.
-      if (
-        !fields.some(
-          (field) =>
-            field.required &&
-            (field.mapping === 'email' || field.mapping === 'phone'),
-        )
-      )
-        throw new BadRequestException(
-          'The form needs a required email or phone question',
-        );
-      for (const field of fields) {
-        if (field.type === 'select' && !field.options.length)
-          throw new BadRequestException('Dropdown questions need choices');
-      }
-      // A tick-box with nothing written beside it asks the visitor to agree to
-      // nothing, which is worse than not asking at all.
-      if (data.leadForm.consentRequired && !data.leadForm.consentText)
-        throw new BadRequestException('Required consent needs its wording');
     }
     const plans = Array.isArray(data.plans) ? data.plans : [];
     if (sectionOn('pricing')) {

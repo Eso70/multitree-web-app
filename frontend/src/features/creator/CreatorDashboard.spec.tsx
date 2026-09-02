@@ -25,16 +25,8 @@ vi.mock("@/features/mini-website/MiniWebsitesPage", () => ({
   ),
 }));
 vi.mock("@/features/templates/components/TemplatesPage", () => ({
-  TemplatesPage: ({
-    canCreate,
-    accessMode,
-  }: {
-    canCreate?: boolean;
-    accessMode?: string;
-  }) => (
-    <div data-can-create={String(canCreate)} data-access-mode={accessMode}>
-      Shared templates workspace
-    </div>
+  TemplatesPage: ({ accessMode }: { accessMode?: string }) => (
+    <div data-access-mode={accessMode}>Shared templates workspace</div>
   ),
 }));
 
@@ -120,7 +112,6 @@ describe("CreatorDashboard", () => {
     render(<CreatorDashboard />);
 
     const workspace = await screen.findByText("Shared templates workspace");
-    expect(workspace).toHaveAttribute("data-can-create", "false");
     expect(workspace).toHaveAttribute("data-access-mode", "all");
     expect(screen.getByRole("button", { name: "قاڵبەکان" })).toBeEnabled();
   });

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { memo, useState, useMemo } from "react";
 import { ColorGradientModal } from "../ColorGradientModal";
@@ -8,6 +8,7 @@ import { CustomSelect } from "@/components/shared/CustomSelect";
 import { RequiredMark } from "@/components/shared/RequiredMark";
 import { BrandAssetStack } from "./BrandAssetStack";
 import { BusinessOwnerIdentityFields } from "./BusinessOwnerIdentityFields";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 // Exported validation helpers
 
@@ -220,15 +221,15 @@ export const BusinessInfoStep = memo(function BusinessInfoStep({
                 placeholder="سەب دۆمەین بنووسە"
                 required
               />
-              <button
-                type="button"
-                onClick={onGenerateSubdomain}
-                className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-gray-300"
-                aria-label="Generate random subdomain"
-                title="Generate random subdomain"
-              >
-                <svg
-                  className="h-3.5 w-3.5"
+              <Tooltip content="دروستکردنی سەب دۆمەینی هەڕەمەکی" side="top">
+                <button
+                  type="button"
+                  onClick={onGenerateSubdomain}
+                  className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-gray-300 cursor-pointer"
+                  aria-label="Generate random subdomain"
+                >
+                  <svg
+                    className="h-3.5 w-3.5"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -243,7 +244,8 @@ export const BusinessInfoStep = memo(function BusinessInfoStep({
                   <path d="M3 22v-6h6" />
                   <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
                 </svg>
-              </button>
+                </button>
+              </Tooltip>
             </div>
             {errors.subdomain && touched.subdomain && (
               <p className="mt-1 text-xs text-red-500 font-kurdish">

@@ -27,6 +27,11 @@ describe('request origin protection', () => {
     expect(
       isAuthenticatedMutation('DELETE', { platform_admin_session: 'token' }),
     ).toBe(true);
+    expect(
+      isAuthenticatedMutation('POST', {
+        client_linktree_session: 'token',
+      }),
+    ).toBe(true);
     expect(isAuthenticatedMutation('GET', { creator_session: 'token' })).toBe(
       false,
     );

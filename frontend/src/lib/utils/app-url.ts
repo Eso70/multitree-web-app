@@ -57,9 +57,8 @@ export function getSubdomainPageUrl(subdomain: string, path: string): string {
   return `${protocol}//${subdomain}.${root}${normalizedPath}`;
 }
 
-export function getSubdomainLoginUrl(subdomain?: string): string {
-  if (!subdomain) return "/login";
-  return getSubdomainPageUrl(subdomain, "/business/login");
+export function getBusinessWorkspaceEntryUrl(subdomain: string): string {
+  return getSubdomainPageUrl(subdomain, "/business/workspace-entry");
 }
 
 export function getAbsolutePublicUrl(pathPrefix: string, slug: string): string {

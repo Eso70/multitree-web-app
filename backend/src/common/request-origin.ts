@@ -13,6 +13,7 @@ const SESSION_COOKIE_NAMES = [
   'business_session',
   'platform_admin_session',
   'creator_session',
+  'client_linktree_session',
 ] as const;
 type HeaderValue = string | string[] | undefined;
 

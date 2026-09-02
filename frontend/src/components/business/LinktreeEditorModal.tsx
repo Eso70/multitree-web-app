@@ -1,6 +1,14 @@
 ﻿"use client";
 
-import { memo, useState, useEffect, useMemo, useCallback, useRef, startTransition } from "react";
+import {
+  memo,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  startTransition,
+} from "react";
 import { BasicInfoStep } from "@/features/link-editor/components/BasicInfoStep";
 import { PlatformSelectionStep } from "@/features/link-editor/components/PlatformSelectionStep";
 import { LinksStep } from "@/features/link-editor/components/LinksStep";
@@ -10,16 +18,24 @@ import {
   DEFAULT_DESCRIPTION,
   DEFAULT_FOOTER_TEXT,
   DEFAULT_FOOTER_PHONE,
-  getPlatformNameKurdish
+  getPlatformNameKurdish,
 } from "@/features/link-editor/modal-constants";
-import { buildSlugFromName, generateUrl, extractValueFromUrl } from "@/features/link-editor/modal-utils";
+import {
+  buildSlugFromName,
+  generateUrl,
+  extractValueFromUrl,
+} from "@/features/link-editor/modal-utils";
 import {
   validateLinktreeName,
   validateSingleLink,
   validateSlug as validateSlugValue,
   validateWhatsappQuestion,
 } from "@/features/link-editor/components/validation";
-import { TEMPLATE_DEFAULT_ID, isTemplateKey, normalizeTemplateConfig, type TemplateKey } from "@/lib/templates/config";
+import {
+  TEMPLATE_DEFAULT_ID,
+  isTemplateKey,
+  normalizeTemplateConfig,
+} from "@/lib/templates/config";
 import { debounce } from "@/lib/utils/debounce";
 import type { WhatsAppQuestion } from "@/components/public/WhatsAppQuestionModal";
 import { ManagementModal } from "@/components/shared/ManagementModal";
@@ -28,10 +44,13 @@ import { ModalWizardActions } from "@/components/shared/ModalWizardActions";
 import { shouldAdvanceModalWizardOnEnter } from "@/components/shared/modal-wizard-keyboard";
 import { useSubmissionLock } from "@/hooks/useSubmissionLock";
 import type { SocialLink } from "@/features/link-editor/types";
-import { groupSocialLinksByPlatform, normalizeSelectedSocialLinks } from "@/features/link-editor/link-payload";
+import {
+  groupSocialLinksByPlatform,
+  normalizeSelectedSocialLinks,
+} from "@/features/link-editor/link-payload";
 import { useTheme } from "@/lib/contexts/ThemeProvider";
 import { InlineRequestError } from "@/components/shared/InlineRequestError";
-import { SkeletonForm } from "@/components/shared/Skeleton";
+import { SkeletonLinktreeBasicInfo } from "@/components/shared/SkeletonModalLayouts";
 import {
   createUploadFailureError,
   inlineRequestErrorFromResponse,
@@ -62,11 +81,13 @@ export type {
 export interface LinktreeEditorWorkflow {
   /** Local demo mode never calls availability or upload endpoints. */
   persistence: "api" | "browser-local";
-  allowedTemplateKeys?: readonly TemplateKey[];
+  allowedTemplateKeys?: readonly string[];
   maxLinks?: number;
   allowImageUploads?: boolean;
   maxImageBytes?: number;
   hideBusinessFields?: boolean;
+  hideFooterSection?: boolean;
+  hideWhatsappQuestions?: boolean;
   title?: string;
   submitLabel?: string;
 }
@@ -123,13 +144,16 @@ function resolveDefaultBackgroundColor(value?: string | null): string {
   }
 
   const preset = BACKGROUND_COLORS.find((color) => {
-    return color.id === trimmed || color.value.toLowerCase() === trimmed.toLowerCase();
+    return (
+      color.id === trimmed ||
+      color.value.toLowerCase() === trimmed.toLowerCase()
+    );
   });
 
   return preset?.value ?? trimmed;
 }
 
-function resolveDefaultTemplateKey(value?: string | null): TemplateKey {
+function resolveDefaultTemplateKey(value?: string | null): string {
   return value && isTemplateKey(value) ? value : TEMPLATE_DEFAULT_ID;
 }
 
@@ -162,19 +186,27 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     workflow.allowedTemplateKeys?.[0] ??
     resolveDefaultTemplateKey(businessDefaults?.default_template);
   const { color: businessTheme } = useTheme();
-  const [currentStep, setCurrentStep] = useState<"basic" | "select" | "links">("basic");
+  const [currentStep, setCurrentStep] = useState<"basic" | "select" | "links">(
+    "basic",
+  );
   const [profileImage, setProfileImage] = useState<File | null>(null);
-  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(businessDefaults?.default_avatar || null);
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(
+    businessDefaults?.default_avatar || null,
+  );
   const [name, setName] = useState("");
   const [subtitle, setSubtitle] = useState(DEFAULT_SUBTITLE);
   const [description, setDescription] = useState(DEFAULT_DESCRIPTION);
   const [slug, setSlug] = useState("");
-  const [backgroundColor, setBackgroundColor] = useState(() => resolveDefaultBackgroundColor(businessDefaults?.default_background_color));
+  const [backgroundColor, setBackgroundColor] = useState(() =>
+    resolveDefaultBackgroundColor(businessDefaults?.default_background_color),
+  );
   // A background image replaces the background colour on the public page. Like
   // the profile image, the file is held until submit and uploaded once.
   const [backgroundImage, setBackgroundImage] = useState<File | null>(null);
-  const [backgroundImagePreview, setBackgroundImagePreview] = useState<string | null>(null);
-  const [templateKey, setTemplateKey] = useState<TemplateKey>(defaultTemplateKey);
+  const [backgroundImagePreview, setBackgroundImagePreview] = useState<
+    string | null
+  >(null);
+  const [templateKey, setTemplateKey] = useState<string>(defaultTemplateKey);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const selectedPlatforms = useMemo(
     () =>
@@ -183,22 +215,40 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
         .map((link) => link.id),
     [socialLinks],
   );
-  const { isSubmitting, beginSubmission, resetSubmission } = useSubmissionLock();
-  const [footerText, setFooterText] = useState(businessDefaults?.default_footer_text || DEFAULT_FOOTER_TEXT);
-  const [footerPhone, setFooterPhone] = useState(businessDefaults?.default_footer_phone || DEFAULT_FOOTER_PHONE);
-  const [footerHidden, setFooterHidden] = useState(businessDefaults?.default_footer_hidden ?? false);
-  const [templateConfig, setTemplateConfig] = useState<Record<string, unknown>>(() => normalizeTemplateConfig(resolveDefaultTemplateKey(businessDefaults?.default_template), null));
-  
+  const { isSubmitting, beginSubmission, resetSubmission } =
+    useSubmissionLock();
+  const [footerText, setFooterText] = useState(
+    businessDefaults?.default_footer_text || DEFAULT_FOOTER_TEXT,
+  );
+  const [footerPhone, setFooterPhone] = useState(
+    businessDefaults?.default_footer_phone || DEFAULT_FOOTER_PHONE,
+  );
+  const [footerHidden, setFooterHidden] = useState(
+    businessDefaults?.default_footer_hidden ?? false,
+  );
+  const [templateConfig, setTemplateConfig] = useState<Record<string, unknown>>(
+    () =>
+      normalizeTemplateConfig(
+        resolveDefaultTemplateKey(businessDefaults?.default_template),
+        null,
+      ),
+  );
+
   // WhatsApp modal questions state
-  const [whatsappModalEnabled, setWhatsappModalEnabled] = useState(businessDefaults?.default_whatsapp_enabled ?? false);
+  const [whatsappModalEnabled, setWhatsappModalEnabled] = useState(
+    businessDefaults?.default_whatsapp_enabled ?? false,
+  );
   const [whatsappModalTitle, setWhatsappModalTitle] = useState("پەیوەندی کردن");
-  const [whatsappModalSubtitle, setWhatsappModalSubtitle] = useState("پرسیارێک هەڵبژێرە");
-  const [whatsappQuestions, setWhatsappQuestions] = useState<WhatsAppQuestion[]>([
+  const [whatsappModalSubtitle, setWhatsappModalSubtitle] =
+    useState("پرسیارێک هەڵبژێرە");
+  const [whatsappQuestions, setWhatsappQuestions] = useState<
+    WhatsAppQuestion[]
+  >([
     { id: "order", text: "داواکردن", message: "سڵاو بەڕێز دەمەوێت داوا بکەم." },
     { id: "price", text: "زانینی نرخ", message: "سڵاو بەڕێز، نرخی چەندە ؟" },
     { id: "other", text: "پرسیارێکی تر", message: "سڵاو" },
   ]);
-  
+
   // Validation errors state
   const [errors, setErrors] = useState<{
     name?: string;
@@ -211,7 +261,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     image?: string;
     questions?: string;
   }>({});
-  
+
   // Per-link validation errors: { platformId_linkIndex: errorMessage }
   const [linkErrors, setLinkErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<{
@@ -223,7 +273,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     links?: boolean;
     footerPhone?: boolean;
   }>({});
-  
+
   const [backgroundPattern, setBackgroundPattern] =
     useState<BackgroundPatternStyle>(BACKGROUND_PATTERN_DEFAULT);
   const [slugApiError, setSlugApiError] = useState<string | null>(null);
@@ -234,8 +284,9 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
    * apart in the pages list.
    */
   const [nameWarning, setNameWarning] = useState<string | null>(null);
-  const [uploadError, setUploadError] =
-    useState<InlineRequestErrorData | null>(null);
+  const [uploadError, setUploadError] = useState<InlineRequestErrorData | null>(
+    null,
+  );
   const [checkingSlug, setCheckingSlug] = useState(false);
   const [checkingName, setCheckingName] = useState(false);
   const [questionErrors, setQuestionErrors] = useState<
@@ -284,89 +335,109 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     [],
   );
 
-  const validateBackgroundColor = useCallback((value: string): string | undefined => {
-    const selectedBgColor = BACKGROUND_COLORS.find(c => c.id === value)?.value || value;
-    if (!selectedBgColor) {
-      return "تکایە ڕەنگی باکگڕاوند هەڵبژێرە";
-    }
-    return undefined;
-  }, []);
+  const validateBackgroundColor = useCallback(
+    (value: string): string | undefined => {
+      const selectedBgColor =
+        BACKGROUND_COLORS.find((c) => c.id === value)?.value || value;
+      if (!selectedBgColor) {
+        return "تکایە ڕەنگی باکگڕاوند هەڵبژێرە";
+      }
+      return undefined;
+    },
+    [],
+  );
 
-  const validateTemplateKey = useCallback((value: string): string | undefined => {
-    if (!value || !isTemplateKey(value)) {
-      return "تکایە شێوازی پەڕە هەڵبژێرە";
-    }
-    if (
-      workflow.allowedTemplateKeys &&
-      !workflow.allowedTemplateKeys.includes(value)
-    ) {
-      return "ئەم شێوازی پەڕەیە بۆ ئەم بانگهێشتنامەیە ڕێگەپێنەدراوە";
-    }
-    return undefined;
-  }, [workflow.allowedTemplateKeys]);
+  const validateTemplateKey = useCallback(
+    (value: string): string | undefined => {
+      if (!value || !isTemplateKey(value)) {
+        return "تکایە شێوازی پەڕە هەڵبژێرە";
+      }
+      if (
+        workflow.allowedTemplateKeys &&
+        !workflow.allowedTemplateKeys.includes(value)
+      ) {
+        return "ئەم شێوازی پەڕەیە بۆ ئەم بانگهێشتنامەیە ڕێگەپێنەدراوە";
+      }
+      return undefined;
+    },
+    [workflow.allowedTemplateKeys],
+  );
 
-  const validatePlatforms = useCallback((platforms: string[]): string | undefined => {
-    if (!platforms || platforms.length === 0) {
-      return "لانیکەم یەک پلاتفۆڕمەکان هەڵبژێرە";
-    }
-    return undefined;
-  }, []);
+  const validatePlatforms = useCallback(
+    (platforms: string[]): string | undefined => {
+      if (!platforms || platforms.length === 0) {
+        return "لانیکەم یەک پلاتفۆڕمەکان هەڵبژێرە";
+      }
+      return undefined;
+    },
+    [],
+  );
 
-  const validateLinks = useCallback((links: SocialLink[], selected: string[]): string | undefined => {
-    if (!selected || selected.length === 0) {
-      return "لانیکەم یەک پلاتفۆڕمەکان هەڵبژێرە";
-    }
-    if (maxLinks && selected.length > maxLinks) {
-      return `زۆرترین ژمارەی لینک بۆ ئەم بانگهێشتنامەیە ${maxLinks} ـە`;
-    }
-    
-    let hasError = false;
-    const newLinkErrors: Record<string, string> = {};
-    
-    // Validate each link
-    for (const linkId of selected) {
-      const link = links.find(l => l.id === linkId);
-      if (!link) continue;
-      
-      const linkValue = link.value?.trim() || "";
-      const linkUrl = link.url?.trim() || "";
-      
-      // Must have either value or URL
-      if (!linkValue && !linkUrl) {
-        newLinkErrors[linkId] = "تکایە بەهای لینکەکە بنووسە";
-        hasError = true;
-        continue;
+  const validateLinks = useCallback(
+    (links: SocialLink[], selected: string[]): string | undefined => {
+      if (!selected || selected.length === 0) {
+        return "لانیکەم یەک پلاتفۆڕمەکان هەڵبژێرە";
+      }
+      if (maxLinks && selected.length > maxLinks) {
+        return `زۆرترین ژمارەی لینک بۆ ئەم بانگهێشتنامەیە ${maxLinks} ـە`;
       }
 
-      const error = validateSingleLink(link.platform, linkValue, link.countryCode);
-      if (error) {
-        newLinkErrors[linkId] = error;
-        hasError = true;
-      }
-    }
-    
-    if (hasError) {
-      setLinkErrors(newLinkErrors);
-      return "تکایە هەڵەی لینکەکان چاک بکەرەوە";
-    } else {
-      setLinkErrors({});
-    }
-    
-    return undefined;
-  }, [maxLinks]);
+      let hasError = false;
+      const newLinkErrors: Record<string, string> = {};
 
-  const validateFooterPhone = useCallback((value: string): string | undefined => {
-    const trimmed = value.trim();
-    if (trimmed && !/^\+?\d{10,15}$/.test(trimmed)) {
-      return "ژمارەی مۆبایلی دەستپێکردن نادروستە (دەبێت ١٠-١٥ ژمارە بێت)";
-    }
-    return undefined;
-  }, []);
+      // Validate each link
+      for (const linkId of selected) {
+        const link = links.find((l) => l.id === linkId);
+        if (!link) continue;
+
+        const linkValue = link.value?.trim() || "";
+        const linkUrl = link.url?.trim() || "";
+
+        // Must have either value or URL
+        if (!linkValue && !linkUrl) {
+          newLinkErrors[linkId] = "تکایە بەهای لینکەکە بنووسە";
+          hasError = true;
+          continue;
+        }
+
+        const error = validateSingleLink(
+          link.platform,
+          linkValue,
+          link.countryCode,
+        );
+        if (error) {
+          newLinkErrors[linkId] = error;
+          hasError = true;
+        }
+      }
+
+      if (hasError) {
+        setLinkErrors(newLinkErrors);
+        return "تکایە هەڵەی لینکەکان چاک بکەرەوە";
+      } else {
+        setLinkErrors({});
+      }
+
+      return undefined;
+    },
+    [maxLinks],
+  );
+
+  const validateFooterPhone = useCallback(
+    (value: string): string | undefined => {
+      const trimmed = value.trim();
+      if (trimmed && !/^\+?\d{10,15}$/.test(trimmed)) {
+        return "ژمارەی مۆبایلی دەستپێکردن نادروستە (دەبێت ١٠-١٥ ژمارە بێت)";
+      }
+      return undefined;
+    },
+    [],
+  );
 
   // Validate all fields before submission
   const validateAllFields = useCallback((): boolean => {
     const newErrors: typeof errors = {};
-    
+
     newErrors.name = validateName(name);
     newErrors.slug = validateSlug(slug) || slugApiError || undefined;
     newErrors.backgroundColor = validateBackgroundColor(backgroundColor);
@@ -380,7 +451,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     if (footerPhone.trim()) {
       newErrors.footerPhone = validateFooterPhone(footerPhone);
     }
-    
+
     setErrors(newErrors);
     setTouched({
       name: true,
@@ -391,9 +462,28 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       links: true,
       footerPhone: true,
     });
-    
-    return !Object.values(newErrors).some(error => error !== undefined);
-  }, [name, slug, slugApiError, backgroundColor, templateKey, selectedPlatforms, socialLinks, whatsappQuestions, whatsappModalEnabled, footerPhone, validateName, validateSlug, validateBackgroundColor, validateTemplateKey, validatePlatforms, validateLinks, validateQuestions, validateFooterPhone]);
+
+    return !Object.values(newErrors).some((error) => error !== undefined);
+  }, [
+    name,
+    slug,
+    slugApiError,
+    backgroundColor,
+    templateKey,
+    selectedPlatforms,
+    socialLinks,
+    whatsappQuestions,
+    whatsappModalEnabled,
+    footerPhone,
+    validateName,
+    validateSlug,
+    validateBackgroundColor,
+    validateTemplateKey,
+    validatePlatforms,
+    validateLinks,
+    validateQuestions,
+    validateFooterPhone,
+  ]);
 
   // Question rows clear their own error as soon as the missing half is typed.
   useEffect(() => {
@@ -411,99 +501,124 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
 
   // Debounced name validation
   const debouncedNameValidation = useMemo(
-    () => debounce((value: unknown) => {
-      if (touched.name && typeof value === 'string') {
-        setErrors(prev => ({ ...prev, name: validateName(value) }));
-      }
-    }, 200),
-    [touched.name, validateName]
+    () =>
+      debounce((value: unknown) => {
+        if (touched.name && typeof value === "string") {
+          setErrors((prev) => ({ ...prev, name: validateName(value) }));
+        }
+      }, 200),
+    [touched.name, validateName],
   );
 
   // Update validation on field changes - optimized
-  const handleNameChange = useCallback((value: string) => {
-    setName(value);
-    debouncedNameValidation(value);
-  }, [debouncedNameValidation]);
+  const handleNameChange = useCallback(
+    (value: string) => {
+      setName(value);
+      debouncedNameValidation(value);
+    },
+    [debouncedNameValidation],
+  );
 
   const handleNameBlur = useCallback(() => {
-    setTouched(prev => ({ ...prev, name: true }));
-    setErrors(prev => ({ ...prev, name: validateName(name) }));
+    setTouched((prev) => ({ ...prev, name: true }));
+    setErrors((prev) => ({ ...prev, name: validateName(name) }));
   }, [name, validateName]);
 
-  const handleBackgroundColorChange = useCallback((value: string) => {
-    setBackgroundColor(value);
-    if (touched.backgroundColor) {
-      setErrors(prev => ({ ...prev, backgroundColor: validateBackgroundColor(value) }));
-    }
-  }, [touched.backgroundColor, validateBackgroundColor]);
+  const handleBackgroundColorChange = useCallback(
+    (value: string) => {
+      setBackgroundColor(value);
+      if (touched.backgroundColor) {
+        setErrors((prev) => ({
+          ...prev,
+          backgroundColor: validateBackgroundColor(value),
+        }));
+      }
+    },
+    [touched.backgroundColor, validateBackgroundColor],
+  );
 
   const handleBackgroundColorBlur = useCallback(() => {
-    setTouched(prev => ({ ...prev, backgroundColor: true }));
-    setErrors(prev => ({ ...prev, backgroundColor: validateBackgroundColor(backgroundColor) }));
+    setTouched((prev) => ({ ...prev, backgroundColor: true }));
+    setErrors((prev) => ({
+      ...prev,
+      backgroundColor: validateBackgroundColor(backgroundColor),
+    }));
   }, [backgroundColor, validateBackgroundColor]);
 
-  const handleTemplateKeyChange = useCallback((value: TemplateKey) => {
-    setTemplateKey(value);
-    setTemplateConfig((prev) => normalizeTemplateConfig(value, prev));
-    setTouched(prev => ({ ...prev, templateKey: true }));
-    setErrors(prev => ({ ...prev, templateKey: validateTemplateKey(value) }));
-  }, [validateTemplateKey]);
+  const handleTemplateKeyChange = useCallback(
+    (value: string) => {
+      setTemplateKey(value);
+      setTemplateConfig((prev) => normalizeTemplateConfig(value, prev));
+      setTouched((prev) => ({ ...prev, templateKey: true }));
+      setErrors((prev) => ({
+        ...prev,
+        templateKey: validateTemplateKey(value),
+      }));
+    },
+    [validateTemplateKey],
+  );
 
   // Handle image upload - memoized for performance
-  const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  const handleImageChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const validationError = validateUploadFile(file, {
+          allowedMimeTypes: ["image/png", "image/jpeg"],
+          maxBytes: workflow.maxImageBytes ?? 10 * 1024 * 1024,
+        });
+        if (validationError) {
+          setUploadError(validationError);
+          // Reset file input
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+          return;
+        }
+        setUploadError(null);
+
+        // Clear any previous image errors
+        setErrors((prev) => ({ ...prev, image: undefined }));
+
+        setProfileImage(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setProfileImagePreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
+    },
+    [workflow.maxImageBytes],
+  );
+
+  const handleBackgroundImageChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      // Reset the input so re-picking the same file still fires a change.
+      e.target.value = "";
+      if (!file) {
+        return;
+      }
+
       const validationError = validateUploadFile(file, {
         allowedMimeTypes: ["image/png", "image/jpeg"],
         maxBytes: workflow.maxImageBytes ?? 10 * 1024 * 1024,
       });
       if (validationError) {
         setUploadError(validationError);
-        // Reset file input
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
         return;
       }
+
       setUploadError(null);
-      
-      // Clear any previous image errors
-      setErrors(prev => ({ ...prev, image: undefined }));
-      
-      setProfileImage(file);
+      setBackgroundImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfileImagePreview(reader.result as string);
+        setBackgroundImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-    }
-  }, [workflow.maxImageBytes]);
-
-  const handleBackgroundImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    // Reset the input so re-picking the same file still fires a change.
-    e.target.value = "";
-    if (!file) {
-      return;
-    }
-
-    const validationError = validateUploadFile(file, {
-      allowedMimeTypes: ["image/png", "image/jpeg"],
-      maxBytes: workflow.maxImageBytes ?? 10 * 1024 * 1024,
-    });
-    if (validationError) {
-      setUploadError(validationError);
-      return;
-    }
-
-    setUploadError(null);
-    setBackgroundImage(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setBackgroundImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  }, [workflow.maxImageBytes]);
+    },
+    [workflow.maxImageBytes],
+  );
 
   const handleRemoveBackgroundImage = useCallback(() => {
     setBackgroundImage(null);
@@ -528,9 +643,8 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     if (isBrowserLocal) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(
-          typeof reader.result === "string" ? reader.result : null,
-        );
+        reader.onload = () =>
+          resolve(typeof reader.result === "string" ? reader.result : null);
         reader.onerror = () => reject(new Error("Unable to read local image"));
         reader.readAsDataURL(file);
       });
@@ -539,15 +653,17 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       setUploadError(null);
       try {
         const formData = new FormData();
-        const linktreeKey = (editData?.linktree.id || slug || name || "draft").trim().toLowerCase();
+        const linktreeKey = (editData?.linktree.id || slug || name || "draft")
+          .trim()
+          .toLowerCase();
         formData.append("file", file);
         formData.append("linktreeKey", linktreeKey);
         formData.append("assetType", assetType);
 
         const response = await fetch(apiEndpoints.upload, {
           method: "POST",
-          cache: 'no-store', // Always fetch fresh data
-          credentials: 'include', // Include cookies for authentication
+          cache: "no-store", // Always fetch fresh data
+          credentials: "include", // Include cookies for authentication
           body: formData,
         });
 
@@ -579,11 +695,21 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       const defaultTemplate =
         workflow.allowedTemplateKeys?.[0] ??
         resolveDefaultTemplateKey(businessDefaults?.default_template);
-      setBackgroundColor(resolveDefaultBackgroundColor(businessDefaults?.default_background_color));
+      setBackgroundColor(
+        resolveDefaultBackgroundColor(
+          businessDefaults?.default_background_color,
+        ),
+      );
       setTemplateKey(defaultTemplate);
       setTemplateConfig(normalizeTemplateConfig(defaultTemplate, null));
     }
-  }, [isOpen, businessDefaults?.default_background_color, businessDefaults?.default_template, resetSubmission, workflow.allowedTemplateKeys]);
+  }, [
+    isOpen,
+    businessDefaults?.default_background_color,
+    businessDefaults?.default_template,
+    resetSubmission,
+    workflow.allowedTemplateKeys,
+  ]);
 
   // Initialize form data when editing (optimized - only runs when editData changes)
   useEffect(() => {
@@ -592,9 +718,9 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     }
 
     // Initialize only once when editData is first loaded or when switching between edit/create modes
-    const shouldInitialize = editData 
-      ? (initializedLinktreeIdRef.current !== editData.linktree.id)
-      : (initializedLinktreeIdRef.current !== "create");
+    const shouldInitialize = editData
+      ? initializedLinktreeIdRef.current !== editData.linktree.id
+      : initializedLinktreeIdRef.current !== "create";
 
     if (!shouldInitialize) {
       return;
@@ -605,14 +731,14 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       // VALIDATE AND SANITIZE EDIT DATA
       // ============================================
       const linktree = editData.linktree;
-      
+
       // Validate linktree ID
       if (!linktree.id || typeof linktree.id !== "string") {
         console.error("Invalid linktree ID in edit data");
         console.error("Invalid linktree data");
         return;
       }
-      
+
       // Sanitize and set name (max 100 chars)
       const sanitizedName = (linktree.name || "").trim().slice(0, 100);
       if (!sanitizedName) {
@@ -620,28 +746,39 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       } else {
         setName(sanitizedName);
       }
-      
+
       // Sanitize and set subtitle (max 200 chars)
       const sanitizedSubtitle = (linktree.subtitle || "").trim().slice(0, 200);
       setSubtitle(sanitizedSubtitle || DEFAULT_SUBTITLE);
 
       // Sanitize and set description (max 500 chars)
-      const sanitizedDescription = (linktree.description || "").trim().slice(0, 500);
+      const sanitizedDescription = (linktree.description || "")
+        .trim()
+        .slice(0, 500);
       setDescription(sanitizedDescription || DEFAULT_DESCRIPTION);
-      
+
       // Sanitize and set slug (max 100 chars, validate format)
-      const sanitizedSlug = (linktree.seo_name || buildSlugFromName(sanitizedName)).trim().slice(0, 100);
+      const sanitizedSlug = (
+        linktree.seo_name || buildSlugFromName(sanitizedName)
+      )
+        .trim()
+        .slice(0, 100);
       setSlug(sanitizedSlug || buildSlugFromName(sanitizedName));
-      
+
       // Validate and set background color
       const bgColor = linktree.background_color || "#eab308";
       setBackgroundColor(resolveDefaultBackgroundColor(bgColor));
 
-      const normalizedConfig = normalizeTemplateConfig(undefined, (linktree.template_config as Record<string, unknown> | null) ?? null);
+      const normalizedConfig = normalizeTemplateConfig(
+        undefined,
+        (linktree.template_config as Record<string, unknown> | null) ?? null,
+      );
       const configTemplateKey = normalizedConfig["templateKey"];
-      const sanitizedTemplate = (typeof configTemplateKey === "string" && isTemplateKey(configTemplateKey))
-        ? configTemplateKey
-        : TEMPLATE_DEFAULT_ID;
+      const sanitizedTemplate =
+        typeof configTemplateKey === "string" &&
+        isTemplateKey(configTemplateKey)
+          ? configTemplateKey
+          : TEMPLATE_DEFAULT_ID;
       setTemplateKey(sanitizedTemplate);
       setTemplateConfig(normalizedConfig);
 
@@ -651,28 +788,35 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       setBackgroundImagePreview(readBackgroundImage(normalizedConfig));
       setBackgroundPattern(readBackgroundPattern(normalizedConfig));
 
-
       // Load WhatsApp modal config from template_config
-      const whatsappModal = (linktree.template_config as Record<string, unknown> | null)?.whatsapp_modal;
-      if (whatsappModal && typeof whatsappModal === 'object' && !Array.isArray(whatsappModal)) {
+      const whatsappModal = (
+        linktree.template_config as Record<string, unknown> | null
+      )?.whatsapp_modal;
+      if (
+        whatsappModal &&
+        typeof whatsappModal === "object" &&
+        !Array.isArray(whatsappModal)
+      ) {
         const modal = whatsappModal as Record<string, unknown>;
         // Load enabled flag, default to false if not found
-        const enabled = typeof modal.enabled === 'boolean' ? modal.enabled : false;
+        const enabled =
+          typeof modal.enabled === "boolean" ? modal.enabled : false;
         setWhatsappModalEnabled(enabled);
-        if (typeof modal.title === 'string') setWhatsappModalTitle(modal.title);
-        if (typeof modal.subtitle === 'string') setWhatsappModalSubtitle(modal.subtitle);
+        if (typeof modal.title === "string") setWhatsappModalTitle(modal.title);
+        if (typeof modal.subtitle === "string")
+          setWhatsappModalSubtitle(modal.subtitle);
         if (Array.isArray(modal.questions)) {
           const questions = modal.questions
             .filter((q): q is WhatsAppQuestion => {
-              if (!q || typeof q !== 'object') return false;
+              if (!q || typeof q !== "object") return false;
               const obj = q as unknown as Record<string, unknown>;
               return (
-                typeof obj.id === 'string' &&
-                typeof obj.text === 'string' &&
-                typeof obj.message === 'string'
+                typeof obj.id === "string" &&
+                typeof obj.text === "string" &&
+                typeof obj.message === "string"
               );
             })
-            .map(q => {
+            .map((q) => {
               const obj = q as unknown as Record<string, unknown>;
               return {
                 id: obj.id as string,
@@ -686,10 +830,12 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
 
       // Load Dark Card config from template_config
       // Sanitize footer text (max 200 chars)
-      const sanitizedFooterText = (linktree.footer_text || "").trim().slice(0, 200);
+      const sanitizedFooterText = (linktree.footer_text || "")
+        .trim()
+        .slice(0, 200);
       // Always default to "MultiTree" if empty
       setFooterText(sanitizedFooterText || DEFAULT_FOOTER_TEXT);
-      
+
       // Validate and sanitize footer phone
       const footerPhoneValue = (linktree.footer_phone || "").trim();
       if (footerPhoneValue && /^\+?\d{10,15}$/.test(footerPhoneValue)) {
@@ -701,7 +847,6 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       // Set footer hidden
       setFooterHidden(linktree.footer_hidden ?? false);
 
-      
       // Validate and set image
       if (linktree.image && typeof linktree.image === "string") {
         const imageUrl = linktree.image.trim();
@@ -720,47 +865,59 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       } else {
         setProfileImagePreview(null);
       }
-      
+
       // Use memoized processed links (already validated in useMemo)
       // Access processedLinks directly from the memoized value
-      const currentProcessedLinks = editData.links && editData.links.length > 0
-        ? (() => {
-            const sortedLinks = [...editData.links].sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
-            return sortedLinks.map((link, index) => {
-              const linkId = `${link.platform}-${link.id}-${index}`;
-              const extracted = extractValueFromUrl(link.platform, link.url, link.metadata || null);
-              return {
-                id: linkId,
-                platform: link.platform,
-                url: link.url,
-                value: extracted.value,
-                countryCode: extracted.countryCode,
-                displayName: link.display_name || getPlatformNameKurdish(link.platform), // Pre-fill with Kurdish if not set
-                customColor: (link.metadata as Record<string, string>)?.custom_color,
-                customIcon: (link.metadata as Record<string, string>)?.custom_icon,
-                enabled: true,
-                order: link.display_order || index,
-              };
-            });
-          })()
-        : [];
-      
+      const currentProcessedLinks =
+        editData.links && editData.links.length > 0
+          ? (() => {
+              const sortedLinks = [...editData.links].sort(
+                (a, b) => (a.display_order || 0) - (b.display_order || 0),
+              );
+              return sortedLinks.map((link, index) => {
+                const linkId = `${link.platform}-${link.id}-${index}`;
+                const extracted = extractValueFromUrl(
+                  link.platform,
+                  link.url,
+                  link.metadata || null,
+                );
+                return {
+                  id: linkId,
+                  platform: link.platform,
+                  url: link.url,
+                  value: extracted.value,
+                  countryCode: extracted.countryCode,
+                  displayName:
+                    link.display_name || getPlatformNameKurdish(link.platform), // Pre-fill with Kurdish if not set
+                  customColor: (link.metadata as Record<string, string>)
+                    ?.custom_color,
+                  customIcon: (link.metadata as Record<string, string>)
+                    ?.custom_icon,
+                  enabled: true,
+                  order: link.display_order || index,
+                };
+              });
+            })()
+          : [];
+
       if (currentProcessedLinks.length > 0) {
         setSocialLinks(currentProcessedLinks);
       } else {
         setSocialLinks([]);
       }
-      
+
       // Only reset to first step when first opening edit mode, not on subsequent renders
       if (initializedLinktreeIdRef.current === null) {
         setCurrentStep("basic");
         resetSubmission();
       }
-      
+
       initializedLinktreeIdRef.current = editData.linktree.id;
     } else if (!editData) {
       // Reset form for create mode - use business defaults if available
-      const defaultTemplate = resolveDefaultTemplateKey(businessDefaults?.default_template);
+      const defaultTemplate = resolveDefaultTemplateKey(
+        businessDefaults?.default_template,
+      );
       const defaultBusinessName = businessIdentity?.name?.trim() || "";
       const defaultBusinessPhone =
         businessIdentity?.phone?.trim() ||
@@ -770,7 +927,11 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       setSubtitle(DEFAULT_SUBTITLE);
       setDescription(DEFAULT_DESCRIPTION);
       setSlug("");
-      setBackgroundColor(resolveDefaultBackgroundColor(businessDefaults?.default_background_color));
+      setBackgroundColor(
+        resolveDefaultBackgroundColor(
+          businessDefaults?.default_background_color,
+        ),
+      );
       setTemplateKey(defaultTemplate);
       setTemplateConfig(normalizeTemplateConfig(defaultTemplate, null));
       setProfileImage(null);
@@ -799,15 +960,29 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       } else {
         setSocialLinks([]);
       }
-      setFooterText(businessDefaults?.default_footer_text || DEFAULT_FOOTER_TEXT);
-      setFooterPhone(businessDefaults?.default_footer_phone || DEFAULT_FOOTER_PHONE);
+      setFooterText(
+        businessDefaults?.default_footer_text || DEFAULT_FOOTER_TEXT,
+      );
+      setFooterPhone(
+        businessDefaults?.default_footer_phone || DEFAULT_FOOTER_PHONE,
+      );
       setFooterHidden(businessDefaults?.default_footer_hidden ?? false);
-      setWhatsappModalEnabled(businessDefaults?.default_whatsapp_enabled ?? false);
+      setWhatsappModalEnabled(
+        businessDefaults?.default_whatsapp_enabled ?? false,
+      );
       setWhatsappModalTitle("پەیوەندی کردن");
       setWhatsappModalSubtitle("پرسیارێک هەڵبژێرە");
       setWhatsappQuestions([
-        { id: "order", text: "داواکردن", message: "سڵاو بەڕێز دەمەوێت داوا بکەم." },
-        { id: "price", text: "زانینی نرخ", message: "سڵاو بەڕێز، نرخی چەندە ؟" },
+        {
+          id: "order",
+          text: "داواکردن",
+          message: "سڵاو بەڕێز دەمەوێت داوا بکەم.",
+        },
+        {
+          id: "price",
+          text: "زانینی نرخ",
+          message: "سڵاو بەڕێز، نرخی چەندە ؟",
+        },
         { id: "other", text: "پرسیارێکی تر", message: "سڵاو" },
       ]);
       setCurrentStep("basic");
@@ -819,19 +994,23 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
 
   // Debounced slug generation - optimized for performance
   const debouncedSlugUpdate = useMemo(
-    () => debounce((newName: unknown) => {
-      if (typeof newName === 'string' && newName && !isEditMode) {
-        const generatedSlug = buildSlugFromName(newName);
-        startTransition(() => {
-          setSlug(generatedSlug);
-          // Validate auto-generated slug
-          if (touched.slug) {
-            setErrors(prev => ({ ...prev, slug: validateSlug(generatedSlug) }));
-          }
-        });
-      }
-    }, 300),
-    [isEditMode, touched.slug, validateSlug]
+    () =>
+      debounce((newName: unknown) => {
+        if (typeof newName === "string" && newName && !isEditMode) {
+          const generatedSlug = buildSlugFromName(newName);
+          startTransition(() => {
+            setSlug(generatedSlug);
+            // Validate auto-generated slug
+            if (touched.slug) {
+              setErrors((prev) => ({
+                ...prev,
+                slug: validateSlug(generatedSlug),
+              }));
+            }
+          });
+        }
+      }, 300),
+    [isEditMode, touched.slug, validateSlug],
   );
 
   // Auto-generate slug from name
@@ -864,13 +1043,16 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     const timer = setTimeout(async () => {
       try {
         const params = new URLSearchParams({ slug: s });
-        if (isEditMode && editData?.linktree?.id) params.set('excludeId', editData.linktree.id);
-        const res = await fetch(`${apiEndpoints.checkSlug}?${params}`, { credentials: 'include' });
+        if (isEditMode && editData?.linktree?.id)
+          params.set("excludeId", editData.linktree.id);
+        const res = await fetch(`${apiEndpoints.checkSlug}?${params}`, {
+          credentials: "include",
+        });
         const json = await res.json();
         if (cancelled) return;
         if (json.success) {
-          setSlugApiError(json.data ? null : 'ئەم سلاگە پێشتر بەکارهاتووە');
-          if (!json.data) setTouched(prev => ({ ...prev, slug: true }));
+          setSlugApiError(json.data ? null : "ئەم سلاگە پێشتر بەکارهاتووە");
+          if (!json.data) setTouched((prev) => ({ ...prev, slug: true }));
         }
       } catch {
         // network error — don't block
@@ -882,7 +1064,13 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [slug, isEditMode, editData?.linktree?.id, apiEndpoints.checkSlug, isBrowserLocal]);
+  }, [
+    slug,
+    isEditMode,
+    editData?.linktree?.id,
+    apiEndpoints.checkSlug,
+    isBrowserLocal,
+  ]);
 
   /**
    * Debounced duplicate-name check.
@@ -907,12 +1095,15 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     const timer = setTimeout(async () => {
       try {
         const params = new URLSearchParams({ name: trimmed });
-        if (isEditMode && editData?.linktree?.id) params.set('excludeId', editData.linktree.id);
-        const res = await fetch(`${apiEndpoints.checkName}?${params}`, { credentials: 'include' });
+        if (isEditMode && editData?.linktree?.id)
+          params.set("excludeId", editData.linktree.id);
+        const res = await fetch(`${apiEndpoints.checkName}?${params}`, {
+          credentials: "include",
+        });
         const json = await res.json();
         if (cancelled) return;
         if (json.success) {
-          setNameWarning(json.data ? null : 'پەڕەیەکی تر بە هەمان ناو هەیە');
+          setNameWarning(json.data ? null : "پەڕەیەکی تر بە هەمان ناو هەیە");
         }
       } catch {
         // network error — the name is not required to be unique anyway
@@ -924,7 +1115,13 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [name, isEditMode, editData?.linktree?.id, apiEndpoints.checkName, isBrowserLocal]);
+  }, [
+    name,
+    isEditMode,
+    editData?.linktree?.id,
+    apiEndpoints.checkName,
+    isBrowserLocal,
+  ]);
 
   // Merge API slug error into displayed errors
   const displayErrors = useMemo(() => {
@@ -944,83 +1141,96 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
 
   // Toggle a platform by updating the canonical link list. Selected IDs are
   // derived from this list so the selection and links steps cannot drift.
-  const togglePlatform = useCallback((platformId: string) => {
-    const isSelected = socialLinks.some((link) => link.platform === platformId);
-    if (!isSelected && maxLinks && socialLinks.length >= maxLinks) {
-      setErrors((previous) => ({
-        ...previous,
-        platforms: `زۆرترین ژمارەی لینک بۆ ئەم بانگهێشتنامەیە ${maxLinks} ـە`,
-      }));
-      setTouched((previous) => ({ ...previous, platforms: true }));
-      return;
-    }
-    startTransition(() => {
-      setSocialLinks(prevLinks => {
-        const existingLinks = prevLinks.filter(l => l.platform === platformId);
-        const isSelected = existingLinks.length > 0;
-        
-        if (isSelected) {
-          return prevLinks
-            .filter(l => l.platform !== platformId)
-            .map((link, index) => ({ ...link, order: index }));
-        }
+  const togglePlatform = useCallback(
+    (platformId: string) => {
+      const isSelected = socialLinks.some(
+        (link) => link.platform === platformId,
+      );
+      if (!isSelected && maxLinks && socialLinks.length >= maxLinks) {
+        setErrors((previous) => ({
+          ...previous,
+          platforms: `زۆرترین ژمارەی لینک بۆ ئەم بانگهێشتنامەیە ${maxLinks} ـە`,
+        }));
+        setTouched((previous) => ({ ...previous, platforms: true }));
+        return;
+      }
+      startTransition(() => {
+        setSocialLinks((prevLinks) => {
+          const existingLinks = prevLinks.filter(
+            (l) => l.platform === platformId,
+          );
+          const isSelected = existingLinks.length > 0;
 
+          if (isSelected) {
+            return prevLinks
+              .filter((l) => l.platform !== platformId)
+              .map((link, index) => ({ ...link, order: index }));
+          }
+
+          const newLink: SocialLink = {
+            id: generateLinkId(platformId),
+            platform: platformId,
+            url: "",
+            value: "",
+            displayName: getPlatformNameKurdish(platformId),
+            enabled: true,
+            order: prevLinks.length,
+          };
+          const nonGpsLinks = prevLinks.filter(
+            (link) => link.platform !== "gps",
+          );
+          const gpsLinks = prevLinks.filter((link) => link.platform === "gps");
+          const nextLinks =
+            platformId === "gps"
+              ? [...nonGpsLinks, newLink]
+              : [...nonGpsLinks, newLink, ...gpsLinks];
+
+          return nextLinks.map((link, index) => ({ ...link, order: index }));
+        });
+      });
+    },
+    [generateLinkId, maxLinks, socialLinks],
+  );
+
+  // Add another instance of a platform - memoized for performance
+  const addPlatformInstance = useCallback(
+    (platformId: string) => {
+      if (platformId === "gps") {
+        return;
+      }
+      if (maxLinks && socialLinks.length >= maxLinks) {
+        setErrors((previous) => ({
+          ...previous,
+          links: `زۆرترین ژمارەی لینک بۆ ئەم بانگهێشتنامەیە ${maxLinks} ـە`,
+        }));
+        setTouched((previous) => ({ ...previous, links: true }));
+        return;
+      }
+      const newLinkId = generateLinkId(platformId);
+      setSocialLinks((prev) => {
         const newLink: SocialLink = {
-          id: generateLinkId(platformId),
+          id: newLinkId,
           platform: platformId,
           url: "",
           value: "",
-          displayName: getPlatformNameKurdish(platformId),
+          displayName: getPlatformNameKurdish(platformId), // Pre-fill with Kurdish
           enabled: true,
-          order: prevLinks.length,
+          order: prev.length,
         };
-        const nonGpsLinks = prevLinks.filter(link => link.platform !== "gps");
-        const gpsLinks = prevLinks.filter(link => link.platform === "gps");
-        const nextLinks = platformId === "gps"
-          ? [...nonGpsLinks, newLink]
-          : [...nonGpsLinks, newLink, ...gpsLinks];
-
+        const nonGpsLinks = prev.filter((link) => link.platform !== "gps");
+        const gpsLinks = prev.filter((link) => link.platform === "gps");
+        const nextLinks = [...nonGpsLinks, newLink, ...gpsLinks];
         return nextLinks.map((link, index) => ({ ...link, order: index }));
       });
-    });
-  }, [generateLinkId, maxLinks, socialLinks]);
-
-  // Add another instance of a platform - memoized for performance
-  const addPlatformInstance = useCallback((platformId: string) => {
-    if (platformId === "gps") {
-      return;
-    }
-    if (maxLinks && socialLinks.length >= maxLinks) {
-      setErrors((previous) => ({
-        ...previous,
-        links: `زۆرترین ژمارەی لینک بۆ ئەم بانگهێشتنامەیە ${maxLinks} ـە`,
-      }));
-      setTouched((previous) => ({ ...previous, links: true }));
-      return;
-    }
-    const newLinkId = generateLinkId(platformId);
-    setSocialLinks(prev => {
-      const newLink: SocialLink = {
-        id: newLinkId,
-        platform: platformId,
-        url: "",
-        value: "",
-        displayName: getPlatformNameKurdish(platformId), // Pre-fill with Kurdish
-        enabled: true,
-        order: prev.length,
-      };
-      const nonGpsLinks = prev.filter(link => link.platform !== "gps");
-      const gpsLinks = prev.filter(link => link.platform === "gps");
-      const nextLinks = [...nonGpsLinks, newLink, ...gpsLinks];
-      return nextLinks.map((link, index) => ({ ...link, order: index }));
-    });
-  }, [generateLinkId, maxLinks, socialLinks.length]);
+    },
+    [generateLinkId, maxLinks, socialLinks.length],
+  );
 
   // Remove a link instance - memoized for performance
   const removeLinkInstance = useCallback((linkId: string) => {
-    setSocialLinks(prev =>
+    setSocialLinks((prev) =>
       prev
-        .filter(link => link.id !== linkId)
+        .filter((link) => link.id !== linkId)
         .map((link, index) => ({ ...link, order: index })),
     );
     setLinkErrors((previous) => {
@@ -1031,60 +1241,74 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
   }, []);
 
   // Update social link
-  const updateSocialLink = useCallback((id: string, value: string) => {
-    setSocialLinks(prev => {
-      const existing = prev.find(link => link.id === id);
-      const platformId = existing ? existing.platform : (id.includes('-') ? id.split('-')[0] : id);
-      const isPhoneBased = platformId === "whatsapp" || platformId === "phone" || platformId === "viber";
-      const code = isPhoneBased ? (existing?.countryCode || "964") : "";
-      const url = generateUrl(platformId, value || "", isPhoneBased ? code : undefined);
+  const updateSocialLink = useCallback(
+    (id: string, value: string) => {
+      setSocialLinks((prev) => {
+        const existing = prev.find((link) => link.id === id);
+        const platformId = existing
+          ? existing.platform
+          : id.includes("-")
+            ? id.split("-")[0]
+            : id;
+        const isPhoneBased =
+          platformId === "whatsapp" ||
+          platformId === "phone" ||
+          platformId === "viber";
+        const code = isPhoneBased ? existing?.countryCode || "964" : "";
+        const url = generateUrl(
+          platformId,
+          value || "",
+          isPhoneBased ? code : undefined,
+        );
 
-      // If this link already has an error, re-validate it in real-time
-      if (linkErrors[id]) {
-        const error = validateSingleLink(platformId, value || "", code);
-        setLinkErrors(prevErrors => {
-          if (error) {
-            return { ...prevErrors, [id]: error };
-          } else {
-            const nextErrors = { ...prevErrors };
-            delete nextErrors[id];
-            return nextErrors;
-          }
-        });
-      }
+        // If this link already has an error, re-validate it in real-time
+        if (linkErrors[id]) {
+          const error = validateSingleLink(platformId, value || "", code);
+          setLinkErrors((prevErrors) => {
+            if (error) {
+              return { ...prevErrors, [id]: error };
+            } else {
+              const nextErrors = { ...prevErrors };
+              delete nextErrors[id];
+              return nextErrors;
+            }
+          });
+        }
 
-      if (!existing) {
-        // Create new link if it doesn't exist
-        const newLink: SocialLink = {
-          id,
-          platform: platformId,
+        if (!existing) {
+          // Create new link if it doesn't exist
+          const newLink: SocialLink = {
+            id,
+            platform: platformId,
+            url,
+            value: value || "",
+            countryCode: code,
+            displayName: getPlatformNameKurdish(platformId), // Pre-fill with Kurdish
+            enabled: true,
+            order: prev.length,
+          };
+          return [...prev, newLink];
+        }
+
+        // Update existing link
+        const updatedLink: SocialLink = {
+          ...existing,
           url,
           value: value || "",
           countryCode: code,
-          displayName: getPlatformNameKurdish(platformId), // Pre-fill with Kurdish
-          enabled: true,
-          order: prev.length,
         };
-        return [...prev, newLink];
-      }
 
-      // Update existing link
-      const updatedLink: SocialLink = {
-        ...existing,
-        url,
-        value: value || "",
-        countryCode: code,
-      };
-
-      // Return new array with updated link
-      return prev.map(link => (link.id === id ? updatedLink : link));
-    });
-  }, [linkErrors]);
+        // Return new array with updated link
+        return prev.map((link) => (link.id === id ? updatedLink : link));
+      });
+    },
+    [linkErrors],
+  );
 
   // Update display name for a link
   const updateDisplayName = useCallback((id: string, displayName: string) => {
-    setSocialLinks(prev => {
-      const existing = prev.find(link => link.id === id);
+    setSocialLinks((prev) => {
+      const existing = prev.find((link) => link.id === id);
       if (!existing) {
         return prev; // Link doesn't exist
       }
@@ -1096,29 +1320,33 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       };
 
       // Return new array with updated link
-      return prev.map(link => (link.id === id ? updatedLink : link));
+      return prev.map((link) => (link.id === id ? updatedLink : link));
     });
   }, []);
 
   // Update custom color for a link
   const updateCustomColor = useCallback((id: string, customColor: string) => {
-    setSocialLinks(prev => {
-      const existing = prev.find(link => link.id === id);
+    setSocialLinks((prev) => {
+      const existing = prev.find((link) => link.id === id);
       if (!existing) {
         return prev;
       }
-      return prev.map(link => (link.id === id ? { ...existing, customColor } : link));
+      return prev.map((link) =>
+        link.id === id ? { ...existing, customColor } : link,
+      );
     });
   }, []);
 
   // Update custom icon for a link
   const updateCustomIcon = useCallback((id: string, customIcon: string) => {
-    setSocialLinks(prev => {
-      const existing = prev.find(link => link.id === id);
+    setSocialLinks((prev) => {
+      const existing = prev.find((link) => link.id === id);
       if (!existing) {
         return prev;
       }
-      return prev.map(link => (link.id === id ? { ...existing, customIcon } : link));
+      return prev.map((link) =>
+        link.id === id ? { ...existing, customIcon } : link,
+      );
     });
   }, []);
 
@@ -1130,20 +1358,27 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     const trimmedCode = countryCode.trim();
 
     // Update the link with new country code
-    setSocialLinks(prev => {
-      const existing = prev.find(link => link.id === id);
+    setSocialLinks((prev) => {
+      const existing = prev.find((link) => link.id === id);
       if (!existing) {
         return prev; // Link doesn't exist
       }
 
       // Only update country code for phone-based platforms
-      const isPhoneBased = existing.platform === "whatsapp" || existing.platform === "phone" || existing.platform === "viber";
+      const isPhoneBased =
+        existing.platform === "whatsapp" ||
+        existing.platform === "phone" ||
+        existing.platform === "viber";
       if (!isPhoneBased) {
         return prev; // Not a phone-based platform
       }
 
       // Generate new URL with updated country code and current value
-      const newUrl = generateUrl(existing.platform, existing.value || "", trimmedCode);
+      const newUrl = generateUrl(
+        existing.platform,
+        existing.value || "",
+        trimmedCode,
+      );
 
       // Create updated link object
       const updatedLink: SocialLink = {
@@ -1153,8 +1388,12 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       };
 
       // Run validation with the new country code and current value
-      const error = validateSingleLink(existing.platform, existing.value || "", trimmedCode);
-      setLinkErrors(prevErrors => {
+      const error = validateSingleLink(
+        existing.platform,
+        existing.value || "",
+        trimmedCode,
+      );
+      setLinkErrors((prevErrors) => {
         if (error) {
           return { ...prevErrors, [id]: error };
         } else {
@@ -1165,25 +1404,32 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       });
 
       // Return new array with updated link
-      return prev.map(link => (link.id === id ? updatedLink : link));
+      return prev.map((link) => (link.id === id ? updatedLink : link));
     });
   }, []);
 
-  const handleLinkBlur = useCallback((id: string) => {
-    const link = socialLinks.find(l => l.id === id);
-    if (!link) return;
+  const handleLinkBlur = useCallback(
+    (id: string) => {
+      const link = socialLinks.find((l) => l.id === id);
+      if (!link) return;
 
-    const error = validateSingleLink(link.platform, link.value || "", link.countryCode);
-    setLinkErrors(prev => {
-      if (error) {
-        return { ...prev, [id]: error };
-      } else {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      }
-    });
-  }, [socialLinks]);
+      const error = validateSingleLink(
+        link.platform,
+        link.value || "",
+        link.countryCode,
+      );
+      setLinkErrors((prev) => {
+        if (error) {
+          return { ...prev, [id]: error };
+        } else {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        }
+      });
+    },
+    [socialLinks],
+  );
 
   // Handle next step with validation - memoized for performance
   const handleNextStep = useCallback(() => {
@@ -1193,23 +1439,23 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       const slugError = slug.trim() ? validateSlug(slug) : undefined;
       const bgError = validateBackgroundColor(backgroundColor);
       const templateError = validateTemplateKey(templateKey);
-      
+
       if (nameError || slugError || slugApiError || bgError || templateError) {
-        setErrors(prev => ({
+        setErrors((prev) => ({
           ...prev,
           name: nameError,
           slug: slugError || slugApiError || undefined,
           backgroundColor: bgError,
           templateKey: templateError,
         }));
-        setTouched(prev => ({
+        setTouched((prev) => ({
           ...prev,
           name: true,
           slug: slug.trim() ? true : false,
           backgroundColor: true,
           templateKey: true,
         }));
-        
+
         if (nameError) {
           console.error(nameError);
           document.getElementById("name")?.focus();
@@ -1223,26 +1469,45 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
         }
         return;
       }
-      
+
       // Clear errors if validation passes
-      setErrors(prev => ({ ...prev, name: undefined, slug: slugApiError || undefined, backgroundColor: undefined, templateKey: undefined }));
+      setErrors((prev) => ({
+        ...prev,
+        name: undefined,
+        slug: slugApiError || undefined,
+        backgroundColor: undefined,
+        templateKey: undefined,
+      }));
       setCurrentStep("select");
     } else if (currentStep === "select") {
       // Validate platforms before moving to links step
       const platformsError = validatePlatforms(selectedPlatforms);
-      
+
       if (platformsError) {
-        setErrors(prev => ({ ...prev, platforms: platformsError }));
-        setTouched(prev => ({ ...prev, platforms: true }));
+        setErrors((prev) => ({ ...prev, platforms: platformsError }));
+        setTouched((prev) => ({ ...prev, platforms: true }));
         console.error(platformsError);
         return;
       }
-      
+
       // Clear errors if validation passes
-      setErrors(prev => ({ ...prev, platforms: undefined }));
+      setErrors((prev) => ({ ...prev, platforms: undefined }));
       setCurrentStep("links");
     }
-  }, [currentStep, name, slug, slugApiError, backgroundColor, templateKey, selectedPlatforms, validateName, validateSlug, validateBackgroundColor, validateTemplateKey, validatePlatforms]);
+  }, [
+    currentStep,
+    name,
+    slug,
+    slugApiError,
+    backgroundColor,
+    templateKey,
+    selectedPlatforms,
+    validateName,
+    validateSlug,
+    validateBackgroundColor,
+    validateTemplateKey,
+    validatePlatforms,
+  ]);
 
   // Handle back step - memoized for performance
   const handleBackStep = useCallback(() => {
@@ -1262,19 +1527,19 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
   ) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     // CRITICAL: Prevent duplicate submissions
     // CRITICAL: Only allow submission on the links step
     if (currentStep !== "links" && !opts?.allowNonFinalStep) {
       return;
     }
     if (!beginSubmission()) return;
-    
+
     try {
       // ============================================
       // VALIDATION CHECKS
       // ============================================
-      
+
       // Validate all fields before submission
       if (!validateAllFields()) {
         // Focus first invalid field
@@ -1284,9 +1549,17 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
           document.getElementById("slug")?.focus();
         } else if (errors.backgroundColor) {
           // Scroll to background color section
-          document.querySelector('[data-bg-color-section]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else if (errors.templateKey || !templateKey || !isTemplateKey(templateKey)) {
-          document.querySelector('[data-template-section]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          document
+            .querySelector("[data-bg-color-section]")
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else if (
+          errors.templateKey ||
+          !templateKey ||
+          !isTemplateKey(templateKey)
+        ) {
+          document
+            .querySelector("[data-template-section]")
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
         } else if (errors.platforms) {
           // Scroll to platforms section
           if (currentStep === "links") {
@@ -1297,24 +1570,28 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
         }
         throw new Error("Validation failed");
       }
-      
+
       // Validate name
       const sanitizedName = name.trim();
-      
+
       // Validate slug
       const sanitizedSlug = slug.trim() || buildSlugFromName(sanitizedName);
-      
-      // Validate background color
-      const selectedBgColor = BACKGROUND_COLORS.find(c => c.id === backgroundColor)?.value || backgroundColor;
 
-      const selectedTemplateKey = isTemplateKey(templateKey) ? templateKey : TEMPLATE_DEFAULT_ID;
-      
+      // Validate background color
+      const selectedBgColor =
+        BACKGROUND_COLORS.find((c) => c.id === backgroundColor)?.value ||
+        backgroundColor;
+
+      const selectedTemplateKey = isTemplateKey(templateKey)
+        ? templateKey
+        : TEMPLATE_DEFAULT_ID;
+
       // Validate links
       if (!selectedPlatforms || selectedPlatforms.length === 0) {
         console.error("لانیکەم یەک پلاتفۆڕمەکان هەڵبژێرە");
         throw new Error("No platforms selected");
       }
-      
+
       // ============================================
       // IMAGE UPLOAD
       // ============================================
@@ -1345,7 +1622,10 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       // path it was hydrated with, and a removed one resolves to null.
       let backgroundImageUrl: string | null = null;
       if (backgroundImage) {
-        backgroundImageUrl = await uploadImage(backgroundImage, "background-image");
+        backgroundImageUrl = await uploadImage(
+          backgroundImage,
+          "background-image",
+        );
         if (!backgroundImageUrl) {
           throw new Error("Background image upload failed");
         }
@@ -1356,11 +1636,12 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       // ============================================
       // PROCESS LINKS DATA
       // ============================================
-      const normalizedLinks = normalizeSelectedSocialLinks(socialLinks, selectedPlatforms);
-      const {
-        urls: processedLinks,
-        metadata: linkMetadata,
-      } = groupSocialLinksByPlatform(normalizedLinks);
+      const normalizedLinks = normalizeSelectedSocialLinks(
+        socialLinks,
+        selectedPlatforms,
+      );
+      const { urls: processedLinks, metadata: linkMetadata } =
+        groupSocialLinksByPlatform(normalizedLinks);
       // Final validation: ensure we have at least one link
       if (Object.keys(processedLinks).length === 0) {
         const hasSelectedPlatforms = selectedPlatforms.length > 0;
@@ -1379,13 +1660,13 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       const sanitizedDescription = description.trim() || DEFAULT_DESCRIPTION;
       const sanitizedFooterText = footerText.trim() || undefined;
       const sanitizedFooterPhone = footerPhone.trim() || undefined;
-      
+
       // Validate footer phone format if provided
       if (sanitizedFooterPhone) {
         const phoneError = validateFooterPhone(sanitizedFooterPhone);
         if (phoneError) {
-          setErrors(prev => ({ ...prev, footerPhone: phoneError }));
-          setTouched(prev => ({ ...prev, footerPhone: true }));
+          setErrors((prev) => ({ ...prev, footerPhone: phoneError }));
+          setTouched((prev) => ({ ...prev, footerPhone: true }));
           console.error(phoneError);
           throw new Error(phoneError);
         }
@@ -1397,9 +1678,9 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       const platforms = Array.from(
         new Set(
           socialLinks
-            .filter(l => selectedPlatforms.includes(l.id))
-            .map(l => l.platform)
-        )
+            .filter((l) => selectedPlatforms.includes(l.id))
+            .map((l) => l.platform),
+        ),
       );
 
       // ============================================
@@ -1413,162 +1694,197 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
         // Include whatsapp_modal with enabled flag
         whatsapp_modal: {
           enabled: whatsappModalEnabled,
-          ...(whatsappModalEnabled && whatsappQuestions.length > 0 ? {
-            title: whatsappModalTitle.trim() || "پەیوەندی کردن",
-            subtitle: whatsappModalSubtitle.trim() || "پرسیارێک هەڵبژێرە",
-            questions: whatsappQuestions.filter(q => q.text.trim() && q.message.trim()),
-          } : {}),
+          ...(whatsappModalEnabled && whatsappQuestions.length > 0
+            ? {
+                title: whatsappModalTitle.trim() || "پەیوەندی کردن",
+                subtitle: whatsappModalSubtitle.trim() || "پرسیارێک هەڵبژێرە",
+                questions: whatsappQuestions.filter(
+                  (q) => q.text.trim() && q.message.trim(),
+                ),
+              }
+            : {}),
         },
       };
-      const normalizedTemplateConfig = normalizeTemplateConfig(selectedTemplateKey, templateConfigWithMessage);
+      const normalizedTemplateConfig = normalizeTemplateConfig(
+        selectedTemplateKey,
+        templateConfigWithMessage,
+      );
 
-      await onSubmit({
-        name: sanitizedName,
-        subtitle: sanitizedSubtitle,
-        description: sanitizedDescription,
-        slug: sanitizedSlug,
-        image: imageUrl,
-        background_color: selectedBgColor,
-        templateKey: selectedTemplateKey,
-        templateConfig: normalizedTemplateConfig,
-        footer_text: sanitizedFooterText,
-        footer_phone: sanitizedFooterPhone,
-        footer_hidden: footerHidden,
-        platforms: platforms,
-        links: processedLinks,
-        linkMetadata: Object.keys(linkMetadata).length > 0 ? linkMetadata : undefined,
-        ...(isDefault ? { is_default: true } : {}),
-      }, editData?.linktree.id);
+      await onSubmit(
+        {
+          name: sanitizedName,
+          subtitle: sanitizedSubtitle,
+          description: sanitizedDescription,
+          slug: sanitizedSlug,
+          image: imageUrl,
+          background_color: selectedBgColor,
+          templateKey: selectedTemplateKey,
+          templateConfig: normalizedTemplateConfig,
+          footer_text: sanitizedFooterText,
+          footer_phone: sanitizedFooterPhone,
+          footer_hidden: footerHidden,
+          platforms: platforms,
+          links: processedLinks,
+          linkMetadata:
+            Object.keys(linkMetadata).length > 0 ? linkMetadata : undefined,
+          ...(isDefault ? { is_default: true } : {}),
+        },
+        editData?.linktree.id,
+      );
 
       // Note: Modal closing is handled by parent component after successful submission
       // Don't reset isSubmitting here - let the modal close naturally reset the state
       // This keeps the button disabled with spinner until modal closes
-      
     } catch (error) {
       console.error("Error submitting:", error);
-      
+
       // Check if error has link-specific errors
-      if (error && typeof error === 'object' && 'linkErrors' in error) {
-        const linkErrorsData = (error as Error & { linkErrors?: Record<string, string> }).linkErrors;
+      if (error && typeof error === "object" && "linkErrors" in error) {
+        const linkErrorsData = (
+          error as Error & { linkErrors?: Record<string, string> }
+        ).linkErrors;
         if (linkErrorsData && Object.keys(linkErrorsData).length > 0) {
           // Map link errors to display format
           // The key format from API is: platform_index (where index is position in linksToCreate)
           // We need to map this to our linkId format
           const mappedErrors: Record<string, string> = {};
-          
+
           // Build a map of platform+index to linkId
           // We need to match the order in which links were processed
           const platformLinkCounts = new Map<string, number>();
-          selectedPlatforms.forEach(linkId => {
-            const link = socialLinks.find(l => l.id === linkId);
+          selectedPlatforms.forEach((linkId) => {
+            const link = socialLinks.find((l) => l.id === linkId);
             if (!link) return;
-            
+
             const count = platformLinkCounts.get(link.platform) || 0;
             const errorKey = `${link.platform}_${count}`;
-            
+
             if (linkErrorsData[errorKey]) {
               mappedErrors[linkId] = linkErrorsData[errorKey];
             }
-            
+
             platformLinkCounts.set(link.platform, count + 1);
           });
-          
+
           if (Object.keys(mappedErrors).length > 0) {
             setLinkErrors(mappedErrors);
             console.error("هەندێک لینک هەڵەیەک هەیە. تکایە چاکی بکەوە");
           } else {
             // Fallback: show general error if mapping failed
-            if (!(error instanceof Error && error.message === "Validation failed")) {
+            if (!(
+              error instanceof Error && error.message === "Validation failed"
+            )) {
               console.error("هەڵە لە پاشەکەوتکردن");
             }
           }
         } else {
           // No link-specific errors, show general error
-          if (!(error instanceof Error && error.message === "Validation failed")) {
+          if (!(
+            error instanceof Error && error.message === "Validation failed"
+          )) {
             console.error("هەڵە لە پاشەکەوتکردن");
           }
         }
       } else {
         // No link-specific errors, show general error
-        if (!(error instanceof Error && error.message === "Validation failed")) {
+        if (!(
+          error instanceof Error && error.message === "Validation failed"
+        )) {
           console.error("هەڵە لە پاشەکەوتکردن");
         }
       }
-      
+
       // ALWAYS reset submission flag on error so user can retry
       resetSubmission();
     }
   };
 
   // Handle reorder links - move up or down
-  const handleMoveLink = useCallback((linkId: string, direction: 'up' | 'down') => {
-    // Get current sorted links for reordering
-    const currentSorted = selectedPlatforms
-      .map(linkId => {
-        const link = socialLinks.find(l => l.id === linkId);
-        if (!link) return null;
-        return { linkId, link };
-      })
-      .filter((item): item is NonNullable<typeof item> => item !== null)
-      .sort((a, b) => (a.link.order ?? 0) - (b.link.order ?? 0));
+  const handleMoveLink = useCallback(
+    (linkId: string, direction: "up" | "down") => {
+      // Get current sorted links for reordering
+      const currentSorted = selectedPlatforms
+        .map((linkId) => {
+          const link = socialLinks.find((l) => l.id === linkId);
+          if (!link) return null;
+          return { linkId, link };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null)
+        .sort((a, b) => (a.link.order ?? 0) - (b.link.order ?? 0));
 
-    const currentIndex = currentSorted.findIndex((item) => item.linkId === linkId);
-    
-    if (currentIndex === -1) return;
+      const currentIndex = currentSorted.findIndex(
+        (item) => item.linkId === linkId,
+      );
 
-    const currentItem = currentSorted[currentIndex];
-    if (currentItem.link.platform === "gps") return;
-    
-    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    
-    if (newIndex < 0 || newIndex >= currentSorted.length) return;
+      if (currentIndex === -1) return;
 
-    // Swap items
-    const reorderedLinks = [...currentSorted];
-    [reorderedLinks[currentIndex], reorderedLinks[newIndex]] = [reorderedLinks[newIndex], reorderedLinks[currentIndex]];
-    
-    const gpsItems = reorderedLinks.filter((item) => item.link.platform === "gps");
-    const nonGpsItems = reorderedLinks.filter((item) => item.link.platform !== "gps");
-    const orderedItems = [...nonGpsItems, ...gpsItems];
+      const currentItem = currentSorted[currentIndex];
+      if (currentItem.link.platform === "gps") return;
 
-    const newSelectedPlatforms = orderedItems.map((item: { linkId: string }) => item.linkId);
+      const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
 
-    setSocialLinks((prev) =>
-      prev.map((link) => {
-        const index = newSelectedPlatforms.indexOf(link.id);
-        return index !== -1 ? { ...link, order: index } : link;
-      })
-    );
-  }, [selectedPlatforms, socialLinks]);
+      if (newIndex < 0 || newIndex >= currentSorted.length) return;
+
+      // Swap items
+      const reorderedLinks = [...currentSorted];
+      [reorderedLinks[currentIndex], reorderedLinks[newIndex]] = [
+        reorderedLinks[newIndex],
+        reorderedLinks[currentIndex],
+      ];
+
+      const gpsItems = reorderedLinks.filter(
+        (item) => item.link.platform === "gps",
+      );
+      const nonGpsItems = reorderedLinks.filter(
+        (item) => item.link.platform !== "gps",
+      );
+      const orderedItems = [...nonGpsItems, ...gpsItems];
+
+      const newSelectedPlatforms = orderedItems.map(
+        (item: { linkId: string }) => item.linkId,
+      );
+
+      setSocialLinks((prev) =>
+        prev.map((link) => {
+          const index = newSelectedPlatforms.indexOf(link.id);
+          return index !== -1 ? { ...link, order: index } : link;
+        }),
+      );
+    },
+    [selectedPlatforms, socialLinks],
+  );
 
   // Check if there are any valid links (with values filled in) - optimized
   const hasValidLinks = useMemo(() => {
     if (selectedPlatforms.length === 0) return false;
-    
+
     // Create a map for O(1) lookup instead of O(n) find
-    const linksMap = new Map(socialLinks.map(link => [link.id, link]));
-    
+    const linksMap = new Map(socialLinks.map((link) => [link.id, link]));
+
     // Every selected platform must have a completed, valid link.
     for (const linkId of selectedPlatforms) {
       const link = linksMap.get(linkId);
       if (!link) return false;
-      
+
       // Check if link has a value (user has filled in the input)
       const hasValue = link.value && link.value.trim();
       if (!hasValue) return false;
 
-      if (validateSingleLink(link.platform, link.value || "", link.countryCode)) {
+      if (
+        validateSingleLink(link.platform, link.value || "", link.countryCode)
+      ) {
         return false;
       }
-      
+
       // Generate URL to verify it's valid
-      const linkUrl = link.url && link.url.trim() 
-        ? link.url 
-        : generateUrl(link.platform, link.value || "", link.countryCode);
-      
+      const linkUrl =
+        link.url && link.url.trim()
+          ? link.url
+          : generateUrl(link.platform, link.value || "", link.countryCode);
+
       if (!linkUrl || !linkUrl.trim()) return false;
     }
-    
+
     return true;
   }, [selectedPlatforms, socialLinks]);
 
@@ -1577,12 +1893,14 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
 
     if (currentStep === "basic") {
       const slugError = slug.trim() ? validateSlug(slug) : undefined;
-      return !checkingSlug
-        && !slugApiError
-        && !validateName(name)
-        && !slugError
-        && !validateBackgroundColor(backgroundColor)
-        && !validateTemplateKey(templateKey);
+      return (
+        !checkingSlug &&
+        !slugApiError &&
+        !validateName(name) &&
+        !slugError &&
+        !validateBackgroundColor(backgroundColor) &&
+        !validateTemplateKey(templateKey)
+      );
     }
 
     if (currentStep === "select") {
@@ -1606,14 +1924,15 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     validateTemplateKey,
   ]);
 
-if (!isOpen) return null;
+  if (!isOpen) return null;
 
   return (
     <ManagementModal
       isOpen={isOpen}
       onClose={onClose}
       title={
-        workflow.title ?? (isEditMode
+        workflow.title ??
+        (isEditMode
           ? "دەستکاریکردنی پەڕە"
           : isDefault
             ? "دروستکردنی پەڕەی بنەڕەتی"
@@ -1648,10 +1967,13 @@ if (!isOpen) return null;
           isFinalStep={currentStep === "links"}
           isLoadingData={isLoadingEditData}
           isSubmitting={isSubmitting}
-          canContinue={currentStep === "links" ? hasValidLinks : canContinueToNextStep}
+          canContinue={
+            currentStep === "links" ? hasValidLinks : canContinueToNextStep
+          }
           disableWhenInvalid={false}
           submitLabel={
-            workflow.submitLabel ?? (isEditMode
+            workflow.submitLabel ??
+            (isEditMode
               ? "پاشەکەوتکردن"
               : isDefault
                 ? "دروستکردنی پەڕەی بنەڕەتی"
@@ -1707,15 +2029,15 @@ if (!isOpen) return null;
           <InlineRequestError className="mb-4" error={uploadError} />
         )}
         {/* Loading state mirrors the first editor step to prevent layout shift. */}
-        {isLoadingEditData && (
-          <SkeletonForm fields={5} />
-        )}
+        {isLoadingEditData && <SkeletonLinktreeBasicInfo />}
 
         {/* Step 1: Basic Info */}
         {!isLoadingEditData && currentStep === "basic" && (
           <BasicInfoStep
             profileImagePreview={profileImagePreview}
-            hideRemoveImage={!profileImage && !!businessDefaults?.default_avatar}
+            hideRemoveImage={
+              !profileImage && !!businessDefaults?.default_avatar
+            }
             fileInputRef={fileInputRef}
             name={name}
             subtitle={subtitle}
@@ -1758,8 +2080,12 @@ if (!isOpen) return null;
             onWhatsappModalTitleChange={setWhatsappModalTitle}
             onWhatsappModalSubtitleChange={setWhatsappModalSubtitle}
             onWhatsappQuestionsChange={setWhatsappQuestions}
-            hideFooterSection={workflow.hideBusinessFields}
-            hideWhatsappQuestions={workflow.hideBusinessFields}
+            hideFooterSection={
+              workflow.hideFooterSection ?? workflow.hideBusinessFields
+            }
+            hideWhatsappQuestions={
+              workflow.hideWhatsappQuestions ?? workflow.hideBusinessFields
+            }
             hideImageUploads={workflow.allowImageUploads === false}
             allowedTemplateKeys={workflow.allowedTemplateKeys}
           />

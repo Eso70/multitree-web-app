@@ -12,8 +12,7 @@
 -- PERFORMANCE AND SCALE BASELINE
 -- Indexes for every foreign-key column that would otherwise be unindexed,
 -- plus per-table storage tuning for high-churn event tables and hot-update
--- rollup/counter tables. Consolidated from 20260725_perf_scale_baseline.sql
--- and 20260726_analytics_crm_scale.sql.
+-- rollup/counter tables. Consolidated from the performance scale migrations.
 -- ============================================================================
 
 CREATE INDEX idx_access_rules_created_by ON public.access_rules (created_by);
@@ -41,15 +40,6 @@ CREATE INDEX idx_platform_media_settings_updated_by ON public.platform_media_set
 CREATE INDEX idx_analytics_visitors_first_page ON public.analytics_visitors (first_public_page_id);
 CREATE INDEX idx_analytics_sessions_visitor ON public.analytics_sessions (visitor_id);
 CREATE INDEX idx_analytics_action_daily_business ON public.analytics_action_daily (business_id);
-CREATE INDEX idx_crm_contacts_visitor ON public.crm_contacts (visitor_id);
-CREATE INDEX idx_crm_leads_contact ON public.crm_leads (contact_id);
-CREATE INDEX idx_crm_leads_visitor ON public.crm_leads (visitor_id);
-CREATE INDEX idx_crm_leads_session ON public.crm_leads (session_id);
-CREATE INDEX idx_crm_lead_status_history_lead ON public.crm_lead_status_history (lead_id);
-CREATE INDEX idx_crm_lead_events_lead ON public.crm_lead_events (lead_id);
-CREATE INDEX idx_crm_lead_events_analytics_event ON public.crm_lead_events (analytics_event_id);
-CREATE INDEX idx_crm_notes_lead ON public.crm_notes (lead_id);
-
 -- High-churn event tables: default autovacuum triggers at 20% dead tuples;
 -- trigger at 2-5% instead so retention deletes and delivery retries never
 -- bloat the tables. Hot-update rollup/counter/session tables get
@@ -75,7 +65,7 @@ BEGIN
   FOREACH hot_table IN ARRAY ARRAY[
     'public.billing_usage_counters', 'public.http_request_event_daily_stats',
     'public.analytics_page_daily', 'public.analytics_action_daily',
-    'public.analytics_dimension_daily', 'public.analytics_visitors',
+    'public.analytics_visitors',
     'public.analytics_sessions', 'public.business_sessions',
     'public.platform_admin_sessions'
   ] LOOP
@@ -84,4 +74,3 @@ BEGIN
     END IF;
   END LOOP;
 END $$;
-

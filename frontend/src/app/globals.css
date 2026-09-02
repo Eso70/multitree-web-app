@@ -899,6 +899,19 @@ html.dark ::-moz-selection {
 
 [data-multitree-theme],
 body.multitree-theme-portals {
+  --business-website-color: var(--multitree-brand-accent);
+  --multitree-accent: var(--multitree-brand-accent);
+  --multitree-accent-gradient: linear-gradient(
+    to right,
+    var(--multitree-brand-accent),
+    var(--multitree-brand-accent)
+  );
+  --multitree-accent-hover: color-mix(
+    in srgb,
+    var(--multitree-brand-accent) 88%,
+    black
+  );
+  --multitree-accent-ink: #111827;
   --theme-primary: var(--multitree-accent);
   --theme-css: var(--multitree-accent);
 }
@@ -2558,18 +2571,8 @@ body * {
   scrollbar-width: thin;
 }
 
-[data-create-template] > span {
-  display: none;
-}
-
 [data-responsive-create] > span {
   display: none;
-}
-
-@media (min-width: 640px) {
-  [data-create-template] > span {
-    display: inline;
-  }
 }
 
 @media (min-width: 1280px) {

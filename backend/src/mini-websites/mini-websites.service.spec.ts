@@ -1277,7 +1277,6 @@ describe('MiniWebsitesService', () => {
         'ownedProperties',
         'education',
         'experience',
-        'leadForm',
         'pricing',
       ]);
 

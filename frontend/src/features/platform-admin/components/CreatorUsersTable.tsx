@@ -30,6 +30,7 @@ import {
   type CreatorManageAction,
 } from "@/features/platform-admin/creator-account";
 import { CreatorMetaBadges } from "@/features/platform-admin/components/CreatorMetaBadges";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 interface CreatorUsersTableProps {
   data?: Creator[];
@@ -122,77 +123,87 @@ function CreatorActions({
       }
     >
       {onView && (
-        <button
-          type="button"
-          onClick={() => onView(item)}
-          className={`${buttonClass} hover:bg-sky-50 dark:hover:bg-sky-500/10`}
-          title="بینینی وردەکاری"
-          aria-label={`بینینی وردەکاری ${item.display_name}`}
-        >
-          <Eye className={`${iconClass} text-sky-600`} />
-        </button>
+        <Tooltip content="بینینی وردەکاری" side="top">
+          <button
+            type="button"
+            onClick={() => onView(item)}
+            className={`${buttonClass} hover:bg-sky-50 dark:hover:bg-sky-500/10 cursor-pointer`}
+            title="بینینی وردەکاری"
+            aria-label={`بینینی وردەکاری ${item.display_name}`}
+          >
+            <Eye className={`${iconClass} text-sky-600`} />
+          </button>
+        </Tooltip>
       )}
       {onManage && (
         <>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onManage(item, suspended ? "reactivate" : "suspend")}
-            className={`${buttonClass} ${suspended ? "hover:bg-emerald-50 dark:hover:bg-emerald-500/10" : "hover:bg-orange-50 dark:hover:bg-orange-500/10"}`}
-            title={suspended ? "چالاککردنەوە" : "ڕاگرتن"}
-            aria-label={
-              suspended
-                ? `چالاککردنەوەی ${item.display_name}`
-                : `ڕاگرتنی ${item.display_name}`
-            }
-          >
-            {suspended ? (
-              <CirclePlay className={`${iconClass} text-emerald-600`} />
-            ) : (
-              <CirclePause className={`${iconClass} text-orange-600`} />
-            )}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onManage(item, "extend_trial")}
-            className={`${buttonClass} hover:bg-violet-50 dark:hover:bg-violet-500/10`}
-            title="درێژکردنەوەی تاقیکردنەوە بۆ ٧ ڕۆژ"
-            aria-label={`درێژکردنەوەی تاقیکردنەوەی ${item.display_name}`}
-          >
-            <CalendarPlus className={`${iconClass} text-violet-600`} />
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() =>
-              onManage(item, paid ? "cancel_paid" : "activate_paid")
-            }
-            className={`${buttonClass} ${paid ? "hover:bg-amber-50 dark:hover:bg-amber-500/10" : "hover:bg-emerald-50 dark:hover:bg-emerald-500/10"}`}
-            title={paid ? "وەستاندنی پارەدان" : "چالاککردنی پارەدان"}
-            aria-label={
-              paid
-                ? `وەستاندنی پارەدانی ${item.display_name}`
-                : `چالاککردنی پارەدانی ${item.display_name}`
-            }
-          >
-            <CreditCard
-              className={`${iconClass} ${paid ? "text-amber-600" : "text-emerald-600"}`}
-            />
-          </button>
+          <Tooltip content={suspended ? "چالاککردنەوە" : "ڕاگرتن"} side="top">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onManage(item, suspended ? "reactivate" : "suspend")}
+              className={`${buttonClass} ${suspended ? "hover:bg-emerald-50 dark:hover:bg-emerald-500/10" : "hover:bg-orange-50 dark:hover:bg-orange-500/10"} cursor-pointer`}
+              title={suspended ? "چالاککردنەوە" : "ڕاگرتن"}
+              aria-label={
+                suspended
+                  ? `چالاککردنەوەی ${item.display_name}`
+                  : `ڕاگرتنی ${item.display_name}`
+              }
+            >
+              {suspended ? (
+                <CirclePlay className={`${iconClass} text-emerald-600`} />
+              ) : (
+                <CirclePause className={`${iconClass} text-orange-600`} />
+              )}
+            </button>
+          </Tooltip>
+          <Tooltip content="درێژکردنەوەی تاقیکردنەوە بۆ ٧ ڕۆژ" side="top">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onManage(item, "extend_trial")}
+              className={`${buttonClass} hover:bg-violet-50 dark:hover:bg-violet-500/10 cursor-pointer`}
+              title="درێژکردنەوەی تاقیکردنەوە بۆ ٧ ڕۆژ"
+              aria-label={`درێژکردنەوەی تاقیکردنەوەی ${item.display_name}`}
+            >
+              <CalendarPlus className={`${iconClass} text-violet-600`} />
+            </button>
+          </Tooltip>
+          <Tooltip content={paid ? "وەستاندنی پارەدان" : "چالاککردنی پارەدان"} side="top">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() =>
+                onManage(item, paid ? "cancel_paid" : "activate_paid")
+              }
+              className={`${buttonClass} ${paid ? "hover:bg-amber-50 dark:hover:bg-amber-500/10" : "hover:bg-emerald-50 dark:hover:bg-emerald-500/10"} cursor-pointer`}
+              title={paid ? "وەستاندنی پارەدان" : "چالاککردنی پارەدان"}
+              aria-label={
+                paid
+                  ? `وەستاندنی پارەدانی ${item.display_name}`
+                  : `چالاککردنی پارەدانی ${item.display_name}`
+              }
+            >
+              <CreditCard
+                className={`${iconClass} ${paid ? "text-amber-600" : "text-emerald-600"}`}
+              />
+            </button>
+          </Tooltip>
         </>
       )}
       {onDeletePage && item.page_type && (
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => onDeletePage(item)}
-          className={`${buttonClass} hover:bg-red-50 dark:hover:bg-red-500/10`}
-          title="سڕینەوەی پەڕە"
-          aria-label={`سڕینەوەی پەڕەی ${item.display_name}`}
-        >
-          <Trash2 className={`${iconClass} text-red-600`} />
-        </button>
+        <Tooltip content="سڕینەوەی پەڕە" side="top">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onDeletePage(item)}
+            className={`${buttonClass} hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer`}
+            title="سڕینەوەی پەڕە"
+            aria-label={`سڕینەوەی پەڕەی ${item.display_name}`}
+          >
+            <Trash2 className={`${iconClass} text-red-600`} />
+          </button>
+        </Tooltip>
       )}
     </div>
   );
@@ -213,12 +224,11 @@ function IdentityCell({ item }: { item: Creator }) {
       <div className="truncate text-sm font-medium text-gray-900 dark:text-white">
         {item.display_name}
       </div>
-      <div
-        className="mt-0.5 truncate text-[11px] text-gray-400"
-        title={item.email}
-      >
-        {item.email}
-      </div>
+      <Tooltip content={item.email} side="top">
+        <div className="mt-0.5 truncate text-[11px] text-gray-400">
+          {item.email}
+        </div>
+      </Tooltip>
       {href ? (
         <a
           href={href}

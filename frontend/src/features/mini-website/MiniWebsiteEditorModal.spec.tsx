@@ -3,6 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MiniWebsiteEditorModal } from "./MiniWebsiteEditorModal";
 import { createMiniWebsiteDraft } from "./types";
 import { ThemeProvider } from "@/lib/contexts/ThemeProvider";
+import {
+  CREATOR_MINI_WEBSITE_WORKSPACE,
+  MiniWebsiteWorkspaceProvider,
+} from "./workspace-config";
 
 vi.mock("./MiniWebsiteContentStep", () => ({
   MiniWebsiteHeroMediaFields: () => <div data-testid="hero-fields" />,
@@ -41,13 +45,15 @@ describe("MiniWebsiteEditorModal actions", () => {
 
     render(
       <ThemeProvider websiteColor="#0f172a">
-        <MiniWebsiteEditorModal
-          isOpen
-          initial={draft}
-          defaultAvatar="/images/DefaultAvatar.png"
-          onClose={vi.fn()}
-          onSave={vi.fn()}
-        />
+        <MiniWebsiteWorkspaceProvider config={CREATOR_MINI_WEBSITE_WORKSPACE}>
+          <MiniWebsiteEditorModal
+            isOpen
+            initial={draft}
+            defaultAvatar="/images/DefaultAvatar.png"
+            onClose={vi.fn()}
+            onSave={vi.fn()}
+          />
+        </MiniWebsiteWorkspaceProvider>
       </ThemeProvider>,
     );
 
@@ -56,9 +62,7 @@ describe("MiniWebsiteEditorModal actions", () => {
     fireEvent.click(next);
 
     expect(screen.getByText("سەردێڕ پێویستە.")).toBeInTheDocument();
-    expect(
-      screen.getByText("پێناسەیەکی کورت پێویستە."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("پێناسەیەکی کورت پێویستە.")).toBeInTheDocument();
   });
 
   it("saves an edit immediately from the first step", async () => {
@@ -73,20 +77,20 @@ describe("MiniWebsiteEditorModal actions", () => {
 
     render(
       <ThemeProvider websiteColor="#0f172a">
-        <MiniWebsiteEditorModal
-          isOpen
-          initial={validIdentityDraft()}
-          editorId="mini-1"
-          defaultAvatar="/images/DefaultAvatar.png"
-          onClose={vi.fn()}
-          onSave={onSave}
-        />
+        <MiniWebsiteWorkspaceProvider config={CREATOR_MINI_WEBSITE_WORKSPACE}>
+          <MiniWebsiteEditorModal
+            isOpen
+            initial={validIdentityDraft()}
+            editorId="mini-1"
+            defaultAvatar="/images/DefaultAvatar.png"
+            onClose={vi.fn()}
+            onSave={onSave}
+          />
+        </MiniWebsiteWorkspaceProvider>
       </ThemeProvider>,
     );
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "ئێستا پاشەکەوت بکە" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "ئێستا پاشەکەوت بکە" }));
 
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
     expect(onSave.mock.calls[0][0].status).toBe("draft");

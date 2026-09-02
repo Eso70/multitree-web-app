@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { CreatorAuthPage } from "@/features/creator/CreatorAuthPage";
 
 export default async function LoginPage() {
@@ -15,5 +15,5 @@ export default async function LoginPage() {
     host === root ||
     host === `www.${root}`;
   if (isRoot) return <CreatorAuthPage mode="login" />;
-  redirect("/business/login");
+  notFound();
 }

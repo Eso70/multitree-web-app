@@ -14,6 +14,7 @@ describe("Linktree template catalog", () => {
       "frost",
       "aurora",
       "serenity",
+      "branch-signal",
     ]);
     expect(names).toEqual([
       "Spectrum",
@@ -21,6 +22,7 @@ describe("Linktree template catalog", () => {
       "Frost",
       "Aurora",
       "Serenity",
+      "Branch Signal",
     ]);
   });
 });

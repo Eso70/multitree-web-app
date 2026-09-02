@@ -3,11 +3,7 @@
  * Prevents code duplication across components
  */
 
-import {
-  getAbsolutePublicUrl,
-  getRootDomain,
-  getSubdomainLoginUrl,
-} from "@/lib/utils/app-url";
+import { getAbsolutePublicUrl, getRootDomain } from "@/lib/utils/app-url";
 
 /**
  * Format date to YYYY-MM-DD HH:MM format (used in business components)
@@ -35,7 +31,7 @@ export function getAbsoluteUrl(uid: string, pathPrefix = "/linktree"): string {
   return getAbsolutePublicUrl(pathPrefix, uid);
 }
 
-export { getRootDomain, getSubdomainLoginUrl };
+export { getRootDomain };
 
 /**
  * Optimized memo comparison for template props
@@ -52,7 +48,12 @@ export function areTemplatePropsEqual(
       footer_phone?: string | null;
     };
     links: Array<{ id: string; url: string; display_name?: string | null }>;
-    theme: { from: string; via: string; to: string; backgroundImage?: string | null };
+    theme: {
+      from: string;
+      via: string;
+      to: string;
+      backgroundImage?: string | null;
+    };
   },
   nextProps: {
     linktree: {
@@ -64,7 +65,12 @@ export function areTemplatePropsEqual(
       footer_phone?: string | null;
     };
     links: Array<{ id: string; url: string; display_name?: string | null }>;
-    theme: { from: string; via: string; to: string; backgroundImage?: string | null };
+    theme: {
+      from: string;
+      via: string;
+      to: string;
+      backgroundImage?: string | null;
+    };
   },
 ): boolean {
   // Quick reference checks first

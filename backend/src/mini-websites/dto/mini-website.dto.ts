@@ -207,7 +207,6 @@ export class SaveMiniWebsiteDto {
   @ArrayMaxSize(20)
   @IsObject({ each: true })
   experience?: Array<Record<string, unknown>>;
-  @IsOptional() @IsObject() leadForm?: Record<string, unknown>;
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(MINI_WEBSITE_MAX_PLANS)

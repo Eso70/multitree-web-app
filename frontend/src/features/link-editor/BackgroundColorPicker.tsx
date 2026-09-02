@@ -4,6 +4,7 @@ import { useState, type CSSProperties } from "react";
 import { ImagePlus, X } from "lucide-react";
 import { parseWebsiteColor } from "@/lib/utils/parse-website-color";
 import { ColorGradientModal } from "./ColorGradientModal";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 export interface BackgroundColorOption {
   id: string;
@@ -91,18 +92,21 @@ export function BackgroundColorPicker({
       <div className="flex flex-wrap gap-2">
         {showCustom && (
           <div className="flex flex-col items-center gap-0.5">
-            <button
-              type="button"
-              onClick={() => setShowGradientPicker(true)}
-              className={`relative h-6 w-6 overflow-hidden rounded-md border-2 transition-all duration-200 ${
-                isCustom
-                  ? "border-brand-500 scale-110 ring-1 ring-brand-500/50 shadow-sm z-10"
-                  : "border-gray-300 hover:border-gray-400 hover:scale-105"
-              }`}
-              title="ئارەزوومەندانەیە"
-            >
-              <span className="absolute inset-0" style={customSwatchStyle(value)} />
-            </button>
+            <Tooltip content="ئارەزوومەندانەیە" side="top">
+              <button
+                type="button"
+                onClick={() => setShowGradientPicker(true)}
+                className={`relative h-6 w-6 overflow-hidden rounded-md border-2 transition-all duration-200 cursor-pointer ${
+                  isCustom
+                    ? "border-brand-500 scale-110 ring-1 ring-brand-500/50 shadow-sm z-10"
+                    : "border-gray-300 hover:border-gray-400 hover:scale-105"
+                }`}
+                title="ئارەزوومەندانەیە"
+                aria-label="ئارەزوومەندانەیە"
+              >
+                <span className="absolute inset-0" style={customSwatchStyle(value)} />
+              </button>
+            </Tooltip>
             <span className="text-[8px] text-gray-500 leading-tight text-center w-7 truncate">ئارەزوومەندانەیە</span>
           </div>
         )}
@@ -110,40 +114,42 @@ export function BackgroundColorPicker({
         {onImageChange && (
           <div className="flex flex-col items-center gap-0.5">
             <div className="relative">
-              <label
-                className={`relative flex h-6 w-6 cursor-pointer items-center justify-center overflow-hidden rounded-md border-2 transition-all duration-200 ${
-                  hasImage
-                    ? "border-brand-500 scale-110 ring-1 ring-brand-500/50 shadow-sm z-10"
-                    : "border-gray-300 hover:border-gray-400 hover:scale-105"
-                }`}
-                title={IMAGE_TILE_LABEL}
-              >
-                {imagePreview ? (
-                  // A data URL preview and an uploaded path both render here, so
-                  // the optimizer is bypassed.
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={imagePreview} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                ) : (
-                  <ImagePlus className="h-3.5 w-3.5 text-gray-500" />
-                )}
-                <input
-                  aria-label={IMAGE_TILE_LABEL}
-                  type="file"
-                  accept="image/png,image/jpeg"
-                  onChange={onImageChange}
-                  className="hidden"
-                />
-              </label>
-              {hasImage && onImageRemove && (
-                <button
-                  type="button"
-                  onClick={onImageRemove}
-                  aria-label={IMAGE_REMOVE_LABEL}
-                  title={IMAGE_REMOVE_LABEL}
-                  className="absolute -right-1.5 -top-1.5 z-20 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-gray-700 text-white shadow-sm transition hover:bg-gray-900"
+              <Tooltip content={IMAGE_TILE_LABEL} side="top">
+                <label
+                  className={`relative flex h-6 w-6 cursor-pointer items-center justify-center overflow-hidden rounded-md border-2 transition-all duration-200 ${
+                    hasImage
+                      ? "border-brand-500 scale-110 ring-1 ring-brand-500/50 shadow-sm z-10"
+                      : "border-gray-300 hover:border-gray-400 hover:scale-105"
+                  }`}
                 >
-                  <X className="h-2.5 w-2.5" />
-                </button>
+                  {imagePreview ? (
+                    // A data URL preview and an uploaded path both render here, so
+                    // the optimizer is bypassed.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={imagePreview} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                  ) : (
+                    <ImagePlus className="h-3.5 w-3.5 text-gray-500" />
+                  )}
+                  <input
+                    aria-label={IMAGE_TILE_LABEL}
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    onChange={onImageChange}
+                    className="hidden"
+                  />
+                </label>
+              </Tooltip>
+              {hasImage && onImageRemove && (
+                <Tooltip content={IMAGE_REMOVE_LABEL} side="top">
+                  <button
+                    type="button"
+                    onClick={onImageRemove}
+                    aria-label={IMAGE_REMOVE_LABEL}
+                    className="absolute -right-1.5 -top-1.5 z-20 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-gray-700 text-white shadow-sm transition hover:bg-gray-900 cursor-pointer"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </Tooltip>
               )}
             </div>
             <span className="text-[8px] text-gray-500 leading-tight text-center w-7 truncate">{IMAGE_TILE_LABEL}</span>
@@ -152,34 +158,37 @@ export function BackgroundColorPicker({
 
         {colors.map((color) => (
           <div key={color.id} className="flex flex-col items-center gap-0.5">
-            <button
-              type="button"
-              onClick={() => {
-                // Choosing a colour drops the image, because the image is the
-                // background instead of the colour rather than on top of it.
-                onImageRemove?.();
-                onChange(color.value);
-                setShowGradientPicker(false);
-              }}
-              onBlur={onBlur}
-              className={`relative h-6 w-6 overflow-hidden rounded-md border-2 transition-all duration-200 ${
-                !hasImage && value === color.value
-                  ? "border-brand-500 scale-110 ring-1 ring-brand-500/50 shadow-sm z-10"
-                  : "border-gray-300 hover:border-gray-400 hover:scale-105"
-              }`}
-              title={color.name}
-            >
-              {color.isSolid ? (
-                <span className="absolute inset-0 transition-opacity duration-200" style={{ backgroundColor: color.value }} />
-              ) : (
-                <span className={`absolute inset-0 bg-gradient-to-br transition-opacity duration-200 ${color.gradient}`} />
-              )}
-              {!hasImage && value === color.value && (
-                <span className="absolute inset-0 flex items-center justify-center bg-black/10">
-                  <span className="h-1 w-1 rounded-full bg-white" />
-                </span>
-              )}
-            </button>
+            <Tooltip content={color.name} side="top">
+              <button
+                type="button"
+                onClick={() => {
+                  // Choosing a colour drops the image, because the image is the
+                  // background instead of the colour rather than on top of it.
+                  onImageRemove?.();
+                  onChange(color.value);
+                  setShowGradientPicker(false);
+                }}
+                onBlur={onBlur}
+                className={`relative h-6 w-6 overflow-hidden rounded-md border-2 transition-all duration-200 cursor-pointer ${
+                  !hasImage && value === color.value
+                    ? "border-brand-500 scale-110 ring-1 ring-brand-500/50 shadow-sm z-10"
+                    : "border-gray-300 hover:border-gray-400 hover:scale-105"
+                }`}
+                title={color.name}
+                aria-label={color.name}
+              >
+                {color.isSolid ? (
+                  <span className="absolute inset-0 transition-opacity duration-200" style={{ backgroundColor: color.value }} />
+                ) : (
+                  <span className={`absolute inset-0 bg-gradient-to-br transition-opacity duration-200 ${color.gradient}`} />
+                )}
+                {!hasImage && value === color.value && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/10">
+                    <span className="h-1 w-1 rounded-full bg-white" />
+                  </span>
+                )}
+              </button>
+            </Tooltip>
             <span className="text-[8px] text-gray-500 leading-tight text-center w-7 truncate">{color.name}</span>
           </div>
         ))}

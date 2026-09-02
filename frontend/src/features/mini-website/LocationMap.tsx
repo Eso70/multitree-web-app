@@ -5,6 +5,7 @@ import { ExternalLink, Info, Minus, Plus } from "lucide-react";
 import type { Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
 import maplibregl from "./maplibre";
 import type { MiniWebsiteLocation } from "@linktree/types";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 /**
  * Basemaps, no API key required.
@@ -259,17 +260,18 @@ function MapButton({
   children: React.ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      aria-pressed={active}
-      className="flex h-9 w-9 items-center justify-center text-slate-600 transition duration-200 hover:bg-slate-900/5 active:scale-95 dark:text-slate-300 dark:hover:bg-white/10"
-      style={active && accent ? { color: accent } : undefined}
-    >
-      {children}
-    </button>
+    <Tooltip content={label} side="left">
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={label}
+        aria-pressed={active}
+        className="flex h-9 w-9 items-center justify-center text-slate-600 transition duration-200 hover:bg-slate-900/5 active:scale-95 dark:text-slate-300 dark:hover:bg-white/10 cursor-pointer"
+        style={active && accent ? { color: accent } : undefined}
+      >
+        {children}
+      </button>
+    </Tooltip>
   );
 }
 

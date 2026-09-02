@@ -2,7 +2,10 @@ import { ArrowLeft } from "lucide-react";
 import { AuthenticationPreviewPanel } from "@/components/shared/AuthenticationPreviewPanel";
 import { ThemeToggleButton } from "@/components/shared/ThemeToggleButton";
 import { parseWebsiteColor, readableInk } from "@/lib/utils/parse-website-color";
-import { MULTITREE_LOGO } from "@/lib/brand/brand-assets";
+import {
+  BUSINESS_LOGO_PLACEHOLDER,
+  MULTITREE_LOGO,
+} from "@/lib/brand/brand-assets";
 
 interface AuthenticationShellProps {
   children: React.ReactNode;
@@ -14,6 +17,7 @@ interface AuthenticationShellProps {
   brandLogo?: string | null;
   accentColor?: string | null;
   previewTitle?: string;
+  businessTenant?: boolean;
 }
 
 export function AuthenticationShell({
@@ -22,15 +26,11 @@ export function AuthenticationShell({
   backHref = "/",
   wide = false,
   headerAction,
-  brandName = "MultiTree",
-  // Defaults to MultiTree's own mark, matching `brandName` above: this shell
-  // renders both MultiTree's sign-in/sign-up and tenant login. Tenant pages
-  // pass the business logo explicitly and fall back to the neutral business
-  // placeholder inside the panel; MultiTree's own pages pass nothing and must
-  // not inherit that placeholder.
-  brandLogo = MULTITREE_LOGO,
+  brandName,
+  brandLogo,
   accentColor,
   previewTitle,
+  businessTenant = false,
 }: AuthenticationShellProps) {
   const controlClass =
     "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/85 text-slate-500 shadow-sm backdrop-blur transition hover:text-slate-900 dark:border-white/10 dark:bg-[#171a20]/90 dark:text-slate-400 dark:hover:text-white";
@@ -44,11 +44,35 @@ export function AuthenticationShell({
         "--multitree-accent-ink": readableInk(accent.primary),
         "--multitree-accent-hover": `color-mix(in srgb, ${accent.primary} 86%, black)`,
       } as React.CSSProperties)
-    : undefined;
+    : businessTenant
+      ? ({
+          "--business-website-color": "var(--theme-primary, #64748b)",
+          "--theme-primary": "var(--theme-primary, #64748b)",
+          "--theme-css": "var(--theme-css, #64748b)",
+          "--multitree-accent": "var(--business-website-color, #1e293b)",
+          "--multitree-accent-ink": "#ffffff",
+          "--multitree-accent-hover":
+            "color-mix(in srgb, var(--multitree-accent, #1e293b) 86%, black)",
+        } as React.CSSProperties)
+      : undefined;
+
+  const effectiveBrandName =
+    brandName ?? (businessTenant ? "بزنس" : "MultiTree");
+  const effectiveBrandLogo =
+    brandLogo !== undefined
+      ? brandLogo
+      : businessTenant
+        ? BUSINESS_LOGO_PLACEHOLDER
+        : MULTITREE_LOGO;
+  const effectivePreviewTitle =
+    previewTitle ??
+    (businessTenant || effectiveBrandName !== "MultiTree"
+      ? "پانێڵی بزنس"
+      : undefined);
 
   return (
     <main
-      data-multitree-theme={accent ? undefined : true}
+      data-multitree-theme={accent || businessTenant ? undefined : true}
       className={`${accent ? "custom-scrollbar theme-custom-scrollbar" : ""} relative h-screen overflow-hidden bg-[#f7f8fa] text-slate-900 transition-colors dark:bg-[#0d0f12] dark:text-white`}
       style={themeStyle}
     >
@@ -73,9 +97,10 @@ export function AuthenticationShell({
         </section>
         <AuthenticationPreviewPanel
           description={brandDescription}
-          brandName={brandName}
-          brandLogo={brandLogo}
-          title={previewTitle}
+          brandName={effectiveBrandName}
+          brandLogo={effectiveBrandLogo}
+          title={effectivePreviewTitle}
+          businessTenant={businessTenant}
         />
       </div>
     </main>

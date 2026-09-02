@@ -19,6 +19,7 @@ import { AdvertisingModule } from './advertising/advertising.module';
 import { ObservabilityModule } from './observability/observability.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
 import { CreatorModule } from './creator/creator.module';
+import { ClientLinktreeAccessModule } from './client-linktree-access/client-linktree-access.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { CreatorModule } from './creator/creator.module';
     RequestTrackingModule,
     OnboardingModule,
     CreatorModule,
+    ClientLinktreeAccessModule,
   ],
   controllers: [AppController],
   providers: [AppService],

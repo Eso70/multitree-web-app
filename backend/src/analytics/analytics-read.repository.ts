@@ -36,11 +36,8 @@ export class AnalyticsReadRepository {
   /**
    * Lifetime view and click totals per linktree for one business.
    *
-   * Unique counts come from the event log rather than
-   * `analytics_page_daily.new_visitors`: that column marks only a visitor's
-   * first-ever event, so a returning visitor would be undercounted in a
-   * lifetime total. `total_clicks` does come from the rollup, which is what it
-   * is for.
+   * Unique counts come from the event log; daily rollups intentionally hold
+   * only additive totals. `total_clicks` comes from that rollup.
    *
    * Shared by the business dashboard's page list and the platform admin's
    * business analytics modal, which asked the same question with two copies of

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 export interface DashboardSidebarItem {
   id: string;
@@ -85,57 +86,62 @@ export function DashboardSidebar({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onCloseMobile}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-[background-color,color,transform] duration-200 hover:bg-slate-50 hover:text-slate-600 active:scale-95 dark:hover:bg-white/5 dark:hover:text-gray-300 md:hidden"
-            aria-label="Close sidebar"
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
+          <Tooltip content="داخستن" side="left">
+            <button
+              type="button"
+              onClick={onCloseMobile}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-[background-color,color,transform] duration-200 hover:bg-slate-50 hover:text-slate-600 active:scale-95 dark:hover:bg-white/5 dark:hover:text-gray-300 md:hidden cursor-pointer"
+              aria-label="Close sidebar"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </Tooltip>
         </div>
 
         <nav className="custom-scrollbar flex flex-1 flex-col gap-1 overflow-y-auto p-4">
           {items.map((item) =>
             item.hidden ? null : (
-              <button
+              <Tooltip
                 key={item.id}
-                type="button"
-                disabled={item.disabled}
-                onClick={() => {
-                  item.onClick();
-                  onCloseMobile();
-                }}
-                className={`flex cursor-pointer items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
-                  collapsed ? "md:justify-center md:gap-0 md:px-0" : "gap-3"
-                } ${
-                  item.active
-                    ? "text-slate-700 dark:text-gray-200"
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200"
-                }`}
-                style={
-                  item.active
-                    ? {
-                        background: `color-mix(in srgb, ${accent} 20%, transparent)`,
-                        color: accent,
-                      }
-                    : undefined
-                }
-                title={
-                  item.disabled ? item.disabledReason || item.label : item.label
-                }
-                aria-disabled={item.disabled || undefined}
-                aria-current={item.active ? "page" : undefined}
+                content={item.disabled ? item.disabledReason || item.label : item.label}
+                side="right"
+                disabled={!collapsed}
               >
-                <span className="shrink-0" aria-hidden="true">
-                  {item.icon}
-                </span>
-                <span
-                  className={`whitespace-nowrap transition-all duration-300 ${collapsed ? "overflow-hidden md:pointer-events-none md:w-0 md:opacity-0" : "opacity-100"}`}
+                <button
+                  type="button"
+                  disabled={item.disabled}
+                  onClick={() => {
+                    item.onClick();
+                    onCloseMobile();
+                  }}
+                  className={`w-full flex cursor-pointer items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
+                    collapsed ? "md:justify-center md:gap-0 md:px-0" : "gap-3"
+                  } ${
+                    item.active
+                      ? "text-slate-700 dark:text-gray-200"
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200"
+                  }`}
+                  style={
+                    item.active
+                      ? {
+                          background: `color-mix(in srgb, ${accent} 20%, transparent)`,
+                          color: accent,
+                        }
+                      : undefined
+                  }
+                  aria-disabled={item.disabled || undefined}
+                  aria-current={item.active ? "page" : undefined}
                 >
-                  {item.label}
-                </span>
-              </button>
+                  <span className="shrink-0" aria-hidden="true">
+                    {item.icon}
+                  </span>
+                  <span
+                    className={`whitespace-nowrap transition-all duration-300 ${collapsed ? "overflow-hidden md:pointer-events-none md:w-0 md:opacity-0" : "opacity-100"}`}
+                  >
+                    {item.label}
+                  </span>
+                </button>
+              </Tooltip>
             ),
           )}
         </nav>

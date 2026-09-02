@@ -12,7 +12,7 @@ export function shortTabTitle(value: string): string {
 
 export function businessTabTitle(
   businessName: string | null | undefined,
-  section: "Home" | "Login" | "Dashboard" | "Pages" | "Website" | "Analytics" | "CRM" | "TikTok Config" | "Templates" | "Ads" | "Profile" | "Settings" | "Not Found" | "Error",
+  section: "Home" | "Login" | "Dashboard" | "Pages" | "Website" | "TikTok Config" | "Templates" | "Ads" | "Profile" | "Settings" | "Not Found" | "Error",
 ): string {
   const name = shortTabTitle(businessName || "Business");
   const availableNameLength = Math.max(

@@ -30,6 +30,7 @@ describe("ManagementModal accent scoping", () => {
     // what makes checkboxes, selects and wizard actions follow along.
     expect(root?.style.getPropertyValue("--multitree-accent")).toBe("#2563eb");
     expect(root?.style.getPropertyValue("--theme-primary")).toBe("#2563eb");
+    expect(root?.style.getPropertyValue("--theme-ink")).toBe("#ffffff");
     // Dark ink would vanish on a dark blue fill.
     expect(root?.style.getPropertyValue("--multitree-accent-ink")).toBe(
       "#ffffff",
@@ -51,6 +52,7 @@ describe("ManagementModal accent scoping", () => {
     expect(shell()?.style.getPropertyValue("--multitree-accent-ink")).toBe(
       "#111827",
     );
+    expect(shell()?.style.getPropertyValue("--theme-ink")).toBe("#111827");
   });
 
   it("carries a gradient's first colour into the flat accent slots", () => {

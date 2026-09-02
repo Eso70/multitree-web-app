@@ -73,7 +73,7 @@ describe("TemplatesPage", () => {
       isTemplateAllowed: () => false,
     });
 
-    render(<TemplatesPage canCreate={false} />);
+    render(<TemplatesPage accessMode="entitlement" />);
 
     expect(
       screen.getByRole("status", { name: "Loading templates" }),
@@ -86,28 +86,37 @@ describe("TemplatesPage", () => {
    * removed from it, and with one visual template left there is nothing to
    * browse there anyway.
    */
-  it.each([
-    { canCreate: false, surface: "business" },
-    { canCreate: true, surface: "platform admin" },
-  ])(
-    "offers no template category tabs in the $surface page",
-    ({ canCreate }) => {
-      render(<TemplatesPage canCreate={canCreate} />);
+  it("offers no template category tabs", () => {
+    render(<TemplatesPage />);
 
-      expect(screen.queryAllByRole("tab")).toHaveLength(0);
-      expect(
-        screen.queryByText("قالبەکانی مینی وێبسایت"),
-      ).not.toBeInTheDocument();
-      expect(screen.queryByText("Liquid Glass")).not.toBeInTheDocument();
-    },
-  );
+    expect(screen.queryAllByRole("tab")).toHaveLength(0);
+    expect(
+      screen.queryByText("قالبەکانی مینی وێبسایت"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Liquid Glass")).not.toBeInTheDocument();
+  });
 
   it("supports the shared Creator view-only catalogue without business entitlement loading", () => {
-    render(<TemplatesPage canCreate={false} accessMode="all" />);
+    render(<TemplatesPage accessMode="all" />);
 
     expect(mockUseTemplateAccess).toHaveBeenCalledWith(false);
-    expect(
-      screen.queryByRole("button", { name: /زیادکردنی قالب/ }),
-    ).not.toBeInTheDocument();
+  });
+
+  it("uses provided session template keys for the client catalogue", () => {
+    render(
+      <TemplatesPage
+        accessMode="provided"
+        allowedTemplateKeys={["spectrum"]}
+      />,
+    );
+
+    expect(mockUseTemplateAccess).toHaveBeenCalledWith(false);
+    expect(screen.getByText("بەردەستەکان: 1")).toBeInTheDocument();
+  });
+
+  it("keeps the template catalogue inside the MultiTree theme boundary", () => {
+    const { container } = render(<TemplatesPage />);
+
+    expect(container.querySelector("[data-multitree-theme]")).not.toBeNull();
   });
 });

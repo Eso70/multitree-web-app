@@ -2,9 +2,6 @@ type PermissionOutcome = "allow" | "approval" | "deny";
 
 export type BusinessDashboardPage =
   | "linktrees"
-  | "mini-website"
-  | "analytics"
-  | "crm"
   | "tiktok-config"
   | "advertising"
   | "templates"
@@ -12,10 +9,7 @@ export type BusinessDashboardPage =
   | "settings";
 
 export type BusinessSettingsTab =
-  | "profile"
-  | "defaults"
-  | "security"
-  | "messages";
+  "profile" | "defaults" | "security" | "messages";
 
 interface AccessManifestLike {
   permissions?: Record<string, { outcome?: PermissionOutcome } | undefined>;
@@ -26,9 +20,6 @@ interface AccessManifestLike {
 
 const PAGE_PERMISSIONS: Partial<Record<BusinessDashboardPage, string>> = {
   linktrees: "business:pages:linktrees-access",
-  "mini-website": "business:pages:mini-websites-access",
-  analytics: "business:analytics:advanced-read",
-  crm: "business:analytics:details-read",
   "tiktok-config": "business:tiktok:update",
   advertising: "business:pages:advertising-access",
   templates: "business:pages:templates-access",
@@ -45,7 +36,6 @@ const PAGE_PERMISSIONS: Partial<Record<BusinessDashboardPage, string>> = {
  * — so this is presentation, not the security boundary.
  */
 const ULTRA_ONLY_PAGES: ReadonlySet<BusinessDashboardPage> = new Set([
-  "crm",
   "advertising",
 ]);
 
@@ -77,9 +67,7 @@ export function isBusinessPageLocked(
   ) {
     return true;
   }
-  return page === "analytics" || page === "mini-website" || page === "advertising"
-    ? outcome !== "allow"
-    : outcome === "deny";
+  return page === "advertising" ? outcome !== "allow" : outcome === "deny";
 }
 
 export function isBusinessSettingsTabLocked(
@@ -87,5 +75,7 @@ export function isBusinessSettingsTabLocked(
   access: AccessManifestLike | null | undefined,
 ): boolean {
   if (tab === "messages") return false;
-  return access?.permissions?.[SETTINGS_TAB_PERMISSIONS[tab]]?.outcome === "deny";
+  return (
+    access?.permissions?.[SETTINGS_TAB_PERMISSIONS[tab]]?.outcome === "deny"
+  );
 }

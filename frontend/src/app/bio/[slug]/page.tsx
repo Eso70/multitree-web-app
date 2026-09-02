@@ -87,15 +87,7 @@ export default async function BusinessBioPage({
         pixelIds={result.profile.analytics?.pixelIds}
         nonce={nonce}
       />
-      <PublicMiniWebsite
-        profile={result.profile}
-        subdomain={result.subdomain}
-        leadFormEndpoint={
-          result.platformOwned
-            ? `/api/public/mini-websites/platform/${encodeURIComponent(result.profile.slug)}/leads`
-            : undefined
-        }
-      />
+      <PublicMiniWebsite profile={result.profile} />
     </>
   );
 }

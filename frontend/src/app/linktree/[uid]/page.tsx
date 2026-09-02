@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import dynamicImport from "next/dynamic";
-import { MotionSpinner } from "@/components/motion/MotionPrimitives";
+import { SkeletonPublicLinktreePage } from "@/components/shared/Skeleton";
 import type {
   LinktreeLink as Link,
   PublicLinktree as Linktree,
@@ -32,13 +32,7 @@ const LinktreePage = dynamicImport(
       default: mod.LinktreePage,
     })),
   {
-    loading: () => (
-      <div className="flex items-center justify-center h-screen">
-        <MotionSpinner>
-          <span className="h-8 w-8 rounded-full border-2 border-white/30 border-t-white" />
-        </MotionSpinner>
-      </div>
-    ),
+    loading: () => <SkeletonPublicLinktreePage />,
     ssr: true,
   },
 );

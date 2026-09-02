@@ -1,14 +1,7 @@
 "use client";
 
-import { memo, useEffect, useMemo, useState } from "react";
-import {
-  CheckCircle,
-  LayoutTemplate,
-  Link2,
-  Plus,
-  Search,
-  X,
-} from "lucide-react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { CheckCircle, LayoutTemplate, Link2, Search, X } from "lucide-react";
 import { useTemplateAccess } from "@/hooks/useTemplateAccess";
 import { StatCard } from "@/components/shared/StatCard";
 import { TEMPLATE_OPTIONS, type TemplateKey } from "@/lib/templates/config";
@@ -30,6 +23,7 @@ import {
 } from "./TemplatePhonePreview";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
 import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 const SAMPLE_LINKS = createBusinessContactPreviewLinks();
 
@@ -86,18 +80,32 @@ const LinktreeTemplatePreview = memo(function LinktreeTemplatePreview({
 });
 
 export interface TemplatesPageProps {
-  canCreate?: boolean;
-  accessMode?: "all" | "entitlement";
+  accessMode?: "all" | "entitlement" | "provided";
+  allowedTemplateKeys?: readonly string[];
 }
 
 export function TemplatesPage({
-  canCreate = true,
-  accessMode = canCreate ? "all" : "entitlement",
+  accessMode = "all",
+  allowedTemplateKeys,
 }: TemplatesPageProps) {
   const enforceTemplateAccess = accessMode === "entitlement";
-  const { isLoading, isTemplateAllowed, refresh } = useTemplateAccess(
-    enforceTemplateAccess,
+  const {
+    isLoading: isEntitlementLoading,
+    isTemplateAllowed: isEntitledToTemplate,
+    refresh,
+  } = useTemplateAccess(enforceTemplateAccess);
+  const providedTemplateKeys = useMemo(
+    () => new Set(allowedTemplateKeys ?? []),
+    [allowedTemplateKeys],
   );
+  const isTemplateAllowed = useCallback(
+    (templateKey: string) =>
+      accessMode === "provided"
+        ? providedTemplateKeys.has(templateKey)
+        : isEntitledToTemplate(templateKey),
+    [accessMode, isEntitledToTemplate, providedTemplateKeys],
+  );
+  const shouldShowLockedTemplates = accessMode !== "all";
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   useRegisterBusinessDashboardRefresh("templates", () =>
@@ -148,10 +156,13 @@ export function TemplatesPage({
     setIsSearchModalOpen(false);
   };
 
-  if (isLoading) return <SkeletonTemplatePage />;
+  if (enforceTemplateAccess && isEntitlementLoading) {
+    return <SkeletonTemplatePage />;
+  }
 
   return (
     <section
+      data-multitree-theme
       className="w-full min-w-0 space-y-4 pb-8 sm:space-y-6 sm:pb-10"
       dir="ltr"
     >
@@ -182,61 +193,47 @@ export function TemplatesPage({
       >
         <PageHeader
           title={DASHBOARD_PAGE_LABELS.templates}
-          description="قالبەکانی لینک تری و مینی وێبسایت ببینە و دیزاینەکان پێشبینی بکە."
+          description="قالبەکانی لینک تری ببینە و دیزاینەکان پێشبینی بکە."
           icon={LayoutTemplate}
           action={
             <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-              <button
-                type="button"
-                onClick={() =>
-                  searchQuery.trim()
-                    ? setSearchQuery("")
-                    : setIsSearchModalOpen(true)
-                }
-                className={`group relative flex h-10 min-w-10 cursor-pointer items-center justify-center rounded-xl border px-0 shadow-sm transition-all hover:shadow ${
-                  searchQuery.trim()
-                    ? "w-10 flex-none"
-                    : "flex-1 sm:w-44 sm:flex-none sm:justify-between sm:px-3.5"
-                } ${
-                  isSearchModalOpen
-                    ? "sa-soft sa-soft-border"
-                    : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50/50 hover:text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
-                }`}
-                title={
-                  searchQuery.trim() ? "پاککردنەوەی گەڕان" : "گەڕان (Ctrl+K)"
-                }
-              >
-                {searchQuery.trim() ? (
-                  <X className="h-4 w-4 text-slate-500 transition-transform group-hover:scale-110 dark:text-gray-400" />
-                ) : (
-                  <>
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Search className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:scale-110 dark:text-gray-500" />
-                      <span className="hidden truncate text-xs font-semibold text-slate-400 transition-colors group-hover:text-slate-600 dark:text-gray-500 dark:group-hover:text-gray-300 sm:inline">
-                        گەڕان...
-                      </span>
-                    </div>
-                    <kbd className="hidden items-center gap-0.5 rounded bg-slate-100 px-1 py-0.5 font-sans text-[8px] font-bold text-slate-400 dark:bg-white/10 dark:text-gray-500 sm:inline-flex">
-                      <span>Ctrl</span>
-                      <span>K</span>
-                    </kbd>
-                  </>
-                )}
-              </button>
-
-              {canCreate && (
+              <Tooltip content={searchQuery.trim() ? "پاککردنەوەی گەڕان" : "گەڕان لە قالبەکان (Ctrl+K)"} side="bottom">
                 <button
                   type="button"
-                  data-create-template
                   onClick={() =>
-                    alert("زیادکردنی قالبی لینک تری بەم نزیکانە زیاد دەکرێت")
+                    searchQuery.trim()
+                      ? setSearchQuery("")
+                      : setIsSearchModalOpen(true)
                   }
-                  className="sa-gradient sa-gradient-hover group relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-0 text-xs font-bold text-white shadow-md transition-all duration-300 sm:w-auto sm:px-4 sm:text-sm"
+                  className={`group relative flex h-10 min-w-10 cursor-pointer items-center justify-center rounded-xl border px-0 shadow-sm transition-all hover:shadow ${
+                    searchQuery.trim()
+                      ? "w-10 flex-none"
+                      : "flex-1 sm:w-44 sm:flex-none sm:justify-between sm:px-3.5"
+                  } ${
+                    isSearchModalOpen
+                      ? "sa-soft sa-soft-border"
+                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50/50 hover:text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
+                  }`}
+                  aria-label={searchQuery.trim() ? "پاککردنەوەی گەڕان" : "گەڕان (Ctrl+K)"}
                 >
-                  <Plus className="h-4 w-4 transition-transform group-hover:scale-110" />
-                  <span>زیادکردنی قالب</span>
+                  {searchQuery.trim() ? (
+                    <X className="h-4 w-4 text-slate-500 transition-transform group-hover:scale-110 dark:text-gray-400" />
+                  ) : (
+                    <>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <Search className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:scale-110 dark:text-gray-500" />
+                        <span className="hidden truncate text-xs font-semibold text-slate-400 transition-colors group-hover:text-slate-600 dark:text-gray-500 dark:group-hover:text-gray-300 sm:inline">
+                          گەڕان...
+                        </span>
+                      </div>
+                      <kbd className="hidden items-center gap-0.5 rounded bg-slate-100 px-1 py-0.5 font-sans text-[8px] font-bold text-slate-400 dark:bg-white/10 dark:text-gray-500 sm:inline-flex">
+                        <span>Ctrl</span>
+                        <span>K</span>
+                      </kbd>
+                    </>
+                  )}
                 </button>
-              )}
+              </Tooltip>
             </div>
           }
         />
@@ -265,7 +262,8 @@ export function TemplatesPage({
                     templateId={template.id as TemplateKey}
                     templateName={template.name}
                     locked={
-                      enforceTemplateAccess && !isTemplateAllowed(template.id)
+                      shouldShowLockedTemplates &&
+                      !isTemplateAllowed(template.id)
                     }
                   />
                 </article>

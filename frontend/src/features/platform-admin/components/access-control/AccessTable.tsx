@@ -1,6 +1,7 @@
 import { Eye } from "lucide-react";
 import type { Permission } from "./types";
 import { Badge, riskLevelLabel } from "./SharedUI";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 export function AccessTable({
   items,
@@ -68,14 +69,16 @@ export function AccessTable({
                 />
               </td>
               <td className="px-3 py-3">
-                <button
-                  type="button"
-                  onClick={() => onPermission(permission)}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-sky-600 transition hover:bg-sky-50 dark:hover:bg-sky-500/10"
-                  title="بینین"
-                >
-                  <Eye className="h-4 w-4" />
-                </button>
+                <Tooltip content="بینین" side="top">
+                  <button
+                    type="button"
+                    onClick={() => onPermission(permission)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-sky-600 transition hover:bg-sky-50 dark:hover:bg-sky-500/10 cursor-pointer"
+                    aria-label="بینین"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
+                </Tooltip>
               </td>
             </tr>
           ))}

@@ -3,6 +3,7 @@
 import { useCallback, useState, type ChangeEvent } from "react";
 import { X } from "lucide-react";
 import { CountrySelector } from "@/components/ui/CountrySelector";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { modalInputClass } from "../modal-input-styles";
 
 export const PHONE_PLATFORMS = ["whatsapp", "phone", "viber"] as const;
@@ -132,18 +133,20 @@ export function StandardPlatformInput({
             disabled={disabled}
           />
           {showClear && value && !disabled && (
-            <button
-              type="button"
-              onClick={() => {
-                onChange("");
-                setTouched(false);
-              }}
-              className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-rose-500 dark:hover:bg-white/10"
-              aria-label="سڕینەوەی بەها"
-              title="سڕینەوە"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+            <Tooltip content="سڕینەوە" side="top">
+              <button
+                type="button"
+                onClick={() => {
+                  onChange("");
+                  setTouched(false);
+                }}
+                className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-rose-500 dark:hover:bg-white/10 cursor-pointer"
+                aria-label="سڕینەوەی بەها"
+                title="سڕینەوە"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
           )}
         </div>
       </div>

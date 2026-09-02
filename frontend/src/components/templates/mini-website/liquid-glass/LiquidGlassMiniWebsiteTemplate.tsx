@@ -136,8 +136,6 @@ export function LiquidGlassMiniWebsiteTemplate({
   interactive = false,
   fullPage = false,
   embeddedPreview = false,
-  leadFormEndpoint,
-  onLeadSubmitted,
 }: MiniWebsiteTemplateProps) {
   const profile = useMemo(
     () => withLatinDigits(sourceProfile),
@@ -615,8 +613,6 @@ export function LiquidGlassMiniWebsiteTemplate({
                 fullPage={expandedLayout}
                 interactive={interactive}
                 whatsappHref={whatsappHref}
-                leadFormEndpoint={leadFormEndpoint}
-                onLeadSubmitted={onLeadSubmitted}
                 dark={section.key === "location" ? dark : undefined}
                 index={index}
               />
@@ -744,8 +740,6 @@ const DynamicSection = memo(function DynamicSection({
   fullPage,
   interactive,
   whatsappHref,
-  leadFormEndpoint,
-  onLeadSubmitted,
   dark,
   index = 0,
 }: {
@@ -754,8 +748,6 @@ const DynamicSection = memo(function DynamicSection({
   fullPage: boolean;
   interactive: boolean;
   whatsappHref?: string;
-  leadFormEndpoint?: string;
-  onLeadSubmitted?: (eventId: string) => void;
   dark?: boolean;
   index?: number;
 }) {
@@ -770,8 +762,6 @@ const DynamicSection = memo(function DynamicSection({
     fullPage,
     interactive,
     whatsappHref,
-    leadFormEndpoint,
-    onLeadSubmitted,
     dark,
     index,
     accent: brand,

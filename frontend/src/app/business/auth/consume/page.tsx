@@ -2,7 +2,10 @@
 
 import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { AuthenticationCard } from "@/components/shared/AuthenticationCard";
+import { AuthenticationShell } from "@/components/shared/AuthenticationShell";
+import { LoadingState } from "@/components/shared/LoadingState";
+import { BUSINESS_LOGO_PLACEHOLDER } from "@/lib/brand/brand-assets";
 
 export default function ConsumeBusinessAuthPage() {
   const search = useSearchParams();
@@ -13,7 +16,7 @@ export default function ConsumeBusinessAuthPage() {
     if (started.current) return;
     started.current = true;
     if (!code) {
-      window.location.replace("/business/login");
+      window.location.replace("/business/workspace-entry");
       return;
     }
     window.history.replaceState({}, "", "/business/auth/consume");
@@ -28,23 +31,34 @@ export default function ConsumeBusinessAuthPage() {
     })
       .then((response) => {
         if (!response.ok) {
-          window.location.replace("/business/login");
+          window.location.replace("/business/workspace-entry");
           return;
         }
         window.location.replace("/business");
       })
-      .catch(() => window.location.replace("/business/login"))
+      .catch(() => window.location.replace("/business/workspace-entry"))
       .finally(() => window.clearTimeout(timeout));
   }, [code]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="max-w-sm text-center">
-        <Loader2 className="mx-auto h-9 w-9 animate-spin text-slate-500" />
-        <h1 className="mt-4 text-base font-bold text-slate-700 dark:text-white">
-          Loading...
-        </h1>
-      </div>
-    </main>
+    <AuthenticationShell
+      backHref="/business/workspace-entry"
+      brandDescription="بە پاراستن دەچیتە داشبۆردی بزنسەکەت"
+      brandName="بزنس"
+      brandLogo={BUSINESS_LOGO_PLACEHOLDER}
+      previewTitle="پانێڵی بزنس"
+      businessTenant
+    >
+      <AuthenticationCard
+        title="چوونەژوورەوەی پارێزراو"
+        description="دانیشتنەکەت پشتڕاست دەکەینەوە"
+      >
+        <LoadingState
+          compact
+          title="دانیشتنەکەت ئامادە دەکرێت"
+          description="ئەمە تەنها چەند چرکەیەک دەخایەنێت."
+        />
+      </AuthenticationCard>
+    </AuthenticationShell>
   );
 }

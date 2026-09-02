@@ -20,9 +20,6 @@ import {
   LogOut,
   User,
   Settings,
-  IdCard,
-  BarChart3,
-  ContactRound,
   Megaphone,
 } from "lucide-react";
 import { TbBrandTiktok } from "react-icons/tb";
@@ -35,8 +32,10 @@ import {
 import { toast } from "sonner";
 import { ThemeProvider } from "@/lib/contexts/ThemeProvider";
 import { useLinktrees } from "@/features/business/hooks/useLinktrees";
-import type { BusinessLinktreeSummary as Linktree } from "@linktree/types";
+import type { BusinessLinktreeSummary as Linktree, LinktreeListItem } from "@linktree/types";
 import { BusinessLinktreesPage } from "@/features/business/components/BusinessLinktreesPage";
+import { DuplicateLinktreeModal } from "@/components/business/DuplicateLinktreeModal";
+import { LinktreeSearchModal } from "@/components/shared/LinktreeSearchModal";
 import type { EffectiveAccessManifest } from "@linktree/types";
 import { BusinessCommunicationBell } from "@/features/communications/BusinessCommunicationBell";
 import { BusinessAnnouncementBanners } from "@/features/communications/BusinessAnnouncementBanners";
@@ -67,10 +66,17 @@ import { parseWebsiteColor } from "@/lib/utils/parse-website-color";
 import { businessTabTitle } from "@/lib/utils/tab-title";
 import {
   SkeletonDashboardPage,
-  SkeletonManagementPage,
-  SkeletonModal,
   SkeletonTemplatePage,
 } from "@/components/shared/Skeleton";
+import {
+  SkeletonSettingsPage,
+  SkeletonAdvertisingEditor,
+  SkeletonTikTokPage,
+} from "@/components/shared/SkeletonPageLayouts";
+import {
+  SkeletonLinktreeEditorModal,
+  SkeletonPageAnalyticsModal,
+} from "@/components/shared/SkeletonModalLayouts";
 import {
   BusinessDashboardRefreshProvider,
   useBusinessDashboardRefreshController,
@@ -86,7 +92,7 @@ const LinktreeEditorModal = dynamic(
     })),
   {
     ssr: false,
-    loading: () => <SkeletonModal />,
+    loading: () => <SkeletonLinktreeEditorModal />,
     // Preload on hover/focus for better UX
   },
 );
@@ -98,18 +104,8 @@ const BusinessSettingsPage = dynamic(
     })),
   {
     ssr: false,
-    loading: () => (
-      <SkeletonDashboardPage body="form" statCount={4} tabCount={5} />
-    ),
+    loading: () => <SkeletonSettingsPage tabCount={4} />,
   },
-);
-
-const MiniWebsitesPage = dynamic(
-  () =>
-    import("@/features/mini-website/MiniWebsitesPage").then((mod) => ({
-      default: mod.MiniWebsitesPage,
-    })),
-  { ssr: false, loading: () => <SkeletonManagementPage /> },
 );
 
 const TemplatesPage = dynamic(
@@ -120,36 +116,12 @@ const TemplatesPage = dynamic(
   { ssr: false, loading: () => <SkeletonTemplatePage /> },
 );
 
-const BusinessAnalyticsPage = dynamic(
-  () =>
-    import("@/features/analytics/components/BusinessAnalyticsPage").then(
-      (mod) => ({ default: mod.BusinessAnalyticsPage }),
-    ),
-  {
-    ssr: false,
-    loading: () => (
-      <SkeletonDashboardPage body="analytics" statCount={8} tabCount={6} />
-    ),
-  },
-);
-
-const BusinessCrmPage = dynamic(
-  () =>
-    import("@/features/analytics/components/BusinessCrmPage").then((mod) => ({
-      default: mod.BusinessCrmPage,
-    })),
-  {
-    ssr: false,
-    loading: () => <SkeletonDashboardPage body="table" statCount={4} />,
-  },
-);
-
 const BusinessLinktreeAnalyticsModal = dynamic(
   () =>
     import("@/components/business/BusinessLinktreeAnalyticsModal").then(
       (mod) => ({ default: mod.BusinessLinktreeAnalyticsModal }),
     ),
-  { ssr: false, loading: () => <SkeletonModal wide /> },
+  { ssr: false, loading: () => <SkeletonPageAnalyticsModal /> },
 );
 
 const BusinessTikTokConfigPage = dynamic(
@@ -161,9 +133,7 @@ const BusinessTikTokConfigPage = dynamic(
     ),
   {
     ssr: false,
-    loading: () => (
-      <SkeletonDashboardPage body="analytics" statCount={4} tabCount={2} />
-    ),
+    loading: () => <SkeletonTikTokPage />,
   },
 );
 
@@ -174,9 +144,7 @@ const AdvertisingServicePage = dynamic(
     ),
   {
     ssr: false,
-    loading: () => (
-      <SkeletonDashboardPage body="form" statCount={4} tabCount={5} />
-    ),
+    loading: () => <SkeletonAdvertisingEditor />,
   },
 );
 
@@ -213,9 +181,6 @@ interface BusinessDashboardProps {
 type BusinessTheme = "light" | "dark";
 const BUSINESS_PAGE_TITLES: Record<BusinessDashboardPage, string> = {
   linktrees: DASHBOARD_PAGE_LABELS.linktrees,
-  "mini-website": DASHBOARD_PAGE_LABELS.miniWebsite,
-  analytics: "شیکاری",
-  crm: "بەڕێوەبردنی پەیوەندییەکانی کڕیار",
   "tiktok-config": DASHBOARD_PAGE_LABELS.tiktokSettings,
   advertising: "خزمەتگوزاری ڕیکلام",
   templates: DASHBOARD_PAGE_LABELS.templates,
@@ -227,10 +192,7 @@ function getBusinessPage(pathname: string): BusinessDashboardPage {
   const segment = pathname.split("/").filter(Boolean)[1];
   if (!segment) return "linktrees";
   if (segment === "pages") return "linktrees";
-  return segment === "mini-website" ||
-    segment === "analytics" ||
-    segment === "crm" ||
-    segment === "tiktok-config" ||
+  return segment === "tiktok-config" ||
     segment === "advertising" ||
     segment === "templates" ||
     segment === "profile" ||
@@ -318,27 +280,6 @@ export const BusinessDashboard = memo(function BusinessDashboard({
         onClick: () => router.push("/business/pages"),
       },
       {
-        id: "mini-website",
-        label: DASHBOARD_PAGE_LABELS.miniWebsite,
-        icon: <IdCard className="h-4 w-4" />,
-        active: activeTab === "mini-website",
-        onClick: () => router.push("/business/mini-website"),
-      },
-      {
-        id: "analytics",
-        label: "شیکاری",
-        icon: <BarChart3 className="h-4 w-4" />,
-        active: activeTab === "analytics",
-        onClick: () => router.push("/business/analytics"),
-      },
-      {
-        id: "crm",
-        label: "بەڕێوەبردنی پەیوەندییەکانی کڕیار",
-        icon: <ContactRound className="h-4 w-4" />,
-        active: activeTab === "crm",
-        onClick: () => router.push("/business/crm"),
-      },
-      {
         id: "tiktok-config",
         label: DASHBOARD_PAGE_LABELS.tiktokSettings,
         icon: <TbBrandTiktok className="h-4 w-4" />,
@@ -382,6 +323,8 @@ export const BusinessDashboard = memo(function BusinessDashboard({
     id: string;
     name: string;
   } | null>(null);
+  const [duplicateTargetLinktree, setDuplicateTargetLinktree] =
+    useState<LinktreeListItem | null>(null);
   const [isCreatingDefault, setIsCreatingDefault] =
     useState(createDefaultFromUrl);
 
@@ -407,9 +350,6 @@ export const BusinessDashboard = memo(function BusinessDashboard({
       Parameters<typeof businessTabTitle>[1]
     > = {
       linktrees: "Pages",
-      "mini-website": "Website",
-      analytics: "Analytics",
-      crm: "CRM",
       "tiktok-config": "TikTok Config",
       advertising: "Ads",
       templates: "Templates",
@@ -505,7 +445,7 @@ export const BusinessDashboard = memo(function BusinessDashboard({
           return;
         }
         if (isApiRequestError(error) && [401, 404].includes(error.status)) {
-          window.location.href = "/login";
+          window.location.href = "/business/workspace-entry";
         }
         // Keep the last valid manifest during transient network failures.
         if (rethrow) throw error;
@@ -579,7 +519,6 @@ export const BusinessDashboard = memo(function BusinessDashboard({
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-  const searchModalRef = useRef<HTMLDivElement>(null);
 
   const toggleTheme = useCallback(() => {
     const nextTheme = theme === "light" ? "dark" : "light";
@@ -596,7 +535,7 @@ export const BusinessDashboard = memo(function BusinessDashboard({
 
   const handleLogout = useCallback(async () => {
     await logoutBusiness();
-    window.location.href = "/login";
+    window.location.href = "/business/workspace-entry";
   }, []);
 
   useEffect(() => {
@@ -629,24 +568,6 @@ export const BusinessDashboard = memo(function BusinessDashboard({
       router.replace("/business/pages", { scroll: false });
     }
   }, [createDefaultFromUrl, router]);
-
-  // Search click-outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchModalRef.current &&
-        !searchModalRef.current.contains(event.target as Node)
-      ) {
-        setIsSearchModalOpen(false);
-      }
-    };
-    if (isSearchModalOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isSearchModalOpen]);
 
   // Filtered linktrees for grid/table
   const filteredLinktrees = useMemo(() => {
@@ -770,7 +691,7 @@ export const BusinessDashboard = memo(function BusinessDashboard({
   // which already sees a revoked session on /api/auth/effective-access.
   useEffect(() => {
     if (!currentUsername || currentUsername.trim() === "") {
-      window.location.href = "/login";
+      window.location.href = "/business/workspace-entry";
     }
   }, [currentUsername]);
 
@@ -812,7 +733,7 @@ export const BusinessDashboard = memo(function BusinessDashboard({
           "دەستپێکردنەوەت بەسەرهاتووە. دەتەوێت دووبارە لۆگین بکەیت؟",
         );
         if (shouldReload) {
-          window.location.href = "/login";
+          window.location.href = "/business/workspace-entry";
         }
         return;
       }
@@ -1523,9 +1444,10 @@ export const BusinessDashboard = memo(function BusinessDashboard({
   }
 
   return (
-    <ThemeProvider websiteColor={wColor ?? null}>
+    <ThemeProvider websiteColor={wColor ?? null} documentTheme="business">
       <BusinessDashboardRefreshProvider value={dashboardRefresh}>
         <div
+          data-business-dashboard
           className="h-screen bg-slate-50 dark:bg-[#161B22] text-slate-800 dark:text-gray-100 flex flex-col md:flex-row relative overflow-hidden"
           dir="ltr"
           inert={onboardingRequired ? true : undefined}
@@ -1650,23 +1572,14 @@ export const BusinessDashboard = memo(function BusinessDashboard({
                       onViewModeChange={setViewMode}
                       onCreate={handleCreateNew}
                       onEdit={handleEdit}
+                      onDuplicate={(item) => setDuplicateTargetLinktree(item)}
                       onDelete={handleDelete}
                       onViewAnalytics={handleViewAnalytics}
                     />
-                  ) : activeTab === "mini-website" ? (
-                    <MiniWebsitesPage
-                      businessLogo={logo}
-                      businessDefaultAvatar={businessDefaults?.default_avatar}
-                      websiteColor={wColor}
-                    />
-                  ) : activeTab === "analytics" ? (
-                    <BusinessAnalyticsPage />
-                  ) : activeTab === "crm" ? (
-                    <BusinessCrmPage />
                   ) : activeTab === "tiktok-config" ? (
                     <BusinessTikTokConfigPage />
                   ) : activeTab === "templates" ? (
-                    <TemplatesPage canCreate={false} />
+                    <TemplatesPage accessMode="entitlement" />
                   ) : activeTab === "advertising" ? (
                     <AdvertisingServicePage
                       name={name || currentUsername || "Business"}
@@ -1741,8 +1654,8 @@ export const BusinessDashboard = memo(function BusinessDashboard({
             isDeleting={isClearingAnalytics}
             message={
               <p>
-                دڵنیایت لە پاککردنەوەی تەنها ئامارەکانی پەڕەکانی لینکتری؟
-                ئاماری مینی وێبسایتەکان دەستکاری ناکرێت.
+                دڵنیایت لە پاککردنەوەی تەنها ئامارەکانی پەڕەکانی لینکتری؟ ئاماری
+                مینی وێبسایتەکان دەستکاری ناکرێت.
               </p>
             }
           />
@@ -1775,114 +1688,27 @@ export const BusinessDashboard = memo(function BusinessDashboard({
             />
           )}
 
-          {/* Floating Command Palette Search Modal */}
-          {isSearchModalOpen && (
-            <div className="modal-ltr fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] px-4 bg-black/40 dark:bg-black/60 backdrop-blur-xs transition-opacity duration-300">
-              <div
-                ref={searchModalRef}
-                className="relative w-full max-w-lg rounded-2xl bg-white/95 dark:bg-[#161B22]/95 border border-gray-200/80 dark:border-white/10 shadow-2xl overflow-hidden    duration-200"
-                dir="ltr"
-              >
-                {/* Search Input Box */}
-                <div className="relative flex items-center border-b border-gray-100 dark:border-white/10">
-                  <div className="absolute right-4 text-slate-400 dark:text-gray-500 pointer-events-none">
-                    <Search className="h-5 w-5" />
-                  </div>
-                  <input
-                    autoFocus
-                    type="text"
-                    placeholder="ناوی پەیج بنووسە بۆ گەڕان..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        setIsSearchModalOpen(false);
-                      }
-                    }}
-                    className="w-full pr-12 pl-14 py-4 text-sm sm:text-base bg-transparent focus:outline-none text-slate-700 dark:text-gray-200 placeholder-slate-400 dark:placeholder-gray-500 font-kurdish text-left"
-                  />
-                  <button
-                    onClick={() => setIsSearchModalOpen(false)}
-                    className="absolute left-4 p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
-                  >
-                    <span className="text-[10px] px-1.5 py-0.5 rounded border border-gray-200 dark:border-white/10 text-slate-400 dark:text-gray-500 font-sans font-bold">
-                      ESC
-                    </span>
-                  </button>
-                </div>
-
-                {/* Results Grid List */}
-                <div
-                  className="max-h-[320px] overflow-y-auto p-2"
-                  style={{ scrollbarWidth: "thin" }}
-                >
-                  {!searchQuery.trim() ? (
-                    <div className="py-8 text-center text-slate-400 dark:text-gray-500 text-xs sm:text-sm font-kurdish flex flex-col items-center justify-center gap-2 select-none">
-                      <MotionPulseIcon>
-                        <Search
-                          className="h-5 w-5 opacity-40"
-                          style={{ color: "var(--theme-primary, #FEE049)" }}
-                        />
-                      </MotionPulseIcon>
-                      <span>گەڕان بۆ پەیجەکان بکە.....</span>
-                    </div>
-                  ) : searchResults.length === 0 ? (
-                    <div className="py-8 text-center text-slate-450 dark:text-gray-500 text-sm font-kurdish">
-                      هیچ ئەنجامێک نەدۆزرایەوە بۆ &quot;{searchQuery}&quot;
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-0.5">
-                      {searchResults.map((item) => (
-                        <button
-                          key={item.id}
-                          onClick={() => {
-                            setIsSearchModalOpen(false);
-                            handleEdit(item.id);
-                          }}
-                          className="flex items-center justify-between w-full p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 text-left transition-all duration-200 group cursor-pointer"
-                        >
-                          <div className="flex items-center gap-3">
-                            {/* Item Image */}
-                            <div className="relative w-10 h-10 overflow-hidden rounded-full border border-gray-200 dark:border-white/10 bg-slate-100 dark:bg-slate-900 flex-shrink-0">
-                              <Image
-                                src={item.image || "/images/DefaultAvatar.png"}
-                                alt={item.name}
-                                fill
-                                sizes="40px"
-                                unoptimized
-                                className="object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.src = "/images/DefaultAvatar.png";
-                                }}
-                              />
-                            </div>
-                            {/* Name and UID slug */}
-                            <div className="flex flex-col text-left">
-                              <span className="text-sm font-semibold text-slate-700 dark:text-gray-200 transition-colors leading-tight">
-                                {item.name}
-                              </span>
-                              <span className="text-xs text-slate-400 dark:text-gray-500 font-mono leading-none mt-1">
-                                /linktree/{item.seo_name || item.uid}
-                              </span>
-                            </div>
-                          </div>
-                          {/* Action Trigger */}
-                          <div
-                            className="text-xs font-semibold opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-1 group-hover:translate-x-0 pl-2"
-                            style={{ color: "var(--theme-primary, #FEE049)" }}
-                          >
-                            دەستکاریکردن ←
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+          {duplicateTargetLinktree && (
+            <DuplicateLinktreeModal
+              isOpen={Boolean(duplicateTargetLinktree)}
+              onClose={() => setDuplicateTargetLinktree(null)}
+              targetLinktree={duplicateTargetLinktree}
+              onSuccess={() => {
+                void handleRefresh();
+              }}
+            />
           )}
+
+          {/* Floating Command Palette Search Modal */}
+          <LinktreeSearchModal
+            isOpen={isSearchModalOpen}
+            onClose={() => setIsSearchModalOpen(false)}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            items={linktreesData}
+            onSelect={(item) => handleEdit(item.id)}
+            publicPathPrefix="/linktree"
+          />
         </div>
         {onboardingRequired ? (
           <BusinessGettingStarted initialStep={onboardingStep} />

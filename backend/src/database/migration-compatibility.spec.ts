@@ -19,7 +19,6 @@ function clientWithSchema(
     'creator_trial_claims_device_hmac_idx',
   ],
   catalog = {
-    mini_website_create_permission: true,
     public_page_entitlement: true,
     advertising_permissions: true,
     advertising_entitlement: true,
@@ -41,7 +40,7 @@ function clientWithSchema(
           rows: indexes.map((indexname) => ({ indexname })),
         });
       }
-      if (sql.includes('AS mini_website_create_permission')) {
+      if (sql.includes('AS public_page_entitlement')) {
         return Promise.resolve({ rows: [catalog] });
       }
       return Promise.resolve({
@@ -99,8 +98,7 @@ describe('migration compatibility checks', () => {
     await expect(
       assertSupportedSchema(
         clientWithSchema([...REQUIRED_TABLES], requiredColumns, undefined, {
-          mini_website_create_permission: false,
-          public_page_entitlement: true,
+          public_page_entitlement: false,
           advertising_permissions: true,
           advertising_entitlement: true,
           mini_website_entitlement: true,

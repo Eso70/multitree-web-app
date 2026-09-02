@@ -7,6 +7,7 @@ import {
   AvatarMenu,
   type AvatarMenuItem,
 } from "@/components/shared/AvatarMenu";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 export function DashboardHeaderActionButton({
   className = "",
@@ -41,6 +42,8 @@ interface DashboardHeaderProps {
     items: AvatarMenuItem[];
   };
   onProfileItemClick?: () => void;
+  showLanguage?: boolean;
+  showRefresh?: boolean;
 }
 
 const iconClassName =
@@ -57,56 +60,70 @@ export function DashboardHeader({
   notifications,
   profile,
   onProfileItemClick,
+  showLanguage = true,
+  showRefresh = true,
 }: DashboardHeaderProps) {
   return (
     <header className="sticky top-0 z-30 shrink-0 border-b border-slate-200 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-[#161B22]/80">
       <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">
         <div className="flex min-w-0 items-center gap-3">
-          <DashboardHeaderActionButton
-            onClick={onToggleSidebar}
-            aria-label="Toggle sidebar"
-          >
-            <Menu className={iconClassName} aria-hidden="true" />
-          </DashboardHeaderActionButton>
+          <Tooltip content="کردنەوە / داخستنی مینیو" side="bottom">
+            <DashboardHeaderActionButton
+              onClick={onToggleSidebar}
+              aria-label="Toggle sidebar"
+            >
+              <Menu className={iconClassName} aria-hidden="true" />
+            </DashboardHeaderActionButton>
+          </Tooltip>
           <h1 className="truncate text-base font-bold sm:text-lg">{title}</h1>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <DashboardHeaderActionButton
-            onClick={() => void onRefresh()}
-            disabled={refreshing}
-            aria-busy={refreshing}
-            aria-label="Refresh dashboard data"
-            title="Refresh dashboard data"
-          >
-            <MotionSpinner active={refreshing}>
-              <RefreshCw className={iconClassName} aria-hidden="true" />
-            </MotionSpinner>
-          </DashboardHeaderActionButton>
+          {showRefresh ? (
+            <Tooltip content="نوێکردنەوەی داتا" side="bottom">
+              <DashboardHeaderActionButton
+                onClick={() => void onRefresh()}
+                disabled={refreshing}
+                aria-busy={refreshing}
+                aria-label="Refresh dashboard data"
+              >
+                <MotionSpinner active={refreshing}>
+                  <RefreshCw className={iconClassName} aria-hidden="true" />
+                </MotionSpinner>
+              </DashboardHeaderActionButton>
+            </Tooltip>
+          ) : null}
 
           {notifications}
 
-          <DashboardHeaderActionButton
-            aria-label="Toggle language"
-            title="Toggle language"
-            className="hidden sm:flex"
-          >
-            <Languages className={iconClassName} aria-hidden="true" />
-          </DashboardHeaderActionButton>
+          {showLanguage ? (
+            <Tooltip content="گۆڕینی زمان" side="bottom">
+              <DashboardHeaderActionButton
+                aria-label="Toggle language"
+                className="hidden sm:flex"
+              >
+                <Languages className={iconClassName} aria-hidden="true" />
+              </DashboardHeaderActionButton>
+            </Tooltip>
+          ) : null}
 
-          <DashboardHeaderActionButton
-            onClick={onToggleTheme}
-            aria-label="Toggle theme"
-            title="Toggle theme"
+          <Tooltip
+            content={!mounted ? "دۆخی ڕەنگ" : theme === "light" ? "دۆخی تاریک" : "دۆخی ڕووناک"}
+            side="bottom"
           >
-            {!mounted ? (
-              <span className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5" />
-            ) : theme === "light" ? (
-              <Moon className={iconClassName} aria-hidden="true" />
-            ) : (
-              <Sun className={iconClassName} aria-hidden="true" />
-            )}
-          </DashboardHeaderActionButton>
+            <DashboardHeaderActionButton
+              onClick={onToggleTheme}
+              aria-label="Toggle theme"
+            >
+              {!mounted ? (
+                <span className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+              ) : theme === "light" ? (
+                <Moon className={iconClassName} aria-hidden="true" />
+              ) : (
+                <Sun className={iconClassName} aria-hidden="true" />
+              )}
+            </DashboardHeaderActionButton>
+          </Tooltip>
 
           <AvatarMenu
             name={profile.name}

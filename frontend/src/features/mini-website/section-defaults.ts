@@ -12,7 +12,6 @@ import {
   createMiniWebsiteExperience,
   createMiniWebsiteEvent,
   createMiniWebsiteFaqEntry,
-  createMiniWebsiteLeadForm,
   createMiniWebsiteLocation,
   createMiniWebsiteOwnedProperty,
   createMiniWebsitePartner,
@@ -145,12 +144,6 @@ export function ensureEnabledSectionDefaults(
       enabled.has("experience") && draft.experience.length === 0
         ? [createMiniWebsiteExperience()]
         : draft.experience,
-    // The form arrives already asking for a name and a way to reply, because a
-    // blank one can be published as a section that collects nothing usable.
-    leadForm:
-      enabled.has("leadForm") && draft.leadForm.fields.length === 0
-        ? createMiniWebsiteLeadForm()
-        : draft.leadForm,
     // Two tiers, not one: a pricing table with a single card is a price tag,
     // and the section only earns its place by letting them be compared.
     plans:

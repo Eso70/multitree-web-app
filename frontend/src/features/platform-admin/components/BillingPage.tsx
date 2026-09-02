@@ -43,6 +43,7 @@ import { SegmentedTabs } from "@/components/shared/SegmentedTabs";
 import { TablePagination } from "@/components/shared/TablePagination";
 import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 import { StatCard } from "@/components/shared/StatCard";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { SkeletonStatCards } from "@/components/shared/Skeleton";
 import { RequiredMark } from "@/components/shared/RequiredMark";
 import { modalInputClass } from "@/features/link-editor/modal-input-styles";
@@ -244,9 +245,9 @@ export function BillingPage() {
   const [overview, setOverview] = useState<BillingOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [planModal, setPlanModal] = useState<SubscriptionPlan | "create" | null>(
-    null,
-  );
+  const [planModal, setPlanModal] = useState<
+    SubscriptionPlan | "create" | null
+  >(null);
   const [viewPlan, setViewPlan] = useState<SubscriptionPlan | null>(null);
   const [deletePlan, setDeletePlan] = useState<SubscriptionPlan | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -258,61 +259,58 @@ export function BillingPage() {
   const [businessSearch, setBusinessSearch] = useState("");
   const [businessPlanFilter, setBusinessPlanFilter] = useState("all");
   const [businessStatusFilter, setBusinessStatusFilter] = useState("all");
-  const [businessSort, setBusinessSort] =
-    useState<BusinessSort>("nameAsc");
+  const [businessSort, setBusinessSort] = useState<BusinessSort>("nameAsc");
   const [businessPage, setBusinessPage] = useState(1);
   const deferredPlanSearch = useDeferredValue(
     planSearch.trim().toLocaleLowerCase(),
   );
-  const load = useCallback(async (quiet = false) => {
-    if (quiet) setRefreshing(true);
-    else setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: String(businessPage),
-        limit: "10",
-      });
-      if (businessSearch.trim()) params.set("search", businessSearch.trim());
-      const unassigned =
-        businessPlanFilter === "unassigned" ||
-        businessStatusFilter === "unassigned";
-      if (unassigned) params.set("status", "unassigned");
-      else if (businessStatusFilter !== "all") {
-        params.set("status", businessStatusFilter);
-      }
-      if (
-        businessPlanFilter !== "all" &&
-        businessPlanFilter !== "unassigned"
-      ) {
-        params.set("planId", businessPlanFilter);
-      }
-      const response = await fetch(`/api/platform/billing?${params}`, {
-        credentials: "include",
-        cache: "no-store",
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(
-          result.message || "بارکردنی بەشداربوونەکان سەرکەوتوو نەبوو",
+  const load = useCallback(
+    async (quiet = false) => {
+      if (quiet) setRefreshing(true);
+      else setLoading(true);
+      try {
+        const params = new URLSearchParams({
+          page: String(businessPage),
+          limit: "10",
+        });
+        if (businessSearch.trim()) params.set("search", businessSearch.trim());
+        const unassigned =
+          businessPlanFilter === "unassigned" ||
+          businessStatusFilter === "unassigned";
+        if (unassigned) params.set("status", "unassigned");
+        else if (businessStatusFilter !== "all") {
+          params.set("status", businessStatusFilter);
+        }
+        if (
+          businessPlanFilter !== "all" &&
+          businessPlanFilter !== "unassigned"
+        ) {
+          params.set("planId", businessPlanFilter);
+        }
+        const response = await fetch(`/api/platform/billing?${params}`, {
+          credentials: "include",
+          cache: "no-store",
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(
+            result.message || "بارکردنی بەشداربوونەکان سەرکەوتوو نەبوو",
+          );
+        }
+        setOverview(result.data);
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "بارکردنی بەشداربوونەکان سەرکەوتوو نەبوو",
         );
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-      setOverview(result.data);
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "بارکردنی بەشداربوونەکان سەرکەوتوو نەبوو",
-      );
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [
-    businessPage,
-    businessPlanFilter,
-    businessSearch,
-    businessStatusFilter,
-  ]);
+    },
+    [businessPage, businessPlanFilter, businessSearch, businessStatusFilter],
+  );
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => void load());
@@ -370,10 +368,7 @@ export function BillingPage() {
       }
       return left.name.localeCompare(right.name);
     });
-  }, [
-    businessRows,
-    businessSort,
-  ]);
+  }, [businessRows, businessSort]);
 
   const pageSize = overview?.pagination.limit || 10;
   const totalBusinessPages = overview?.pagination.totalPages || 1;
@@ -448,9 +443,7 @@ export function BillingPage() {
       <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#1c222b] sm:p-6">
         <PageHeader
           title={
-            tab === "plans"
-              ? "پلانەکانی بەشداربوون"
-              : "بزنس و بەشداربوونەکان"
+            tab === "plans" ? "پلانەکانی بەشداربوون" : "بزنس و بەشداربوونەکان"
           }
           description={
             tab === "plans"
@@ -466,9 +459,9 @@ export function BillingPage() {
                 className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/10"
                 aria-label="نوێکردنەوە"
               >
-                <MotionSpinner active={refreshing}><RefreshCw
-                  className="h-4 w-4"
-                 /></MotionSpinner>
+                <MotionSpinner active={refreshing}>
+                  <RefreshCw className="h-4 w-4" />
+                </MotionSpinner>
               </button>
               <button
                 type="button"
@@ -555,7 +548,9 @@ export function BillingPage() {
               فلتەر و ڕیزبەندی
             </p>
             {(tab === "plans"
-              ? !!planSearch || planStatusFilter !== "all" || planSort !== "displayOrder"
+              ? !!planSearch ||
+                planStatusFilter !== "all" ||
+                planSort !== "displayOrder"
               : !!businessSearch ||
                 businessPlanFilter !== "all" ||
                 businessStatusFilter !== "all" ||
@@ -648,7 +643,10 @@ export function BillingPage() {
         <div className="mt-2 flex items-center justify-between rounded-xl border border-slate-200/80 px-3 py-3 text-xs text-slate-500 dark:border-white/10 dark:text-slate-300">
           <span className="flex items-center gap-2">
             <Search className="h-4 w-4 text-slate-400" />
-            {tab === "plans" ? filteredPlans.length : filteredBusinesses.length} ئەنجام
+            {tab === "plans"
+              ? filteredPlans.length
+              : filteredBusinesses.length}{" "}
+            ئەنجام
           </span>
           <span className="text-[10px] text-slate-400">
             گەڕان و فلتەرەکان خۆکارانە جێبەجێ دەبن
@@ -774,30 +772,39 @@ function PlansTable({
               </td>
               <td className="px-3 py-3">
                 <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => onView(plan)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-sky-600 transition hover:bg-sky-50 dark:hover:bg-sky-500/10"
-                    title="بینین"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onEdit(plan)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-violet-600 transition hover:bg-violet-50 dark:hover:bg-violet-500/10"
-                    title="دەستکاریکردن"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete(plan)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-red-600 transition hover:bg-red-50 dark:hover:bg-red-500/10"
-                    title="سڕینەوە"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <Tooltip content="بینین" side="top">
+                    <button
+                      type="button"
+                      onClick={() => onView(plan)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-sky-600 transition hover:bg-sky-50 dark:hover:bg-sky-500/10 cursor-pointer"
+                      title="بینین"
+                      aria-label="بینینی پلان"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip content="دەستکاریکردن" side="top">
+                    <button
+                      type="button"
+                      onClick={() => onEdit(plan)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-violet-600 transition hover:bg-violet-50 dark:hover:bg-violet-500/10 cursor-pointer"
+                      title="دەستکاریکردن"
+                      aria-label="دەستکاریکردنی پلان"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip content="سڕینەوە" side="top">
+                    <button
+                      type="button"
+                      onClick={() => onDelete(plan)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-red-600 transition hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"
+                      title="سڕینەوە"
+                      aria-label="سڕینەوەی پلان"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
                 </div>
               </td>
             </tr>
@@ -872,15 +879,17 @@ function BusinessesSubscriptionsTable({
               </td>
               <td className="px-3 py-3">
                 <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => onView(business)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-sky-600 transition hover:bg-sky-50 dark:hover:bg-sky-500/10"
-                    title="بینین"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </button>
-
+                  <Tooltip content="بینین" side="top">
+                    <button
+                      type="button"
+                      onClick={() => onView(business)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-sky-600 transition hover:bg-sky-50 dark:hover:bg-sky-500/10 cursor-pointer"
+                      title="بینین"
+                      aria-label="بینینی بەشداری"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
                 </div>
               </td>
             </tr>
@@ -1123,11 +1132,10 @@ function FormField({
 
 const PLAN_DESCRIPTION_PRESETS: Record<string, string> = {
   basic:
-    "Essential business access\n\nUp to 5 link pages\n7 templates\nCore analytics\nPage defaults configuration\nMultiTree subdomain",
-  pro:
-    "Advanced analytics management access\n\nUp to 20 link pages\n11 templates\nAdvanced analytics & reporting\nBusiness profile editing\nCustom branding (logo, favicon, colors)\nTikTok Pixel & Events API\n7-day free trial\nPage defaults configuration\nMultiTree subdomain",
+    "Essential business access\n\nUp to 5 link pages\n2 Linktree templates\nCore analytics\nPage defaults configuration\nMultiTree subdomain",
+  pro: "Advanced analytics management access\n\nUp to 20 link pages\n5 Linktree templates\nAdvanced analytics & reporting\nBusiness profile editing\nCustom branding (logo, favicon, colors)\nTikTok Pixel & Events API\n7-day free trial\nPage defaults configuration\nMultiTree subdomain",
   ultra:
-    "Complete business access\n\nUnlimited link pages\n12 templates\nAdvanced analytics & reporting\nBusiness profile editing\nCustom branding (logo, favicon, colors)\nTikTok Pixel & Events API\nRemove MultiTree branding\nPremium templates\nPage defaults configuration\nMultiTree subdomain",
+    "Complete business access\n\nUnlimited link pages\n6 Linktree templates\nAdvanced analytics & reporting\nBusiness profile editing\nCustom branding (logo, favicon, colors)\nTikTok Pixel & Events API\nRemove MultiTree branding\nPremium templates\nPage defaults configuration\nMultiTree subdomain",
 };
 
 function getPlanDescriptionPreset(
@@ -1177,8 +1185,7 @@ function PlanFormModal({
   const duplicateName = plans.some(
     (item) =>
       item.id !== plan?.id &&
-      item.name.trim().toLocaleLowerCase() ===
-        name.trim().toLocaleLowerCase(),
+      item.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase(),
   );
   const yearlyNumber = Number(yearlyPrice);
   const canSave =

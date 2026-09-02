@@ -7,8 +7,6 @@ describe('mini website database projection', () => {
       'social_links',
       'locations',
       'services',
-      'lead_form',
-      'lead_fields',
       'plans',
     ]) {
       expect(CONTENT_SELECT).toContain(`AS ${alias}`);

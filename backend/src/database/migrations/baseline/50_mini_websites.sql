@@ -178,11 +178,11 @@ CREATE TABLE public.mini_website_items (
   -- Stars, for the sections that are scored. Zero means unrated rather than
   -- badly rated, which is what a section with no stars at all stores.
   rating smallint NOT NULL DEFAULT 0 CHECK (rating BETWEEN 0 AND 5),
-  -- Whether a lead-form question must be answered before the form will send.
+  -- Retained for compatibility with existing item projections.
   required boolean NOT NULL DEFAULT false,
   -- The recommended tier, for the pricing section.
   featured boolean NOT NULL DEFAULT false,
-  -- A lead-form dropdown's choices, or a pricing tier's included features.
+  -- A pricing tier's included features.
   options text[] NOT NULL DEFAULT '{}'::text[] CHECK (cardinality(options) <= 20),
   pixel_event varchar(40) NOT NULL DEFAULT 'None'
     CHECK (pixel_event IN ('None','Contact','Lead','InitiateCheckout','CompletePayment')),
@@ -202,29 +202,6 @@ CREATE INDEX idx_mini_locations_coordinates ON public.mini_website_locations(lat
 CREATE INDEX idx_mini_hours_website ON public.mini_website_hours(mini_website_id, day);
 CREATE INDEX idx_mini_items_section ON public.mini_website_items(mini_website_id, section_key, position);
 
--- Per-page lead form settings. One row per mini website, so the form's wording
--- lives with the page rather than being repeated on every question row.
---
--- Submissions are deliberately absent: they flow through the analytics ingest
--- into `crm_contacts` and `crm_leads`, where name, email and phone are encrypted
--- at rest and hashed for de-duplication. A second, plaintext copy of the same
--- details sitting beside the page definition would undo all of that.
-CREATE TABLE public.mini_website_lead_forms (
-  mini_website_id uuid PRIMARY KEY REFERENCES public.mini_websites(id) ON DELETE CASCADE,
-  title varchar(160) NOT NULL DEFAULT '',
-  description varchar(600) NOT NULL DEFAULT '',
-  submit_label varchar(80) NOT NULL DEFAULT '',
-  success_message varchar(400) NOT NULL DEFAULT '',
-  consent_text varchar(600) NOT NULL DEFAULT '',
-  consent_required boolean NOT NULL DEFAULT false,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  -- A required tick-box with nothing written beside it asks the visitor to
-  -- agree to nothing, which is worse than not asking at all.
-  CONSTRAINT mini_website_lead_forms_consent_check
-    CHECK (NOT consent_required OR length(btrim(consent_text)) > 0)
-);
-
 DROP TRIGGER IF EXISTS trg_mini_website_sections_updated_at ON public.mini_website_sections;
 CREATE TRIGGER trg_mini_website_sections_updated_at BEFORE UPDATE ON public.mini_website_sections FOR EACH ROW EXECUTE FUNCTION public.fn_set_updated_at();
 DROP TRIGGER IF EXISTS trg_mini_website_social_links_updated_at ON public.mini_website_social_links;
@@ -235,9 +212,6 @@ DROP TRIGGER IF EXISTS trg_mini_website_hours_updated_at ON public.mini_website_
 CREATE TRIGGER trg_mini_website_hours_updated_at BEFORE UPDATE ON public.mini_website_hours FOR EACH ROW EXECUTE FUNCTION public.fn_set_updated_at();
 DROP TRIGGER IF EXISTS trg_mini_website_items_updated_at ON public.mini_website_items;
 CREATE TRIGGER trg_mini_website_items_updated_at BEFORE UPDATE ON public.mini_website_items FOR EACH ROW EXECUTE FUNCTION public.fn_set_updated_at();
-DROP TRIGGER IF EXISTS trg_mini_website_lead_forms_updated_at ON public.mini_website_lead_forms;
-CREATE TRIGGER trg_mini_website_lead_forms_updated_at BEFORE UPDATE ON public.mini_website_lead_forms FOR EACH ROW EXECUTE FUNCTION public.fn_set_updated_at();
-
 -- One-time move off the jsonb columns.
 --
 -- Guarded on the columns still existing and skipped once the tables hold rows,
@@ -414,4 +388,3 @@ CREATE INDEX idx_mini_websites_public_slug ON public.mini_websites(business_id, 
 DROP TRIGGER IF EXISTS trg_mini_websites_updated_at ON public.mini_websites;
 CREATE TRIGGER trg_mini_websites_updated_at BEFORE UPDATE ON public.mini_websites FOR EACH ROW EXECUTE FUNCTION public.fn_set_updated_at();
 -- MINI WEBSITE SCHEMA END
-

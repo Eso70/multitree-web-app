@@ -61,8 +61,8 @@ Only the endpoints differ: totals and action rows are read from
 `/api/creator/{linktrees,mini-websites}/:id/analytics` and
 `.../analytics/actions`, which resolve the workspace from the `creator_session`
 and prove ownership before reading. The business `/api/analytics/v2` routes are
-never called from a Creator workspace. The advanced-analytics button is hidden
-because `/business/analytics` is a business-only route; platform administration
+never called from a Creator workspace. Analytics now stays inside the shared
+per-page modal for both Creator and Business workspaces. Platform administration
 keeps the summary-only mode, since it reviews pages it does not own.
 
 The `/account/linktree`, `/account/mini-website`, and `/account/settings`

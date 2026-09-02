@@ -12,7 +12,6 @@ import {
   MINI_WEBSITE_MAX_FAQ_ENTRIES,
   MINI_WEBSITE_MAX_GALLERY_IMAGES,
   MINI_WEBSITE_MAX_IMPACT_STATS,
-  MINI_WEBSITE_MAX_LEAD_FIELDS,
   MINI_WEBSITE_MAX_PLANS,
   MINI_WEBSITE_MAX_PROCESS_STEPS,
   MINI_WEBSITE_MAX_LOCATIONS,
@@ -67,7 +66,6 @@ export function getSectionCountLabel(
     ],
     education: [draft.education.length, MINI_WEBSITE_MAX_EDUCATION_ENTRIES],
     experience: [draft.experience.length, MINI_WEBSITE_MAX_EXPERIENCE_ENTRIES],
-    leadForm: [draft.leadForm.fields.length, MINI_WEBSITE_MAX_LEAD_FIELDS],
     pricing: [draft.plans.length, MINI_WEBSITE_MAX_PLANS],
   };
   const count = countAndLimit[key];

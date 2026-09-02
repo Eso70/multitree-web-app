@@ -6,7 +6,9 @@ import {
   type TemplateKey,
 } from "@/lib/templates/config";
 
-function createDynamicTemplate(factory: () => Promise<TemplateComponent>): TemplateComponent {
+function createDynamicTemplate(
+  factory: () => Promise<TemplateComponent>,
+): TemplateComponent {
   return dynamic(
     () =>
       factory().then((Component) => ({
@@ -20,11 +22,24 @@ function createDynamicTemplate(factory: () => Promise<TemplateComponent>): Templ
 }
 
 export const TEMPLATE_COMPONENTS: Record<TemplateKey, TemplateComponent> = {
-  spectrum: createDynamicTemplate(() => import("./SpectrumTemplate").then((m) => m.SpectrumTemplate)),
-  spotlight: createDynamicTemplate(() => import("./SpotlightTemplate").then((m) => m.SpotlightTemplate)),
-  frost: createDynamicTemplate(() => import("./FrostTemplate").then((m) => m.FrostTemplate)),
-  aurora: createDynamicTemplate(() => import("./AuroraTemplate").then((m) => m.AuroraTemplate)),
-  serenity: createDynamicTemplate(() => import("./SerenityTemplate").then((m) => m.SerenityTemplate)),
+  spectrum: createDynamicTemplate(() =>
+    import("./SpectrumTemplate").then((m) => m.SpectrumTemplate),
+  ),
+  spotlight: createDynamicTemplate(() =>
+    import("./SpotlightTemplate").then((m) => m.SpotlightTemplate),
+  ),
+  frost: createDynamicTemplate(() =>
+    import("./FrostTemplate").then((m) => m.FrostTemplate),
+  ),
+  aurora: createDynamicTemplate(() =>
+    import("./AuroraTemplate").then((m) => m.AuroraTemplate),
+  ),
+  serenity: createDynamicTemplate(() =>
+    import("./SerenityTemplate").then((m) => m.SerenityTemplate),
+  ),
+  "branch-signal": createDynamicTemplate(() =>
+    import("./BranchSignalTemplate").then((m) => m.BranchSignalTemplate),
+  ),
 };
 
 export { TEMPLATE_DEFAULT_ID, TEMPLATE_OPTIONS };

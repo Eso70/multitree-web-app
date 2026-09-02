@@ -4,13 +4,18 @@
 
 Creator Linktree and mini-website routes render the same shared page lists,
 grid/table views, editors, analytics modal, statistics, loading skeletons, and
-empty states as Business and Platform. Workspace differences are supplied only
-through typed endpoints and capability props. A Creator configuration limits
+empty states as Platform. Workspace differences are supplied only through
+typed endpoints and capability props. A Creator configuration limits
 the workspace to one page, hides page deletion, and disables the opposite page
 type after creation; it must never fork or copy the shared presentation.
 Shared Business, Platform, and Creator navigation names come from
 `components/shared/dashboard-page-labels.ts`; do not introduce surface-local
 copies for names that describe the same workspace.
+The Business dashboard does not expose a Mini Website navigation item or route
+on any plan. Creator and Platform retain the shared Mini Website manager and
+creation workflow through their own guarded endpoints. Existing public
+`/bio/:slug` pages remain renderable; removing the Business management page
+does not remove stored public content.
 `/account/templates` renders the same `TemplatesPage` used by Business and
 Platform. Creator users receive its view-only configuration with the full
 template catalogue; template creation controls remain platform-only.
@@ -45,7 +50,8 @@ Validation appears beside the affected field and
 entered values remain available after recoverable failures. Signup request
 payloads are built explicitly from backend DTO fields; never spread UI-only
 form state into a strict API request. Platform administrator selects plan during
-review. Tenant `/business/login` offers Google and a six-digit email code for
+review. Tenant `/business/workspace-entry` is the sole business sign-in route
+and offers Google and a six-digit email code for
 approved active business members. The root-domain platform login and the
 invite signup page offer the same Google or email-code choice, with the email
 option verifying identity before it creates a platform/application session.
@@ -98,12 +104,27 @@ and initial content surface while server data or a route bundle resolves. Keep
 route-level dashboard loading states on this shared shell so they never fall
 back to the unrelated public landing-page skeleton.
 
+Authentication routes use the shared `SkeletonAuthenticationPage` boundary so
+navigation reserves the real split-screen authentication layout in both light
+and dark mode. Link validation and secure handoff exchange use the shared
+compact `LoadingState`; predictable forms and data surfaces continue to use
+layout-matched skeletons. Platform-impersonated business sessions keep a
+permanent amber security banner whose dark surface and exit action have explicit
+contrast rather than inheriting a tenant or platform accent.
+
 The loaded dashboards also share `DashboardSidebar` and `DashboardHeader`.
 Each permission domain supplies its own navigation, notification inbox, refresh
 operation, branding, and account actions, while the shared components own the
 responsive sidebar, collapse behavior, global header controls, active states,
 and profile-menu presentation. Do not recreate dashboard chrome inside a
 feature entry point.
+
+The Business dashboard publishes the tenant's effective website color at the
+document boundary. Text selection, the custom cursor, native page scrollbars,
+nested scroll surfaces, portalled dialogs, and shared accent controls therefore
+use the tenant color on every Business route. The Templates catalogue is the
+deliberate exception: it establishes a MultiTree theme boundary so template
+artwork and catalogue controls are not repainted by the current tenant.
 
 Both dashboards render notifications through the communications feature's
 shared inbox hook and `NotificationBell`. The unread badge, responsive
@@ -491,7 +512,7 @@ future segments remain visible at reduced opacity.
   TikTok base code or client pixel.
 - Linktrees support branding, an avatar, a subtitle tagline under the name, a
   longer description helper text, configurable footer, WhatsApp questions,
-  ordered links, TikTok tracking, and 12 selectable templates.
+  ordered links, TikTok tracking, and six selectable Linktree templates.
 - A custom colour is stored as `gradient:<direction>:<from>:<to>` and rendered
   only through `parseWebsiteColor`, which owns the nine-direction table and
   emits explicit `0%`/`100%` stops so the two colours split the surface evenly.
@@ -578,12 +599,20 @@ future segments remain visible at reduced opacity.
   one-option picker would only be dead UI. Linktree selection keeps the shared
   compact selector shell, cards, animations, selection state, and plan locks.
   An absent or retired key still resolves to Liquid.
+- `branch-signal` is the Ultra-only premium Branch Signal Linktree template. It
+  supports the complete shared solid, gradient, custom-gradient, uploaded-image,
+  and pattern background system. Text contrast follows that background, while
+  signal paths, avatar rings, nodes, borders, hover light, and the footer accent
+  derive from the tenant website color. Its asymmetric dark cards use only the
+  stored link title, description, platform icon, URL, and default message;
+  share/theme/header controls are not invented inside the template. The shared
+  phone supplies preview-only device chrome.
 - Neither the templates page nor the business subdomain landing page shows
   mini-websites. The templates page catalogues Linktree templates only and no
   longer carries category tabs; the landing page lists Linktrees alone and
   does not fetch `/api/public/mini-websites`. The public advertising page
-  footer still links to them, and `/business/mini-website` and the public
-  `/bio/:slug` pages are unaffected.
+  footer still links to them. The Business dashboard has no Mini Website route;
+  public `/bio/:slug` pages remain available.
 - Appointment cards can open a business's public Calendly, Cal.com, Google
   Calendar, or custom HTTPS booking page, or start a WhatsApp conversation.
   MultiTree stores the appointment details and click analytics; availability,
@@ -635,10 +664,6 @@ future segments remain visible at reduced opacity.
 - Work experience supports up to 20 entries with a title, organization,
   employment type, location, start and end dates, current/completed status,
   description, image, and optional HTTPS verification link.
-- The lead-capture form supports up to 12 custom fields (with up to 20
-  options each), an optional consent checkbox, and a configurable success
-  message; submissions are posted directly from the public page and become a
-  CRM contact and lead.
 - Pricing supports up to 6 plans with up to 20 features each, a price,
   billing period, one featured/recommended tier, and a call-to-action;
   missing features are automatically shown as gaps relative to the richest
@@ -726,14 +751,19 @@ configurable. The component's loading state selects the matching
 `SkeletonStatCard` shape so data arrival does not change the card's footprint.
 Linktree and mini-website initial data, lazy page bundles, grids, tables, edit
 forms, and analytics content use the matching shared skeleton composition.
-Advanced Analytics, CRM, Event Tracking, TikTok configuration, Settings,
+Per-page analytics, Event Tracking, TikTok configuration, Settings,
 sessions, business messages, and communication inboxes follow the same rule:
 their initial placeholders preserve metrics, tabs, headers, and the expected
 chart, table, form, or list body instead of showing only a spinner or leaving
 the rest of the page blank.
 The business Templates route uses a catalog-specific skeleton while template
-permissions load, including its metrics, category tabs, header, and phone
-preview footprints. Linktree and mini-website previews both render lazily.
+permissions load, including its metrics, header actions, catalog cards, and
+phone preview footprints. The shared skeleton contract covers responsive
+management tables and cards, page management, settings, advertising, TikTok,
+business directories, client invitations/results, analytics modals, editor
+forms, and communication lists. A route shell and an embedded content fallback
+are kept distinct when the surrounding header or dashboard chrome is already
+mounted. Linktree and mini-website previews both render lazily.
 Mini-website cards use the stable MultiTree fixture and the real public mobile
 composition inside a scrollable shared phone. Preview interactions are
 disabled, and the preview canvas forces mobile grids even when the surrounding
@@ -751,27 +781,26 @@ unsaved local input; they may refresh only independent read-only data.
 The platform header refresh also invokes the shared notification adapter, so
 its communication inbox and permission-specific pending approvals refresh with
 the rest of the platform dashboard rather than waiting for the next poll.
-The Linktree and mini-website management pages each expose six equivalent
+The shared Linktree and Mini Website managers expose six equivalent
 metrics—owned page count, views, unique visitors, interactions, interaction
 rate, and conversions—but query them through separate analytics page-type
 boundaries. Linktree summaries use `pageType=linktree`; mini-website summaries
-use `pageType=mini_website`. Clearing analytics from either management page is
-also scoped to that page type and must never remove the other type's data.
+use `pageType=mini_website`. Mini Website management is available only in the
+Creator and Platform workspaces. Clearing analytics is scoped to its page type
+and must never remove the other type's data.
 
 - linktree creation, editing, deletion, publication status, default-page
   selection, slug checks, link ordering, link batch synchronization, image
   uploads, template selection, footer settings, and WhatsApp modal settings;
-- mini-website creation, editing, deletion, publication status, slug checks,
-  section management, image uploads, and public preview;
 - template browsing subject to the business's plan;
 - profile and branding management, including logo, favicon, default avatar,
   website color, business name, username, phone, and email;
 - default linktree template, background, footer, and WhatsApp settings;
 - TikTok Pixel and Events API configuration;
 - active-session listing and revocation;
-- analytics summaries, daily and range reporting, breakdowns, visitor
-  journeys, action performance, funnel, retention, and realtime reporting;
-- CRM lead summaries, lead lists, lead-status updates, and lead notes;
+- per-page analytics in the Linktree analytics modal,
+  including views, unique visitors, clicks, unique clickers, conversions,
+  date filtering, and action performance;
 - TikTok delivery health and retry controls;
 - analytics deletion for one public page or the complete business;
 - business notifications, announcement banners, and conversations with the
@@ -782,8 +811,7 @@ effective access manifest. Effective access combines capability rules,
 subscription entitlements, field rules, approval requirements, and quotas —
 see [docs/security.md](security.md#authorization).
 
-Routes: `/business/pages`, `/business/mini-website`, `/business/analytics`,
-`/business/crm`, `/business/tiktok-config`, `/business/templates`,
+Routes: `/business/pages`, `/business/tiktok-config`, `/business/templates`,
 `/business/profile`, `/business/settings`. `/business` redirects to
 `/business/pages`.
 
@@ -820,7 +848,7 @@ The console provides:
 - platform-owned mini-website creation at root-domain `/bio/:slug`, using the
   exact business manager, editor steps, templates, preview, grid/table,
   skeletons, uploads, map resolution, analytics modal, clear actions, public
-  renderer, lead form, and tracking behavior through workspace configuration;
+  renderer and tracking behavior through workspace configuration;
   the grid and table also reuse the Linktree list presentation while injecting
   mini-website status/template badges and action-specific analytics labels;
 - business editing, deletion, session revocation, profile-change
@@ -864,19 +892,24 @@ Routes (mounted beneath the private console path): `/`, `/linktrees`, `/template
 
 Assume `ROOT_DOMAIN=example.com` and a business subdomain of `acme`.
 
-| URL                                         | Result                       |
-| ------------------------------------------- | ---------------------------- |
-| `https://example.com/`                      | Platform landing page        |
-| `https://example.com/<PLATFORM_ADMIN_PATH>` | Platform console             |
-| `https://www.example.com/`                  | Treated as root domain       |
-| `https://example.com/linktree/:uid`         | Platform-owned Linktree      |
-| `https://example.com/bio/:slug`             | Platform-owned mini website  |
-| `https://acme.example.com/`                 | Business public landing page |
-| `https://acme.example.com/linktree/:uid`    | Public linktree              |
-| `https://acme.example.com/bio/:slug`        | Public mini-website          |
-| `https://acme.example.com/login`            | Redirect to business login   |
-| `https://acme.example.com/business/login`   | Business login               |
-| `https://acme.example.com/business`         | Redirect to business pages   |
+| URL                                                 | Result                                       |
+| --------------------------------------------------- | -------------------------------------------- |
+| `https://example.com/`                              | Platform landing page                        |
+| `https://example.com/<PLATFORM_ADMIN_PATH>`         | Platform console                             |
+| `https://www.example.com/`                          | Treated as root domain                       |
+| `https://example.com/linktree/:uid`                 | Platform-owned Linktree                      |
+| `https://example.com/bio/:slug`                     | Platform-owned mini website                  |
+| `https://acme.example.com/`                         | Business public landing page                 |
+| `https://acme.example.com/linktree/:uid`            | Public linktree                              |
+| `https://acme.example.com/bio/:slug`                | Public mini-website                          |
+| `https://acme.example.com/login`                    | Tenant 404                                   |
+| `https://acme.example.com/business/workspace-entry` | Business sign-in                             |
+| `https://acme.example.com/business`                 | Dashboard with session; otherwise tenant 404 |
+
+There are no compatibility redirects for the former tenant login paths.
+Only the workspace-entry route and the single-use handoff consumer are public
+under `/business`; every dashboard route without a business session is
+rewritten to the tenant 404 page.
 
 ### Root marketing website
 
@@ -958,26 +991,20 @@ development, use a wildcard localhost domain such as `http://acme.lvh.me:3011`
 and include every browser origin, including its port, in `CORS_ORIGIN`. Add
 local hostnames used for device testing to `ALLOWED_DEV_ORIGINS`.
 
-## Temporary client-access frontend prototype
+## Client Linktree creation access
 
-The Linktree management screen at `/business/pages` includes a **Client
-invitations** tab containing a deliberately isolated frontend prototype of
-temporary client Linktree creation. It stores mock invitations, PINs, drafts,
-submission state, publication state, and illustrative results in browser
-`localStorage`. The corresponding public demo routes are
-`/client-linktree-demo/:token` and `/client-linktree-demo/:token/results`.
+The **Client invitations** tab on `/business/pages` uses the production
+`/api/client-linktree-invitations` endpoints. Its creation modal asks only for
+the client name and shows the generated link and mandatory PIN once. The list
+shows server state, the resulting page, active-session revocation, and manual
+invitation expiry; no secret is persisted in browser storage.
 
-The prototype performs no mutating API requests, creates no business-owned
-content, uploads no media, and provides no security or tenant boundary. It
-reuses the existing read-only `/api/auth/template-access` response so the mock
-invitation can expose every Linktree template currently available to the
-business. The left-to-right client route reuses the shared Linktree editor
-modal and wizard steps through a typed browser-local workflow. That workflow
-uses the invitation's template snapshot, skips availability checks, converts
-images to bounded local previews instead of uploading them, hides business-only
-fields, and applies the invitation's link limit. PIN attempts are bounded only
-for the current browser session; this is demo behavior, not authentication.
-Invitation state remains browser-local. Its visible warnings are part of the
-product contract: it is for evaluating UI and workflow only, never for real
-clients or sensitive information. The future production implementation remains specified in
-`docs/new-feature-client-linktree-access.md`.
+The client route is `/client-linktree#TOKEN`. It removes the fragment before
+exchanging the token and PIN, resumes only through an HttpOnly cookie, and uses
+the shared tenant-branded authentication shell. Successful verification opens
+a responsive client dashboard. Before creation it launches
+`ReusableLinktreeEditorModal` with the inviting business's current templates
+and a restricted validated image-upload endpoint; business-only fields remain
+disabled. After submission the dashboard exposes read-only totals and link
+clicks only for the resulting page. See
+`docs/new-feature-client-linktree-access.md` for the complete contract.

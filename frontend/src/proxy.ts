@@ -101,33 +101,6 @@ function rewriteNotFound(
   );
 }
 
-function createSubdomainRedirect(
-  request: NextRequest,
-  subdomain: string,
-  path: string,
-  cookieName: string,
-  csp: string,
-): NextResponse {
-  const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
-  // In development, preserve the port from the current request
-  const host = request.headers.get("host") || "";
-  const port = host.includes(":") ? `:${host.split(":")[1]}` : "";
-  const loginUrl = new URL(
-    `${protocol}://${subdomain}.${ROOT_DOMAIN}${port}${path}`,
-  );
-  const response = NextResponse.redirect(loginUrl);
-
-  response.cookies.set(cookieName, "", {
-    expires: new Date(0),
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-  });
-
-  return withCsp(response, csp);
-}
-
 /**
  * Checks page-request subdomains; backend guards validate API tenants directly.
  * Result is NOT cached — each request to an business-prefixed route validates it.
@@ -304,18 +277,18 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
 
   // ── Business routes on a subdomain ──────────────────────────────────────────
   if (subdomain && pathname.startsWith("/business")) {
-    // Subdomain is valid — check session for protected business routes
+    // Only the explicit workspace entry and the single-use OAuth handoff are
+    // public. Protected routes disclose nothing when no session is present.
     if (
-      !pathname.startsWith("/business/login") &&
+      pathname !== "/business/workspace-entry" &&
       !pathname.startsWith("/business/auth/consume")
     ) {
       const sessionToken = request.cookies.get("business_session")?.value;
       if (!sessionToken) {
-        return createSubdomainRedirect(
+        return rewriteNotFound(
           request,
-          subdomain,
-          "/business/login",
-          "business_session",
+          "/__public-not-found",
+          requestHeaders,
           csp,
         );
       }
@@ -383,6 +356,16 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     });
     response.headers.set("Cache-Control", "no-store, private");
     response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+    return withCsp(response, csp);
+  }
+
+  if (pathname === "/client-linktree") {
+    const response = NextResponse.next({
+      request: { headers: requestHeaders },
+    });
+    response.headers.set("Cache-Control", "no-store, private");
+    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+    response.headers.set("Referrer-Policy", "no-referrer");
     return withCsp(response, csp);
   }
 

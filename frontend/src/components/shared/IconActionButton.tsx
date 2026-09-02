@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 /**
  * The small icon control used for row actions — reorder, remove, add.
@@ -29,15 +30,16 @@ export function IconActionButton({
       : "text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/10 dark:hover:text-slate-200";
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      title={label}
-      aria-label={label}
-      className={`rounded-lg p-1.5 transition disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent ${toneClasses}`}
-    >
-      {children}
-    </button>
+    <Tooltip content={label} side="top">
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        aria-label={label}
+        className={`rounded-lg p-1.5 transition disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer ${toneClasses}`}
+      >
+        {children}
+      </button>
+    </Tooltip>
   );
 }

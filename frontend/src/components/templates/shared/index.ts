@@ -19,3 +19,7 @@ export {
   type TemplateViewportLayoutProps,
 } from "./TemplateViewportLayout";
 export { templateBackgroundStyle } from "./template-background";
+export {
+  TemplateLinkLabel,
+  type TemplateLinkLabelProps,
+} from "./TemplateLinkLabel";

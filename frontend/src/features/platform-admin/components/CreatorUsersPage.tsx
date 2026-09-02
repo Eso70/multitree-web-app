@@ -20,6 +20,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { StatCard } from "@/components/shared/StatCard";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
 import { SearchModal } from "@/components/shared/SearchModal";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { CreatorDetailModal } from "@/features/platform-admin/components/CreatorDetailModal";
 import { CreatorUsersTable } from "@/features/platform-admin/components/CreatorUsersTable";
 import type {
@@ -186,48 +187,52 @@ export function CreatorUsersPage() {
           icon={Users}
           action={
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() =>
-                  query.trim() ? changeQuery("") : setIsSearchModalOpen(true)
-                }
-                className={`group relative flex h-10 w-10 items-center justify-center rounded-xl border px-0 shadow-sm transition-all duration-300 hover:shadow cursor-pointer ${query.trim() ? "" : "sm:w-44 sm:justify-between sm:px-3.5"} ${
-                  isSearchModalOpen
-                    ? "sa-soft sa-soft-border"
-                    : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50/50 hover:text-slate-750 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
-                }`}
-                aria-label={query.trim() ? "Clear search" : "Search"}
-                title={query.trim() ? "پاککردنەوەی گەڕان" : "گەڕان (Ctrl+K)"}
-              >
-                {query.trim() ? (
-                  <X className="h-4 w-4 text-slate-500 transition-transform group-hover:scale-110 dark:text-gray-400" />
-                ) : (
-                  <>
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Search className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:scale-110 dark:text-gray-500" />
-                      <span className="hidden truncate text-xs font-semibold text-slate-400 transition-colors group-hover:text-slate-650 dark:text-gray-500 dark:group-hover:text-gray-300 sm:inline">
-                        گەڕان...
-                      </span>
-                    </div>
-                    <kbd className="hidden select-none items-center gap-0.5 rounded bg-slate-100 px-1 py-0.5 font-sans text-[8px] font-bold text-slate-400 dark:bg-white/10 dark:text-gray-500 sm:inline-flex">
-                      <span>Ctrl</span>
-                      <span>K</span>
-                    </kbd>
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => void load(true)}
-                disabled={refreshing}
-                className="group flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:shadow disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
-                title="نوێکردنەوە"
-                aria-label="نوێکردنەوە"
-              >
-                <MotionSpinner active={refreshing}>
-                  <RefreshCw className="h-4 w-4" />
-                </MotionSpinner>
-              </button>
+              <Tooltip content={query.trim() ? "پاککردنەوەی گەڕان" : "گەڕان (Ctrl+K)"} side="top">
+                <button
+                  type="button"
+                  onClick={() =>
+                    query.trim() ? changeQuery("") : setIsSearchModalOpen(true)
+                  }
+                  className={`group relative flex h-10 w-10 items-center justify-center rounded-xl border px-0 shadow-sm transition-all duration-300 hover:shadow cursor-pointer ${query.trim() ? "" : "sm:w-44 sm:justify-between sm:px-3.5"} ${
+                    isSearchModalOpen
+                      ? "sa-soft sa-soft-border"
+                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50/50 hover:text-slate-750 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
+                  }`}
+                  aria-label={query.trim() ? "Clear search" : "Search"}
+                  title={query.trim() ? "پاککردنەوەی گەڕان" : "گەڕان (Ctrl+K)"}
+                >
+                  {query.trim() ? (
+                    <X className="h-4 w-4 text-slate-500 transition-transform group-hover:scale-110 dark:text-gray-400" />
+                  ) : (
+                    <>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <Search className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:scale-110 dark:text-gray-500" />
+                        <span className="hidden truncate text-xs font-semibold text-slate-400 transition-colors group-hover:text-slate-650 dark:text-gray-500 dark:group-hover:text-gray-300 sm:inline">
+                          گەڕان...
+                        </span>
+                      </div>
+                      <kbd className="hidden select-none items-center gap-0.5 rounded bg-slate-100 px-1 py-0.5 font-sans text-[8px] font-bold text-slate-400 dark:bg-white/10 dark:text-gray-500 sm:inline-flex">
+                        <span>Ctrl</span>
+                        <span>K</span>
+                      </kbd>
+                    </>
+                  )}
+                </button>
+              </Tooltip>
+              <Tooltip content="نوێکردنەوە" side="bottom">
+                <button
+                  type="button"
+                  onClick={() => void load(true)}
+                  disabled={refreshing}
+                  className="group flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:shadow disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 cursor-pointer"
+                  title="نوێکردنەوە"
+                  aria-label="نوێکردنەوە"
+                >
+                  <MotionSpinner active={refreshing}>
+                    <RefreshCw className="h-4 w-4" />
+                  </MotionSpinner>
+                </button>
+              </Tooltip>
             </div>
           }
         />

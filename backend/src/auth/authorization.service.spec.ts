@@ -62,7 +62,7 @@ describe('AuthorizationService business policy engine', () => {
     expect(decision.reasonCode).toBe('NO_PERMISSION');
   });
 
-  it('keeps simple analytics available while advanced analytics is excluded', async () => {
+  it('keeps page analytics available when TikTok is excluded', async () => {
     jest
       .spyOn(service as never, 'getBusinessPolicy' as never)
       .mockResolvedValue(
@@ -84,8 +84,8 @@ describe('AuthorizationService business policy engine', () => {
               conditions: {},
               source: 'plan',
             },
-            'business:analytics:advanced-read': {
-              key: 'business:analytics:advanced-read',
+            'business:analytics:tiktok-health-read': {
+              key: 'business:analytics:tiktok-health-read',
               accessMode: 'direct',
               fieldModes: {},
               resourceScope: { type: 'all' },
@@ -93,20 +93,20 @@ describe('AuthorizationService business policy engine', () => {
               source: 'plan',
             },
           },
-          entitlements: { 'feature.advanced_analytics': false },
+          entitlements: { 'feature.tiktok': false },
         }) as never,
       );
 
-    const [totals, details, advanced] = await Promise.all([
+    const [totals, details, tiktokHealth] = await Promise.all([
       service.authorize(request('business:analytics:totals-read')),
       service.authorize(request('business:analytics:details-read')),
-      service.authorize(request('business:analytics:advanced-read')),
+      service.authorize(request('business:analytics:tiktok-health-read')),
     ]);
 
     expect(totals.outcome).toBe('allow');
     expect(details.outcome).toBe('allow');
-    expect(advanced.outcome).toBe('deny');
-    expect(advanced.reasonCode).toBe('FEATURE_NOT_INCLUDED');
+    expect(tiktokHealth.outcome).toBe('deny');
+    expect(tiktokHealth.reasonCode).toBe('FEATURE_NOT_INCLUDED');
   });
 
   it('allows a platform administrator without a role lookup', async () => {
@@ -287,41 +287,39 @@ describe('AuthorizationService business policy engine', () => {
     expect(policySpy).not.toHaveBeenCalled();
   });
 
-  it.each(['business:linktrees:create', 'business:mini-websites:create'])(
-    'denies %s when the shared public-page quota is exhausted',
-    async (permission) => {
-      jest
-        .spyOn(service as never, 'getBusinessPolicy' as never)
-        .mockResolvedValue(
-          policy({
-            permissions: {
-              [permission]: {
-                key: permission,
-                accessMode: 'direct',
-                fieldModes: {},
-                resourceScope: { type: 'all' },
-                conditions: {},
-                source: 'plan',
-              },
+  it('denies Linktree creation when the public-page quota is exhausted', async () => {
+    const permission = 'business:linktrees:create';
+    jest
+      .spyOn(service as never, 'getBusinessPolicy' as never)
+      .mockResolvedValue(
+        policy({
+          permissions: {
+            [permission]: {
+              key: permission,
+              accessMode: 'direct',
+              fieldModes: {},
+              resourceScope: { type: 'all' },
+              conditions: {},
+              source: 'plan',
             },
-            entitlements: { 'limit.linktrees': 2 },
-          }) as never,
-        );
-      jest
-        .spyOn(service as never, 'getQuotaUsage' as never)
-        .mockResolvedValue(2 as never);
+          },
+          entitlements: { 'limit.linktrees': 2 },
+        }) as never,
+      );
+    jest
+      .spyOn(service as never, 'getQuotaUsage' as never)
+      .mockResolvedValue(2 as never);
 
-      const decision = await service.authorize(request(permission));
+    const decision = await service.authorize(request(permission));
 
-      expect(decision.reasonCode).toBe('QUOTA_EXCEEDED');
-      expect(decision.quota).toEqual({
-        key: 'limit.linktrees',
-        limit: 2,
-        used: 2,
-        remaining: 0,
-      });
-    },
-  );
+    expect(decision.reasonCode).toBe('QUOTA_EXCEEDED');
+    expect(decision.quota).toEqual({
+      key: 'limit.linktrees',
+      limit: 2,
+      used: 2,
+      remaining: 0,
+    });
+  });
 
   it('counts Linktrees and non-archived mini-websites in one quota query', async () => {
     jest.restoreAllMocks();

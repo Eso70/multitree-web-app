@@ -45,8 +45,8 @@ addition, not a migration of existing server data.
 
 `public_pages` is the canonical identity every public surface gets, and
 `analytics_visitors.first_public_page_id`, `analytics_sessions.landing_public_page_id`,
-`analytics_events.public_page_id`, `public_page_actions`, `crm_audience_exports`,
-and `marketing_event_outbox` all hang off it. Pixel attribution and CRM export
+`analytics_events.public_page_id`, `public_page_actions`, and
+`marketing_event_outbox` all hang off it. Pixel attribution and conversion
 to TikTok Ads is what the product sells. An advertising page outside
 `public_pages` could not join that pipeline without a second, parallel one,
 which AGENTS.md forbids.
@@ -60,7 +60,7 @@ holds without change. The `page_type` CHECK, the source-column XOR CHECK, and
 
 Alternative rejected: a standalone `advertising_*` island with its own event
 table. Cheaper to write, and it would have made the advertising page the one
-public surface whose conversions never reach CRM or the TikTok pixel.
+public surface whose conversions never reach internal analytics or TikTok.
 
 ### 2. Content is relational, not one `jsonb` blob
 

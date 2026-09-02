@@ -16,6 +16,8 @@ export interface TemplateViewportLayoutProps {
   backgroundPattern?: BackgroundPatternStyle | null;
   /** Colour the pattern is stroked in. Defaults to the page text colour. */
   backgroundPatternAccent?: string;
+  /** Optional visual-strength multiplier for templates with ambient overlays. */
+  backgroundPatternOpacityScale?: number;
 }
 
 /**
@@ -34,6 +36,7 @@ export const TemplateViewportLayout = memo(function TemplateViewportLayout({
   footer,
   backgroundPattern = null,
   backgroundPatternAccent = "#ffffff",
+  backgroundPatternOpacityScale = 1,
 }: TemplateViewportLayoutProps) {
   return (
     <div
@@ -48,6 +51,7 @@ export const TemplateViewportLayout = memo(function TemplateViewportLayout({
         <BackgroundPattern
           accent={backgroundPatternAccent}
           className={`pointer-events-none ${isPreview ? "absolute" : "fixed"} inset-0 h-full w-full`}
+          opacityScale={backgroundPatternOpacityScale}
           style={backgroundPattern}
         />
       )}

@@ -39,50 +39,41 @@ afterEach(() => {
   vi.resetModules();
 });
 
-describe("getSubdomainLoginUrl on the server", () => {
+describe("getBusinessWorkspaceEntryUrl on the server", () => {
   it("uses http for local development", async () => {
-    const { getSubdomainLoginUrl } = await loadAppUrl({
+    const { getBusinessWorkspaceEntryUrl } = await loadAppUrl({
       NEXT_PUBLIC_APP_URL: "http://lvh.me:3011",
       NEXT_PUBLIC_ROOT_DOMAIN: "lvh.me:3011",
       NODE_ENV: "development",
     });
 
-    expect(getSubdomainLoginUrl("acme")).toBe(
-      "http://acme.lvh.me:3011/business/login",
+    expect(getBusinessWorkspaceEntryUrl("acme")).toBe(
+      "http://acme.lvh.me:3011/business/workspace-entry",
     );
   });
 
   it("uses https for the live server", async () => {
-    const { getSubdomainLoginUrl } = await loadAppUrl({
+    const { getBusinessWorkspaceEntryUrl } = await loadAppUrl({
       NEXT_PUBLIC_APP_URL: "https://sponsor.krd",
       NEXT_PUBLIC_ROOT_DOMAIN: "sponsor.krd",
       NODE_ENV: "production",
     });
 
-    expect(getSubdomainLoginUrl("acme")).toBe(
-      "https://acme.sponsor.krd/business/login",
+    expect(getBusinessWorkspaceEntryUrl("acme")).toBe(
+      "https://acme.sponsor.krd/business/workspace-entry",
     );
   });
 
   it("falls back to https in production when the app URL is unset", async () => {
-    const { getSubdomainLoginUrl } = await loadAppUrl({
+    const { getBusinessWorkspaceEntryUrl } = await loadAppUrl({
       NEXT_PUBLIC_APP_URL: undefined,
       NEXT_PUBLIC_ROOT_DOMAIN: "sponsor.krd",
       NODE_ENV: "production",
     });
 
-    expect(getSubdomainLoginUrl("acme")).toBe(
-      "https://acme.sponsor.krd/business/login",
+    expect(getBusinessWorkspaceEntryUrl("acme")).toBe(
+      "https://acme.sponsor.krd/business/workspace-entry",
     );
-  });
-
-  it("returns the root login path when there is no subdomain", async () => {
-    const { getSubdomainLoginUrl } = await loadAppUrl({
-      NEXT_PUBLIC_APP_URL: "http://lvh.me:3011",
-      NODE_ENV: "development",
-    });
-
-    expect(getSubdomainLoginUrl()).toBe("/login");
   });
 });
 

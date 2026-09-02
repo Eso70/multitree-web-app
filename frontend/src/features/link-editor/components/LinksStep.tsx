@@ -11,6 +11,7 @@ import { modalInputClass } from "../modal-input-styles";
 import { StandardPlatformInput } from "./StandardPlatformInput";
 import { IconActionButton } from "@/components/shared/IconActionButton";
 import { RequiredMark } from "@/components/shared/RequiredMark";
+import { Tooltip } from "@/components/shared/Tooltip";
 import React from "react";
 import type { SocialLink } from "@/features/link-editor/types";
 import { parseUploadedIconValue } from "@/features/link-editor/custom-icon-value";
@@ -231,21 +232,29 @@ const LinkItem = memo(function LinkItem({
           
           {/* Display Name and Color Customization Input Row */}
           <div className="flex items-center gap-2 w-full">
-            <button
-              type="button"
-              onClick={() => setIsColorPickerOpen(true)}
-              disabled={colorDisabled}
-              className="relative shrink-0 w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 lg:h-12 overflow-hidden rounded-lg sm:rounded-xl md:rounded-2xl border border-gray-300 bg-white shadow-sm transition-all duration-200 cursor-pointer group hover:border-gray-400 focus:outline-none focus:ring-2 focus:border-brand-500 focus:ring-brand-500/30 disabled:cursor-not-allowed disabled:opacity-45 dark:border-white/10 dark:bg-[#161B22] dark:hover:border-white/20"
-              title={colorDisabled ? "ئەم وێنەیە پاشبنەمای خۆی هەیە" : "ڕەنگی دوگمە"}
+            <Tooltip
+              content={
+                colorDisabled ? "ئەم وێنەیە پاشبنەمای خۆی هەیە" : "ڕەنگی دوگمە"
+              }
+              side="top"
             >
-              {!colorDisabled && customColor ? (
-                <span className="absolute inset-0" style={{ background: customColor }} />
-              ) : (
-                <span className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-500 transition-colors group-hover:bg-gray-100 dark:bg-white/5 dark:text-gray-300 dark:group-hover:bg-white/10">
-                  <Palette className="h-4 w-4" />
-                </span>
-              )}
-            </button>
+              <button
+                type="button"
+                onClick={() => setIsColorPickerOpen(true)}
+                disabled={colorDisabled}
+                className="relative shrink-0 w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 lg:h-12 overflow-hidden rounded-lg sm:rounded-xl md:rounded-2xl border border-gray-300 bg-white shadow-sm transition-all duration-200 cursor-pointer group hover:border-gray-400 focus:outline-none focus:ring-2 focus:border-brand-500 focus:ring-brand-500/30 disabled:cursor-not-allowed disabled:opacity-45 dark:border-white/10 dark:bg-[#161B22] dark:hover:border-white/20"
+                title={colorDisabled ? "ئەم وێنەیە پاشبنەمای خۆی هەیە" : "ڕەنگی دوگمە"}
+                aria-label={colorDisabled ? "ئەم وێنەیە پاشبنەمای خۆی هەیە" : "ڕەنگی دوگمە"}
+              >
+                {!colorDisabled && customColor ? (
+                  <span className="absolute inset-0" style={{ background: customColor }} />
+                ) : (
+                  <span className="absolute inset-0 flex items-center justify-center bg-gray-50 text-gray-500 transition-colors group-hover:bg-gray-100 dark:bg-white/5 dark:text-gray-300 dark:group-hover:bg-white/10">
+                    <Palette className="h-4 w-4" />
+                  </span>
+                )}
+              </button>
+            </Tooltip>
             <ColorGradientModal
               isOpen={isColorPickerOpen}
               value={customColor || "#000000"}
@@ -261,14 +270,16 @@ const LinkItem = memo(function LinkItem({
               placeholder="ئەگەر بەتاڵ بێت ناوی ئینگلیزی بەکاردێت"
               className={modalInputClass(!!error, "flex-1 md:rounded-2xl md:px-5 md:py-3.5 text-xs sm:text-sm md:text-base font-kurdish")}
             />
-            <button
-              type="button"
-              onClick={handleToggleDisplayName}
-              className="shrink-0 px-2 sm:px-3 py-2.5 sm:py-3 md:py-3.5 rounded-lg sm:rounded-xl md:rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 transition-colors text-xs sm:text-sm md:text-base font-kurdish"
-              title="Kurdish/English"
-            >
-              {((displayName || "").trim() === getPlatformNameKurdish(platform.id)) ? "English" : "کوردی"}
-            </button>
+            <Tooltip content="گۆڕینی زمان (کوردی / ئینگلیزی)" side="top">
+              <button
+                type="button"
+                onClick={handleToggleDisplayName}
+                className="shrink-0 px-2 sm:px-3 py-2.5 sm:py-3 md:py-3.5 rounded-lg sm:rounded-xl md:rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 transition-colors text-xs sm:text-sm md:text-base font-kurdish cursor-pointer"
+                aria-label="Kurdish/English"
+              >
+                {((displayName || "").trim() === getPlatformNameKurdish(platform.id)) ? "English" : "کوردی"}
+              </button>
+            </Tooltip>
           </div>
         </div>
       </div>

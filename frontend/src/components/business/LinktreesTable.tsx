@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { memo, useCallback, useState, type ComponentType } from "react";
 import Image from "next/image";
@@ -6,11 +6,13 @@ import {
   Trash2,
   Eye,
   Copy,
+  CopyPlus,
   Check,
   Edit,
   Link as LinkIcon,
   MousePointerClick,
 } from "lucide-react";
+import { toast } from "sonner";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { formatDate, getAbsoluteUrl } from "@/lib/utils/linktree-utils";
 import {
@@ -27,12 +29,14 @@ import {
   type PageListTrafficLabels,
 } from "@/components/business/LinktreeMeta";
 import type { LinktreeListItem as Linktree } from "@linktree/types";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 interface LinktreesTableProps {
   publicPathPrefix?: string;
   data?: Linktree[];
   isLoading?: boolean;
   onEdit?: (id: string) => void;
+  onDuplicate?: (item: Linktree) => void;
   onDelete?: (id: string, uid: string, name: string) => void;
   onViewAnalytics?: (id: string, name: string) => void;
   viewActionLabel?: string;
@@ -102,6 +106,7 @@ function getPublicIdentifier(item: Linktree): string {
 const TableRow = memo(function TableRow({
   item,
   onEdit,
+  onDuplicate,
   onDelete,
   onViewAnalytics,
   copiedUid,
@@ -116,6 +121,7 @@ const TableRow = memo(function TableRow({
 }: {
   item: Linktree;
   onEdit?: (id: string) => void;
+  onDuplicate?: (item: Linktree) => void;
   onDelete?: (id: string, uid: string, name: string) => void;
   onViewAnalytics?: (id: string, name: string) => void;
   copiedUid: string | null;
@@ -209,40 +215,40 @@ const TableRow = memo(function TableRow({
           >
             {publicPathPrefix}/{publicIdentifier}
           </a>
-          <button
-            onClick={(e) => onCopy(publicIdentifier, e)}
-            className="p-0.5 sm:p-1 rounded hover:bg-gray-100 transition-colors duration-200 shrink-0 cursor-pointer"
-            title="کۆپیکردنی بەستەر"
-          >
-            {copiedUid === publicIdentifier ? (
-              <Check className="h-3 w-3 text-green-600" />
-            ) : (
-              <Copy className="h-3 w-3 text-gray-500 hover:text-gray-700" />
-            )}
-          </button>
+          <Tooltip content={copiedUid === publicIdentifier ? "کۆپیکرا" : "کۆپیکردنی بەستەر"} side="top">
+            <button
+              onClick={(e) => onCopy(publicIdentifier, e)}
+              className="p-1 rounded hover:bg-gray-100 transition-colors shrink-0 cursor-pointer"
+              aria-label="کۆپیکردنی بەستەر"
+            >
+              {copiedUid === publicIdentifier ? (
+                <Check className="h-3 w-3 text-green-600" />
+              ) : (
+                <Copy className="h-3 w-3 text-gray-500 hover:text-gray-700" />
+              )}
+            </button>
+          </Tooltip>
         </div>
       </td>
       {showTraffic && (
         <td className="px-2 sm:px-3 py-3 hidden sm:table-cell">
           <div className="flex items-center gap-3">
-            <span
-              className="inline-flex items-center gap-1"
-              title={trafficLabels.views}
-            >
-              <Eye className="h-3 w-3 shrink-0 text-gray-400" />
-              <span className="text-xs font-bold text-gray-700">
-                {(item.analytics?.unique_views ?? 0).toLocaleString()}
+            <Tooltip content={trafficLabels.views} side="top">
+              <span className="inline-flex items-center gap-1 cursor-default">
+                <Eye className="h-3 w-3 shrink-0 text-gray-400" />
+                <span className="text-xs font-bold text-gray-700">
+                  {(item.analytics?.unique_views ?? 0).toLocaleString()}
+                </span>
               </span>
-            </span>
-            <span
-              className="inline-flex items-center gap-1"
-              title={trafficLabels.interactions}
-            >
-              <MousePointerClick className="h-3 w-3 shrink-0 text-gray-400" />
-              <span className="text-xs font-bold text-gray-700">
-                {(item.analytics?.unique_clicks ?? 0).toLocaleString()}
+            </Tooltip>
+            <Tooltip content={trafficLabels.interactions} side="top">
+              <span className="inline-flex items-center gap-1 cursor-default">
+                <MousePointerClick className="h-3 w-3 shrink-0 text-gray-400" />
+                <span className="text-xs font-bold text-gray-700">
+                  {(item.analytics?.unique_clicks ?? 0).toLocaleString()}
+                </span>
               </span>
-            </span>
+            </Tooltip>
           </div>
         </td>
       )}
@@ -259,31 +265,49 @@ const TableRow = memo(function TableRow({
       <td className="px-2 sm:px-3 py-3">
         <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap justify-start">
           {onViewAnalytics && (
-            <button
-              onClick={() => onViewAnalytics(item.id, item.name)}
-              className="p-1 sm:p-1.5 rounded hover:bg-sky-50 transition-colors duration-200 shrink-0 cursor-pointer"
-              title={viewActionLabel}
-            >
-              <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-sky-600 hover:text-sky-700" />
-            </button>
+            <Tooltip content={viewActionLabel} side="top">
+              <button
+                onClick={() => onViewAnalytics(item.id, item.name)}
+                className="p-1 sm:p-1.5 rounded hover:bg-sky-50 transition-colors duration-200 shrink-0 cursor-pointer"
+                aria-label={viewActionLabel}
+              >
+                <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-sky-600 hover:text-sky-700" />
+              </button>
+            </Tooltip>
           )}
           {onEdit && (
-            <button
-              onClick={() => onEdit(item.id)}
-              className="p-1 sm:p-1.5 rounded hover:bg-yellow-50 transition-colors duration-200 shrink-0 cursor-pointer"
-              title="دەستکاریکردن"
-            >
-              <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-600 hover:text-yellow-700" />
-            </button>
+            <Tooltip content="دەستکاریکردن" side="top">
+              <button
+                onClick={() => onEdit(item.id)}
+                className="p-1 sm:p-1.5 rounded hover:bg-yellow-50 transition-colors duration-200 shrink-0 cursor-pointer"
+                aria-label="دەستکاریکردن"
+              >
+                <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-600 hover:text-yellow-700" />
+              </button>
+            </Tooltip>
+          )}
+          {onDuplicate && (
+            <Tooltip content="لەبەرگرتنەوە" side="top">
+              <button
+                onClick={() => onDuplicate(item)}
+                className="p-1 sm:p-1.5 rounded transition-colors duration-200 shrink-0 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5"
+                style={{ color: "var(--theme-primary, #6366f1)" }}
+                aria-label="لەبەرگرتنەوە"
+              >
+                <CopyPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>
+            </Tooltip>
           )}
           {onDelete && item.uid !== "id" && !item.is_default && (
-            <button
-              onClick={() => onDelete(item.id, item.uid, item.name)}
-              className="p-1 sm:p-1.5 rounded hover:bg-red-50 transition-colors duration-200 shrink-0 cursor-pointer"
-              title="سڕینەوە"
-            >
-              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600 hover:text-red-700" />
-            </button>
+            <Tooltip content="سڕینەوە" side="top">
+              <button
+                onClick={() => onDelete(item.id, item.uid, item.name)}
+                className="p-1 sm:p-1.5 rounded hover:bg-red-50 transition-colors duration-200 shrink-0 cursor-pointer"
+                aria-label="سڕینەوە"
+              >
+                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600 hover:text-red-700" />
+              </button>
+            </Tooltip>
           )}
         </div>
       </td>
@@ -296,6 +320,7 @@ const TableRow = memo(function TableRow({
 const MobileCard = memo(function MobileCard({
   item,
   onEdit,
+  onDuplicate,
   onDelete,
   onViewAnalytics,
   copiedUid,
@@ -310,6 +335,7 @@ const MobileCard = memo(function MobileCard({
 }: {
   item: Linktree;
   onEdit?: (id: string) => void;
+  onDuplicate?: (item: Linktree) => void;
   onDelete?: (id: string, uid: string, name: string) => void;
   onViewAnalytics?: (id: string, name: string) => void;
   copiedUid: string | null;
@@ -366,57 +392,82 @@ const MobileCard = memo(function MobileCard({
           </div>
           <div className="flex items-center gap-1">
             {onViewAnalytics && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewAnalytics(item.id, item.name);
-                }}
-                className="flex items-center justify-center p-2 rounded-lg hover:bg-sky-50 transition-colors cursor-pointer"
-                title={viewActionLabel}
-                aria-label={viewActionLabel}
-              >
-                <Eye className="h-4 w-4 text-sky-600" />
-              </button>
+              <Tooltip content={viewActionLabel} side="top">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewAnalytics(item.id, item.name);
+                  }}
+                  className="flex items-center justify-center p-2 rounded-lg hover:bg-sky-50 transition-colors cursor-pointer"
+                  aria-label={viewActionLabel}
+                >
+                  <Eye className="h-4 w-4 text-sky-600" />
+                </button>
+              </Tooltip>
             )}
             {onEdit && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(item.id);
-                }}
-                className="flex items-center justify-center p-2 rounded-lg hover:bg-yellow-50 transition-colors cursor-pointer"
-              >
-                <Edit className="h-4 w-4 text-yellow-600" />
-              </button>
+              <Tooltip content="دەستکاریکردن" side="top">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(item.id);
+                  }}
+                  className="flex items-center justify-center p-2 rounded-lg hover:bg-yellow-50 transition-colors cursor-pointer"
+                  aria-label="دەستکاریکردن"
+                >
+                  <Edit className="h-4 w-4 text-yellow-600" />
+                </button>
+              </Tooltip>
+            )}
+            {onDuplicate && (
+              <Tooltip content="لەبەرگرتنەوە" side="top">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicate(item);
+                  }}
+                  className="flex items-center justify-center p-2 rounded-lg transition-colors cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5"
+                  style={{ color: "var(--theme-primary, #6366f1)" }}
+                  aria-label="لەبەرگرتنەوە"
+                >
+                  <CopyPlus className="h-4 w-4" />
+                </button>
+              </Tooltip>
             )}
             {onDelete && item.uid !== "id" && !item.is_default && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(item.id, item.uid, item.name);
-                }}
-                className="flex items-center justify-center p-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-              >
-                <Trash2 className="h-4 w-4 text-red-600" />
-              </button>
+              <Tooltip content="سڕینەوە" side="top">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(item.id, item.uid, item.name);
+                  }}
+                  className="flex items-center justify-center p-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                  aria-label="سڕینەوە"
+                >
+                  <Trash2 className="h-4 w-4 text-red-600" />
+                </button>
+              </Tooltip>
             )}
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs text-gray-700">
-          <button
-            onClick={(e) => onCopy(publicIdentifier, e)}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
-          >
-            {copiedUid === publicIdentifier ? (
-              <Check className="h-3.5 w-3.5 text-green-600" />
-            ) : (
-              <Copy className="h-3.5 w-3.5 text-gray-500" />
-            )}
-            <span className="font-mono">
-              {publicPathPrefix}/{publicIdentifier}
-            </span>
-          </button>
+          <Tooltip content={copiedUid === publicIdentifier ? "کۆپیکرا" : "کۆپیکردنی بەستەر"} side="top">
+            <button
+              onClick={(e) => onCopy(publicIdentifier, e)}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer"
+              aria-label="کۆپیکردنی بەستەر"
+            >
+              {copiedUid === publicIdentifier ? (
+                <Check className="h-3.5 w-3.5 text-green-600" />
+              ) : (
+                <Copy className="h-3.5 w-3.5 text-gray-500" />
+              )}
+              <span className="font-mono text-gray-700">
+                {publicPathPrefix}/{publicIdentifier}
+              </span>
+            </button>
+          </Tooltip>
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-200 text-gray-600 bg-gray-50">
             دروستکراوە {formatDate(item.created_at)}
           </span>
@@ -425,20 +476,18 @@ const MobileCard = memo(function MobileCard({
           </span>
           {showPageMeta && item.analytics && (
             <span className="inline-flex items-center gap-2 px-2 py-1 rounded-lg border border-gray-200 bg-gray-50 text-gray-600">
-              <span
-                className="inline-flex items-center gap-1"
-                title={trafficLabels.views}
-              >
-                <Eye className="h-3.5 w-3.5 text-gray-400" />
-                {item.analytics.unique_views.toLocaleString()}
-              </span>
-              <span
-                className="inline-flex items-center gap-1"
-                title={trafficLabels.interactions}
-              >
-                <MousePointerClick className="h-3.5 w-3.5 text-gray-400" />
-                {item.analytics.unique_clicks.toLocaleString()}
-              </span>
+              <Tooltip content={trafficLabels.views} side="top">
+                <span className="inline-flex items-center gap-1 cursor-default">
+                  <Eye className="h-3.5 w-3.5 text-gray-400" />
+                  {item.analytics.unique_views.toLocaleString()}
+                </span>
+              </Tooltip>
+              <Tooltip content={trafficLabels.interactions} side="top">
+                <span className="inline-flex items-center gap-1 cursor-default">
+                  <MousePointerClick className="h-3.5 w-3.5 text-gray-400" />
+                  {item.analytics.unique_clicks.toLocaleString()}
+                </span>
+              </Tooltip>
             </span>
           )}
         </div>
@@ -452,6 +501,7 @@ export const LinktreesTable = memo(function LinktreesTable({
   data = [],
   isLoading = false,
   onEdit,
+  onDuplicate,
   onDelete,
   onViewAnalytics,
   viewActionLabel = "ئامار",
@@ -485,6 +535,9 @@ export const LinktreesTable = memo(function LinktreesTable({
         setTimeout(() => {
           setCopiedUid(null);
         }, 2000);
+        toast.success("بەستەرەکە کۆپی کرا");
+      } else {
+        toast.error("کۆپیکردنی بەستەر سەرکەوتوو نەبوو");
       }
     },
     [publicPathPrefix],
@@ -527,6 +580,7 @@ export const LinktreesTable = memo(function LinktreesTable({
         <TableRow
           item={item}
           onEdit={onEdit}
+          onDuplicate={onDuplicate}
           onDelete={handleDelete}
           onViewAnalytics={onViewAnalytics}
           copiedUid={copiedUid}
@@ -544,6 +598,7 @@ export const LinktreesTable = memo(function LinktreesTable({
         <MobileCard
           item={item}
           onEdit={onEdit}
+          onDuplicate={onDuplicate}
           onDelete={handleDelete}
           onViewAnalytics={onViewAnalytics}
           copiedUid={copiedUid}

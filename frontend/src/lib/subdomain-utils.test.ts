@@ -1,6 +1,6 @@
 ﻿import { describe, it, expect } from "vitest";
 import * as fc from "fast-check";
-import { extractSubdomain } from "./subdomain-utils";
+import { buildSubdomainUrl, extractSubdomain } from "./subdomain-utils";
 
 /**
  * Feature: subdomain-business-routing, Property 8: Subdomain Extraction Precedence
@@ -13,10 +13,13 @@ import { extractSubdomain } from "./subdomain-utils";
 
 /** Valid subdomain: lowercase alphanumeric + hyphens, no leading/trailing hyphens, no dots */
 const arbSimpleSubdomain = fc
-  .array(fc.constantFrom(..."abcdefghijklmnopqrstuvwxyz0123456789-".split("")), {
-    minLength: 1,
-    maxLength: 20,
-  })
+  .array(
+    fc.constantFrom(..."abcdefghijklmnopqrstuvwxyz0123456789-".split("")),
+    {
+      minLength: 1,
+      maxLength: 20,
+    },
+  )
   .map((chars) => chars.join(""))
   .filter((s) => !s.startsWith("-") && !s.endsWith("-") && s.length >= 1);
 
@@ -42,11 +45,7 @@ const arbHostWithoutSubdomain = fc.constantFrom(
 );
 
 /** Host header with only 1 part (e.g., "localhost") */
-const arbHostSinglePart = fc.constantFrom(
-  "localhost",
-  "intranet",
-  "myhost",
-);
+const arbHostSinglePart = fc.constantFrom("localhost", "intranet", "myhost");
 
 /** Host with ≤2 parts (no subdomain extractable from host) */
 const arbHostNoSubdomain = fc.oneof(arbHostWithoutSubdomain, arbHostSinglePart);
@@ -55,7 +54,9 @@ const arbHostNoSubdomain = fc.oneof(arbHostWithoutSubdomain, arbHostSinglePart);
 
 describe("Feature: subdomain-business-routing, Property 8: Subdomain Extraction Precedence", () => {
   it("extracts a localhost tenant when the configured root domain is provided", () => {
-    expect(extractSubdomain("acme.localhost:3011", undefined, "localhost")).toBe("acme");
+    expect(
+      extractSubdomain("acme.localhost:3011", undefined, "localhost"),
+    ).toBe("acme");
   });
 
   describe("8.1: x-subdomain header takes priority over host parsing", () => {
@@ -169,5 +170,31 @@ describe("Feature: subdomain-business-routing, Property 8: Subdomain Extraction 
         { numRuns: 100 },
       );
     });
+  });
+});
+
+describe("tenant URL construction", () => {
+  it("does not duplicate a port configured on the root domain", () => {
+    expect(
+      buildSubdomainUrl({
+        protocol: "http",
+        rootDomain: "lvh.me:3011",
+        requestHost: "localhost:3011",
+        subdomain: "acme",
+        path: "/business/workspace-entry",
+      }).toString(),
+    ).toBe("http://acme.lvh.me:3011/business/workspace-entry");
+  });
+
+  it("preserves the request port when the root domain has none", () => {
+    expect(
+      buildSubdomainUrl({
+        protocol: "http",
+        rootDomain: "localhost",
+        requestHost: "localhost:3011",
+        subdomain: "acme",
+        path: "/business/workspace-entry",
+      }).toString(),
+    ).toBe("http://acme.localhost:3011/business/workspace-entry");
   });
 });

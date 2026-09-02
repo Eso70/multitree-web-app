@@ -9,8 +9,8 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "motion/react";
-import { Check, Layout, Sparkles, X } from "lucide-react";
-import { LockedItemOverlay } from "@/components/shared/LockedContent";
+import { Check, Layout, Lock, Sparkles, X } from "lucide-react";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 
 export type CompactTemplateOption = {
@@ -31,25 +31,26 @@ const CompactTemplateCard = memo(function CompactTemplateCard({
   onSelect: () => void;
 }) {
   return (
-    <motion.button
-      type="button"
-      onClick={disabled ? undefined : onSelect}
-      disabled={disabled}
-      aria-label={template.name}
-      aria-pressed={selected}
-      className={`group relative aspect-4/3 w-full overflow-hidden rounded-xl border-2 ${selected ? "shadow-lg" : "border-slate-200 hover:border-brand-500/40 hover:shadow-md"}`}
-      animate={{ scale: selected ? 1.05 : 1 }}
-      whileHover={disabled ? undefined : { scale: selected ? 1.05 : 1.02 }}
-      style={
-        selected
-          ? ({
-              borderColor: "var(--theme-primary, #64748b)",
-              "--tw-ring-color":
-                "color-mix(in srgb, var(--theme-primary, #64748b) 30%, transparent)",
-            } as CSSProperties)
-          : undefined
-      }
-    >
+    <Tooltip content={disabled ? `${template.name} (قوفڵکراوە)` : template.name} side="top">
+      <motion.button
+        type="button"
+        onClick={disabled ? undefined : onSelect}
+        disabled={disabled}
+        aria-label={template.name}
+        aria-pressed={selected}
+        className={`group relative aspect-4/3 w-full overflow-hidden rounded-xl border-2 cursor-pointer ${selected ? "shadow-lg" : "border-slate-200 hover:border-brand-500/40 hover:shadow-md"}`}
+        animate={{ scale: selected ? 1.05 : 1 }}
+        whileHover={disabled ? undefined : { scale: selected ? 1.05 : 1.02 }}
+        style={
+          selected
+            ? ({
+                borderColor: "var(--theme-primary, #64748b)",
+                "--tw-ring-color":
+                  "color-mix(in srgb, var(--theme-primary, #64748b) 30%, transparent)",
+              } as CSSProperties)
+            : undefined
+        }
+      >
       <div
         className={`absolute inset-0 bg-linear-to-br ${template.previewGradient} transition-opacity duration-300 ${selected ? "opacity-95" : "opacity-70 group-hover:opacity-85"}`}
         aria-hidden
@@ -78,9 +79,14 @@ const CompactTemplateCard = memo(function CompactTemplateCard({
             />
           </div>
         ) : null}
-        {disabled ? <LockedItemOverlay compact roundedClassName="" /> : null}
+        {disabled && (
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-[1px]">
+            <Lock className="h-4 w-4 text-white drop-shadow" />
+          </div>
+        )}
       </div>
     </motion.button>
+    </Tooltip>
   );
 });
 
@@ -174,14 +180,16 @@ export function CompactTemplateSelectorModal({
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="shrink-0 rounded-xl border border-slate-100 bg-linear-to-br from-slate-50 to-gray-50 p-1.5 text-slate-500 shadow-sm transition-all duration-300 hover:from-slate-100 hover:to-gray-100 hover:text-slate-700 hover:shadow sm:p-2"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <Tooltip content="داخستن" side="bottom">
+              <button
+                type="button"
+                onClick={onClose}
+                className="shrink-0 rounded-xl border border-slate-100 bg-linear-to-br from-slate-50 to-gray-50 p-1.5 text-slate-500 shadow-sm transition-all duration-300 hover:from-slate-100 hover:to-gray-100 hover:text-slate-700 hover:shadow sm:p-2 cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </Tooltip>
           </div>
         </div>
         <div

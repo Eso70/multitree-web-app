@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 import { SkeletonList } from "@/components/shared/Skeleton";
 import { CustomSelect } from "@/components/shared/CustomSelect";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { communicationRequest } from "./api";
 import { usePolling } from "@/lib/utils/usePolling";
 import { ChatComposer } from "./ChatComposer";
@@ -223,14 +224,16 @@ export function BusinessMessagesPanel({
   if (view === "new") {
     return (
       <div className="space-y-5">
-        <button
-          type="button"
-          onClick={() => setView("list")}
-          className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-        >
-          <ArrowRight className="h-3.5 w-3.5" />
-          گەڕانەوە بۆ لیستی پەیامەکان
-        </button>
+        <Tooltip content="گەڕانەوە بۆ لیستی پەیامەکان" side="bottom">
+          <button
+            type="button"
+            onClick={() => setView("list")}
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer"
+          >
+            <ArrowRight className="h-3.5 w-3.5" />
+            گەڕانەوە بۆ لیستی پەیامەکان
+          </button>
+        </Tooltip>
         <div className="grid gap-5 sm:grid-cols-2">
           <label className="block">
             <span className="mb-2 block text-xs font-semibold text-slate-600 dark:text-slate-300">
@@ -280,14 +283,16 @@ export function BusinessMessagesPanel({
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => setView("list")}
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-          >
-            <ArrowRight className="h-3.5 w-3.5" />
-            گەڕانەوە
-          </button>
+          <Tooltip content="گەڕانەوە بۆ لیستی پەیامەکان" side="bottom">
+            <button
+              type="button"
+              onClick={() => setView("list")}
+              className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer"
+            >
+              <ArrowRight className="h-3.5 w-3.5" />
+              گەڕانەوە
+            </button>
+          </Tooltip>
           <span className={`text-xs font-bold ${status.color}`}>{status.label}</span>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-white/10 dark:bg-white/[0.04]">
@@ -355,14 +360,16 @@ export function BusinessMessagesPanel({
         <p className="text-xs text-slate-500 dark:text-slate-400">
           پەیامەکانت لەگەڵ ئەدمین
         </p>
-        <button
-          type="button"
-          onClick={() => setView("new")}
-          className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          پەیامی نوێ
-        </button>
+        <Tooltip content="ناردنی پەیامی نوێ بۆ بەڕێوەبەری پلاتفۆرم" side="bottom">
+          <button
+            type="button"
+            onClick={() => setView("new")}
+            className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60 cursor-pointer"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            پەیامی نوێ
+          </button>
+        </Tooltip>
       </div>
 
       {conversations.length === 0 ? (

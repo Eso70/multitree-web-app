@@ -22,7 +22,10 @@ import type {
   UpdateSubscriptionPlanDto,
   UpsertBusinessSubscriptionDto,
 } from './dto/billing-management.dto';
-import { getDefaultTemplateKeys } from '../billing/plan-template-tiers';
+import {
+  getDefaultTemplateKeys,
+  isTemplateAllowedForPlanCode,
+} from '../billing/plan-template-tiers';
 import { pageMetadata } from '../common/dto/admin-list-query.dto';
 import type { BillingOverviewQueryDto } from './dto/billing-overview-query.dto';
 import { BillingRepository } from './billing.repository';
@@ -988,9 +991,17 @@ export class BillingManagementService {
     dto: UpdatePlanConfigurationDto,
   ) {
     const result = await this.database.transaction(async (client) => {
-      const configurationId = await this.getPlanConfigurationId(client, planId);
-      await this.applyPlanConfiguration(client, configurationId, dto);
-      return { id: configurationId, planId };
+      const configuration = await this.getPlanConfigurationContext(
+        client,
+        planId,
+      );
+      await this.applyPlanConfiguration(
+        client,
+        configuration.id,
+        configuration.planCode,
+        dto,
+      );
+      return { id: configuration.id, planId };
     });
     await this.invalidatePlanBusinesses(planId);
     await this.invalidatePublicPlans();
@@ -1068,10 +1079,6 @@ export class BillingManagementService {
     const hasTikTok = [...permissionKeys].some((key) =>
       key.startsWith('business:tiktok:'),
     );
-    const hasAdvancedAnalytics =
-      permissionKeys.has('business:analytics:advanced-read') ||
-      permissionKeys.has('business:analytics:daily-read') ||
-      permissionKeys.has('business:analytics:range-read');
     const hasAnalyticsClear =
       permissionKeys.has('business:analytics:clear-linktree') ||
       permissionKeys.has('business:analytics:clear-all');
@@ -1082,7 +1089,6 @@ export class BillingManagementService {
       ),
       'feature.page_defaults': true,
       'feature.tiktok': hasTikTok,
-      'feature.advanced_analytics': hasAdvancedAnalytics,
       'feature.analytics_clear': hasAnalyticsClear,
       'feature.premium_templates': false,
       'feature.remove_branding': false,
@@ -1096,13 +1102,12 @@ export class BillingManagementService {
               ? 1
               : 0,
       'limit.templates': getDefaultTemplateKeys(planCode).length,
-      'limit.analytics_range_days': hasAdvancedAnalytics ? 90 : 30,
       'limit.profile_changes_monthly': permissionKeys.has(
         'business:profile:update',
       )
         ? 20
         : 0,
-      'retention.analytics_days': hasAdvancedAnalytics ? 365 : 30,
+      'retention.analytics_days': 30,
     };
     const entitlements = await client.query<{ id: string; key: string }>(
       `SELECT id::text, entitlement_key AS key
@@ -1123,9 +1128,22 @@ export class BillingManagementService {
     client: PoolClient,
     planId: string,
   ): Promise<string> {
-    const configuration = await client.query<{ id: string }>(
-      `SELECT id::text FROM billing_plan_configurations
-       WHERE plan_id=$1::uuid
+    return (await this.getPlanConfigurationContext(client, planId)).id;
+  }
+
+  private async getPlanConfigurationContext(
+    client: PoolClient,
+    planId: string,
+  ): Promise<{ id: string; planCode: string }> {
+    const configuration = await client.query<{
+      id: string;
+      planCode: string;
+    }>(
+      `SELECT configuration.id::text,
+              plan.code AS "planCode"
+         FROM billing_plan_configurations configuration
+         JOIN billing_plans plan ON plan.id = configuration.plan_id
+        WHERE configuration.plan_id=$1::uuid
        FOR UPDATE`,
       [planId],
     );
@@ -1137,7 +1155,7 @@ export class BillingManagementService {
       if (!plan.rowCount) throw new NotFoundException('Plan not found');
       throw new NotFoundException('Plan configuration not found');
     }
-    return configuration.rows[0].id;
+    return configuration.rows[0];
   }
 
   private async resolveSubscriptionAssignment(
@@ -1203,6 +1221,7 @@ export class BillingManagementService {
   private async applyPlanConfiguration(
     client: PoolClient,
     configurationId: string,
+    planCode: string,
     dto: UpdatePlanConfigurationDto,
   ): Promise<void> {
     if (dto.permissions !== undefined) {
@@ -1228,6 +1247,11 @@ export class BillingManagementService {
         )
       ) {
         throw new BadRequestException('One or more template keys are invalid');
+      }
+      if (keys.some((key) => !isTemplateAllowedForPlanCode(key, planCode))) {
+        throw new BadRequestException(
+          'Branch Signal is available only for the Ultra plan',
+        );
       }
       await client.query(
         `DELETE FROM billing_plan_templates

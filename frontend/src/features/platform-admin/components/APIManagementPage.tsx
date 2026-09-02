@@ -43,9 +43,11 @@ import { DateTimeInput } from "@/components/shared/DateTimeInput";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchModal } from "@/components/shared/SearchModal";
 import { SegmentedTabs } from "@/components/shared/SegmentedTabs";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { StatCard } from "@/components/shared/StatCard";
 import { TablePagination } from "@/components/shared/TablePagination";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
+import { copyToClipboard } from "@/lib/utils/clipboard";
 
 type ApiTab = "overview" | "clients" | "webhooks" | "policies" | "versions";
 type ClientStatus = "active" | "suspended" | "expired";
@@ -370,7 +372,9 @@ export function APIManagementPage() {
       cell: (item) => (
         <div className="max-w-[250px] min-w-0">
           <p className="font-bold text-slate-700 dark:text-slate-200">{item.name}</p>
-          <p className="mt-1 truncate font-mono text-[10px] text-slate-400" title={item.url}>{item.url}</p>
+          <Tooltip content={item.url} side="top">
+            <p className="mt-1 truncate font-mono text-[10px] text-slate-400 cursor-default">{item.url}</p>
+          </Tooltip>
         </div>
       ),
     },
@@ -746,7 +750,7 @@ function CreateVersionModal({ onClose, onCreate }: { onClose: () => void; onCrea
 }
 
 function DocumentationModal({ documentation, onClose }: { documentation: ApiDocumentation; onClose: () => void }) {
-  const copy = async (value: string) => { await navigator.clipboard.writeText(value); toast.success("کۆپی کرا"); };
+  const copy = async (value: string) => { const success = await copyToClipboard(value); if (success) toast.success("کۆپی کرا"); else toast.error("کۆپیکردن سەرکەوتوو نەبوو"); };
   return (
     <ManagementModal isOpen onClose={onClose} title={`بەڵگەنامەی API ${documentation.version}`} description="ڕێڕەو، method و دەسەڵاتی پێویست بۆ APIـی Linktree." createBusinessStyle wide footer={<SecondaryButton label="داخستن" onClick={onClose} />}>
       <div className="space-y-5">
@@ -760,10 +764,10 @@ function DocumentationModal({ documentation, onClose }: { documentation: ApiDocu
 }
 
 function SecretModal({ secret, onClose }: { secret: string; onClose: () => void }) {
-  const copy = async () => { await navigator.clipboard.writeText(secret); toast.success("نهێنییەکە کۆپی کرا"); };
+  const copy = async () => { const success = await copyToClipboard(secret); if (success) toast.success("نھێنییەکە کۆپی کرا"); else toast.error("کۆپیکردن سەرکەوتوو نەبوو"); };
   return (
     <ManagementModal isOpen onClose={onClose} title="کڕیاری API دروستکرا" description="ئەم نهێنییە تەنها ئەم جارە پیشان دەدرێت. لە شوێنێکی پارێزراو هەڵیبگرە." createBusinessStyle footer={<PrimaryButton icon={Check} label="هەڵمگرت و تەواو" onClick={onClose} full />}>
-      <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900/40 dark:bg-amber-950/20"><div className="mb-3 flex items-start gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" /><p className="text-xs font-semibold leading-5 text-amber-800 dark:text-amber-300">دوای داخستنی ئەم پەنجەرەیە نهێنییەکە دووبارە پیشان نادرێتەوە.</p></div><div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-white p-2 dark:border-amber-900/40 dark:bg-[#161B22]"><code className="min-w-0 flex-1 break-all px-2 text-xs text-slate-700 dark:text-slate-200">{secret}</code><button type="button" onClick={() => void copy()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sa-gradient text-white"><Copy className="h-4 w-4" /></button></div></div>
+      <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900/40 dark:bg-amber-950/20"><div className="mb-3 flex items-start gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" /><p className="text-xs font-semibold leading-5 text-amber-800 dark:text-amber-300">دوای داخستنی ئەم پەنجەرەیە نهێنییەکە دووبارە پیشان نادرێتەوە.</p></div><div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-white p-2 dark:border-amber-900/40 dark:bg-[#161B22]"><code className="min-w-0 flex-1 break-all px-2 text-xs text-slate-700 dark:text-slate-200">{secret}</code><Tooltip content="کۆپیکردنی نھێنی" side="top"><button type="button" onClick={() => void copy()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sa-gradient text-white cursor-pointer" aria-label="کۆپیکردنی نھێنی"><Copy className="h-4 w-4" /></button></Tooltip></div></div>
     </ManagementModal>
   );
 }
@@ -773,7 +777,24 @@ function NumberField({ label, value, onChange }: { label: string; value: number;
 
 function PrimaryButton({ icon: Icon, label, onClick, full = false }: { icon: typeof Plus; label: string; onClick: () => void; full?: boolean }) { return <button type="button" onClick={onClick} className={`sa-gradient flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-xs font-bold text-white shadow-md transition hover:brightness-95 ${full ? "h-11 w-full sm:flex-1" : ""}`}><Icon className="h-4 w-4" />{label}</button>; }
 function SecondaryButton({ label, onClick }: { label: string; onClick: () => void }) { return <button type="button" onClick={onClick} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 sm:flex-1">{label}</button>; }
-function IconButton({ label, icon: Icon, onClick, danger = false }: { label: string; icon: typeof Plus; onClick: () => void; danger?: boolean }) { return <button type="button" onClick={onClick} title={label} aria-label={label} className={`flex h-8 w-8 items-center justify-center rounded-lg border transition ${danger ? "border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/40 dark:hover:bg-red-950/20" : "border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"}`}><Icon className="h-3.5 w-3.5" /></button>; }
+function IconButton({ label, icon: Icon, onClick, danger = false }: { label: string; icon: typeof Plus; onClick: () => void; danger?: boolean }) {
+  return (
+    <Tooltip content={label} side="top">
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={label}
+        className={`flex h-8 w-8 items-center justify-center rounded-lg border transition cursor-pointer ${
+          danger
+            ? "border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/40 dark:hover:bg-red-950/20"
+            : "border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
+        }`}
+      >
+        <Icon className="h-3.5 w-3.5" />
+      </button>
+    </Tooltip>
+  );
+}
 
 function QuickAction({ icon: Icon, title, description, onClick }: { icon: typeof Plus; title: string; description: string; onClick: () => void }) { return <button type="button" onClick={onClick} className="group flex w-full items-center gap-3 rounded-2xl border border-slate-200/80 p-3.5 text-left transition hover:border-[color-mix(in_srgb,var(--multitree-accent)_35%,transparent)] hover:bg-[color-mix(in_srgb,var(--multitree-accent)_4%,transparent)] dark:border-white/10"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sa-soft sa-accent-text"><Icon className="h-5 w-5" /></span><span className="min-w-0 flex-1"><span className="block text-xs font-black text-slate-700 dark:text-slate-200">{title}</span><span className="mt-1 block text-[10px] leading-4 text-slate-400">{description}</span></span><ExternalLink className="h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:text-[var(--multitree-accent)]" /></button>; }
 function UseCase({ icon: Icon, title, description }: { icon: typeof Plus; title: string; description: string }) { return <div className="flex items-start gap-3 rounded-2xl border border-slate-200/80 p-4 dark:border-white/10"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sa-soft sa-accent-text"><Icon className="h-4 w-4" /></div><div className="min-w-0"><p className="text-xs font-black text-slate-700 dark:text-slate-200">{title}</p><p className="mt-1 text-[10px] leading-4 text-slate-400">{description}</p></div></div>; }

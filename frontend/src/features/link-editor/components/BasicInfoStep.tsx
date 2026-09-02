@@ -1,11 +1,22 @@
-﻿"use client";
+"use client";
 
 import { memo, useState, useMemo } from "react";
-import { Layout, Plus, Trash2, GripVertical, MessageCircle, Sparkles } from "lucide-react";
+import {
+  Layout,
+  Plus,
+  Trash2,
+  GripVertical,
+  MessageCircle,
+  Sparkles,
+} from "lucide-react";
 import { DEFAULT_FOOTER_PHONE } from "../modal-constants";
-import { modalChoiceButtonClass, modalInputClass, modalTextareaClass } from "../modal-input-styles";
+import {
+  modalChoiceButtonClass,
+  modalInputClass,
+  modalTextareaClass,
+} from "../modal-input-styles";
 import { LINKTREE_NAME_MAX_LENGTH } from "./validation";
-import { TEMPLATE_OPTIONS, type TemplateKey } from "@/lib/templates/config";
+import { TEMPLATE_OPTIONS } from "@/lib/templates/config";
 import { TemplateSelector } from "../TemplateSelector";
 import { BackgroundPatternModal } from "@/components/shared/BackgroundPatternModal";
 import { backgroundPatternLabel } from "@/lib/templates/background-pattern";
@@ -17,6 +28,7 @@ import type { WhatsAppQuestion } from "@/components/public/WhatsAppQuestionModal
 import { BackgroundColorPicker } from "../BackgroundColorPicker";
 import { AvatarImageUpload } from "@/components/shared/AvatarImageUpload";
 import { EditorField } from "@/components/shared/EditorField";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 interface BasicInfoStepProps {
   profileImagePreview: string | null;
@@ -28,9 +40,11 @@ interface BasicInfoStepProps {
   backgroundColor: string;
   /** An uploaded background image, which replaces the background colour. */
   backgroundImagePreview?: string | null;
-  onBackgroundImageChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onBackgroundImageChange?: (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => void;
   onBackgroundImageRemove?: () => void;
-  templateKey: TemplateKey;
+  templateKey: string;
   /**
    * The repeating pattern drawn over the page background. Omitted by surfaces
    * that do not offer one, which keeps their layout as it was.
@@ -75,7 +89,7 @@ interface BasicInfoStepProps {
   onSlugChange: (value: string) => void;
   onBackgroundColorChange: (value: string) => void;
   onBackgroundColorBlur: () => void;
-  onTemplateKeyChange: (value: TemplateKey) => void;
+  onTemplateKeyChange: (value: string) => void;
   onFooterTextChange: (value: string) => void;
   onFooterPhoneChange: (value: string) => void;
   onFooterHiddenChange: (value: boolean) => void;
@@ -91,7 +105,7 @@ interface BasicInfoStepProps {
   isEditMode?: boolean;
   hideRemoveImage?: boolean;
   hideImageUploads?: boolean;
-  allowedTemplateKeys?: readonly TemplateKey[];
+  allowedTemplateKeys?: readonly string[];
 }
 
 export const BasicInfoStep = memo(function BasicInfoStep({
@@ -162,20 +176,24 @@ export const BasicInfoStep = memo(function BasicInfoStep({
   };
 
   const handleRemoveQuestion = (id: string) => {
-    onWhatsappQuestionsChange(whatsappQuestions.filter(q => q.id !== id));
+    onWhatsappQuestionsChange(whatsappQuestions.filter((q) => q.id !== id));
   };
 
-  const handleQuestionChange = (id: string, field: 'text' | 'message', value: string) => {
+  const handleQuestionChange = (
+    id: string,
+    field: "text" | "message",
+    value: string,
+  ) => {
     onWhatsappQuestionsChange(
-      whatsappQuestions.map(q =>
-        q.id === id ? { ...q, [field]: value } : q
-      )
+      whatsappQuestions.map((q) =>
+        q.id === id ? { ...q, [field]: value } : q,
+      ),
     );
   };
 
   // Memoize selected template lookup
   const selectedTemplate = useMemo(() => {
-    return TEMPLATE_OPTIONS.find(t => t.id === templateKey);
+    return TEMPLATE_OPTIONS.find((template) => template.id === templateKey);
   }, [templateKey]);
 
   return (
@@ -191,7 +209,11 @@ export const BasicInfoStep = memo(function BasicInfoStep({
             onRemove={onRemoveImage}
             hideRemove={hideRemoveImage}
             error={errors.image}
-            uploadLabel={onUploadClick ? "بارکردنی وێنەکانی بڕاند" : "وێنەی پڕۆفایل هەڵبژێرە"}
+            uploadLabel={
+              onUploadClick
+                ? "بارکردنی وێنەکانی بڕاند"
+                : "وێنەی پڕۆفایل هەڵبژێرە"
+            }
           />
         )}
 
@@ -212,11 +234,17 @@ export const BasicInfoStep = memo(function BasicInfoStep({
               dir="auto"
             />
             {errors.name && touched.name ? (
-              <p className="text-xs text-red-500 mt-1 font-kurdish">{errors.name}</p>
+              <p className="text-xs text-red-500 mt-1 font-kurdish">
+                {errors.name}
+              </p>
             ) : checkingName ? (
-              <p className="text-xs text-gray-400 mt-1 font-kurdish">پشکنینی ناو...</p>
+              <p className="text-xs text-gray-400 mt-1 font-kurdish">
+                پشکنینی ناو...
+              </p>
             ) : nameWarning ? (
-              <p className="text-xs text-amber-600 mt-1 font-kurdish">{nameWarning}</p>
+              <p className="text-xs text-amber-600 mt-1 font-kurdish">
+                {nameWarning}
+              </p>
             ) : null}
           </EditorField>
 
@@ -274,7 +302,9 @@ export const BasicInfoStep = memo(function BasicInfoStep({
               dir="ltr"
             />
             {errors.slug && touched.slug && (
-              <p className="text-xs text-red-500 mt-1 font-kurdish">{errors.slug}</p>
+              <p className="text-xs text-red-500 mt-1 font-kurdish">
+                {errors.slug}
+              </p>
             )}
           </EditorField>
         )}
@@ -291,49 +321,66 @@ export const BasicInfoStep = memo(function BasicInfoStep({
                 onChange={(e) => onSlugChange(e.target.value)}
                 disabled
                 aria-invalid={!!(errors.slug && touched.slug)}
-                className={modalInputClass(!!(errors.slug && touched.slug), "cursor-not-allowed bg-gray-50 text-gray-500")}
+                className={modalInputClass(
+                  !!(errors.slug && touched.slug),
+                  "cursor-not-allowed bg-gray-50 text-gray-500",
+                )}
                 placeholder="Slug بنووسە"
                 dir="ltr"
               />
               {errors.slug && touched.slug ? (
-                <p className="text-xs text-red-500 mt-1 font-kurdish">{errors.slug}</p>
+                <p className="text-xs text-red-500 mt-1 font-kurdish">
+                  {errors.slug}
+                </p>
               ) : checkingSlug ? (
-                <p className="text-xs text-gray-400 mt-1 font-kurdish">پشکنینی slug...</p>
+                <p className="text-xs text-gray-400 mt-1 font-kurdish">
+                  پشکنینی slug...
+                </p>
               ) : null}
             </EditorField>
 
             {/* Template Style */}
             <EditorField label="شێوازی پەڕە" required>
-              <button
-                type="button"
-                onClick={() => setIsTemplateSelectorOpen(true)}
-                className={modalChoiceButtonClass(!!(errors.templateKey && touched.templateKey))}
-              >
-                {selectedTemplate ? (
-                  <span className="text-gray-900 truncate">{selectedTemplate.name}</span>
-                ) : (
-                  <span className="text-gray-400">شێوازێک هەڵبژێرە</span>
-                )}
-                <Layout className="h-4 w-4 text-gray-500 shrink-0" />
-              </button>
+              <Tooltip content="دیاریکردنی قاڵبی ڕووکاری پەڕە" side="top">
+                <button
+                  type="button"
+                  onClick={() => setIsTemplateSelectorOpen(true)}
+                  className={`${modalChoiceButtonClass(
+                    !!(errors.templateKey && touched.templateKey),
+                  )} w-full cursor-pointer`}
+                >
+                  {selectedTemplate ? (
+                    <span className="text-gray-900 truncate">
+                      {selectedTemplate.name}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">شێوازێک هەڵبژێرە</span>
+                  )}
+                  <Layout className="h-4 w-4 text-gray-500 shrink-0" />
+                </button>
+              </Tooltip>
               {errors.templateKey && touched.templateKey && (
-                <p className="text-xs text-red-500 mt-1 font-kurdish">{errors.templateKey}</p>
+                <p className="text-xs text-red-500 mt-1 font-kurdish">
+                  {errors.templateKey}
+                </p>
               )}
             </EditorField>
 
             {/* Background Pattern — the same picker the mini website uses */}
             {onBackgroundPatternChange && (
               <EditorField label="شێوازی پاشبنەما">
-                <button
-                  type="button"
-                  onClick={() => setIsPatternSelectorOpen(true)}
-                  className={modalChoiceButtonClass(false)}
-                >
-                  <span className="text-gray-900 truncate">
-                    {backgroundPatternLabel(backgroundPattern)}
-                  </span>
-                  <Sparkles className="h-4 w-4 text-gray-500 shrink-0" />
-                </button>
+                <Tooltip content="دیاریکردنی نەخشی پاشبنەمای پەڕە" side="top">
+                  <button
+                    type="button"
+                    onClick={() => setIsPatternSelectorOpen(true)}
+                    className={`${modalChoiceButtonClass(false)} w-full cursor-pointer`}
+                  >
+                    <span className="text-gray-900 truncate">
+                      {backgroundPatternLabel(backgroundPattern)}
+                    </span>
+                    <Sparkles className="h-4 w-4 text-gray-500 shrink-0" />
+                  </button>
+                </Tooltip>
               </EditorField>
             )}
           </div>
@@ -341,15 +388,29 @@ export const BasicInfoStep = memo(function BasicInfoStep({
 
         {/* Background Color */}
         <div className="space-y-2">
-          <EditorField label={onUploadClick ? "ڕەنگی وێبسایت (Website Color)" : "ڕەنگی باکگڕاوند"}>
+          <EditorField
+            label={
+              onUploadClick
+                ? "ڕەنگی وێبسایت (Website Color)"
+                : "ڕەنگی باکگڕاوند"
+            }
+          >
             <BackgroundColorPicker
               value={backgroundColor}
               onChange={onBackgroundColorChange}
               onBlur={onBackgroundColorBlur}
               imagePreview={backgroundImagePreview}
-              onImageChange={hideImageUploads ? undefined : onBackgroundImageChange}
-              onImageRemove={hideImageUploads ? undefined : onBackgroundImageRemove}
-              error={errors.backgroundColor && touched.backgroundColor ? errors.backgroundColor : undefined}
+              onImageChange={
+                hideImageUploads ? undefined : onBackgroundImageChange
+              }
+              onImageRemove={
+                hideImageUploads ? undefined : onBackgroundImageRemove
+              }
+              error={
+                errors.backgroundColor && touched.backgroundColor
+                  ? errors.backgroundColor
+                  : undefined
+              }
             />
           </EditorField>
         </div>
@@ -367,21 +428,38 @@ export const BasicInfoStep = memo(function BasicInfoStep({
                 >
                   فوتەر بشارەوە
                 </label>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={footerHidden}
-                  aria-label={footerHidden ? "فوتەر شاردراوە" : "فوتەر نیشاندراوە"}
-                  onClick={() => onFooterHiddenChange(!footerHidden)}
-                  className={`relative inline-flex h-7 w-12 sm:h-8 sm:w-14 md:h-9 md:w-16 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 touch-manipulation active:scale-95 ${footerHidden ? '' : 'bg-gray-300 dark:bg-gray-750'
+                <Tooltip content={footerHidden ? "فوتەر بشارەوە (شاردراوە)" : "فوتەر پیشان بدە (نیشاندراو)"} side="top">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={footerHidden}
+                    aria-label={
+                      footerHidden ? "فوتەر شاردراوە" : "فوتەر نیشاندراوە"
+                    }
+                    onClick={() => onFooterHiddenChange(!footerHidden)}
+                    className={`relative inline-flex h-7 w-12 sm:h-8 sm:w-14 md:h-9 md:w-16 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 touch-manipulation active:scale-95 ${
+                      footerHidden ? "" : "bg-gray-300 dark:bg-gray-750"
                     }`}
-                  style={footerHidden ? { background: 'var(--theme-css, #64748b)', '--tw-ring-color': 'var(--theme-primary, #64748b)' } as React.CSSProperties : { '--tw-ring-color': 'var(--theme-primary, #64748b)' } as React.CSSProperties}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${footerHidden ? 'translate-x-5 sm:translate-x-6 md:translate-x-7' : 'translate-x-0.5 sm:translate-x-0.5 md:translate-x-1'
+                    style={
+                      footerHidden
+                        ? ({
+                            background: "var(--theme-css, #64748b)",
+                            "--tw-ring-color": "var(--theme-primary, #64748b)",
+                          } as React.CSSProperties)
+                        : ({
+                            "--tw-ring-color": "var(--theme-primary, #64748b)",
+                          } as React.CSSProperties)
+                    }
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                        footerHidden
+                          ? "translate-x-5 sm:translate-x-6 md:translate-x-7"
+                          : "translate-x-0.5 sm:translate-x-0.5 md:translate-x-0.5"
                       }`}
-                  />
-                </button>
+                    />
+                  </button>
+                </Tooltip>
               </div>
             )}
 
@@ -404,12 +482,16 @@ export const BasicInfoStep = memo(function BasicInfoStep({
                     type="text"
                     value={footerPhone}
                     onChange={(e) => onFooterPhoneChange(e.target.value)}
-                    className={modalInputClass(!!(errors.footerPhone && touched.footerPhone))}
+                    className={modalInputClass(
+                      !!(errors.footerPhone && touched.footerPhone),
+                    )}
                     placeholder={DEFAULT_FOOTER_PHONE}
                     dir="ltr"
                   />
                   {errors.footerPhone && touched.footerPhone && (
-                    <p className="text-xs text-red-500 mt-1 font-kurdish">{errors.footerPhone}</p>
+                    <p className="text-xs text-red-500 mt-1 font-kurdish">
+                      {errors.footerPhone}
+                    </p>
                   )}
                 </EditorField>
               </div>
@@ -429,21 +511,42 @@ export const BasicInfoStep = memo(function BasicInfoStep({
                   پرسیارەکانی واتساپ
                 </h3>
               </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={whatsappModalEnabled}
-                aria-label={whatsappModalEnabled ? "مۆدالی واتساپ چالاکە" : "مۆدالی واتساپ ناچالاکە"}
-                onClick={() => onWhatsappModalEnabledChange(!whatsappModalEnabled)}
-                className={`relative inline-flex h-7 w-12 sm:h-8 sm:w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 touch-manipulation active:scale-95 ${whatsappModalEnabled ? '' : 'bg-gray-300 dark:bg-gray-700'
+              <Tooltip content={whatsappModalEnabled ? "مۆدالی واتساپ ناچالاک بکە" : "مۆدالی واتساپ چالاک بکە"} side="top">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={whatsappModalEnabled}
+                  aria-label={
+                    whatsappModalEnabled
+                      ? "مۆدالی واتساپ چالاکە"
+                      : "مۆدالی واتساپ ناچالاکە"
+                  }
+                  onClick={() =>
+                    onWhatsappModalEnabledChange(!whatsappModalEnabled)
+                  }
+                  className={`relative inline-flex h-7 w-12 sm:h-8 sm:w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 touch-manipulation active:scale-95 ${
+                    whatsappModalEnabled ? "" : "bg-gray-300 dark:bg-gray-700"
                   }`}
-                style={whatsappModalEnabled ? { background: 'var(--theme-css, #64748b)', '--tw-ring-color': 'var(--theme-primary, #64748b)' } as React.CSSProperties : { '--tw-ring-color': 'var(--theme-primary, #64748b)' } as React.CSSProperties}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-6 w-6 sm:h-7 sm:w-7 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${whatsappModalEnabled ? 'translate-x-5 sm:translate-x-6' : 'translate-x-0.5 sm:translate-x-0.5'
+                  style={
+                    whatsappModalEnabled
+                      ? ({
+                          background: "var(--theme-css, #64748b)",
+                          "--tw-ring-color": "var(--theme-primary, #64748b)",
+                        } as React.CSSProperties)
+                      : ({
+                          "--tw-ring-color": "var(--theme-primary, #64748b)",
+                        } as React.CSSProperties)
+                  }
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-6 w-6 sm:h-7 sm:w-7 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      whatsappModalEnabled
+                        ? "translate-x-5 sm:translate-x-6"
+                        : "translate-x-0.5 sm:translate-x-0.5"
                     }`}
-                />
-              </button>
+                  />
+                </button>
+              </Tooltip>
             </div>
 
             {whatsappModalEnabled && (
@@ -454,7 +557,9 @@ export const BasicInfoStep = memo(function BasicInfoStep({
                     <input
                       type="text"
                       value={whatsappModalTitle}
-                      onChange={(e) => onWhatsappModalTitleChange(e.target.value)}
+                      onChange={(e) =>
+                        onWhatsappModalTitleChange(e.target.value)
+                      }
                       placeholder="پەیوەندی کردن"
                       className={modalInputClass()}
                       dir="auto"
@@ -465,7 +570,9 @@ export const BasicInfoStep = memo(function BasicInfoStep({
                     <input
                       type="text"
                       value={whatsappModalSubtitle}
-                      onChange={(e) => onWhatsappModalSubtitleChange(e.target.value)}
+                      onChange={(e) =>
+                        onWhatsappModalSubtitleChange(e.target.value)
+                      }
                       placeholder="پرسیارێک هەڵبژێرە"
                       className={modalInputClass()}
                       dir="auto"
@@ -479,14 +586,16 @@ export const BasicInfoStep = memo(function BasicInfoStep({
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                       پرسیارەکان ({whatsappQuestions.length})
                     </label>
-                    <button
-                      type="button"
-                      onClick={handleAddQuestion}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-white bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm hover:shadow-md animate-none"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      <span>زیادکردنی پرسیار</span>
-                    </button>
+                    <Tooltip content="زیادکردنی پرسیارێکی نوێی واتساپ" side="top">
+                      <button
+                        type="button"
+                        onClick={handleAddQuestion}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-white bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-sm hover:shadow-md animate-none cursor-pointer"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>زیادکردنی پرسیار</span>
+                      </button>
+                    </Tooltip>
                   </div>
 
                   {whatsappQuestions.length === 0 ? (
@@ -498,61 +607,86 @@ export const BasicInfoStep = memo(function BasicInfoStep({
                       {whatsappQuestions.map((question, index) => {
                         const questionError = questionErrors[question.id];
                         return (
-                        <div
-                          key={question.id}
-                          className={`p-3 sm:p-4 rounded-lg sm:rounded-xl border bg-white dark:bg-[#161B22] space-y-3 ${questionError ? "border-red-300 dark:border-red-500/40" : "border-gray-200 dark:border-white/10"}`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <GripVertical className="h-4 w-4 text-gray-400" />
-                              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-                                پرسیار #{index + 1}
-                              </span>
+                          <div
+                            key={question.id}
+                            className={`p-3 sm:p-4 rounded-lg sm:rounded-xl border bg-white dark:bg-[#161B22] space-y-3 ${questionError ? "border-red-300 dark:border-red-500/40" : "border-gray-200 dark:border-white/10"}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <GripVertical className="h-4 w-4 text-gray-400" />
+                                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                                  پرسیار #{index + 1}
+                                </span>
+                              </div>
+                              {whatsappQuestions.length > 1 && (
+                                <Tooltip content="سڕینەوەی پرسیار" side="top">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRemoveQuestion(question.id)
+                                    }
+                                    className="p-1.5 rounded-lg text-brand-500 hover:bg-brand-500/10 transition-colors cursor-pointer"
+                                    aria-label="سڕینەوەی پرسیار"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </Tooltip>
+                              )}
                             </div>
-                            {whatsappQuestions.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveQuestion(question.id)}
-                                className="p-1.5 rounded-lg text-brand-500 hover:bg-brand-500/10 transition-colors"
-                                title="سڕینەوەی پرسیار"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            )}
+
+                            {/* Question Text */}
+                            <EditorField label="دەقی پرسیار">
+                              <input
+                                type="text"
+                                value={question.text}
+                                onChange={(e) =>
+                                  handleQuestionChange(
+                                    question.id,
+                                    "text",
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="داواکردن"
+                                aria-invalid={!!questionError?.text}
+                                className={modalInputClass(
+                                  !!questionError?.text,
+                                )}
+                                dir="auto"
+                              />
+                              {questionError?.text && (
+                                <p className="text-xs text-red-500 mt-1 font-kurdish">
+                                  {questionError.text}
+                                </p>
+                              )}
+                            </EditorField>
+
+                            {/* Question Message */}
+                            <EditorField label="پەیام (دەقی نێردراو بۆ واتساپ)">
+                              <textarea
+                                value={question.message}
+                                onChange={(e) =>
+                                  handleQuestionChange(
+                                    question.id,
+                                    "message",
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="سڵاو بەڕێز دەمەوێت داوا بکەم."
+                                rows={2}
+                                aria-invalid={!!questionError?.message}
+                                className={modalTextareaClass(
+                                  !!questionError?.message,
+                                  "min-h-0",
+                                )}
+                                dir="auto"
+                              />
+                              {questionError?.message && (
+                                <p className="text-xs text-red-500 mt-1 font-kurdish">
+                                  {questionError.message}
+                                </p>
+                              )}
+                            </EditorField>
                           </div>
-
-                          {/* Question Text */}
-                          <EditorField label="دەقی پرسیار">
-                            <input
-                              type="text"
-                              value={question.text}
-                              onChange={(e) => handleQuestionChange(question.id, 'text', e.target.value)}
-                              placeholder="داواکردن"
-                              aria-invalid={!!questionError?.text}
-                              className={modalInputClass(!!questionError?.text)}
-                              dir="auto"
-                            />
-                            {questionError?.text && (
-                              <p className="text-xs text-red-500 mt-1 font-kurdish">{questionError.text}</p>
-                            )}
-                          </EditorField>
-
-                          {/* Question Message */}
-                          <EditorField label="پەیام (دەقی نێردراو بۆ واتساپ)">
-                            <textarea
-                              value={question.message}
-                              onChange={(e) => handleQuestionChange(question.id, 'message', e.target.value)}
-                              placeholder="سڵاو بەڕێز دەمەوێت داوا بکەم."
-                              rows={2}
-                              aria-invalid={!!questionError?.message}
-                              className={modalTextareaClass(!!questionError?.message, "min-h-0")}
-                              dir="auto"
-                            />
-                            {questionError?.message && (
-                              <p className="text-xs text-red-500 mt-1 font-kurdish">{questionError.message}</p>
-                            )}
-                          </EditorField>
-                        </div>
                         );
                       })}
                     </div>
@@ -583,4 +717,3 @@ export const BasicInfoStep = memo(function BasicInfoStep({
     </>
   );
 });
-

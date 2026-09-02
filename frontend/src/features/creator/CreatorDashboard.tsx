@@ -17,11 +17,13 @@ import {
   type DashboardSidebarItem,
 } from "@/components/shared/DashboardSidebar";
 import {
-  SkeletonDashboardPage,
   SkeletonDashboardShell,
-  SkeletonManagementPage,
   SkeletonTemplatePage,
 } from "@/components/shared/Skeleton";
+import {
+  SkeletonPageManagement,
+  SkeletonSettingsPage,
+} from "@/components/shared/SkeletonPageLayouts";
 import { CREATOR_MINI_WEBSITE_WORKSPACE } from "@/features/mini-website/workspace-config";
 import { apiRequest } from "@/lib/api/request";
 import { persistAppTheme, readAppTheme, type AppTheme } from "@/lib/app-theme";
@@ -35,7 +37,7 @@ const RootLinktreesPage = dynamic(
     import("@/features/platform-admin/components/PlatformLinktreesPage").then(
       (module) => ({ default: module.RootLinktreesPage }),
     ),
-  { ssr: false, loading: () => <SkeletonManagementPage /> },
+  { ssr: false, loading: () => <SkeletonPageManagement /> },
 );
 
 const MiniWebsitesPage = dynamic(
@@ -43,7 +45,7 @@ const MiniWebsitesPage = dynamic(
     import("@/features/mini-website/MiniWebsitesPage").then((module) => ({
       default: module.MiniWebsitesPage,
     })),
-  { ssr: false, loading: () => <SkeletonManagementPage /> },
+  { ssr: false, loading: () => <SkeletonPageManagement /> },
 );
 
 const TemplatesPage = dynamic(
@@ -61,9 +63,7 @@ const CreatorAccountSettingsPage = dynamic(
     })),
   {
     ssr: false,
-    loading: () => (
-      <SkeletonDashboardPage body="form" statCount={4} tabCount={3} />
-    ),
+    loading: () => <SkeletonSettingsPage tabCount={3} />,
   },
 );
 
@@ -179,7 +179,12 @@ export function CreatorDashboard() {
     [activePage, ownedPageType, router],
   );
 
-  if (!context) return <SkeletonDashboardShell />;
+  if (!context)
+    return (
+      <SkeletonDashboardShell navigationItems={4}>
+        <SkeletonPageManagement />
+      </SkeletonDashboardShell>
+    );
 
   const pageType = ownedPageType;
 
@@ -262,11 +267,11 @@ export function CreatorDashboard() {
           <main className="relative w-full flex-1 overflow-y-auto" dir="ltr">
             <div className="relative z-10 mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10 lg:py-10">
               {activePage === "templates" ? (
-                <TemplatesPage canCreate={false} accessMode="all" />
+                <TemplatesPage accessMode="all" />
               ) : activePage === "settings" ? (
                 <CreatorAccountSettingsPage account={context.account} />
               ) : activePage === "home" ? (
-                <SkeletonManagementPage />
+                <SkeletonPageManagement />
               ) : activePage === "linktree" && pageType === "mini_website" ? (
                 <CreatorPageTypeLocked ownedPageType="mini_website" />
               ) : activePage === "mini_website" && pageType === "linktree" ? (

@@ -10,12 +10,15 @@ import {
   SkeletonManagementPage,
   SkeletonMiniWebsiteTemplate,
   SkeletonModal,
+  SkeletonPublicLandingPage,
+  SkeletonPublicLinktreePage,
   SkeletonStatCards,
   SkeletonStatCard,
   SkeletonTable,
   SkeletonTemplatePage,
   SkeletonText,
 } from "@/components/shared/Skeleton";
+import { SkeletonAuthenticationPage } from "@/components/shared/SkeletonAuthenticationPage";
 
 describe("loading skeletons", () => {
   it("holds still for a reader who asked for less motion", () => {
@@ -39,7 +42,12 @@ describe("loading skeletons", () => {
 
   it("renders the number of rows it was asked for", () => {
     const { container } = render(<SkeletonTable rows={4} />);
-    expect(container.querySelectorAll("[aria-hidden='true']")).toHaveLength(4);
+    expect(
+      container.querySelectorAll("[data-skeleton-table-row]"),
+    ).toHaveLength(4);
+    expect(
+      container.querySelectorAll("[data-skeleton-mobile-row]"),
+    ).toHaveLength(4);
   });
 
   it("ends a block of text short, the way a paragraph does", () => {
@@ -111,6 +119,17 @@ describe("loading skeletons", () => {
     expect(screen.getAllByRole("status")).toHaveLength(1);
   });
 
+  it("reserves the shared authentication shell during route loading", () => {
+    render(
+      <SkeletonAuthenticationPage brandDescription="Secure account access" />,
+    );
+
+    expect(
+      screen.getByRole("status", { name: "Loading authentication" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+  });
+
   it("reserves the complete template catalog while permissions load", () => {
     render(<SkeletonTemplatePage />);
     expect(
@@ -125,6 +144,29 @@ describe("loading skeletons", () => {
       screen.getByRole("status", { name: "Loading mini website" }),
     ).toBeInTheDocument();
     expect(screen.getAllByRole("status")).toHaveLength(1);
+  });
+
+  it.each(["platform", "business"] as const)(
+    "reserves the complete %s landing-page sections",
+    (variant) => {
+      const { container } = render(
+        <SkeletonPublicLandingPage variant={variant} />,
+      );
+      expect(
+        screen.getByRole("status", { name: "Loading homepage" }),
+      ).toBeInTheDocument();
+      expect(container.querySelectorAll("section").length).toBeGreaterThan(3);
+    },
+  );
+
+  it("reserves the public Linktree identity, links, and footer", () => {
+    const { container } = render(<SkeletonPublicLinktreePage />);
+    expect(
+      screen.getByRole("status", { name: "Loading Linktree page" }),
+    ).toBeInTheDocument();
+    expect(container.querySelectorAll("[data-skeleton-link-row]")).toHaveLength(
+      5,
+    );
   });
 
   it.each(["standard", "funnel", "live", "comparison", "story"] as const)(

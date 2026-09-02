@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   memo,
@@ -12,12 +12,14 @@ import {
   Trash2,
   Eye,
   Copy,
+  CopyPlus,
   Check,
   Edit,
   ExternalLink,
   Link as LinkIcon,
   MousePointerClick,
 } from "lucide-react";
+import { toast } from "sonner";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { formatDate, getAbsoluteUrl } from "@/lib/utils/linktree-utils";
 import {
@@ -27,8 +29,9 @@ import {
   type LinktreeMetaBadgesProps,
   type PageListTrafficLabels,
 } from "@/components/business/LinktreeMeta";
-import { SkeletonCardGrid } from "@/components/shared/Skeleton";
+import { SkeletonLinktreeGrid } from "@/components/shared/SkeletonPageLayouts";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { Tooltip } from "@/components/shared/Tooltip";
 import {
   useManagementPagination,
   type ManagementTablePagination,
@@ -40,6 +43,7 @@ interface LinktreesGridProps {
   data?: Linktree[];
   isLoading?: boolean;
   onEdit?: (id: string) => void;
+  onDuplicate?: (item: Linktree) => void;
   onDelete?: (id: string, uid: string, name: string) => void;
   onViewAnalytics?: (id: string, name: string) => void;
   viewActionLabel?: string;
@@ -71,6 +75,7 @@ const LinktreeCard = memo(function LinktreeCard({
   index,
   total,
   onEdit,
+  onDuplicate,
   onDelete,
   onViewAnalytics,
   viewActionLabel,
@@ -85,6 +90,7 @@ const LinktreeCard = memo(function LinktreeCard({
   index: number;
   total: number;
   onEdit?: (id: string) => void;
+  onDuplicate?: (item: Linktree) => void;
   onDelete?: (id: string, uid: string, name: string) => void;
   onViewAnalytics?: (id: string, name: string) => void;
   viewActionLabel: string;
@@ -181,17 +187,19 @@ const LinktreeCard = memo(function LinktreeCard({
           >
             {url}
           </a>
-          <button
-            onClick={(e) => onCopy(publicIdentifier, e)}
-            className="p-1 sm:p-1.5 rounded-lg hover:bg-gray-100 transition-colors shrink-0 cursor-pointer"
-            title="کۆپیکردنی بەستەر"
-          >
-            {copiedUid === publicIdentifier ? (
-              <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-600" />
-            ) : (
-              <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 hover:text-gray-600" />
-            )}
-          </button>
+          <Tooltip content={copiedUid === publicIdentifier ? "کۆپیکرا" : "کۆپیکردنی بەستەر"} side="top">
+            <button
+              onClick={(e) => onCopy(publicIdentifier, e)}
+              className="p-1 sm:p-1.5 rounded-lg hover:bg-gray-100 transition-colors shrink-0 cursor-pointer"
+              aria-label="کۆپیکردنی بەستەر"
+            >
+              {copiedUid === publicIdentifier ? (
+                <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-600" />
+              ) : (
+                <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 hover:text-gray-600" />
+              )}
+            </button>
+          </Tooltip>
         </div>
       </div>
 
@@ -236,42 +244,65 @@ const LinktreeCard = memo(function LinktreeCard({
       {/* Actions Section */}
       <div className="mt-auto flex items-center gap-1.5 sm:gap-2 pt-2 sm:pt-3 border-t border-gray-200">
         {onViewAnalytics && (
-          <button
-            onClick={() => onViewAnalytics(item.id, item.name)}
-            className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-700 hover:text-sky-800 transition-all duration-200 text-xs font-medium cursor-pointer"
-            title={viewActionLabel}
-          >
-            <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="hidden lg:inline text-xs">{viewActionLabel}</span>
-          </button>
+          <Tooltip content={viewActionLabel} side="top" className="flex-1">
+            <button
+              onClick={() => onViewAnalytics(item.id, item.name)}
+              className="w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-700 hover:text-sky-800 transition-all duration-200 text-xs font-medium cursor-pointer"
+              aria-label={viewActionLabel}
+            >
+              <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden lg:inline text-xs">{viewActionLabel}</span>
+            </button>
+          </Tooltip>
         )}
         {onEdit && (
-          <button
-            onClick={() => onEdit(item.id)}
-            className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-700 hover:text-yellow-800 transition-all duration-200 text-xs font-medium cursor-pointer"
-            title="دەستکاریکردن"
-          >
-            <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="hidden lg:inline text-xs">دەستکاریکردن</span>
-          </button>
+          <Tooltip content="دەستکاریکردن" side="top" className="flex-1">
+            <button
+              onClick={() => onEdit(item.id)}
+              className="w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-700 hover:text-yellow-800 transition-all duration-200 text-xs font-medium cursor-pointer"
+              aria-label="دەستکاریکردن"
+            >
+              <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden lg:inline text-xs">دەستکاریکردن</span>
+            </button>
+          </Tooltip>
+        )}
+        {onDuplicate && (
+          <Tooltip content="لەبەرگرتنەوە" side="top">
+            <button
+              onClick={() => onDuplicate(item)}
+              className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border transition-all duration-200 cursor-pointer hover:brightness-95"
+              style={{
+                background: "color-mix(in srgb, var(--theme-primary, #6366f1) 12%, transparent)",
+                borderColor: "color-mix(in srgb, var(--theme-primary, #6366f1) 28%, transparent)",
+                color: "var(--theme-primary, #6366f1)",
+              }}
+              aria-label="لەبەرگرتنەوە"
+            >
+              <CopyPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </button>
+          </Tooltip>
         )}
         {onDelete && item.uid !== "id" && !item.is_default && (
-          <button
-            onClick={() => onDelete(item.id, item.uid, item.name)}
-            className="flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-700 hover:text-red-800 transition-all duration-200 text-xs font-medium cursor-pointer"
-            title="سڕینەوە"
-          >
-            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="hidden lg:inline text-xs">سڕینەوە</span>
-          </button>
+          <Tooltip content="سڕینەوە" side="top">
+            <button
+              onClick={() => onDelete(item.id, item.uid, item.name)}
+              className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-700 hover:text-red-800 transition-all duration-200 cursor-pointer"
+              aria-label="سڕینەوە"
+            >
+              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </button>
+          </Tooltip>
         )}
-        <button
-          onClick={handleView}
-          className="flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 hover:text-gray-700 transition-all duration-200 text-xs font-medium cursor-pointer"
-          title="بینین"
-        >
-          <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-        </button>
+        <Tooltip content="بینینی پەڕە" side="top">
+          <button
+            onClick={handleView}
+            className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 hover:text-gray-700 transition-all duration-200 cursor-pointer"
+            aria-label="بینین"
+          >
+            <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </button>
+        </Tooltip>
       </div>
     </div>
   );
@@ -282,6 +313,7 @@ export const LinktreesGrid = memo(function LinktreesGrid({
   data = [],
   isLoading = false,
   onEdit,
+  onDuplicate,
   onDelete,
   onViewAnalytics,
   viewActionLabel = "ئامار",
@@ -309,6 +341,9 @@ export const LinktreesGrid = memo(function LinktreesGrid({
         setTimeout(() => {
           setCopiedUid(null);
         }, 2000);
+        toast.success("بەستەرەکە کۆپی کرا");
+      } else {
+        toast.error("کۆپیکردنی بەستەر سەرکەوتوو نەبوو");
       }
     },
     [publicPathPrefix],
@@ -328,7 +363,8 @@ export const LinktreesGrid = memo(function LinktreesGrid({
 
   // Cards outlined where the real ones will land, so the grid does not jump
   // when they arrive.
-  if (isLoading) return <SkeletonCardGrid count={6} />;
+  if (isLoading)
+    return <SkeletonLinktreeGrid count={6} showPageMeta={displaysPageMeta} />;
 
   if (data.length === 0) {
     return (
@@ -350,6 +386,7 @@ export const LinktreesGrid = memo(function LinktreesGrid({
             index={index}
             total={visibleData.length}
             onEdit={onEdit}
+            onDuplicate={onDuplicate}
             onDelete={handleDelete}
             onViewAnalytics={onViewAnalytics}
             viewActionLabel={viewActionLabel}

@@ -180,14 +180,21 @@ codebase. The resolved policy (permissions, entitlements, templates, pending
 approvals) is cached per business in Redis for 60 seconds and explicitly
 invalidated on policy-changing writes.
 
-`business:mini-websites:create` is distinct from Linktree creation. Both create
-capabilities use the backward-compatible `limit.linktrees` entitlement, whose
-product meaning is the maximum number of active public pages. Its authoritative
-usage is one database query that counts Linktrees plus non-archived
-mini-websites for the authenticated business. The seeded plan limits are five
-public pages and one active TikTok Pixel group for Basic, twenty public pages
-and two Pixel groups for Pro, and unlimited public pages plus three Pixel
-groups for Ultra.
+Business customers have no Mini Website dashboard navigation item or route on
+any subscription plan and cannot create Mini Websites. The Business API
+intentionally has no Mini Website collection `POST` route and the business
+permission catalog contains no creation capability, so an old plan grant or a
+hand-crafted request cannot bypass the creation boundary. Existing stored Mini
+Websites remain tenant-scoped and their public pages continue to render.
+Creator and Platform workspaces keep their separate authenticated management
+and creation routes.
+
+The backward-compatible `limit.linktrees` entitlement remains the maximum
+number of active public pages considered by Linktree creation. Its authoritative
+usage query counts Linktrees plus non-archived Mini Websites already owned by
+the authenticated business. The seeded plan limits are five public pages and
+one active TikTok Pixel group for Basic, twenty public pages and two Pixel
+groups for Pro, and unlimited public pages plus three Pixel groups for Ultra.
 
 Only the Ultra plan grants `business:profile:update`. Basic and Pro cannot
 submit profile changes.
@@ -577,6 +584,24 @@ fail CI and must be investigated before any new fingerprint is added.
 Environment templates keep secret values empty. Real values belong only in the
 ignored root `.env` or the deployment platform's secret store; the generated
 `frontend/.env` receives only its explicit frontend allowlist.
+
+## Client invitation secrets
+
+Client Linktree invitations are bearer capabilities protected by a separately
+shared mandatory PIN. Raw invitation and guest-session tokens are returned only
+at issuance and stored only as SHA-256 digests; PINs are stored as an HMAC keyed
+by `SESSION_SECRET`. Tokens travel in URL fragments and are removed before an
+explicit same-origin exchange. Guest mutations use a path-scoped HttpOnly,
+`SameSite=Lax`, production-`Secure` cookie registered with the global origin
+check. Per-IP and per-invitation limits, a persisted attempt lock, one active
+session, thirty-day absolute expiry, audit events without secrets, and database
+uniqueness bound the capability. A submitted invitation may reopen its
+restricted dashboard until manual expiry; its analytics resolver accepts no
+page or tenant identifier from the browser. Guest images pass the shared
+magic-byte, MIME, size, format, optimization, and inventory pipeline, with
+additional session/IP limits and tenant-ownership verification at submission.
+Revocation affects access only and cannot delete the resulting business-owned
+Linktree.
 
 ## Dependency install scripts
 

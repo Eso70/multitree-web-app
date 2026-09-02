@@ -3,12 +3,18 @@
 import { memo, useMemo, useCallback } from "react";
 import {
   getPlatformIcon,
-  getPlatformName,
   getPlatformColors,
 } from "@/components/public/LinktreeButtons";
-import { GpsLocationDisplay, splitGpsLinks } from "@/components/public/GpsLocationDisplay";
+import {
+  GpsLocationDisplay,
+  splitGpsLinks,
+} from "@/components/public/GpsLocationDisplay";
 import type { TemplateComponentProps } from "./types";
-import { deriveSubtitleColor, deriveTextColor, deriveTextSecondaryColor } from "@/lib/utils/theme-colors";
+import {
+  deriveSubtitleColor,
+  deriveTextColor,
+  deriveTextSecondaryColor,
+} from "@/lib/utils/theme-colors";
 import { areTemplatePropsEqual } from "@/lib/utils/linktree-utils";
 import { platformBorder, platformTextStyle } from "@/lib/brand/platform-brands";
 import {
@@ -19,6 +25,7 @@ import {
   TemplateActionButtonList,
   TemplateFooter,
   TemplateHeader,
+  TemplateLinkLabel,
   TemplateViewportLayout,
   templateBackgroundStyle,
 } from "./shared";
@@ -29,7 +36,10 @@ export const SpectrumTemplate = memo(function SpectrumTemplate({
   theme,
   onLinkClick,
 }: TemplateComponentProps) {
-  const { gpsLink, regularLinks } = useMemo(() => splitGpsLinks(links), [links]);
+  const { gpsLink, regularLinks } = useMemo(
+    () => splitGpsLinks(links),
+    [links],
+  );
 
   const backgroundStyle = useMemo(
     () =>
@@ -40,22 +50,42 @@ export const SpectrumTemplate = memo(function SpectrumTemplate({
     [theme],
   );
 
-  const textColor = useMemo(() => deriveTextColor(theme.from, theme.via, theme.to), [theme.from, theme.via, theme.to]);
-  const textSecondaryColor = useMemo(() => deriveTextSecondaryColor(theme.from, theme.via, theme.to), [theme.from, theme.via, theme.to]);
+  const textColor = useMemo(
+    () => deriveTextColor(theme.from, theme.via, theme.to),
+    [theme.from, theme.via, theme.to],
+  );
+  const textSecondaryColor = useMemo(
+    () => deriveTextSecondaryColor(theme.from, theme.via, theme.to),
+    [theme.from, theme.via, theme.to],
+  );
   const subtitleColor = deriveSubtitleColor(linktree.business_website_color);
 
   const handleLinkClick = useCallback(
-    (linkId: string, url: string, platform: string, defaultMessage?: string | null) => {
+    (
+      linkId: string,
+      url: string,
+      platform: string,
+      defaultMessage?: string | null,
+    ) => {
       onLinkClick(linkId, url, platform, defaultMessage);
     },
-    [onLinkClick]
+    [onLinkClick],
   );
 
   const linksWithColors = useMemo(() => {
-    return regularLinks.map((link) => ({ link, colors: getPlatformColors(link.platform, link.metadata?.custom_color as string | undefined) }));
+    return regularLinks.map((link) => ({
+      link,
+      colors: getPlatformColors(
+        link.platform,
+        link.metadata?.custom_color as string | undefined,
+      ),
+    }));
   }, [regularLinks]);
 
-  const isPreview = useMemo(() => linktree.id.includes("preview"), [linktree.id]);
+  const isPreview = useMemo(
+    () => linktree.id.includes("preview"),
+    [linktree.id],
+  );
 
   return (
     <TemplateViewportLayout
@@ -92,15 +122,22 @@ export const SpectrumTemplate = memo(function SpectrumTemplate({
             emptyStateTextStyle={{ color: textSecondaryColor }}
           >
             {linksWithColors.map(({ link, colors }, index) => {
-              const displayName = link.display_name || getPlatformName(link.platform);
-              const customColor = link.metadata?.custom_color as string | undefined;
+              const customColor = link.metadata?.custom_color as
+                string | undefined;
               const labelStyle = platformTextStyle(link.platform, customColor);
               const edge = platformBorder(link.platform, customColor);
 
               return (
                 <TemplateActionButton
                   key={link.id}
-                  onClick={() => handleLinkClick(link.id, link.url, link.platform, link.default_message)}
+                  onClick={() =>
+                    handleLinkClick(
+                      link.id,
+                      link.url,
+                      link.platform,
+                      link.default_message,
+                    )
+                  }
                   className={`group relative flex items-center justify-center rounded-full bg-linear-to-r shadow-lg hover:shadow-xl ${STANDARD_TEMPLATE_BUTTON_SIZE_CLASS}`}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   style={{
@@ -110,11 +147,19 @@ export const SpectrumTemplate = memo(function SpectrumTemplate({
                 >
                   <div className="flex items-center justify-center gap-3">
                     <div className="flex h-6 w-6 items-center justify-center">
-                      {getPlatformIcon(link.platform, "h-6 w-6 text-white", (link.metadata as Record<string, string>)?.custom_icon)}
+                      {getPlatformIcon(
+                        link.platform,
+                        "h-6 w-6 text-white",
+                        (link.metadata as Record<string, string>)?.custom_icon,
+                      )}
                     </div>
-                    <span className="text-lg font-semibold" style={labelStyle}>
-                      {displayName}
-                    </span>
+                    <TemplateLinkLabel
+                      link={link}
+                      className="min-w-0 text-left"
+                      style={labelStyle}
+                      titleClassName="block truncate text-base font-semibold leading-tight"
+                      platformClassName="mt-0.5 block truncate font-sans text-xs leading-tight opacity-70"
+                    />
                   </div>
                 </TemplateActionButton>
               );

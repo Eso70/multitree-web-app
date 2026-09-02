@@ -3,6 +3,7 @@
 import { useId, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 import { MotionReveal } from "@/components/motion/MotionPrimitives";
 import {
@@ -75,6 +76,7 @@ export function ManagementModal({
     ? ({
         "--theme-primary": accent.primary,
         "--theme-css": accent.css,
+        "--theme-ink": readableInk(accent.primary),
         "--multitree-accent": accent.primary,
         "--multitree-accent-ink": readableInk(accent.primary),
         "--multitree-accent-hover": `color-mix(in srgb, ${accent.primary} 88%, black)`,
@@ -132,15 +134,17 @@ export function ManagementModal({
           <div className="flex shrink-0 items-center gap-2">
             {headerAction}
             {!locked ? (
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={busy}
-                aria-label="داخستن"
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 ${createBusinessStyle ? "shadow-sm" : ""}`}
-              >
-                <X className={createBusinessStyle ? "h-5 w-5" : "h-4 w-4"} />
-              </button>
+              <Tooltip content="داخستن" side="bottom">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={busy}
+                  aria-label="داخستن"
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 cursor-pointer ${createBusinessStyle ? "shadow-sm" : ""}`}
+                >
+                  <X className={createBusinessStyle ? "h-5 w-5" : "h-4 w-4"} />
+                </button>
+              </Tooltip>
             ) : null}
           </div>
         </header>

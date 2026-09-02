@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 interface TablePaginationProps {
   page: number;
@@ -28,27 +29,33 @@ export function TablePagination({
         {firstItem}–{lastItem} لە {totalItems.toLocaleString()}
       </span>
       <div className="flex items-center justify-between gap-2 sm:justify-end">
-        <button
-          type="button"
-          disabled={page <= 1}
-          onClick={() => onPageChange(page - 1)}
-          className="flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          پێشوو
-        </button>
+        <Tooltip content="پەڕەی پێشوو" side="top">
+          <button
+            type="button"
+            disabled={page <= 1}
+            onClick={() => onPageChange(page - 1)}
+            aria-label="پەڕەی پێشوو"
+            className="flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 cursor-pointer"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            پێشوو
+          </button>
+        </Tooltip>
         <span className="min-w-16 text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
           {page} / {totalPages}
         </span>
-        <button
-          type="button"
-          disabled={page >= totalPages}
-          onClick={() => onPageChange(page + 1)}
-          className="flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
-        >
-          دواتر
-          <ChevronRight className="h-4 w-4" />
-        </button>
+        <Tooltip content="پەڕەی دواتر" side="top">
+          <button
+            type="button"
+            disabled={page >= totalPages}
+            onClick={() => onPageChange(page + 1)}
+            aria-label="پەڕەی دواتر"
+            className="flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 cursor-pointer"
+          >
+            دواتر
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </Tooltip>
       </div>
     </div>
   );

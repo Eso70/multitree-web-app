@@ -93,5 +93,7 @@ describe('allowedTemplateKeySql', () => {
     expect(sql).toContain(
       "subscription.status IN ('trialing','active','grace_period')",
     );
+    expect(sql).toContain("linktree.template_key <> 'branch-signal'");
+    expect(sql).toContain("LOWER(plan.code) = 'ultra'");
   });
 });

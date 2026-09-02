@@ -25,7 +25,6 @@ function content(overrides: Partial<Content> = {}): Content {
     certificates: [],
     processSteps: [],
     locations: [],
-    leadForm: { title: '', fields: [] },
     sections: [],
     ...overrides,
   };
@@ -115,23 +114,6 @@ describe('mini website analytics actions', () => {
     });
   });
 
-  it('registers the form even though it has no destination', () => {
-    const actions = buildMiniWebsiteActions(
-      content({
-        sections: [{ key: 'leadForm', enabled: true }],
-        leadForm: { title: 'Enquiry', fields: [{}] },
-      }),
-    );
-
-    expect(
-      actions.find((action) => action.actionKey === 'mini:leadForm'),
-    ).toMatchObject({
-      actionType: 'form',
-      destination: null,
-      tiktokEvent: 'Lead',
-    });
-  });
-
   it('carries a plan straight to checkout rather than a plain click', () => {
     const actions = buildMiniWebsiteActions(
       content({
@@ -159,7 +141,6 @@ describe('mini website analytics actions', () => {
         sections: [
           { key: 'services', enabled: true },
           { key: 'socials', enabled: true },
-          { key: 'leadForm', enabled: true },
         ],
         services: [service],
         socialLinks: [
@@ -170,7 +151,6 @@ describe('mini website analytics actions', () => {
             displayName: 'WhatsApp',
           },
         ],
-        leadForm: { title: 'Enquiry', fields: [{}] },
       }),
     );
 

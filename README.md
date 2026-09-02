@@ -8,7 +8,7 @@ It includes:
 - Business dashboard
 - Platform administration console
 - Public Linktree and mini-website builder
-- Analytics and CRM
+- Analytics and conversion tracking
 - Role, permission, and access management
 - Subscription, entitlement, and quota management
 - Developer API and webhooks
@@ -106,7 +106,7 @@ The detailed project documentation lives in the `docs/` directory.
 | `docs/architecture.md`                    | MultiTree architecture, module boundaries, storage, scaling, repository structure          |
 | `docs/security.md`                        | Authentication, authorization, encryption, rate limiting, uploads, webhooks, audit logging |
 | `docs/frontend.md`                        | Frontend architecture, routing, implemented features, dashboard, public pages              |
-| `docs/backend.md`                         | Backend architecture, analytics, CRM, uploads, environment configuration                   |
+| `docs/backend.md`                         | Backend architecture, analytics, uploads, environment configuration                        |
 | `docs/database.md`                        | PostgreSQL schema, Redis usage, migrations, reset workflow, demo data                      |
 | `docs/api-standards.md`                   | REST conventions, API design, scopes, webhooks, versioning                                 |
 | `docs/testing.md`                         | Testing workflow, verification commands, testing strategy                                  |

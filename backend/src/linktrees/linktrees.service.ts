@@ -1,4 +1,4 @@
-﻿import {
+import {
   Injectable,
   Logger,
   NotFoundException,
@@ -23,11 +23,9 @@ import {
 } from '../common/linktree-background-pattern';
 import { ForbiddenException } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
-import {
-  CreateLinktreeDto,
-  type LinkMetadataInput,
-} from './dto/create-linktree.dto';
+import { CreateLinktreeDto, type LinkMetadataInput } from './dto/create-linktree.dto';
 import { UpdateLinktreeDto } from './dto/update-linktree.dto';
+import { DuplicateLinktreeDto } from './dto/duplicate-linktree.dto';
 import * as crypto from 'crypto';
 import { EntitlementService } from '../billing/entitlement.service';
 import { TemplateAccessService } from '../billing/template-access.service';
@@ -534,6 +532,7 @@ export class LinktreesService {
     data: CreateLinktreeDto,
     businessId: string,
     scope: LinktreeWriteScope = 'business',
+    sourceClientInvitationId?: string,
   ) {
     const isPlatform = scope === 'platform';
     const linktreeLimit = isPlatform
@@ -712,8 +711,9 @@ export class LinktreesService {
         `INSERT INTO linktrees (
           name, subtitle, description, seo_name, uid, image, background_color,
           template_key, template_config, whatsapp_modal_enabled,
-          footer_text, footer_phone, footer_hidden, status, business_id, is_default
-        ) VALUES ($1, $2, $15, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, 'active', $13, $14)
+          footer_text, footer_phone, footer_hidden, status, business_id, is_default,
+          client_invitation_id
+        ) VALUES ($1, $2, $15, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, 'active', $13, $14, $16::uuid)
         RETURNING id, name, subtitle, description, seo_name, uid, image, background_color,
                   template_key, template_config, whatsapp_modal_enabled,
                   footer_text, footer_phone, footer_hidden, status, is_default, created_at, updated_at`,
@@ -741,6 +741,7 @@ export class LinktreesService {
           businessId,
           isDefaultFlag,
           data.description || null,
+          sourceClientInvitationId || null,
         ],
       );
 
@@ -802,6 +803,367 @@ export class LinktreesService {
 
     return this.mapLinktreeRow(this.databaseService, row);
   }
+
+  /**
+   * Generates a collision-free duplicate slug based on an existing slug.
+   * Handles base slugs, existing '-copy' suffixes, and numbered '-copy-N' or '-N' suffixes cleanly:
+   *   - "my-page"        -> "my-page-copy"
+   *   - "my-page-copy"   -> "my-page-copy-2"
+   *   - "my-page-copy-2" -> "my-page-copy-3"
+   *   - "my-page-2"      -> "my-page-3"
+   * Loops while checking availability against both business scope and root public slugs.
+   */
+  async generateDuplicateSlug(
+    businessId: string,
+    baseSlug: string,
+  ): Promise<string> {
+    const trimmed = (baseSlug || 'page').toLowerCase().trim();
+
+    const copyNumberedMatch = /^(.*?)-copy-(\d+)$/.exec(trimmed);
+    const copyMatch = /^(.*?)-copy$/.exec(trimmed);
+    const numberedMatch = /^(.*?)-(\d+)$/.exec(trimmed);
+
+    let prefix: string;
+    let nextNum: number;
+    let format: (p: string, n: number) => string;
+
+    if (copyNumberedMatch) {
+      prefix = copyNumberedMatch[1];
+      nextNum = parseInt(copyNumberedMatch[2], 10) + 1;
+      format = (p, n) => `${p}-copy-${n}`;
+    } else if (copyMatch) {
+      prefix = copyMatch[1];
+      nextNum = 2;
+      format = (p, n) => `${p}-copy-${n}`;
+    } else if (numberedMatch) {
+      prefix = numberedMatch[1];
+      nextNum = parseInt(numberedMatch[2], 10) + 1;
+      format = (p, n) => `${p}-${n}`;
+    } else {
+      prefix = trimmed;
+      nextNum = 1;
+      format = (p, n) => (n === 1 ? `${p}-copy` : `${p}-copy-${n}`);
+    }
+
+    let candidate = format(prefix, nextNum);
+    let attempts = 0;
+    while (attempts < 100) {
+      const isBusinessAvailable = await this.isSlugAvailable(
+        businessId,
+        candidate,
+      );
+      const isRootAvailable = await this.isRootSlugAvailable(candidate);
+      if (isBusinessAvailable && isRootAvailable) {
+        return candidate;
+      }
+      nextNum++;
+      candidate = format(prefix, nextNum);
+      attempts++;
+    }
+    return `${prefix}-copy-${crypto.randomBytes(2).toString('hex')}`;
+  }
+
+  /**
+   * Generates a clean duplicate name, e.g. "My Store (کۆپی)" or "My Store (کۆپی 2)".
+   */
+  async generateDuplicateName(
+    businessId: string,
+    baseName: string,
+  ): Promise<string> {
+    const trimmed = (baseName || '').trim();
+    if (!trimmed) return 'پەڕەی نوێ (کۆپی)';
+
+    const copyMatch = /^(.*?)\s*\((?:کۆپی|Copy)(?:\s+(\d+))?\)$/i.exec(
+      trimmed,
+    );
+    let prefix = trimmed;
+    let num = 1;
+    if (copyMatch) {
+      prefix = copyMatch[1].trim();
+      num = copyMatch[2] ? parseInt(copyMatch[2], 10) + 1 : 2;
+    }
+
+    let candidate = num === 1 ? `${prefix} (کۆپی)` : `${prefix} (کۆپی ${num})`;
+    let attempts = 0;
+    while (attempts < 50) {
+      const available = await this.isNameAvailable(businessId, candidate);
+      if (available) return candidate;
+      num++;
+      candidate = `${prefix} (کۆپی ${num})`;
+      attempts++;
+    }
+    return candidate;
+  }
+
+  async duplicateLinktree(
+    sourceId: string,
+    businessId: string,
+    dto?: DuplicateLinktreeDto,
+    scope: LinktreeWriteScope = 'business',
+  ) {
+    const isPlatform = scope === 'platform';
+    const linktreeLimit = isPlatform
+      ? -1
+      : await this.entitlementService.getInteger(
+          businessId,
+          'limit.linktrees',
+          0,
+        );
+
+    if (linktreeLimit !== -1) {
+      const countRes = await this.databaseService.query<{ count: string }>(
+        'SELECT COUNT(*) FROM linktrees WHERE business_id = $1',
+        [businessId],
+      );
+      const currentCount = parseInt(countRes.rows[0]?.count || '0', 10);
+      if (currentCount >= linktreeLimit) {
+        throw new ForbiddenException(
+          'گەیشتوویت بە ئەوپەڕی ژمارەی ڕێگەپێدراوی پەڕەکان بۆ ئەم پلانە.',
+        );
+      }
+    }
+
+    // 1. Fetch source linktree
+    const sourceRes = await this.databaseService.query<LinktreeRow>(
+      `SELECT lt.id, lt.name, lt.subtitle, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
+              lt.template_key, lt.template_config, lt.whatsapp_modal_enabled,
+              lt.footer_text, lt.footer_phone, lt.footer_hidden, lt.status, lt.is_default
+       FROM linktrees lt
+       WHERE lt.id = $1 AND lt.business_id = $2`,
+      [sourceId, businessId],
+    );
+
+    if (!sourceRes.rows || sourceRes.rows.length === 0) {
+      throw new NotFoundException('پەڕەی سەرچاوە نەدۆزرایەوە');
+    }
+    const source = sourceRes.rows[0];
+
+    // Check nested copy depth limitation (max 3 levels of nested copies)
+    const MAX_COPY_DEPTH = 3;
+    let sourceTemplateConfig: Record<string, unknown> = {};
+    if (typeof source.template_config === 'string') {
+      try {
+        sourceTemplateConfig = JSON.parse(source.template_config);
+      } catch {
+        sourceTemplateConfig = {};
+      }
+    } else if (
+      source.template_config &&
+      typeof source.template_config === 'object'
+    ) {
+      sourceTemplateConfig = source.template_config as Record<string, unknown>;
+    }
+
+    const sourceLineage = (sourceTemplateConfig._copy_lineage as {
+      source_id?: string;
+      origin_id?: string;
+      depth?: number;
+    }) || null;
+
+    const currentDepth =
+      typeof sourceLineage?.depth === 'number' ? sourceLineage.depth : 0;
+
+    if (!isPlatform && currentDepth >= MAX_COPY_DEPTH) {
+      throw new BadRequestException(
+        `ناتوانیت کۆپی لەم پەڕەیە دروست بکەیت چونکە گەیشتووەتە ئەوپەڕی ئاستی لەبەرگرتنەوە (لانی زۆر ${MAX_COPY_DEPTH} ئاست).`,
+      );
+    }
+
+    // Check direct copies limitation (max 5 direct copies per page)
+    const MAX_DIRECT_COPIES = 5;
+    const directCopiesRes = await this.databaseService.query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM linktrees 
+       WHERE business_id = $1 
+         AND template_config->'_copy_lineage'->>'source_id' = $2`,
+      [businessId, sourceId],
+    );
+    const directCopiesCount = parseInt(
+      directCopiesRes.rows[0]?.count || '0',
+      10,
+    );
+
+    if (!isPlatform && directCopiesCount >= MAX_DIRECT_COPIES) {
+      throw new BadRequestException(
+        `ئەم پەڕەیە گەیشتووەتە ئەوپەڕی ژمارەی ڕێگەپێدراوی کۆپیکردنی ڕاستەوخۆ (لانی زۆر ${MAX_DIRECT_COPIES} کۆپی).`,
+      );
+    }
+
+    // 2. Resolve target slug
+    let targetSlug: string;
+    if (dto?.slug?.trim()) {
+      targetSlug = dto.slug.toLowerCase().trim();
+      const isAvailable = await this.isSlugAvailable(businessId, targetSlug);
+      const isRootAvailable = await this.isRootSlugAvailable(targetSlug);
+      if (!isAvailable || !isRootAvailable) {
+        throw new ConflictException(
+          'ئەم نازناوە (slug) پێشتر بەکارهاتووە، تکایە دانەیەکی تر هەڵبژێرە.',
+        );
+      }
+    } else {
+      targetSlug = await this.generateDuplicateSlug(
+        businessId,
+        source.seo_name,
+      );
+    }
+
+    // 3. Resolve target name (names do not carry a unique constraint, so same name is allowed)
+    const targetName = dto?.name?.trim() || source.name;
+
+    // 4. Fetch source links and whatsapp questions
+    const [linksRes, whatsappRes] = await Promise.all([
+      this.databaseService.query<LinkRow>(
+        `SELECT platform, url, display_name, description, default_message, display_order,
+                original_input, country_code, gps_lat, gps_lng, custom_color, custom_icon
+         FROM links
+         WHERE linktree_id = $1
+         ORDER BY display_order ASC`,
+        [sourceId],
+      ),
+      this.databaseService.query<{
+        question_text: string;
+        message: string;
+        display_order: number;
+      }>(
+        `SELECT question_text, message, display_order
+         FROM whatsapp_questions
+         WHERE linktree_id = $1
+         ORDER BY display_order ASC`,
+        [sourceId],
+      ),
+    ]);
+
+    // 5. Generate unique uid
+    let uid = '';
+    let attempts = 0;
+    while (attempts < 10) {
+      uid = this.generateUid();
+      const checkRes = await this.databaseService.query<{
+        '?column?': number;
+      }>('SELECT 1 FROM linktrees WHERE business_id = $1 AND uid = $2', [
+        businessId,
+        uid,
+      ]);
+      if (checkRes.rows.length === 0) break;
+      attempts++;
+    }
+    if (!uid) {
+      throw new BadRequestException(
+        'نەتوانرا ناسێنەری تایبەت (UID) دروست بکرێت',
+      );
+    }
+
+    // 6. Construct target template_config with copy lineage metadata
+    const targetDepth = currentDepth + 1;
+    const originId = sourceLineage?.origin_id || sourceId;
+    const targetTemplateConfig = {
+      ...sourceTemplateConfig,
+      _copy_lineage: {
+        source_id: sourceId,
+        origin_id: originId,
+        depth: targetDepth,
+        copied_at: new Date().toISOString(),
+      },
+    };
+
+    // 7. Execute atomic transaction
+    const row = await this.databaseService.transaction(async (client) => {
+      const ltRes = await client.query<LinktreeRow>(
+        `INSERT INTO linktrees (
+          business_id, name, subtitle, description, seo_name, uid, image,
+          background_color, template_key, template_config, whatsapp_modal_enabled,
+          footer_text, footer_phone, footer_hidden, status, is_default
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7,
+          $8, $9, $10, $11,
+          $12, $13, $14, $15, $16
+        ) RETURNING *`,
+        [
+          businessId,
+          targetName,
+          source.subtitle,
+          source.description,
+          targetSlug,
+          uid,
+          source.image,
+          source.background_color,
+          source.template_key,
+          JSON.stringify(targetTemplateConfig),
+          source.whatsapp_modal_enabled,
+          source.footer_text,
+          source.footer_phone,
+          source.footer_hidden,
+          source.status || 'active',
+          false, // duplicates are never default
+        ],
+      );
+
+      const created = ltRes.rows[0];
+
+      // Clone WhatsApp questions
+      for (const q of whatsappRes.rows || []) {
+        await client.query(
+          `INSERT INTO whatsapp_questions (linktree_id, question_text, message, display_order)
+           VALUES ($1, $2, $3, $4)`,
+          [created.id, q.question_text, q.message, q.display_order],
+        );
+      }
+
+      // Clone links
+      for (const link of linksRes.rows || []) {
+        await client.query(
+          `INSERT INTO links (
+            linktree_id, business_id, platform, url, display_name, description, default_message,
+            display_order, original_input, country_code, gps_lat, gps_lng, custom_color, custom_icon
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+          [
+            created.id,
+            businessId,
+            link.platform,
+            link.url,
+            link.display_name,
+            link.description,
+            link.default_message,
+            link.display_order,
+            link.original_input,
+            link.country_code,
+            link.gps_lat,
+            link.gps_lng,
+            link.custom_color,
+            link.custom_icon,
+          ],
+        );
+      }
+
+      if (!isPlatform) {
+        await this.webhooks.emitWithClient(
+          client,
+          businessId,
+          'linktree.created',
+          'linktree',
+          created.id,
+          {
+            id: created.id,
+            uid: created.uid,
+            slug: created.seo_name,
+          },
+        );
+      }
+
+      return created;
+    });
+
+    // Claim assets if image or config contains background assets
+    if (source.image || source.template_config) {
+      await this.storage.claimBusinessAssets(
+        businessId,
+        source.image,
+        source.template_config as Record<string, unknown>,
+      );
+    }
+
+    return this.mapLinktreeRow(this.databaseService, row);
+  }
+
 
   private async clearLinktreeCache(
     businessId: string,

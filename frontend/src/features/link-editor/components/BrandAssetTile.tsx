@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { LockKeyhole, Upload } from "lucide-react";
+import { Tooltip } from "@/components/shared/Tooltip";
 
 interface BrandAssetTileProps {
   src: string;
@@ -64,15 +65,16 @@ export function BrandAssetTile({
     return (
       <div className={className}>
         {image}
-        <button
-          type="button"
-          onClick={onUnlock}
-          aria-label={unlockLabel}
-          title={unlockLabel}
-          className="absolute inset-0 flex items-center justify-center bg-white/65 text-slate-500 transition hover:bg-white/80 hover:text-slate-700 dark:bg-black/50 dark:text-slate-300 dark:hover:bg-black/60"
-        >
-          <LockKeyhole className={iconClassName} />
-        </button>
+        <Tooltip content={unlockLabel} side="top">
+          <button
+            type="button"
+            onClick={onUnlock}
+            aria-label={unlockLabel}
+            className="absolute inset-0 flex items-center justify-center bg-white/65 text-slate-500 transition hover:bg-white/80 hover:text-slate-700 dark:bg-black/50 dark:text-slate-300 dark:hover:bg-black/60 cursor-pointer"
+          >
+            <LockKeyhole className={iconClassName} />
+          </button>
+        </Tooltip>
         <span className={captionClassName}>{caption}</span>
       </div>
     );

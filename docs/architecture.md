@@ -30,10 +30,12 @@ live behind domain modules rather than expanding those entry points further.
   coordination, and transaction orchestration. Mutation SQL that participates
   in an existing service transaction remains with that transaction until it can
   be moved as one cohesive repository operation.
-- Business and platform mini-website dashboards use one workspace-configured
+- Creator and Platform mini-website dashboards use one workspace-configured
   manager and editor. Endpoint selection, public path, template policy, and
   analytics ownership are configuration; form steps, validation, payloads,
-  uploads, list UI, renderer, and tracking behavior are shared.
+  uploads, list UI, renderer, and tracking behavior are shared. The Business
+  dashboard exposes no Mini Website navigation item or route on any plan, while
+  stored public tenant pages remain renderable.
 - All presentation shared by business and platform surfaces has one
   implementation with thin surface adapters. Platform-admin-only actions are
   introduced through explicit permission or capability configuration; they do
@@ -239,7 +241,7 @@ NestJS modules own their HTTP controllers and application services
 - `linktrees` and `links`: tenant-owned linktree behavior.
 - `mini-websites`: tenant-owned mini-website persistence, validation, and
   public reads.
-- `analytics`: ingestion, rollups, reporting, CRM, and the TikTok delivery
+- `analytics`: ingestion, rollups, reporting, and the TikTok delivery
   outbox.
 - `communications`: announcements, notifications, and conversations.
 - `api-platform`: developer API clients, scopes, idempotency, schedules, and
@@ -358,7 +360,7 @@ joined to `public_pages`, with idempotent event IDs and indexed
 business/page ownership. `platform-admin/AuditLogService` unions all four
 activity sources — `security_audit_events`, `http_request_events`,
 `analytics_events`, and `marketing_delivery_attempts` — described further in
-[docs/backend.md](backend.md#public-analytics-crm-and-activity).
+[docs/backend.md](backend.md#public-analytics-and-activity).
 
 The superseded `page_views`, `link_clicks`, `analytics_totals`,
 `integration_delivery_events`, `mini_website_events`, and

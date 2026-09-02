@@ -46,6 +46,37 @@ describe('ThemeProvider', () => {
       expect(document.documentElement.style.getPropertyValue('--theme-css')).toBe('#000000');
       expect(document.documentElement.style.getPropertyValue('--theme-type')).toBe('solid');
     });
+
+    it('publishes the tenant color to every document-level business theme token', () => {
+      render(
+        <ThemeProvider websiteColor="#123456" documentTheme="business">
+          <div>children</div>
+        </ThemeProvider>,
+      );
+
+      const root = document.documentElement;
+      expect(root.getAttribute('data-business-theme-active')).toBe('true');
+      expect(root.style.getPropertyValue('--business-website-color')).toBe('#123456');
+      expect(root.style.getPropertyValue('--business-website-css')).toBe('#123456');
+      expect(root.style.getPropertyValue('--multitree-accent')).toBe('#123456');
+      expect(root.style.getPropertyValue('--multitree-accent-gradient')).toBe('#123456');
+      expect(root.style.getPropertyValue('--multitree-accent-ink')).toBe('#ffffff');
+    });
+
+    it('keeps template-only providers from replacing the platform accent', () => {
+      render(
+        <ThemeProvider websiteColor="#123456">
+          <div>children</div>
+        </ThemeProvider>,
+      );
+
+      expect(
+        document.documentElement.style.getPropertyValue('--business-website-color'),
+      ).toBe('');
+      expect(
+        document.documentElement.style.getPropertyValue('--multitree-accent'),
+      ).toBe('');
+    });
   });
 
   describe('CSS custom properties are cleaned up on unmount', () => {
@@ -65,6 +96,24 @@ describe('ThemeProvider', () => {
       expect(document.documentElement.style.getPropertyValue('--theme-primary')).toBe('');
       expect(document.documentElement.style.getPropertyValue('--theme-css')).toBe('');
       expect(document.documentElement.style.getPropertyValue('--theme-type')).toBe('');
+    });
+
+    it('restores the previous platform accent after a business theme unmounts', () => {
+      document.documentElement.style.setProperty('--multitree-accent', '#b6f20d');
+      const { unmount } = render(
+        <ThemeProvider websiteColor="#123456" documentTheme="business">
+          <div>children</div>
+        </ThemeProvider>,
+      );
+
+      unmount();
+
+      expect(
+        document.documentElement.style.getPropertyValue('--multitree-accent'),
+      ).toBe('#b6f20d');
+      expect(
+        document.documentElement.style.getPropertyValue('--business-website-color'),
+      ).toBe('');
     });
   });
 

@@ -6,7 +6,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Monitor, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
-import { SkeletonList } from "@/components/shared/Skeleton";
+import { Tooltip } from "@/components/shared/Tooltip";
+import { SkeletonActivityList, SkeletonSessionList } from "@/components/shared/SkeletonCommunicationLayouts";
 
 type Session = {
   id: string;
@@ -147,23 +148,25 @@ export function SessionManagementPanel({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => void load()}
-            aria-busy={loading}
-            disabled={loading}
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-white disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/5"
-            aria-label="Refresh sessions"
-          >
-            <MotionSpinner active={loading}>
-              <RefreshCw className="h-4 w-4" />
-            </MotionSpinner>
-          </button>
+          <Tooltip content="نوێکردنەوەی دانیشتنەکان" side="bottom">
+            <button
+              type="button"
+              onClick={() => void load()}
+              aria-busy={loading}
+              disabled={loading}
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-white disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/5"
+              aria-label="Refresh sessions"
+            >
+              <MotionSpinner active={loading}>
+                <RefreshCw className="h-4 w-4" />
+              </MotionSpinner>
+            </button>
+          </Tooltip>
         </div>
 
         <div className="space-y-3">
           {loading && sessions.length === 0 ? (
-            <SkeletonList rows={3} />
+            <SkeletonSessionList rows={3} />
           ) : sessions.length === 0 ? (
             <p className="py-8 text-center text-xs text-slate-400">
               No active sessions found.
@@ -198,14 +201,16 @@ export function SessionManagementPanel({
                   </p>
                 </div>
                 {(administratorMode || !session.is_current) && (
-                  <button
-                    type="button"
-                    onClick={() => setPendingRevoke(session)}
-                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-500/10"
-                    aria-label="Revoke session"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <Tooltip content="لابردنی دەستگەیشتنی ئەم دانیشتنە" side="top">
+                    <button
+                      type="button"
+                      onClick={() => setPendingRevoke(session)}
+                      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-500/10"
+                      aria-label="Revoke session"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
                 )}
               </div>
             ))
@@ -213,15 +218,17 @@ export function SessionManagementPanel({
         </div>
 
         {revocableSessions.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setPendingRevoke("all")}
-            className="mt-4 w-full cursor-pointer rounded-xl border border-rose-200 px-4 py-2.5 text-xs font-bold text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/20 dark:text-rose-400 dark:hover:bg-rose-500/10"
-          >
-            {administratorMode
-              ? "Revoke all business sessions"
-              : "Sign out all other sessions"}
-          </button>
+          <Tooltip content={administratorMode ? "لابردنی دەستگەیشتنی هەموو دانیشتنەکان" : "چوونەدەرەوە لە هەموو ئامێرەکانی تر"} side="top">
+            <button
+              type="button"
+              onClick={() => setPendingRevoke("all")}
+              className="mt-4 w-full cursor-pointer rounded-xl border border-rose-200 px-4 py-2.5 text-xs font-bold text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/20 dark:text-rose-400 dark:hover:bg-rose-500/10"
+            >
+              {administratorMode
+                ? "Revoke all business sessions"
+                : "Sign out all other sessions"}
+            </button>
+          </Tooltip>
         )}
       </div>
 
@@ -231,7 +238,7 @@ export function SessionManagementPanel({
         </h3>
         <div className="mt-3 divide-y divide-slate-200 dark:divide-white/5">
           {loading && activity.length === 0 ? (
-            <SkeletonList rows={4} />
+            <SkeletonActivityList rows={4} />
           ) : activity.length === 0 ? (
             <p className="py-6 text-center text-xs text-slate-400">
               No recent login activity.

@@ -13,6 +13,7 @@ import {
   imageHasOpaqueBackground,
   parseUploadedIconValue,
 } from "@/features/link-editor/custom-icon-value";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { InlineRequestError } from "@/components/shared/InlineRequestError";
 import {
   createUploadFailureError,
@@ -236,30 +237,33 @@ setUploading(true);
       {customTrigger}
     </div>
   ) : (
-    <button
-      type="button"
-      onClick={() => setIsOpen(!isOpen)}
-      className="relative flex items-center justify-center shrink-0 w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 lg:h-12 overflow-hidden rounded-lg sm:rounded-xl md:rounded-2xl border border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/20 focus-within:ring-2 transition-all cursor-pointer shadow-sm group bg-white dark:bg-[#161B22]"
-      style={{ '--tw-ring-color': 'color-mix(in srgb, var(--theme-primary, #64748b) 30%, transparent)' } as React.CSSProperties}
-      title="ئاڕاستەی ئایکۆن (Choose Icon)"
-    >
-      {uploadedIcon ? (
-        <Image
-          src={uploadedIcon.url}
-          alt=""
-          width={48}
-          height={48}
-          className={`h-full w-full ${uploadedIcon.hasBackground ? "object-cover" : "object-contain p-2"}`}
-          unoptimized
-        />
-      ) : value && CUSTOM_ICONS_MAP[value] ? (
-        <SelectedIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-gray-300   duration-300" />
-      ) : (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-[#161B22] text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-bold group-hover:bg-gray-100 dark:group-hover:bg-[#161B22] transition-colors">
-          ئایکۆن
-        </div>
-      )}
-    </button>
+    <Tooltip content="دیاریکردنی ئایکۆن" side="top">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="relative flex items-center justify-center shrink-0 w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 lg:h-12 overflow-hidden rounded-lg sm:rounded-xl md:rounded-2xl border border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/20 focus-within:ring-2 transition-all cursor-pointer shadow-sm group bg-white dark:bg-[#161B22]"
+        style={{ '--tw-ring-color': 'color-mix(in srgb, var(--theme-primary, #64748b) 30%, transparent)' } as React.CSSProperties}
+        title="ئاڕاستەی ئایکۆن (Choose Icon)"
+        aria-label="دیاریکردنی ئایکۆن"
+      >
+        {uploadedIcon ? (
+          <Image
+            src={uploadedIcon.url}
+            alt=""
+            width={48}
+            height={48}
+            className={`h-full w-full ${uploadedIcon.hasBackground ? "object-cover" : "object-contain p-2"}`}
+            unoptimized
+          />
+        ) : value && CUSTOM_ICONS_MAP[value] ? (
+          <SelectedIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-gray-300   duration-300" />
+        ) : (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-[#161B22] text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-bold group-hover:bg-gray-100 dark:group-hover:bg-[#161B22] transition-colors">
+            ئایکۆن
+          </div>
+        )}
+      </button>
+    </Tooltip>
   );
 
   if (!mounted) return <div ref={popoverRef} className="relative">{triggerContent}</div>;

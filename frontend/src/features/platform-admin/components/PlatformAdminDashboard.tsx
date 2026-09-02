@@ -22,6 +22,7 @@ import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
 import { CreateBusinessModal } from "@/features/platform-admin/components/CreateBusinessModal";
 import { TemplatesPage } from "@/features/templates/components/TemplatesPage";
 import { SearchModal } from "@/components/shared/SearchModal";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { BlocklistsPage } from "@/features/platform-admin/components/BlocklistsPage";
 import { ActivityLogPage } from "@/features/platform-admin/components/ActivityLogPage";
 import { APIManagementPage } from "@/features/platform-admin/components/APIManagementPage";
@@ -62,13 +63,16 @@ import {
   getPlatformPage,
   type PlatformPage,
 } from "@/features/platform-admin/platform-pages";
+import { SkeletonBusinessAnalyticsModal } from "@/components/shared/SkeletonModalLayouts";
+import { SkeletonDashboardShell } from "@/components/shared/Skeleton";
+import { SkeletonBusinessDirectoryPage } from "@/components/shared/SkeletonPageLayouts";
 
 const BusinessAnalyticsModal = dynamic(
   () =>
     import("@/features/platform-admin/components/BusinessAnalyticsModal").then(
       (mod) => ({ default: mod.BusinessAnalyticsModal }),
     ),
-  { ssr: false, loading: () => null },
+  { ssr: false, loading: () => <SkeletonBusinessAnalyticsModal /> },
 );
 
 type PlatformTheme = "light" | "dark";
@@ -465,9 +469,9 @@ export function PlatformAdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#161B22]">
-        <div className="text-slate-500 dark:text-gray-400">چاوەڕوان بە...</div>
-      </div>
+      <SkeletonDashboardShell navigationItems={12}>
+        <SkeletonBusinessDirectoryPage />
+      </SkeletonDashboardShell>
     );
   }
 
@@ -528,25 +532,28 @@ export function PlatformAdminDashboard() {
         accent="var(--multitree-accent)"
         footer={
           <div className="shrink-0 border-t border-slate-200 p-4 dark:border-white/10">
-            <button
-              type="button"
-              onClick={() => router.push(`${consoleBasePath}/settings`)}
-              className={`flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-slate-100 ${
-                isSidebarCollapsed ? "md:justify-center md:px-0" : "gap-3"
-              }`}
-              title="ڕێکخستنەکانی بەڕێوەبەر"
-            >
-              <UserCog className="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span
-                className={`whitespace-nowrap transition-all duration-300 ${
-                  isSidebarCollapsed
-                    ? "overflow-hidden md:pointer-events-none md:w-0 md:opacity-0"
-                    : "opacity-100"
+            <Tooltip content="ڕێکخستنەکانی بەڕێوەبەر" side="right" disabled={!isSidebarCollapsed}>
+              <button
+                type="button"
+                onClick={() => router.push(`${consoleBasePath}/settings`)}
+                className={`flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-slate-100 cursor-pointer ${
+                  isSidebarCollapsed ? "md:justify-center md:px-0" : "gap-3"
                 }`}
+                title="ڕێکخستنەکانی بەڕێوەبەر"
+                aria-label="ڕێکخستنەکانی بەڕێوەبەر"
               >
-                ڕێکخستنەکانی بەڕێوەبەر
-              </span>
-            </button>
+                <UserCog className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span
+                  className={`whitespace-nowrap transition-all duration-300 ${
+                    isSidebarCollapsed
+                      ? "overflow-hidden md:pointer-events-none md:w-0 md:opacity-0"
+                      : "opacity-100"
+                  }`}
+                >
+                  ڕێکخستنەکانی بەڕێوەبەر
+                </span>
+              </button>
+            </Tooltip>
           </div>
         }
       />

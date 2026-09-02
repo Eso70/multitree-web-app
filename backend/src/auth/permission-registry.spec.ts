@@ -43,17 +43,28 @@ describe('application permission registry', () => {
     },
   );
 
-  it('uses a mini-website capability for mini-website creation', () => {
-    const source = fs.readFileSync(
+  it('does not expose Business mini-website creation while keeping Creator and Platform creation', () => {
+    const businessSource = fs.readFileSync(
       path.resolve(__dirname, '../mini-websites/mini-websites.controller.ts'),
       'utf8',
     );
-
-    expect(source).toMatch(
-      /@Post\(\)[\s\S]*?Capability\.BusinessMiniWebsitesCreate/,
+    const creatorSource = fs.readFileSync(
+      path.resolve(__dirname, '../creator/creator-content.controller.ts'),
+      'utf8',
     );
-    expect(source).not.toMatch(
-      /@Post\(\)[\s\S]*?Capability\.BusinessLinktreesCreate[\s\S]*?async create/,
+    const platformSource = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        '../platform-admin/platform-mini-websites.controller.ts',
+      ),
+      'utf8',
+    );
+
+    expect(businessSource).not.toMatch(/@Post\(\)/);
+    expect(creatorSource).toMatch(/@Post\('mini-websites'\)/);
+    expect(platformSource).toMatch(/@Post\(\)[\s\S]*?async create/);
+    expect(PERMISSION_CATALOG.map(({ key }) => key)).not.toContain(
+      'business:mini-websites:create',
     );
   });
 
@@ -84,7 +95,7 @@ describe('application permission registry', () => {
     expect(Object.keys(allowlist)).toHaveLength(4);
   });
 
-  it('separates simple analytics from the advanced analytics workspace', () => {
+  it('keeps only the per-page analytics and TikTok diagnostic routes', () => {
     const source = fs.readFileSync(
       path.resolve(__dirname, '../analytics/unified-analytics.controller.ts'),
       'utf8',
@@ -96,26 +107,11 @@ describe('application permission registry', () => {
     expect(source).toMatch(
       /@Get\('pages\/:pageId\/actions'\)[\s\S]*?@RequireCapabilities\(Capability\.BusinessAnalyticsDetailsRead\)/,
     );
-    expect(source).toMatch(
-      /@Get\('crm\/summary'\)[\s\S]*?@RequireCapabilities\(Capability\.BusinessAnalyticsDetailsRead\)/,
-    );
-
-    for (const route of [
-      'pages/:pageId/daily',
-      'daily',
-      'breakdowns',
-      'pages/:pageId/visitors',
-      'pages/:pageId/visitors/:visitorId/journey',
-      'funnel',
-      'retention',
-      'realtime',
-    ]) {
-      const escapedRoute = route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      expect(source).toMatch(
-        new RegExp(
-          `@Get\\('${escapedRoute}'\\)[\\s\\S]*?@RequireCapabilities\\(Capability\\.BusinessAnalyticsAdvancedRead\\)`,
-        ),
-      );
-    }
+    expect(source).not.toContain('BusinessAnalyticsAdvancedRead');
+    expect(source).not.toContain("@Get('breakdowns')");
+    expect(source).not.toContain("@Get('visitors')");
+    expect(source).not.toContain("@Get('funnel')");
+    expect(source).not.toContain("@Get('retention')");
+    expect(source).not.toContain("@Get('realtime')");
   });
 });

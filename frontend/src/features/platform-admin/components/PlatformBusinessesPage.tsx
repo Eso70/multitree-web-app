@@ -23,6 +23,7 @@ import type {
   BusinessSummary,
 } from "@/features/platform-admin/hooks/useBusinesses";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
+import { Tooltip } from "@/components/shared/Tooltip";
 import { SignupApplicationsPanel } from "@/features/platform-admin/components/SignupApplicationsPanel";
 import { InvitationCreator } from "@/features/platform-admin/components/InvitationCreator";
 import {
@@ -154,21 +155,24 @@ export function PlatformBusinessesPage({
             <div className="flex items-center gap-2">
               {section === "businesses" ? (
                 <>
-                  <button
-                    onClick={onSearchAction}
-                    className={`group relative flex items-center justify-center h-10 w-10 px-0 rounded-xl border transition-all duration-300 shadow-sm hover:shadow cursor-pointer ${searchQuery.trim() ? "" : "sm:w-44 sm:justify-between sm:px-3.5"} ${
-                      isSearchModalOpen
-                        ? "sa-soft sa-soft-border"
-                        : "bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-750 dark:text-gray-400 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/10"
-                    }`}
-                    aria-label={searchQuery.trim() ? "Clear search" : "Search"}
-                    title={
+                  <Tooltip
+                    content={
                       searchQuery.trim()
                         ? "پاککردنەوەی گەڕان"
                         : "گەڕان (Ctrl+K)"
                     }
+                    side="bottom"
                   >
-                    {searchQuery.trim() ? (
+                    <button
+                      onClick={onSearchAction}
+                      className={`group relative flex items-center justify-center h-10 w-10 px-0 rounded-xl border transition-all duration-300 shadow-sm hover:shadow cursor-pointer ${searchQuery.trim() ? "" : "sm:w-44 sm:justify-between sm:px-3.5"} ${
+                        isSearchModalOpen
+                          ? "sa-soft sa-soft-border"
+                          : "bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-750 dark:text-gray-400 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/10"
+                      }`}
+                      aria-label={searchQuery.trim() ? "Clear search" : "Search"}
+                    >
+                      {searchQuery.trim() ? (
                       <X className="h-4 w-4 text-slate-500 transition-transform group-hover:scale-110 dark:text-gray-400" />
                     ) : (
                       <>
@@ -178,52 +182,59 @@ export function PlatformBusinessesPage({
                             گەڕان...
                           </span>
                         </div>
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-slate-100 dark:bg-white/10 text-[8px] font-sans font-bold text-slate-400 dark:text-gray-500 select-none">
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-sans font-bold text-[8px] text-slate-400 dark:text-gray-500 bg-slate-100 dark:bg-white/10 px-1 py-0.5 rounded select-none">
                           <span>Ctrl</span>
                           <span>K</span>
                         </kbd>
                       </>
                     )}
                   </button>
+                </Tooltip>
 
                   <div className="flex items-center h-10 p-1 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 shadow-sm shrink-0">
-                    <button
-                      onClick={() => onViewModeChange("grid")}
-                      className={`flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-300 cursor-pointer ${viewMode === "grid" ? "sa-gradient sa-ink shadow-md" : "text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/5"}`}
-                      aria-label="Grid view"
-                      title="بینینی گرید"
-                    >
-                      <LayoutGrid className="h-4 w-4 shrink-0" />
-                    </button>
-                    <button
-                      onClick={() => onViewModeChange("table")}
-                      className={`flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-300 cursor-pointer ${viewMode === "table" ? "sa-gradient sa-ink shadow-md" : "text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/5"}`}
-                      aria-label="Table view"
-                      title="بینینی خشتە"
-                    >
-                      <Table2 className="h-4 w-4 shrink-0" />
-                    </button>
+                    <Tooltip content="بینینی گرید" side="bottom">
+                      <button
+                        onClick={() => onViewModeChange("grid")}
+                        className={`flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-300 cursor-pointer ${viewMode === "grid" ? "sa-gradient sa-ink shadow-md" : "text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/5"}`}
+                        aria-label="Grid view"
+                        title="بینینی گرید"
+                      >
+                        <LayoutGrid className="h-4 w-4 shrink-0" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip content="بینینی خشتە" side="bottom">
+                      <button
+                        onClick={() => onViewModeChange("table")}
+                        className={`flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-300 cursor-pointer ${viewMode === "table" ? "sa-gradient sa-ink shadow-md" : "text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/5"}`}
+                        aria-label="Table view"
+                        title="بینینی خشتە"
+                      >
+                        <Table2 className="h-4 w-4 shrink-0" />
+                      </button>
+                    </Tooltip>
                   </div>
                 </>
               ) : null}
 
-              <button
-                type="button"
-                onClick={() => {
-                  if (section === "businesses") onRefresh();
-                  else setApplicationReloadToken((value) => value + 1);
-                }}
-                disabled={section === "businesses" && isRefreshing}
-                className="group flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:shadow disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
-                title="نوێکردنەوە"
-                aria-label="نوێکردنەوە"
-              >
-                <MotionSpinner
-                  active={section === "businesses" && isRefreshing}
+              <Tooltip content="نوێکردنەوە" side="bottom">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (section === "businesses") onRefresh();
+                    else setApplicationReloadToken((value) => value + 1);
+                  }}
+                  disabled={section === "businesses" && isRefreshing}
+                  className="group flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:shadow disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 cursor-pointer"
+                  title="نوێکردنەوە"
+                  aria-label="نوێکردنەوە"
                 >
-                  <RefreshCw className="h-4 w-4" />
-                </MotionSpinner>
-              </button>
+                  <MotionSpinner
+                    active={section === "businesses" && isRefreshing}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </MotionSpinner>
+                </button>
+              </Tooltip>
 
               <InvitationCreator showLabel />
             </div>
