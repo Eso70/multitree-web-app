@@ -90,6 +90,7 @@ interface ActionRow {
   label: string;
   action_type: string;
   tiktok_event: string;
+  metadata?: Record<string, unknown> | null;
 }
 
 interface RedirectActionRow {
@@ -372,7 +373,7 @@ export class UnifiedAnalyticsService {
   ): Promise<ActionRow | null> {
     if (!sourceOrActionId) return null;
     const result = await client.query<ActionRow>(
-      `SELECT id, label, action_type, tiktok_event
+      `SELECT id, label, action_type, tiktok_event, metadata
        FROM public_page_actions
        WHERE public_page_id = $1
          AND (id = $2::uuid OR source_link_id = $2::uuid)
@@ -704,6 +705,18 @@ export class UnifiedAnalyticsService {
           (input.browserDispatched && input.browserEventName) ||
           this.tiktokEvent(input.eventName, action);
         const identity = properties;
+        const rawPlatform =
+          action?.metadata &&
+          typeof action.metadata === 'object' &&
+          typeof action.metadata.platform === 'string'
+            ? action.metadata.platform
+            : typeof properties.platform === 'string'
+              ? properties.platform
+              : undefined;
+        const contentName = rawPlatform
+          ? this.canonicalPlatformName(rawPlatform)
+          : action?.label || page.name;
+
         const payload = {
           event: tikTokName,
           event_time: Math.floor(new Date(occurredAt).getTime() / 1000),
@@ -713,7 +726,7 @@ export class UnifiedAnalyticsService {
           content_id: action?.id || page.id,
           content_ids: [action?.id || page.id],
           content_type: action ? action.action_type : page.page_type,
-          content_name: action?.label || page.name,
+          content_name: contentName,
           value: isConversion ? input.conversionValue || 0 : undefined,
           currency: isConversion ? input.currency || 'USD' : undefined,
           ip: context.ip,
@@ -1048,5 +1061,36 @@ export class UnifiedAnalyticsService {
         [businessId],
       );
     });
+  }
+
+  private canonicalPlatformName(platform: string): string {
+    const map: Record<string, string> = {
+      whatsapp: 'WhatsApp',
+      phone: 'Phone',
+      tel: 'Phone',
+      email: 'Email',
+      mailto: 'Email',
+      telegram: 'Telegram',
+      viber: 'Viber',
+      messenger: 'Messenger',
+      signal: 'Signal',
+      line: 'Line',
+      facebook: 'Facebook',
+      instagram: 'Instagram',
+      tiktok: 'TikTok',
+      youtube: 'YouTube',
+      snapchat: 'Snapchat',
+      x: 'X',
+      twitter: 'X',
+      linkedin: 'LinkedIn',
+      spotify: 'Spotify',
+      appstore: 'App Store',
+      playstore: 'Google Play',
+      location: 'Location',
+      website: 'Website',
+      link: 'Website',
+    };
+    const key = platform.trim().toLowerCase();
+    return map[key] || key.charAt(0).toUpperCase() + key.slice(1);
   }
 }

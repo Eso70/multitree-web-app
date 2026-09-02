@@ -171,6 +171,37 @@ const IMMEDIATE_EVENTS = new Set<PageEventName>([
   "lead_created",
 ]);
 
+function canonicalPlatformName(platform: string): string {
+  const map: Record<string, string> = {
+    whatsapp: "WhatsApp",
+    phone: "Phone",
+    tel: "Phone",
+    email: "Email",
+    mailto: "Email",
+    telegram: "Telegram",
+    viber: "Viber",
+    messenger: "Messenger",
+    signal: "Signal",
+    line: "Line",
+    facebook: "Facebook",
+    instagram: "Instagram",
+    tiktok: "TikTok",
+    youtube: "YouTube",
+    snapchat: "Snapchat",
+    x: "X",
+    twitter: "X",
+    linkedin: "LinkedIn",
+    spotify: "Spotify",
+    appstore: "App Store",
+    playstore: "Google Play",
+    location: "Location",
+    website: "Website",
+    link: "Website",
+  };
+  const key = platform.trim().toLowerCase();
+  return map[key] || (key.charAt(0).toUpperCase() + key.slice(1));
+}
+
 export function createPageTracker(options: PageTrackerOptions): PageTracker {
   const recent = new Map<string, number>();
   const reportedOnce = new Set<string>();
@@ -208,6 +239,11 @@ export function createPageTracker(options: PageTrackerOptions): PageTracker {
     const eventId = createRuntimeId();
     const pixelEvent = input.action?.pixelEvent;
 
+    const rawPlatform = (input.properties?.platform as string) || undefined;
+    const contentName = rawPlatform
+      ? canonicalPlatformName(rawPlatform)
+      : (input.label || options.pageName);
+
     let pixelDispatched = false;
     if (hasPixel() && pixelEvent) {
       trackTikTokEvent(
@@ -216,7 +252,7 @@ export function createPageTracker(options: PageTrackerOptions): PageTracker {
           content_id: input.action?.id || options.pageId,
           content_ids: [input.action?.id || options.pageId],
           content_type: input.actionKey,
-          content_name: input.label || options.pageName,
+          content_name: contentName,
           description: options.description ?? "",
           url: window.location.href,
         },
@@ -244,7 +280,7 @@ export function createPageTracker(options: PageTrackerOptions): PageTracker {
       browserEventName: pixelDispatched ? pixelEvent : undefined,
       properties: {
         actionKey: input.actionKey,
-        contentName: input.label || options.pageName,
+        contentName,
         contentType: input.actionKey,
         destination: input.destination,
         ...input.properties,
