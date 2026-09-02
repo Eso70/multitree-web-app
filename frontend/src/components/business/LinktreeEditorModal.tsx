@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   memo,
@@ -1316,7 +1316,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       // Create updated link object
       const updatedLink: SocialLink = {
         ...existing,
-        displayName: displayName.trim() || undefined,
+        displayName: displayName || undefined,
       };
 
       // Return new array with updated link
