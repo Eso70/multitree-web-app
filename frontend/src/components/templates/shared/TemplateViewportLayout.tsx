@@ -40,7 +40,7 @@ export const TemplateViewportLayout = memo(function TemplateViewportLayout({
 }: TemplateViewportLayoutProps) {
   return (
     <div
-      className={`relative w-full overflow-y-auto ${isPreview ? "min-h-full" : "min-h-screen min-h-[100svh]"} ${className}`.trim()}
+      className={`relative w-full overflow-y-auto ${isPreview ? "min-h-full" : "min-h-screen min-h-[100svh] min-h-[100dvh]"} ${className}`.trim()}
       style={style}
       dir={dir}
       data-template-viewport-layout
@@ -60,7 +60,7 @@ export const TemplateViewportLayout = memo(function TemplateViewportLayout({
         <main className="w-full py-6">
           <div className="mx-auto w-full max-w-md">{main}</div>
         </main>
-        <div className="mx-auto w-full max-w-md">{footer}</div>
+        {footer ? <div className="mx-auto w-full max-w-md">{footer}</div> : null}
       </div>
     </div>
   );

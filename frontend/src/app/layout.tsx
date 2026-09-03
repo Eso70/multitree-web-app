@@ -63,11 +63,6 @@ export default async function RootLayout({
         />
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />
-        {/* Safari/iOS specific meta tags - Required for proper iPhone functionality */}
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes"
-        />
         <meta name="format-detection" content="telephone=no" />
         {/* Browser compatibility meta tags */}
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
@@ -97,7 +92,7 @@ export default async function RootLayout({
           />
           <div
             data-theme-background
-            className="relative min-h-screen w-full overflow-x-clip text-slate-900 dark:text-white"
+            className="relative min-h-screen min-h-[100dvh] w-full overflow-x-clip text-slate-900 dark:text-white"
             style={{
               background: `linear-gradient(to bottom right, var(--theme-bg-from, #f8fafc), var(--theme-bg-via, #ffffff), var(--theme-bg-to, #f1f5f9))`,
               backgroundAttachment: "scroll", // Safari/iOS: Use scroll instead of fixed for better performance
