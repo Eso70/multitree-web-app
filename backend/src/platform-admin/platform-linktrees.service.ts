@@ -147,6 +147,7 @@ export class PlatformLinktreesService {
           footer_text: data.footer_text,
           footer_phone: data.footer_phone,
           footer_hidden: data.footer_hidden,
+          status: data.status,
         },
         businessId,
         'platform',
@@ -161,6 +162,13 @@ export class PlatformLinktreesService {
       updated.uid,
       updated.seo_name,
     );
+    return updated;
+  }
+
+  async toggleStatus(id: string, status: 'active' | 'inactive') {
+    const businessId = await this.workspaceId();
+    const updated = await this.linktrees.toggleStatus(id, businessId, status);
+    await this.invalidate(updated.uid, updated.seo_name);
     return updated;
   }
 

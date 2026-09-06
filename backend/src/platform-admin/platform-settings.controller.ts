@@ -38,6 +38,8 @@ import {
   UpdatePlatformProfileDto,
 } from './dto/platform-settings.dto';
 import { DataRetentionService } from './data-retention.service';
+import { requestIp } from '../common/request-context';
+import { TestTikTokEventsApiDto } from '../analytics/dto/test-tiktok-events-api.dto';
 
 @Controller('api/platform/settings')
 @UseGuards(PlatformAdminGuard, AuthorizationGuard)
@@ -101,6 +103,21 @@ export class PlatformSettingsController {
       data: {
         retried: await this.platformSettingsService.retryFailedTikTokEvents(),
       },
+    };
+  }
+
+  @Post('tiktok/test')
+  @RequireCapabilities(Capability.PlatformSettingsTikTokRead)
+  async testTikTok(
+    @Body() body: TestTikTokEventsApiDto,
+    @Req() request: FastifyRequest,
+  ) {
+    return {
+      success: true,
+      data: await this.platformSettingsService.testTikTokEvents(body, {
+        ip: requestIp(request),
+        userAgent: request.headers['user-agent'],
+      }),
     };
   }
 

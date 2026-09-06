@@ -41,6 +41,7 @@ export interface LinktreeEditorSubmitData {
   footer_text?: string;
   footer_phone?: string;
   footer_hidden?: boolean;
+  status?: "active" | "inactive";
   platforms: string[];
   links: Record<string, string[]>;
   linkMetadata?: Record<

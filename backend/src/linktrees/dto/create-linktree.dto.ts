@@ -7,6 +7,7 @@ import {
   Matches,
   MaxLength,
   MinLength,
+  IsIn,
 } from 'class-validator';
 import {
   SOLID_HEX_COLOR_MAX_LENGTH,
@@ -86,6 +87,10 @@ export class CreateLinktreeDto {
   @IsBoolean()
   @IsOptional()
   is_default?: boolean;
+
+  @IsIn(['active', 'inactive'])
+  @IsOptional()
+  status?: 'active' | 'inactive';
 
   @IsArray()
   @IsOptional()

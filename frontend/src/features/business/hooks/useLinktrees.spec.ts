@@ -84,4 +84,51 @@ describe("useLinktrees", () => {
     act(() => result.current.removeLinktree("first"));
     expect(result.current.linktrees.map((item) => item.id)).toEqual(["second"]);
   });
+
+  it("always keeps the default page first, followed by active campaign pages, then remaining pages", () => {
+    const regular = createLinktree({
+      id: "regular",
+      name: "Regular",
+      created_at: "2026-03-01T00:00:00.000Z",
+    });
+    const campaignOlder = createLinktree({
+      id: "campaign-older",
+      name: "Campaign Older",
+      is_campaign_active: true,
+      created_at: "2026-01-01T00:00:00.000Z",
+    });
+    const campaignNewer = createLinktree({
+      id: "campaign-newer",
+      name: "Campaign Newer",
+      is_campaign_active: true,
+      created_at: "2026-04-01T00:00:00.000Z",
+    });
+    const defaultPage = createLinktree({
+      id: "default",
+      is_default: true,
+      created_at: "2025-01-01T00:00:00.000Z",
+    });
+
+    const sorted = sortLinktreesForDashboard([regular, defaultPage, campaignOlder, campaignNewer]);
+    expect(sorted.map((item) => item.id)).toEqual([
+      "default",
+      "campaign-newer",
+      "campaign-older",
+      "regular",
+    ]);
+  });
+
+  it("promotes a non-default page right under the default page when merged with is_campaign_active", () => {
+    const defaultPage = createLinktree({ id: "default", is_default: true, created_at: "2026-01-01T00:00:00.000Z" });
+    const page1 = createLinktree({ id: "p1", created_at: "2026-02-01T00:00:00.000Z" });
+    const page2 = createLinktree({ id: "p2", created_at: "2026-01-01T00:00:00.000Z" });
+    const { result } = renderHook(() => useLinktrees([defaultPage, page1, page2]));
+
+    expect(result.current.linktrees.map((item) => item.id)).toEqual(["default", "p1", "p2"]);
+
+    act(() => result.current.mergeLinktree("p2", { is_campaign_active: true }));
+    expect(result.current.linktrees.map((item) => item.id)).toEqual(["default", "p2", "p1"]);
+    expect(result.current.linktrees[0].id).toBe("default");
+    expect(result.current.linktrees[1].is_campaign_active).toBe(true);
+  });
 });

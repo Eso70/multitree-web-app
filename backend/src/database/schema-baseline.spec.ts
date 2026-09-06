@@ -248,6 +248,9 @@ describe('full_schema.sql baseline', () => {
     expect(readdirSync(MIGRATIONS_DIR).sort()).toEqual([
       '2026-09-02_add_linktree_subtitle_color.sql',
       '2026-09-03_add_linktree_subtitle_color_permission.sql',
+      '2026-09-05_add_linktree_is_campaign_active.sql',
+      '2026-09-06_add_linktree_is_archived.sql',
+      '2026-09-07_add_linktree_status_permission.sql',
       'baseline',
     ]);
   });

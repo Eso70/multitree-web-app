@@ -18,6 +18,7 @@ export function buildPlatformLinktreePayload(data: LinktreeEditorSubmitData) {
     footer_text: data.footer_text?.trim() || undefined,
     footer_phone: data.footer_phone?.trim() || undefined,
     footer_hidden: data.footer_hidden ?? false,
+    status: data.status || undefined,
     is_default: false,
     platforms: data.platforms,
     links: data.links,

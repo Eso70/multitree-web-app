@@ -30,6 +30,10 @@ export function sortLinktreesForDashboard(items: Linktree[]): Linktree[] {
     const bIsDefault = isDefaultLinktree(b);
     if (aIsDefault !== bIsDefault) return aIsDefault ? -1 : 1;
 
+    const aIsCampaign = !!a.is_campaign_active;
+    const bIsCampaign = !!b.is_campaign_active;
+    if (aIsCampaign !== bIsCampaign) return aIsCampaign ? -1 : 1;
+
     const dateA = Date.parse(a.created_at) || 0;
     const dateB = Date.parse(b.created_at) || 0;
     return dateB - dateA;

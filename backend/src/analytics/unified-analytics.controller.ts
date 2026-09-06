@@ -34,6 +34,8 @@ import {
 import { AnalyticsReadService } from './analytics-read.service';
 import { UnifiedAnalyticsService } from './unified-analytics.service';
 import { AccessRuleEnforcementService } from '../auth/access-rule-enforcement.service';
+import { TikTokPixelConfigService } from '../auth/tiktok-pixel-config.service';
+import { TestTikTokEventsApiDto } from './dto/test-tiktok-events-api.dto';
 
 function redirectQueryString(
   query: Record<string, unknown>,
@@ -268,6 +270,7 @@ export class BusinessUnifiedAnalyticsController {
   constructor(
     private readonly analytics: UnifiedAnalyticsService,
     private readonly reads: AnalyticsReadService,
+    private readonly tikTokPixels: TikTokPixelConfigService,
   ) {}
 
   @Get('pages')
@@ -366,6 +369,23 @@ export class BusinessUnifiedAnalyticsController {
       data: {
         retried: await this.reads.retryFailedTikTokEvents(business.id, pageId),
       },
+    };
+  }
+
+  @Post('tiktok/test')
+  @RequireCapabilities(Capability.BusinessAnalyticsTikTokHealthRead)
+  async testTikTok(
+    @CurrentUser() business: SessionUser,
+    @Body() body: TestTikTokEventsApiDto,
+    @Req() request: FastifyRequest,
+  ) {
+    const context = analyticsRequestContext(request);
+    return {
+      success: true,
+      data: await this.tikTokPixels.testEventsApi(business.id, body, {
+        ip: context.ip,
+        userAgent: context.userAgent,
+      }),
     };
   }
 

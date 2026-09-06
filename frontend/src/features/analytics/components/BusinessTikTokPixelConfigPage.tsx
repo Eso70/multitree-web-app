@@ -1,18 +1,13 @@
 "use client";
 
 import { MotionSpinner } from "@/components/motion/MotionPrimitives";
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CircleOff,
-  Eye,
-  EyeOff,
   KeyRound,
   Loader2,
   Plus,
   Save,
-  Trash2,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { EffectiveAccessManifest } from "@linktree/types";
@@ -20,8 +15,9 @@ import { DashboardSurface } from "@/components/shared/DashboardSurface";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SkeletonTikTokPixelConfig } from "@/components/shared/SkeletonPageLayouts";
-import { TikTokDeliveryStatusPanel } from "@/features/analytics/components/TikTokDeliveryStatusPanel";
+import { TikTokPixelGroupCard } from "@/features/analytics/components/TikTokPixelGroupCard";
 import { Tooltip } from "@/components/shared/Tooltip";
+
 import {
   TIKTOK_CONFIG_WORKSPACES,
   type TikTokConfigOwner,
@@ -63,7 +59,6 @@ export function BusinessTikTokPixelConfigPage({
   const [configs, setConfigs] = useState<PixelConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showTokens, setShowTokens] = useState<Record<number, boolean>>({});
   const [access, setAccess] = useState<EffectiveAccessManifest | null>(null);
 
   const pixelLimit = useMemo(() => {
@@ -174,9 +169,6 @@ export function BusinessTikTokPixelConfigPage({
           detail: payload?.data,
         }),
       );
-      // No `tiktok-settings-updated` broadcast: the dashboard no longer loads a
-      // pixel of its own, so there is nothing here to refresh. The public pages
-      // read their ids from the server on their next request.
       toast.success("ڕێکخستنەکانی TikTok نوێکرانەوە");
     } catch (error) {
       toast.error("پاشەکەوتکردن سەرکەوتوو نەبوو", {
@@ -187,21 +179,20 @@ export function BusinessTikTokPixelConfigPage({
     }
   };
 
-  const inputClass =
-    "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--theme-primary)_18%,transparent)] dark:border-white/10 dark:bg-[#161B22] dark:text-slate-200 dark:placeholder:text-slate-500 dark:[color-scheme:dark]";
-
   if (loading) {
     return <SkeletonTikTokPixelConfig />;
   }
 
   return (
     <DashboardSurface>
+      {/* Simple Page Header */}
       <PageHeader
         icon={KeyRound}
         title="پەیوەستکردنی TikTok"
         description={workspace.description}
       />
 
+      {/* Group Controls Bar */}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5 dark:border-white/5">
         <div>
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
@@ -211,7 +202,14 @@ export function BusinessTikTokPixelConfigPage({
             هەر tokenێک تەنها لەگەڵ Pixel IDی هەمان گرووپ بەکار دەکەوێت.
           </p>
         </div>
-        <Tooltip content={canAdd ? "زیادکردنی گرووپێکی نوێی TikTok" : "گەیشتوویتە سنووری ڕێگەپێدراوی Pixel"} side="bottom">
+        <Tooltip
+          content={
+            canAdd
+              ? "زیادکردنی گرووپێکی نوێی TikTok"
+              : "گەیشتوویتە سنووری ڕێگەپێدراوی Pixel"
+          }
+          side="bottom"
+        >
           <button
             type="button"
             onClick={() =>
@@ -242,165 +240,58 @@ export function BusinessTikTokPixelConfigPage({
         </Tooltip>
       </div>
 
+      {/* Group Cards */}
       {configs.length === 0 ? (
-        <EmptyState
-          compact
-          icon={CircleOff}
-          title="هیچ گرووپێکی TikTok نییە"
-          description="گرووپێک زیاد بکە، Pixel ID دابنێ و ئەگەر دەتەوێت گەیاندنی ڕاژەکار چالاک بێت Events API token زیاد بکە."
-        />
+        <div className="mt-5">
+          <EmptyState
+            compact
+            icon={CircleOff}
+            title="هیچ گرووپێکی TikTok نییە"
+            description="گرووپێک زیاد بکە، Pixel ID دابنێ و ئەگەر دەتەوێت گەیاندنی ڕاژەکار چالاک بێت Events API token زیاد بکە."
+          />
+        </div>
       ) : (
         <div className="mt-5 space-y-4">
           {configs.map((config, index) => (
-            <div
-              key={config.id || `new-${index}`}
-              className="grid gap-4 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 dark:border-white/10 dark:bg-white/[0.035] sm:grid-cols-2"
-            >
-              <div className="flex items-center justify-between sm:col-span-2">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-xs font-black"
-                    style={{
-                      background:
-                        "color-mix(in srgb, var(--theme-primary) 14%, transparent)",
-                      color: "var(--theme-primary)",
-                    }}
-                  >
-                    {index + 1}
-                  </span>
-                  <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-                    گرووپی TikTok
-                  </span>
-                </div>
-                <Tooltip content="سڕینەوەی ئەم گرووپە" side="top">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setConfigs((current) =>
-                        current.filter((_, configIndex) => configIndex !== index),
-                      )
-                    }
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10 cursor-pointer"
-                    aria-label="سڕینەوەی گرووپ"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </Tooltip>
-              </div>
-
-              <label className="block">
-                <span className="mb-2 block text-xs font-semibold text-slate-600 dark:text-slate-300">
-                  Pixel ID <span className="text-red-500">*</span>
-                </span>
-                <input
-                  required
-                  className={inputClass}
-                  value={config.pixel_id}
-                  onChange={(event) =>
-                    updateConfig(index, { pixel_id: event.target.value })
-                  }
-                  placeholder="Pixel ID بنووسە"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 flex items-center justify-between gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                  <span>
-                    Events API token{" "}
-                    <span className="text-slate-400">(ئارەزوومەندانەیە)</span>
-                  </span>
-                  {config.has_events_token && (
-                    <Tooltip content="لابردنی Events API Token" side="top">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateConfig(index, {
-                            events_token: "",
-                            has_events_token: false,
-                            keep_events_token: false,
-                            token_last_four: null,
-                          })
-                        }
-                        className="inline-flex items-center gap-1 text-[11px] text-red-500 hover:text-red-600 cursor-pointer"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        لابردن
-                      </button>
-                    </Tooltip>
-                  )}
-                </span>
-                <div className="relative">
-                  <input
-                    type={showTokens[index] ? "text" : "password"}
-                    autoComplete="new-password"
-                    className={`${inputClass} pr-11`}
-                    value={config.events_token}
-                    onChange={(event) =>
-                      updateConfig(index, {
-                        events_token: event.target.value,
-                        keep_events_token: false,
-                        has_events_token:
-                          Boolean(event.target.value) ||
-                          Boolean(config.token_last_four),
-                      })
-                    }
-                    placeholder={
-                      config.keep_events_token && config.token_last_four
-                        ? `••••${config.token_last_four} — tokenێکی نوێ بنووسە بۆ گۆڕین`
-                        : "Events API Token"
-                    }
-                  />
-                  <Tooltip content={showTokens[index] ? "شاردنەوەی token" : "پیشاندانی token"} side="top">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowTokens((current) => ({
-                          ...current,
-                          [index]: !current[index],
-                        }))
-                      }
-                      className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200 cursor-pointer"
-                      aria-label={
-                        showTokens[index] ? "شاردنەوەی token" : "پیشاندانی token"
-                      }
-                    >
-                      {showTokens[index] ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </Tooltip>
-                </div>
-                <p className="mt-2 text-[11px] leading-5 text-slate-400">
-                  {config.keep_events_token
-                    ? "tokenی پاشەکەوتکراو دەپارێزرێت تا tokenێکی نوێ بنووسیت یان لایببەیت."
-                    : "بە بەتاڵی جێبهێڵە بۆ ئەوەی Events API چالاک نەبێت."}
-                </p>
-              </label>
-            </div>
+            <TikTokPixelGroupCard
+              key={config.id || `group-${index}`}
+              index={index}
+              config={config}
+              testEndpoint={workspace.testEndpoint}
+              secretEndpoint={workspace.secretEndpoint}
+              onUpdate={(patch) => updateConfig(index, patch)}
+              onDelete={() =>
+                setConfigs((current) =>
+                  current.filter((_, configIndex) => configIndex !== index),
+                )
+              }
+            />
           ))}
         </div>
       )}
 
-      <TikTokDeliveryStatusPanel
-        owner={owner}
-        healthEndpoint={workspace.healthEndpoint}
-        errorsEndpoint={workspace.errorsEndpoint}
-      />
-
-      <div className="mt-5 flex justify-end border-t border-slate-100 pt-5 dark:border-white/5">
-        <Tooltip content={saving ? "پاشەکەوت دەکرێت..." : hasInvalidRows ? "تکایە هەموو خانە پێویستەکان پڕبکەرەوە" : "پاشەکەوتکردنی ڕێکخستنەکانی TikTok"} side="top">
+      {/* Save Action Footer */}
+      <div className="mt-6 flex justify-end border-t border-slate-100 pt-5 dark:border-white/5">
+        <Tooltip
+          content={
+            saving
+              ? "پاشەکەوت دەکرێت..."
+              : hasInvalidRows
+                ? "تکایە هەموو خانە پێویستەکان پڕبکەرەوە"
+                : "پاشەکەوتکردنی ڕێکخستنەکانی TikTok"
+          }
+          side="top"
+        >
           <button
             type="button"
             onClick={() => void save()}
             aria-busy={saving}
             disabled={hasInvalidRows || saving}
-            className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-3.5 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60 cursor-pointer"
+            className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-transparent px-4 text-xs font-black text-[var(--theme-ink)] shadow-sm transition [background:var(--theme-css)] hover:brightness-95 disabled:cursor-wait disabled:opacity-60 cursor-pointer"
           >
             {saving ? (
               <MotionSpinner>
-                <Loader2 className="h-4 w-4 " />
+                <Loader2 className="h-4 w-4" />
               </MotionSpinner>
             ) : (
               <Save className="h-4 w-4" />

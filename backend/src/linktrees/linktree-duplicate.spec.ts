@@ -52,12 +52,14 @@ describe('LinktreesService duplication algorithms', () => {
 
     it('skips taken candidates until finding an available one', async () => {
       // Simulate my-page-copy and my-page-copy-2 taken, my-page-copy-3 free
-      service.isSlugAvailable = jest.fn().mockImplementation((_bizId, candidate) => {
-        if (candidate === 'my-page-copy' || candidate === 'my-page-copy-2') {
-          return Promise.resolve(false);
-        }
-        return Promise.resolve(true);
-      });
+      service.isSlugAvailable = jest
+        .fn()
+        .mockImplementation((_bizId, candidate) => {
+          if (candidate === 'my-page-copy' || candidate === 'my-page-copy-2') {
+            return Promise.resolve(false);
+          }
+          return Promise.resolve(true);
+        });
       service.isRootSlugAvailable = jest.fn().mockResolvedValue(true);
 
       const slug = await service.generateDuplicateSlug('biz-1', 'my-page');
@@ -69,31 +71,51 @@ describe('LinktreesService duplication algorithms', () => {
     it('appends (کۆپی) to base name', async () => {
       service.isNameAvailable = jest.fn().mockResolvedValue(true);
 
-      const name = await service.generateDuplicateName('biz-1', 'فرۆشگای سەرەکی');
+      const name = await service.generateDuplicateName(
+        'biz-1',
+        'فرۆشگای سەرەکی',
+      );
       expect(name).toBe('فرۆشگای سەرەکی (کۆپی)');
     });
 
     it('increments already copied name to (کۆپی 2)', async () => {
       service.isNameAvailable = jest.fn().mockResolvedValue(true);
 
-      const name = await service.generateDuplicateName('biz-1', 'فرۆشگای سەرەکی (کۆپی)');
+      const name = await service.generateDuplicateName(
+        'biz-1',
+        'فرۆشگای سەرەکی (کۆپی)',
+      );
       expect(name).toBe('فرۆشگای سەرەکی (کۆپی 2)');
     });
 
     it('increments (کۆپی 2) to (کۆپی 3)', async () => {
       service.isNameAvailable = jest.fn().mockResolvedValue(true);
 
-      const name = await service.generateDuplicateName('biz-1', 'فرۆشگای سەرەکی (کۆپی 2)');
+      const name = await service.generateDuplicateName(
+        'biz-1',
+        'فرۆشگای سەرەکی (کۆپی 2)',
+      );
       expect(name).toBe('فرۆشگای سەرەکی (کۆپی 3)');
     });
   });
 
   describe('duplicateLinktree limitations', () => {
-    let mockDb: any;
-    let mockEntitlements: any;
-    let mockWebhooks: any;
-    let mockStorage: any;
-    let mockRedis: any;
+    let mockDb: {
+      query: jest.Mock;
+      transaction: jest.Mock;
+    };
+    let mockEntitlements: {
+      getInteger: jest.Mock;
+    };
+    let mockWebhooks: {
+      emitWithClient: jest.Mock;
+    };
+    let mockStorage: {
+      claimBusinessAssets: jest.Mock;
+    };
+    let mockRedis: {
+      del: jest.Mock;
+    };
 
     beforeEach(() => {
       mockDb = {
@@ -114,14 +136,14 @@ describe('LinktreesService duplication algorithms', () => {
       };
 
       service = new LinktreesService(
-        mockDb,
-        mockRedis,
-        mockEntitlements,
-        {} as any,
-        mockWebhooks,
-        mockStorage,
-        {} as any,
-        {} as any,
+        mockDb as never,
+        mockRedis as never,
+        mockEntitlements as never,
+        {} as never,
+        mockWebhooks as never,
+        mockStorage as never,
+        {} as never,
+        {} as never,
       );
     });
 
@@ -169,7 +191,9 @@ describe('LinktreesService duplication algorithms', () => {
 
       await expect(
         service.duplicateLinktree('lt-orig', 'biz-1', undefined, 'business'),
-      ).rejects.toThrow('ئەم پەڕەیە گەیشتووەتە ئەوپەڕی ژمارەی ڕێگەپێدراوی کۆپیکردنی ڕاستەوخۆ');
+      ).rejects.toThrow(
+        'ئەم پەڕەیە گەیشتووەتە ئەوپەڕی ژمارەی ڕێگەپێدراوی کۆپیکردنی ڕاستەوخۆ',
+      );
     });
 
     it('allows duplicating when depth < 3 and direct copies < 5', async () => {
@@ -204,23 +228,32 @@ describe('LinktreesService duplication algorithms', () => {
         // mapLinktreeRow questions query
         .mockResolvedValueOnce({ rows: [] });
 
-      service.generateDuplicateSlug = jest.fn().mockResolvedValue('copy-1-copy');
-      mockDb.transaction.mockImplementation(async (cb: any) => {
-        const client = {
-          query: jest.fn().mockResolvedValue({
-            rows: [
-              {
-                id: 'lt-new',
-                name: 'Copy 1',
-                seo_name: 'copy-1-copy',
-              },
-            ],
-          }),
-        };
-        return cb(client);
-      });
+      service.generateDuplicateSlug = jest
+        .fn()
+        .mockResolvedValue('copy-1-copy');
+      mockDb.transaction.mockImplementation(
+        async (cb: (client: { query: jest.Mock }) => Promise<unknown>) => {
+          const client = {
+            query: jest.fn().mockResolvedValue({
+              rows: [
+                {
+                  id: 'lt-new',
+                  name: 'Copy 1',
+                  seo_name: 'copy-1-copy',
+                },
+              ],
+            }),
+          };
+          return cb(client);
+        },
+      );
 
-      const result = await service.duplicateLinktree('lt-1', 'biz-1', undefined, 'business');
+      const result = await service.duplicateLinktree(
+        'lt-1',
+        'biz-1',
+        undefined,
+        'business',
+      );
       expect(result.id).toBe('lt-new');
     });
   });

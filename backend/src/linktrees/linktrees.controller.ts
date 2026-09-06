@@ -18,7 +18,12 @@ import { LinktreesService } from './linktrees.service';
 import { LinksService } from '../links/links.service';
 import { BatchSyncLinksDto } from '../links/dto/sync-links.dto';
 import { CreateLinktreeDto } from './dto/create-linktree.dto';
-import { UpdateLinktreeDto } from './dto/update-linktree.dto';
+import {
+  UpdateLinktreeDto,
+  ToggleLinktreeCampaignDto,
+  ToggleLinktreeArchiveDto,
+  ToggleLinktreeStatusDto,
+} from './dto/update-linktree.dto';
 import { DuplicateLinktreeDto } from './dto/duplicate-linktree.dto';
 import { BusinessGuard } from '../auth/business.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -178,6 +183,63 @@ export class LinktreesController {
       id,
       updateDto,
       business.id,
+    );
+    return { success: true, data: linktree };
+  }
+
+  @Patch(':id/campaign-status')
+  @RequireCapabilities(Capability.BusinessLinktreesUpdate)
+  @AuditEvent('business.linktree.campaign_status.update', {
+    resourceType: 'linktree',
+    resourceIdParam: 'id',
+  })
+  async toggleCampaignStatus(
+    @Param('id') id: string,
+    @Body() dto: ToggleLinktreeCampaignDto,
+    @CurrentUser() business: SessionUser,
+  ) {
+    const linktree = await this.linktreesService.toggleCampaignActive(
+      id,
+      business.id,
+      dto.is_campaign_active,
+    );
+    return { success: true, data: linktree };
+  }
+
+  @Patch(':id/archive')
+  @RequireCapabilities(Capability.BusinessLinktreesUpdate)
+  @AuditEvent('business.linktree.archive_status.update', {
+    resourceType: 'linktree',
+    resourceIdParam: 'id',
+  })
+  async toggleArchiveStatus(
+    @Param('id') id: string,
+    @Body() dto: ToggleLinktreeArchiveDto,
+    @CurrentUser() business: SessionUser,
+  ) {
+    const linktree = await this.linktreesService.toggleArchive(
+      id,
+      business.id,
+      dto.is_archived,
+    );
+    return { success: true, data: linktree };
+  }
+
+  @Patch(':id/status')
+  @RequireCapabilities(Capability.BusinessLinktreesUpdate)
+  @AuditEvent('business.linktree.status.update', {
+    resourceType: 'linktree',
+    resourceIdParam: 'id',
+  })
+  async toggleStatus(
+    @Param('id') id: string,
+    @Body() dto: ToggleLinktreeStatusDto,
+    @CurrentUser() business: SessionUser,
+  ) {
+    const linktree = await this.linktreesService.toggleStatus(
+      id,
+      business.id,
+      dto.status,
     );
     return { success: true, data: linktree };
   }

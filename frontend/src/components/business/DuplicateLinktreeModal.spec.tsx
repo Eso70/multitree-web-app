@@ -116,7 +116,7 @@ describe("DuplicateLinktreeModal", () => {
           source_id: "lt-parent",
           origin_id: "lt-root",
         },
-      } as any,
+      } as Record<string, unknown>,
     };
 
     render(

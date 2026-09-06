@@ -41,12 +41,12 @@ export function SkeletonLinktreeCard({
       aria-hidden="true"
       className="flex min-h-80 flex-col border-b border-slate-200 bg-transparent p-4 dark:border-white/10 sm:p-5 md:p-6 lg:border-r xl:border-b-0"
     >
-      <div className="mb-3 flex items-start gap-3">
+      <div className="relative mb-3 flex items-start gap-3">
         <Skeleton
           className="size-10 shrink-0 sm:size-14"
           rounded="rounded-full"
         />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 pr-16 sm:pr-20">
           <Skeleton className="mb-2 h-4 w-1/2" rounded="rounded-md" />
           <Skeleton className="mb-2 h-3 w-4/5" rounded="rounded-md" />
           <div className="flex gap-1.5">
@@ -54,6 +54,10 @@ export function SkeletonLinktreeCard({
             <Skeleton className="h-5 w-20" rounded="rounded-full" />
           </div>
         </div>
+        <Skeleton
+          className="absolute top-0 right-0 h-4 w-12"
+          rounded="rounded-full"
+        />
       </div>
       <Skeleton className="mb-3 h-3 w-3/4" rounded="rounded-md" />
       <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.035]">
@@ -75,11 +79,13 @@ export function SkeletonLinktreeCard({
           </div>
         </>
       ) : null}
-      <div className="mt-auto flex gap-2 border-t border-slate-200 pt-3 dark:border-white/10">
-        <Skeleton className="h-9 flex-1" rounded="rounded-xl" />
-        <Skeleton className="h-9 flex-1" rounded="rounded-xl" />
-        <Skeleton className="h-9 w-10" rounded="rounded-xl" />
-        <Skeleton className="h-9 w-10" rounded="rounded-xl" />
+      <div className="mt-auto flex items-center gap-1 sm:gap-1.5 border-t border-slate-200 pt-2.5 dark:border-white/10">
+        <Skeleton className="h-8 flex-1" rounded="rounded-lg" />
+        <Skeleton className="h-8 flex-1" rounded="rounded-lg" />
+        <Skeleton className="size-8 shrink-0" rounded="rounded-lg" />
+        <Skeleton className="size-8 shrink-0" rounded="rounded-lg" />
+        <Skeleton className="size-8 shrink-0" rounded="rounded-lg" />
+        <Skeleton className="size-8 shrink-0" rounded="rounded-lg" />
       </div>
     </article>
   );

@@ -114,3 +114,23 @@ export interface BusinessDashboardTikTokHealth {
     serverAcceptedConversions: number;
   };
 }
+
+export interface TikTokEventsApiTestRequest {
+  test_event_code: string;
+  pixel_id?: string;
+  event_name?: "ViewContent" | "Contact" | "ClickButton";
+}
+
+
+export interface TikTokEventsApiTestResult {
+  success: boolean;
+  statusCode: number;
+  tiktokCode: number | null;
+  message: string;
+  requestId: string | null;
+  pixelId: string;
+  testEventCode: string;
+  eventName: string;
+  sentAt: string;
+}
+

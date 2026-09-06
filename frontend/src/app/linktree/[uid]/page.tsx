@@ -14,6 +14,7 @@ import {
 } from "@/lib/security/internal-proxy-key";
 import { BusinessServiceUnavailablePage } from "@/components/error-pages/BusinessServiceUnavailablePage";
 import { BusinessGonePage } from "@/components/error-pages/BusinessGonePage";
+import { BusinessInactivePage } from "@/components/error-pages/BusinessInactivePage";
 import { BusinessBadGatewayPage } from "@/components/error-pages/BusinessBadGatewayPage";
 import { BusinessGatewayTimeoutPage } from "@/components/error-pages/BusinessGatewayTimeoutPage";
 import { classifyUpstreamFailure } from "@/lib/api/upstream-failure";
@@ -66,6 +67,7 @@ async function fetchLinktreeData(uid: string): Promise<
     }
   | "bad-gateway"
   | "gone"
+  | "inactive"
   | "gateway-timeout"
   | "service-unavailable"
   | null
@@ -105,6 +107,7 @@ async function fetchLinktreeData(uid: string): Promise<
       signal: AbortSignal.timeout(30_000),
     });
 
+    if (res.status === 403) return "inactive";
     if (res.status === 410) return "gone";
     if (res.status === 502) return "bad-gateway";
     if (res.status === 503) return "service-unavailable";
@@ -154,6 +157,9 @@ export default async function LinktreePublicPage({ params }: PageProps) {
   if (result === "gone") {
     return <BusinessGonePage />;
   }
+  if (result === "inactive") {
+    return <BusinessInactivePage />;
+  }
 
   if (!result || !result.linktree) {
     notFound();
@@ -200,6 +206,7 @@ export async function generateMetadata({ params }: PageProps) {
   if (result === "bad-gateway") return { title: "Upstream Error" };
   if (result === "gateway-timeout") return { title: "Timeout" };
   if (result === "gone") return { title: "Gone" };
+  if (result === "inactive") return { title: "Inactive" };
 
   if (!result || !result.linktree) {
     return {

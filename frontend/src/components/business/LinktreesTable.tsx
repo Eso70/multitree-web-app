@@ -3,6 +3,10 @@
 import { memo, useCallback, useState, type ComponentType } from "react";
 import Image from "next/image";
 import {
+  Archive,
+  ArchiveRestore,
+  CirclePause,
+  CirclePlay,
   Trash2,
   Eye,
   Copy,
@@ -52,6 +56,9 @@ interface LinktreesTableProps {
   trafficLabels?: PageListTrafficLabels;
   emptyDescription?: string;
   pagination?: ManagementTablePagination;
+  onToggleCampaign?: (id: string, isCampaignActive: boolean) => void;
+  onToggleArchive?: (id: string, isArchived: boolean) => void;
+  onToggleStatus?: (id: string, status: "active" | "inactive") => void;
 }
 
 /**
@@ -109,6 +116,9 @@ const TableRow = memo(function TableRow({
   onDuplicate,
   onDelete,
   onViewAnalytics,
+  onToggleCampaign,
+  onToggleArchive,
+  onToggleStatus,
   copiedUid,
   onCopy,
   formatDate,
@@ -124,6 +134,9 @@ const TableRow = memo(function TableRow({
   onDuplicate?: (item: Linktree) => void;
   onDelete?: (id: string, uid: string, name: string) => void;
   onViewAnalytics?: (id: string, name: string) => void;
+  onToggleCampaign?: (id: string, isCampaignActive: boolean) => void;
+  onToggleArchive?: (id: string, isArchived: boolean) => void;
+  onToggleStatus?: (id: string, status: "active" | "inactive") => void;
   copiedUid: string | null;
   onCopy: (uid: string, e: React.MouseEvent) => void;
   formatDate: (dateString: string) => string;
@@ -148,42 +161,56 @@ const TableRow = memo(function TableRow({
     [publicPathPrefix],
   );
 
+  const isCampaignActive = !!item.is_campaign_active;
+
   return (
     <tr
-      className={MANAGEMENT_TABLE_ROW_CLASS}
+      className={`${MANAGEMENT_TABLE_ROW_CLASS} ${
+        isCampaignActive
+          ? "bg-emerald-50/35 dark:bg-emerald-500/[0.04] hover:bg-emerald-50/55 dark:hover:bg-emerald-500/[0.07]"
+          : ""
+      }`}
       style={{
         contentVisibility: "auto",
         containIntrinsicSize: "80px",
       }}
     >
       <td className="px-2 sm:px-3 py-3">
-        <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border border-gray-200 mx-auto">
-          <Image
-            src={
-              item.image ||
-              item.business_default_avatar ||
-              item.business_logo ||
-              "/images/DefaultAvatar.png"
-            }
-            alt={item.name}
-            fill
-            className="object-cover"
-            loading="lazy"
-            sizes="(max-width: 640px) 32px, 40px"
-            quality={75}
-            unoptimized
-          />
+        <div className="relative w-8 h-8 sm:w-10 sm:h-10 mx-auto">
+          <div className="relative w-full h-full rounded-full overflow-hidden border border-gray-200">
+            <Image
+              src={
+                item.image ||
+                item.business_default_avatar ||
+                item.business_logo ||
+                "/images/DefaultAvatar.png"
+              }
+              alt={item.name}
+              fill
+              className="object-cover"
+              loading="lazy"
+              sizes="(max-width: 640px) 32px, 40px"
+              quality={75}
+              unoptimized
+            />
+          </div>
+          {isCampaignActive && (
+            <span
+              className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"
+              title="کەمپەین چالاکە"
+            />
+          )}
         </div>
       </td>
       <td className="px-2 sm:px-3 py-3">
-        <div className="text-xs sm:text-sm font-medium text-gray-900 wrap-break-word">
+        <span className="text-xs sm:text-sm font-semibold text-gray-900 wrap-break-word block mb-1">
           {item.name}
-        </div>
+        </span>
         <MetaBadgesComponent
           item={item}
           showAgeBadge={showPageMeta}
           showTemplate={showPageMeta}
-          className="mt-1"
+          onToggleCampaign={onToggleCampaign}
         />
       </td>
       <td className="px-2 sm:px-3 py-3 hidden md:table-cell">
@@ -298,6 +325,61 @@ const TableRow = memo(function TableRow({
               </button>
             </Tooltip>
           )}
+          {onToggleArchive && !item.is_default && (
+            <Tooltip
+              content={item.is_archived ? "گەڕاندنەوە لە ئەرشیف" : "ئەرشیفکردن"}
+              side="top"
+            >
+              <button
+                onClick={() => onToggleArchive(item.id, !item.is_archived)}
+                className={`p-1 sm:p-1.5 rounded transition-colors duration-200 shrink-0 cursor-pointer ${
+                  item.is_archived
+                    ? "hover:bg-emerald-50 text-emerald-700 dark:text-emerald-300"
+                    : "hover:bg-slate-100 text-slate-500 hover:text-slate-700 dark:text-gray-400"
+                }`}
+                aria-label={item.is_archived ? "Restore from archive" : "Archive"}
+              >
+                {item.is_archived ? (
+                  <ArchiveRestore className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                ) : (
+                  <Archive className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                )}
+              </button>
+            </Tooltip>
+          )}
+          {onToggleStatus && !item.is_default && (
+            <Tooltip
+              content={
+                item.status === "inactive"
+                  ? "چالاککردنی پەڕە"
+                  : "ناچالاککردنی پەڕە"
+              }
+              side="top"
+            >
+              <button
+                onClick={() =>
+                  onToggleStatus(
+                    item.id,
+                    item.status === "inactive" ? "active" : "inactive",
+                  )
+                }
+                className={`p-1 sm:p-1.5 rounded transition-colors duration-200 shrink-0 cursor-pointer ${
+                  item.status === "inactive"
+                    ? "hover:bg-emerald-50 text-emerald-700 dark:text-emerald-300"
+                    : "hover:bg-rose-50 text-rose-600 dark:text-rose-400"
+                }`}
+                aria-label={
+                  item.status === "inactive" ? "Activate page" : "Deactivate page"
+                }
+              >
+                {item.status === "inactive" ? (
+                  <CirclePlay className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                ) : (
+                  <CirclePause className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                )}
+              </button>
+            </Tooltip>
+          )}
           {onDelete && item.uid !== "id" && !item.is_default && (
             <Tooltip content="سڕینەوە" side="top">
               <button
@@ -323,6 +405,9 @@ const MobileCard = memo(function MobileCard({
   onDuplicate,
   onDelete,
   onViewAnalytics,
+  onToggleCampaign,
+  onToggleArchive,
+  onToggleStatus,
   copiedUid,
   onCopy,
   onView,
@@ -338,6 +423,9 @@ const MobileCard = memo(function MobileCard({
   onDuplicate?: (item: Linktree) => void;
   onDelete?: (id: string, uid: string, name: string) => void;
   onViewAnalytics?: (id: string, name: string) => void;
+  onToggleCampaign?: (id: string, isCampaignActive: boolean) => void;
+  onToggleArchive?: (id: string, isArchived: boolean) => void;
+  onToggleStatus?: (id: string, status: "active" | "inactive") => void;
   copiedUid: string | null;
   onCopy: (uid: string, e: React.MouseEvent) => void;
   onView: (uid: string) => void;
@@ -349,37 +437,50 @@ const MobileCard = memo(function MobileCard({
   trafficLabels: PageListTrafficLabels;
 }) {
   const publicIdentifier = getPublicIdentifier(item);
+  const isCampaignActive = !!item.is_campaign_active;
   return (
     <div
-      className={MANAGEMENT_TABLE_CARD_CLASS}
+      className={`${MANAGEMENT_TABLE_CARD_CLASS} ${
+        isCampaignActive
+          ? "bg-emerald-50/35 dark:bg-emerald-500/[0.04] hover:bg-emerald-50/55 dark:hover:bg-emerald-500/[0.07]"
+          : ""
+      }`}
       onClick={() => onView(publicIdentifier)}
       style={{
         contentVisibility: "auto",
         containIntrinsicSize: "150px",
       }}
     >
-      <div className="relative h-16 w-16 rounded-full overflow-hidden border border-gray-200 shrink-0">
-        <Image
-          src={
-            item.image ||
-            item.business_default_avatar ||
-            item.business_logo ||
-            "/images/DefaultAvatar.png"
-          }
-          alt={item.name}
-          fill
-          className="object-cover"
-          sizes="64px"
-          quality={80}
-          unoptimized
-        />
+      <div className="relative h-16 w-16 shrink-0">
+        <div className="relative w-full h-full rounded-full overflow-hidden border border-gray-200">
+          <Image
+            src={
+              item.image ||
+              item.business_default_avatar ||
+              item.business_logo ||
+              "/images/DefaultAvatar.png"
+            }
+            alt={item.name}
+            fill
+            className="object-cover"
+            sizes="64px"
+            quality={80}
+            unoptimized
+          />
+        </div>
+        {isCampaignActive && (
+          <span
+            className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"
+            title="کەمپەین چالاکە"
+          />
+        )}
       </div>
       <div className="flex-1 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <div className="text-base font-semibold text-gray-900 leading-tight wrap-break-word">
+            <span className="text-base font-semibold text-gray-900 leading-tight wrap-break-word block mb-1">
               {item.name}
-            </div>
+            </span>
             <div className="text-xs text-gray-600 wrap-break-word line-clamp-2">
               {item.subtitle || "—"}
             </div>
@@ -387,6 +488,7 @@ const MobileCard = memo(function MobileCard({
               item={item}
               showAgeBadge={showPageMeta}
               showTemplate={showPageMeta}
+              onToggleCampaign={onToggleCampaign}
               className="mt-1.5"
             />
           </div>
@@ -431,6 +533,62 @@ const MobileCard = memo(function MobileCard({
                   aria-label="لەبەرگرتنەوە"
                 >
                   <CopyPlus className="h-4 w-4" />
+                </button>
+              </Tooltip>
+            )}
+            {onToggleArchive && !item.is_default && (
+              <Tooltip content={item.is_archived ? "هێنانەدەرەوە لە ئەرشیف" : "ئەرشیفکردن"} side="top">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleArchive(item.id, !item.is_archived);
+                  }}
+                  className={`flex items-center justify-center p-2 rounded-lg transition-colors cursor-pointer ${
+                    item.is_archived
+                      ? "hover:bg-emerald-50 text-emerald-700 dark:text-emerald-300"
+                      : "hover:bg-slate-100 text-slate-500 hover:text-slate-700 dark:text-gray-400"
+                  }`}
+                  aria-label={item.is_archived ? "هێنانەدەرەوە لە ئەرشیف" : "ئەرشیفکردن"}
+                >
+                  {item.is_archived ? (
+                    <ArchiveRestore className="h-4 w-4" />
+                  ) : (
+                    <Archive className="h-4 w-4" />
+                  )}
+                </button>
+              </Tooltip>
+            )}
+            {onToggleStatus && !item.is_default && (
+              <Tooltip
+                content={
+                  item.status === "inactive"
+                    ? "چالاککردنی پەڕە"
+                    : "ناچالاککردنی پەڕە"
+                }
+                side="top"
+              >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleStatus(
+                      item.id,
+                      item.status === "inactive" ? "active" : "inactive",
+                    );
+                  }}
+                  className={`flex items-center justify-center p-2 rounded-lg transition-colors cursor-pointer ${
+                    item.status === "inactive"
+                      ? "hover:bg-emerald-50 text-emerald-700 dark:text-emerald-300"
+                      : "hover:bg-rose-50 text-rose-600 dark:text-rose-400"
+                  }`}
+                  aria-label={
+                    item.status === "inactive" ? "چالاککردن" : "ناچالاککردن"
+                  }
+                >
+                  {item.status === "inactive" ? (
+                    <CirclePlay className="h-4 w-4" />
+                  ) : (
+                    <CirclePause className="h-4 w-4" />
+                  )}
                 </button>
               </Tooltip>
             )}
@@ -512,6 +670,9 @@ export const LinktreesTable = memo(function LinktreesTable({
   showPageMeta,
   MetaBadgesComponent = LinktreeMetaBadges,
   trafficLabels = LINKTREE_TRAFFIC_LABELS,
+  onToggleCampaign,
+  onToggleArchive,
+  onToggleStatus,
 }: LinktreesTableProps) {
   const [copiedUid, setCopiedUid] = useState<string | null>(null);
   const displaysPageMeta = showPageMeta ?? showLinktreeMeta;
@@ -583,6 +744,9 @@ export const LinktreesTable = memo(function LinktreesTable({
           onDuplicate={onDuplicate}
           onDelete={handleDelete}
           onViewAnalytics={onViewAnalytics}
+          onToggleCampaign={onToggleCampaign}
+          onToggleArchive={onToggleArchive}
+          onToggleStatus={onToggleStatus}
           copiedUid={copiedUid}
           onCopy={handleCopyUrl}
           formatDate={formatDateString}
@@ -601,6 +765,9 @@ export const LinktreesTable = memo(function LinktreesTable({
           onDuplicate={onDuplicate}
           onDelete={handleDelete}
           onViewAnalytics={onViewAnalytics}
+          onToggleCampaign={onToggleCampaign}
+          onToggleArchive={onToggleArchive}
+          onToggleStatus={onToggleStatus}
           copiedUid={copiedUid}
           onCopy={handleCopyUrl}
           onView={handleView}

@@ -177,6 +177,9 @@ type BusinessLinktreeStatsRow = {
   image: string | null;
   background_color: string | null;
   status: string;
+  is_campaign_active?: boolean;
+  is_archived?: boolean;
+  archived_at?: Date | null;
   is_default: boolean;
   created_at: Date;
   updated_at: Date;
@@ -996,11 +999,11 @@ export class BusinessAdministrationService {
     const [linktreesRes, totals] = await Promise.all([
       this.databaseService.query<BusinessLinktreeStatsRow>(
         `SELECT lt.id, lt.uid, lt.name, lt.subtitle, lt.description, lt.seo_name,
-                lt.image, lt.background_color, lt.status, lt.is_default,
+                lt.image, lt.background_color, lt.status, lt.is_campaign_active, lt.is_archived, lt.archived_at, lt.is_default,
                 lt.created_at, lt.updated_at
            FROM linktrees lt
           WHERE lt.business_id = $1
-          ORDER BY lt.is_default DESC, lt.created_at DESC`,
+          ORDER BY lt.is_default DESC, lt.is_campaign_active DESC, lt.created_at DESC`,
         [id],
       ),
       this.analyticsRead.linktreeTotalsForBusiness(id),
@@ -1018,6 +1021,9 @@ export class BusinessAdministrationService {
         image: row.image,
         background_color: row.background_color,
         status: row.status,
+        is_campaign_active: row.is_campaign_active,
+        is_archived: row.is_archived,
+        archived_at: row.archived_at,
         is_default: row.is_default,
         created_at: row.created_at,
         updated_at: row.updated_at,

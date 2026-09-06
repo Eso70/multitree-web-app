@@ -328,6 +328,37 @@ export function RootLinktreesPage({
     [apiBase, load, onCreated],
   );
 
+  const handleToggleStatus = useCallback(
+    async (id: string, nextStatus: "active" | "inactive") => {
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, status: nextStatus } : item,
+        ),
+      );
+
+      try {
+        await apiRequest(`${apiBase}/${id}/status`, {
+          method: "PATCH",
+          json: { status: nextStatus },
+        });
+
+        if (nextStatus === "active") {
+          toast.success("پەڕەکە چالاککرایەوە");
+        } else {
+          toast.success("پەڕەکە ناچالاککرا");
+        }
+      } catch (error) {
+        await load(true);
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "گۆڕینی دۆخی پەڕە سەرکەوتوو نەبوو",
+        );
+      }
+    },
+    [apiBase, load],
+  );
+
   const content =
     view === "grid" ? (
       <LinktreesGrid
@@ -341,6 +372,7 @@ export function RootLinktreesPage({
             : undefined
         }
         onViewAnalytics={(id) => setAnalyticsPageId(id)}
+        onToggleStatus={handleToggleStatus}
         viewActionLabel="ئامار"
         publicPathPrefix="/linktree"
         showLinktreeMeta
@@ -367,6 +399,7 @@ export function RootLinktreesPage({
             : undefined
         }
         onViewAnalytics={(id) => setAnalyticsPageId(id)}
+        onToggleStatus={handleToggleStatus}
         viewActionLabel="ئامار"
         publicPathPrefix="/linktree"
         showLinktreeMeta

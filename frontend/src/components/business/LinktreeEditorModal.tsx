@@ -240,6 +240,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
   const [footerHidden, setFooterHidden] = useState(
     businessDefaults?.default_footer_hidden ?? false,
   );
+  const [status, setStatus] = useState<"active" | "inactive">("active");
   const [templateConfig, setTemplateConfig] = useState<Record<string, unknown>>(
     () =>
       normalizeTemplateConfig(
@@ -454,7 +455,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
   );
 
   // Validate all fields before submission
-  const validateAllFields = useCallback((): boolean => {
+  const _validateAllFields = useCallback((): boolean => {
     const newErrors: typeof errors = {};
 
     newErrors.name = validateName(name);
@@ -883,6 +884,9 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       // Set footer hidden
       setFooterHidden(linktree.footer_hidden ?? false);
 
+      // Set status
+      setStatus(linktree.status === "inactive" ? "inactive" : "active");
+
       // Validate and set image
       if (linktree.image && typeof linktree.image === "string") {
         const imageUrl = linktree.image.trim();
@@ -1004,6 +1008,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
         businessDefaults?.default_footer_phone || DEFAULT_FOOTER_PHONE,
       );
       setFooterHidden(businessDefaults?.default_footer_hidden ?? false);
+      setStatus("active");
       setWhatsappModalEnabled(
         businessDefaults?.default_whatsapp_enabled ?? false,
       );
@@ -1834,6 +1839,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
           links: processedLinks,
           linkMetadata:
             Object.keys(linkMetadata).length > 0 ? linkMetadata : undefined,
+          status,
           ...(isDefault ? { is_default: true } : {}),
         },
         editData?.linktree.id,
@@ -2157,6 +2163,9 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
             footerText={footerText}
             footerPhone={footerPhone}
             footerHidden={footerHidden}
+            status={status}
+            onStatusChange={setStatus}
+            isDefault={isDefault}
             errors={displayErrors}
             nameWarning={nameWarning}
             checkingName={checkingName}

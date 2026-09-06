@@ -24,6 +24,7 @@ import { Capability } from '../auth/capabilities';
 import { RequireCapabilities } from '../auth/require-capabilities.decorator';
 import { CreateLinktreeDto } from '../linktrees/dto/create-linktree.dto';
 import { DuplicateLinktreeDto } from '../linktrees/dto/duplicate-linktree.dto';
+import { ToggleLinktreeStatusDto } from '../linktrees/dto/update-linktree.dto';
 import { uploadLinktreeImage } from '../linktrees/linktree-image-upload';
 import { PlatformContentWorkspaceService } from '../platform-workspace/platform-content-workspace.service';
 import { StorageService } from '../storage/storage.service';
@@ -106,10 +107,7 @@ export class PlatformLinktreesController {
     resourceType: 'linktree',
     resourceIdParam: 'id',
   })
-  async duplicate(
-    @Param('id') id: string,
-    @Body() body: DuplicateLinktreeDto,
-  ) {
+  async duplicate(@Param('id') id: string, @Body() body: DuplicateLinktreeDto) {
     return {
       success: true,
       data: await this.platformLinktrees.duplicate(id, body),
@@ -126,6 +124,22 @@ export class PlatformLinktreesController {
     return {
       success: true,
       data: await this.platformLinktrees.update(id, body),
+    };
+  }
+
+  @Patch(':id/status')
+  @RequireCapabilities(Capability.PlatformLinktreesUpdate)
+  @AuditEvent('platform.linktree.status', {
+    resourceType: 'linktree',
+    resourceIdParam: 'id',
+  })
+  async toggleStatus(
+    @Param('id') id: string,
+    @Body() body: ToggleLinktreeStatusDto,
+  ) {
+    return {
+      success: true,
+      data: await this.platformLinktrees.toggleStatus(id, body.status),
     };
   }
 

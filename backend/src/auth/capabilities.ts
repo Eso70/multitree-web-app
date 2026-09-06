@@ -49,6 +49,9 @@ const LINKTREE_FIELDS = {
   footer_phone: 'Footer phone',
   footer_hidden: 'Footer visibility',
   whatsapp_modal: 'WhatsApp modal',
+  status: 'Page status',
+  is_campaign_active: 'Campaign active status',
+  is_archived: 'Archive status',
 } as const;
 
 const LINK_FIELDS = {

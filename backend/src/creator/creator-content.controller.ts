@@ -23,6 +23,7 @@ import { AuditEvent } from '../auth/audit-event.decorator';
 import { AuditInterceptor } from '../auth/audit.interceptor';
 import { UpdateTikTokPixelConfigsDto } from '../auth/dto/update-tiktok-pixel-config.dto';
 import { CreateLinktreeDto } from '../linktrees/dto/create-linktree.dto';
+import { ToggleLinktreeStatusDto } from '../linktrees/dto/update-linktree.dto';
 import { uploadLinktreeImage } from '../linktrees/linktree-image-upload';
 import { SaveMiniWebsiteDto } from '../mini-websites/dto/mini-website.dto';
 import { uploadMiniWebsiteImage } from '../mini-websites/mini-website-image-upload';
@@ -33,6 +34,8 @@ import {
 import { StorageService } from '../storage/storage.service';
 import { CreatorContentService } from './creator-content.service';
 import { CreatorGuard, type CreatorRequest } from './creator.guard';
+import { requestIp } from '../common/request-context';
+import { TestTikTokEventsApiDto } from '../analytics/dto/test-tiktok-events-api.dto';
 
 @Controller('api/creator')
 @UseGuards(CreatorGuard)
@@ -74,9 +77,32 @@ export class CreatorContentController {
     return this.content.getTikTokHealth(this.businessId(request));
   }
 
+  @Get('settings/tiktok/:id/secret')
+  async getTikTokSecret(
+    @Param('id') id: string,
+    @Req() request: CreatorRequest,
+  ) {
+    this.assertWritable(request);
+    return {
+      success: true,
+      data: await this.content.getTikTokSecret(this.businessId(request), id),
+    };
+  }
+
   @Get('settings/tiktok/errors')
   getTikTokErrors(@Req() request: CreatorRequest) {
     return this.content.getTikTokErrors(this.businessId(request));
+  }
+
+  @Post('settings/tiktok/test')
+  testTikTok(
+    @Req() request: CreatorRequest,
+    @Body() body: TestTikTokEventsApiDto,
+  ) {
+    return this.content.testTikTok(this.businessId(request), body, {
+      ip: requestIp(request),
+      userAgent: request.headers['user-agent'],
+    });
   }
 
   @Get('linktrees/check-slug')
@@ -128,6 +154,19 @@ export class CreatorContentController {
     @Body() data: CreateLinktreeDto,
   ) {
     return this.content.updateLinktree(id, data, this.businessId(request));
+  }
+
+  @Patch('linktrees/:id/status')
+  toggleLinktreeStatus(
+    @Req() request: CreatorRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: ToggleLinktreeStatusDto,
+  ) {
+    return this.content.toggleLinktreeStatus(
+      id,
+      body.status,
+      this.businessId(request),
+    );
   }
 
   @Delete('linktrees/analytics')

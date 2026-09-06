@@ -23,7 +23,10 @@ import {
 } from '../common/linktree-background-pattern';
 import { ForbiddenException } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
-import { CreateLinktreeDto, type LinkMetadataInput } from './dto/create-linktree.dto';
+import {
+  CreateLinktreeDto,
+  type LinkMetadataInput,
+} from './dto/create-linktree.dto';
 import { UpdateLinktreeDto } from './dto/update-linktree.dto';
 import { DuplicateLinktreeDto } from './dto/duplicate-linktree.dto';
 import * as crypto from 'crypto';
@@ -105,6 +108,9 @@ type LinktreeRow = {
   footer_phone: string | null;
   footer_hidden: boolean | null;
   status: string;
+  is_campaign_active?: boolean;
+  is_archived?: boolean;
+  archived_at?: Date | null;
   is_default: boolean;
   created_at?: Date;
   updated_at?: Date;
@@ -413,12 +419,12 @@ export class LinktreesService {
     const res = await this.databaseService.query<LinktreeRow>(
       `SELECT lt.id, lt.name, lt.subtitle, lt.subtitle_color, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
               lt.template_key, lt.template_config, lt.whatsapp_modal_enabled,
-              lt.footer_text, lt.footer_phone, lt.footer_hidden, lt.status, lt.is_default,
+              lt.footer_text, lt.footer_phone, lt.footer_hidden, lt.status, lt.is_campaign_active, lt.is_archived, lt.archived_at, lt.is_default,
               lt.created_at, lt.updated_at, b.default_avatar AS business_default_avatar
        FROM linktrees lt
        LEFT JOIN business_branding b ON b.business_id = lt.business_id
        WHERE lt.business_id = $1
-       ORDER BY lt.created_at DESC`,
+       ORDER BY lt.is_default DESC, lt.is_campaign_active DESC, lt.created_at DESC`,
       [businessId],
     );
     const mappedRows: MappedLinktree[] = [];
@@ -454,7 +460,7 @@ export class LinktreesService {
     const res = await this.databaseService.query<LinktreeRow>(
       `SELECT lt.id, lt.name, lt.subtitle, lt.subtitle_color, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
               lt.template_key, lt.template_config, lt.whatsapp_modal_enabled,
-              lt.footer_text, lt.footer_phone, lt.footer_hidden, lt.status, lt.is_default,
+              lt.footer_text, lt.footer_phone, lt.footer_hidden, lt.status, lt.is_campaign_active, lt.is_archived, lt.archived_at, lt.is_default,
               lt.created_at, lt.updated_at, b.default_avatar AS business_default_avatar
        FROM linktrees lt
        LEFT JOIN business_branding b ON b.business_id = lt.business_id
@@ -718,7 +724,7 @@ export class LinktreesService {
         ) VALUES ($1, $2, $17, $15, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, 'active', $13, $14, $16::uuid)
         RETURNING id, name, subtitle, subtitle_color, description, seo_name, uid, image, background_color,
                   template_key, template_config, whatsapp_modal_enabled,
-                  footer_text, footer_phone, footer_hidden, status, is_default, created_at, updated_at`,
+                  footer_text, footer_phone, footer_hidden, status, is_campaign_active, is_archived, archived_at, is_default, created_at, updated_at`,
         [
           data.name,
           data.subtitle || null,
@@ -876,9 +882,7 @@ export class LinktreesService {
     const trimmed = (baseName || '').trim();
     if (!trimmed) return 'پەڕەی نوێ (کۆپی)';
 
-    const copyMatch = /^(.*?)\s*\((?:کۆپی|Copy)(?:\s+(\d+))?\)$/i.exec(
-      trimmed,
-    );
+    const copyMatch = /^(.*?)\s*\((?:کۆپی|Copy)(?:\s+(\d+))?\)$/i.exec(trimmed);
     let prefix = trimmed;
     let num = 1;
     if (copyMatch) {
@@ -946,7 +950,10 @@ export class LinktreesService {
     let sourceTemplateConfig: Record<string, unknown> = {};
     if (typeof source.template_config === 'string') {
       try {
-        sourceTemplateConfig = JSON.parse(source.template_config);
+        sourceTemplateConfig = JSON.parse(source.template_config) as Record<
+          string,
+          unknown
+        >;
       } catch {
         sourceTemplateConfig = {};
       }
@@ -954,14 +961,15 @@ export class LinktreesService {
       source.template_config &&
       typeof source.template_config === 'object'
     ) {
-      sourceTemplateConfig = source.template_config as Record<string, unknown>;
+      sourceTemplateConfig = source.template_config;
     }
 
-    const sourceLineage = (sourceTemplateConfig._copy_lineage as {
-      source_id?: string;
-      origin_id?: string;
-      depth?: number;
-    }) || null;
+    const sourceLineage =
+      (sourceTemplateConfig._copy_lineage as {
+        source_id?: string;
+        origin_id?: string;
+        depth?: number;
+      }) || null;
 
     const currentDepth =
       typeof sourceLineage?.depth === 'number' ? sourceLineage.depth : 0;
@@ -1161,13 +1169,12 @@ export class LinktreesService {
       await this.storage.claimBusinessAssets(
         businessId,
         source.image,
-        source.template_config as Record<string, unknown>,
+        source.template_config,
       );
     }
 
     return this.mapLinktreeRow(this.databaseService, row);
   }
-
 
   private async clearLinktreeCache(
     businessId: string,
@@ -1246,6 +1253,15 @@ export class LinktreesService {
       data.footer_hidden !== undefined
         ? data.footer_hidden
         : current.footer_hidden;
+    const is_campaign_active =
+      data.is_campaign_active !== undefined
+        ? data.is_campaign_active
+        : (current.is_campaign_active ?? false);
+    const status =
+      data.status !== undefined ? data.status : current.status || 'active';
+    if (current.is_default && status === 'inactive') {
+      throw new BadRequestException('پەیجی بنەڕەتی ناتوانرێت ناچالاک بکرێت');
+    }
 
     const config = this.normalizeTemplateConfig(
       data.template_config !== undefined
@@ -1270,11 +1286,13 @@ export class LinktreesService {
          SET name = $1, subtitle = $2, subtitle_color = $15, description = $14, seo_name = $3,
              image = $4, background_color = $5,
              template_key = $6, template_config = $7::jsonb, whatsapp_modal_enabled = $8,
-             footer_text = $9, footer_phone = $10, footer_hidden = $11, updated_at = NOW()
+             footer_text = $9, footer_phone = $10, footer_hidden = $11,
+             is_campaign_active = $16, status = $17,
+             updated_at = NOW()
          WHERE id = $12 AND business_id = $13
          RETURNING id, name, subtitle, subtitle_color, description, seo_name, uid, image, background_color,
                    template_key, template_config, whatsapp_modal_enabled,
-                   footer_text, footer_phone, footer_hidden, status, is_default, created_at, updated_at`,
+                    footer_text, footer_phone, footer_hidden, status, is_campaign_active, is_archived, archived_at, is_default, created_at, updated_at`,
         [
           name,
           subtitle,
@@ -1291,6 +1309,8 @@ export class LinktreesService {
           businessId,
           description,
           subtitle_color,
+          is_campaign_active,
+          status,
         ],
       );
 
@@ -1322,8 +1342,7 @@ export class LinktreesService {
              template_key = EXCLUDED.template_key,
              background_color = EXCLUDED.background_color,
              footer_hidden = EXCLUDED.footer_hidden,
-             whatsapp_enabled = EXCLUDED.whatsapp_enabled,
-             updated_at = NOW()`,
+             whatsapp_enabled = EXCLUDED.whatsapp_enabled`,
           [
             businessId,
             footer_text,
@@ -1365,11 +1384,94 @@ export class LinktreesService {
     return this.mapLinktreeRow(this.databaseService, row);
   }
 
+  async toggleCampaignActive(
+    id: string,
+    businessId: string,
+    isCampaignActive: boolean,
+  ) {
+    const res = await this.databaseService.query<LinktreeRow>(
+      `UPDATE linktrees
+       SET is_campaign_active = $1, updated_at = NOW()
+       WHERE id = $2 AND business_id = $3
+       RETURNING id, name, subtitle, subtitle_color, description, seo_name, uid, image, background_color,
+                 template_key, template_config, whatsapp_modal_enabled,
+                 footer_text, footer_phone, footer_hidden, status, is_campaign_active, is_archived, archived_at, is_default, created_at, updated_at`,
+      [isCampaignActive, id, businessId],
+    );
+    if (!res.rows || res.rows.length === 0) {
+      throw new NotFoundException('Linktree page not found');
+    }
+    const mapped = await this.mapLinktreeRow(this.databaseService, res.rows[0]);
+    await this.clearLinktreeCache(businessId, mapped.uid, mapped.seo_name);
+    return mapped;
+  }
+
+  async toggleArchive(id: string, businessId: string, isArchived: boolean) {
+    const existing = await this.databaseService.query<LinktreeRow>(
+      `SELECT is_default FROM linktrees WHERE id = $1 AND business_id = $2`,
+      [id, businessId],
+    );
+    if (!existing.rows || existing.rows.length === 0) {
+      throw new NotFoundException('Linktree page not found');
+    }
+    if (existing.rows[0].is_default && isArchived) {
+      throw new BadRequestException('پەیجی بنەڕەتی ناتوانرێت ئەرشیف بکرێت');
+    }
+
+    const res = await this.databaseService.query<LinktreeRow>(
+      `UPDATE linktrees
+       SET is_archived = $1,
+           archived_at = CASE WHEN $1 = true THEN NOW() ELSE NULL END,
+           is_campaign_active = CASE WHEN $1 = true THEN false ELSE is_campaign_active END,
+           updated_at = NOW()
+       WHERE id = $2 AND business_id = $3
+       RETURNING id, name, subtitle, subtitle_color, description, seo_name, uid, image, background_color,
+                 template_key, template_config, whatsapp_modal_enabled,
+                 footer_text, footer_phone, footer_hidden, status, is_campaign_active, is_archived, archived_at, is_default, created_at, updated_at`,
+      [isArchived, id, businessId],
+    );
+    const mapped = await this.mapLinktreeRow(this.databaseService, res.rows[0]);
+    await this.clearLinktreeCache(businessId, mapped.uid, mapped.seo_name);
+    return mapped;
+  }
+
+  async toggleStatus(
+    id: string,
+    businessId: string,
+    status: 'active' | 'inactive',
+  ) {
+    const existing = await this.databaseService.query<LinktreeRow>(
+      `SELECT is_default FROM linktrees WHERE id = $1 AND business_id = $2`,
+      [id, businessId],
+    );
+    if (!existing.rows || existing.rows.length === 0) {
+      throw new NotFoundException('Linktree page not found');
+    }
+    if (existing.rows[0].is_default && status === 'inactive') {
+      throw new BadRequestException('پەیجی بنەڕەتی ناتوانرێت ناچالاک بکرێت');
+    }
+
+    const res = await this.databaseService.query<LinktreeRow>(
+      `UPDATE linktrees
+       SET status = $1,
+           is_campaign_active = CASE WHEN $1 = 'inactive' THEN false ELSE is_campaign_active END,
+           updated_at = NOW()
+       WHERE id = $2 AND business_id = $3
+       RETURNING id, name, subtitle, subtitle_color, description, seo_name, uid, image, background_color,
+                 template_key, template_config, whatsapp_modal_enabled,
+                 footer_text, footer_phone, footer_hidden, status, is_campaign_active, is_archived, archived_at, is_default, created_at, updated_at`,
+      [status, id, businessId],
+    );
+    const mapped = await this.mapLinktreeRow(this.databaseService, res.rows[0]);
+    await this.clearLinktreeCache(businessId, mapped.uid, mapped.seo_name);
+    return mapped;
+  }
+
   async getDefaultLinktree(businessId: string) {
     const res = await this.databaseService.query<LinktreeRow>(
       `SELECT lt.id, lt.name, lt.subtitle, lt.subtitle_color, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
               lt.template_key, lt.template_config, lt.whatsapp_modal_enabled,
-              lt.footer_text, lt.footer_phone, lt.footer_hidden, lt.status, lt.is_default,
+              lt.footer_text, lt.footer_phone, lt.footer_hidden, lt.status, lt.is_campaign_active, lt.is_archived, lt.archived_at, lt.is_default,
               lt.created_at, lt.updated_at, b.default_avatar AS business_default_avatar
        FROM linktrees lt
        LEFT JOIN business_branding b ON b.business_id = lt.business_id

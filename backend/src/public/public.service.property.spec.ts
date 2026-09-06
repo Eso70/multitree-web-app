@@ -1,5 +1,10 @@
-﻿import * as fc from 'fast-check';
-import { GoneException, NotFoundException } from '@nestjs/common';
+import * as fc from 'fast-check';
+import {
+  GoneException,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
 import { PublicService } from './public.service';
 import { DatabaseService } from '../database/database.service';
 import { RedisService } from '../redis/redis.service';
@@ -154,6 +159,37 @@ describe('PublicService - Property Tests', () => {
       expect.stringContaining('public_page_tombstones'),
       ['lt-deleted', 'tenant'],
     );
+  });
+
+  it('throws 403 Forbidden with INACTIVE error for an inactive linktree', async () => {
+    const database = createMockDatabaseService();
+    (database.query as jest.Mock).mockResolvedValue({
+      rows: [{ id: 'lt-1', status: 'inactive' }],
+      rowCount: 1,
+    });
+    const service = new PublicService(
+      database,
+      createMockRedisService(),
+      createMockPageAnalytics(),
+      createMockPlatformWorkspace(),
+    );
+
+    await expect(
+      service.getPublicLinktreeByUidAndSubdomain('lt-inactive', 'tenant'),
+    ).rejects.toThrow(HttpException);
+
+    try {
+      await service.getPublicLinktreeByUidAndSubdomain('lt-inactive', 'tenant');
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpException);
+      if (error instanceof HttpException) {
+        expect(error.getStatus()).toBe(HttpStatus.FORBIDDEN);
+        expect(error.getResponse()).toEqual({
+          error: 'INACTIVE',
+          message: 'This page is inactive',
+        });
+      }
+    }
   });
 
   describe('Property 12: Unregistered Subdomain Returns 404', () => {

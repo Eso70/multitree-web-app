@@ -110,6 +110,9 @@ export interface LinktreeListItem {
   template_config?: LinktreeTemplateConfig | null;
   whatsapp_modal_enabled?: boolean | null;
   status?: LinktreeStatus;
+  is_campaign_active?: boolean;
+  is_archived?: boolean;
+  archived_at?: string | null;
   is_default?: boolean;
   business_logo?: string | null;
   business_default_avatar?: string | null;
@@ -140,6 +143,9 @@ export interface BusinessLinktreeSummary extends LinktreeListItem {
   footer_phone: string | null;
   footer_hidden: boolean | null;
   status: LinktreeStatus;
+  is_campaign_active?: boolean;
+  is_archived?: boolean;
+  archived_at?: string | null;
   is_default: boolean;
   business_default_avatar: string | null;
 }
@@ -162,6 +168,9 @@ export interface PublicLinktree {
   footer_phone: string | null;
   footer_hidden: boolean | null;
   status: LinktreeStatus;
+  is_campaign_active?: boolean;
+  is_archived?: boolean;
+  archived_at?: string | null;
   is_default: boolean;
   business_logo: string | null;
   business_favicon: string | null;

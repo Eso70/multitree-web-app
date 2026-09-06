@@ -11,6 +11,8 @@ import {
   Radar,
   RefreshCw,
   Search,
+  Send,
+  Server,
 } from "lucide-react";
 import type { EffectiveAccessManifest } from "@linktree/types";
 import { DashboardSurface } from "@/components/shared/DashboardSurface";
@@ -34,11 +36,17 @@ const tabs = [
 
 interface TrackingSummary {
   browserEvents: number;
+  serverEvents: number;
+  delivered: number;
+  failed: number;
   deliveryRate: number;
 }
 
 const EMPTY_TRACKING_SUMMARY: TrackingSummary = {
   browserEvents: 0,
+  serverEvents: 0,
+  delivered: 0,
+  failed: 0,
   deliveryRate: 0,
 };
 
@@ -107,6 +115,9 @@ export function BusinessTikTokConfigPage() {
         const payload = await response.json();
         setSummary({
           browserEvents: Number(payload.data?.browserEvents || 0),
+          serverEvents: Number(payload.data?.serverEvents || 0),
+          delivered: Number(payload.data?.delivered || 0),
+          failed: Number(payload.data?.failed || 0),
           deliveryRate: Number(payload.data?.deliveryRate || 0),
         });
       } catch (error) {
@@ -211,7 +222,7 @@ export function BusinessTikTokConfigPage() {
       dir="ltr"
       className="theme-custom-scrollbar selection:bg-brand-500/30 dark:selection:bg-brand-500/40"
     >
-      <StatCardGrid className="mb-6">
+      <StatCardGrid columns={3} className="mb-8">
         <StatCard
           icon={Radar}
           label="Pixelی ڕێکخراو"
@@ -222,7 +233,7 @@ export function BusinessTikTokConfigPage() {
           icon={KeyRound}
           label="Events APIی چالاک"
           value={apiConnections}
-          color="green"
+          color="cyan"
         />
         <StatCard
           icon={MousePointerClick}
@@ -233,11 +244,27 @@ export function BusinessTikTokConfigPage() {
           action={deliveryAllowed ? undefined : lockedAction}
         />
         <StatCard
+          icon={Server}
+          label="ڕووداوی Events API"
+          value={deliveryAllowed ? summary.serverEvents : "—"}
+          subtitle={deliveryAllowed ? undefined : "لە پلانی بەرزتردا بەردەستە"}
+          color="orange"
+          action={deliveryAllowed ? undefined : lockedAction}
+        />
+        <StatCard
+          icon={Send}
+          label="گەیشتوو"
+          value={deliveryAllowed ? summary.delivered : "—"}
+          subtitle={deliveryAllowed ? undefined : "لە پلانی بەرزتردا بەردەستە"}
+          color="green"
+          action={deliveryAllowed ? undefined : lockedAction}
+        />
+        <StatCard
           icon={Activity}
           label="ڕێژەی سەرکەوتن"
           value={deliveryAllowed ? `${summary.deliveryRate.toFixed(1)}٪` : "—"}
           subtitle={deliveryAllowed ? undefined : "لە پلانی بەرزتردا بەردەستە"}
-          color="amber"
+          color="pink"
           action={deliveryAllowed ? undefined : lockedAction}
         />
       </StatCardGrid>

@@ -2,6 +2,7 @@ import {
   IsString,
   IsOptional,
   IsBoolean,
+  IsIn,
   IsObject,
   Matches,
   MaxLength,
@@ -69,4 +70,31 @@ export class UpdateLinktreeDto {
   @IsBoolean()
   @IsOptional()
   footer_hidden?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  is_campaign_active?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  is_archived?: boolean;
+
+  @IsIn(['active', 'inactive'])
+  @IsOptional()
+  status?: 'active' | 'inactive';
+}
+
+export class ToggleLinktreeCampaignDto {
+  @IsBoolean()
+  is_campaign_active!: boolean;
+}
+
+export class ToggleLinktreeArchiveDto {
+  @IsBoolean()
+  is_archived!: boolean;
+}
+
+export class ToggleLinktreeStatusDto {
+  @IsIn(['active', 'inactive'])
+  status!: 'active' | 'inactive';
 }

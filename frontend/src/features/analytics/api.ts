@@ -1,4 +1,8 @@
 import { apiRequest } from "@/lib/api/request";
+import type {
+  TikTokEventsApiTestRequest,
+  TikTokEventsApiTestResult,
+} from "@linktree/types";
 
 /** How a delivery problem is reported to the owner. */
 export type TikTokDeliverySeverity = "permanent" | "retrying";
@@ -51,3 +55,22 @@ export function getTikTokDeliveryErrors(
     { signal },
   );
 }
+
+export async function testTikTokEventsApi(
+  endpoint: string,
+  payload: TikTokEventsApiTestRequest,
+  signal?: AbortSignal,
+): Promise<TikTokEventsApiTestResult> {
+  const result = await apiRequest<
+    { data: TikTokEventsApiTestResult } | TikTokEventsApiTestResult
+  >(endpoint, {
+    method: "POST",
+    body: JSON.stringify(payload),
+    signal,
+  });
+  if (result && typeof result === "object" && "data" in result && result.data) {
+    return result.data;
+  }
+  return result as TikTokEventsApiTestResult;
+}
+

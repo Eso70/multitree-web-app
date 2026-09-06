@@ -58,6 +58,9 @@ interface BasicInfoStepProps {
   footerText: string;
   footerPhone: string;
   footerHidden: boolean;
+  status?: "active" | "inactive";
+  onStatusChange?: (value: "active" | "inactive") => void;
+  isDefault?: boolean;
   whatsappModalEnabled: boolean;
   onWhatsappModalEnabledChange: (value: boolean) => void;
   whatsappModalTitle: string;
@@ -132,6 +135,9 @@ export const BasicInfoStep = memo(function BasicInfoStep({
   footerText,
   footerPhone,
   footerHidden,
+  status = "active",
+  onStatusChange,
+  isDefault = false,
   whatsappModalEnabled,
   onWhatsappModalEnabledChange,
   whatsappModalTitle,
@@ -474,6 +480,73 @@ export const BasicInfoStep = memo(function BasicInfoStep({
             />
           </EditorField>
         </div>
+
+        {/* Page Active Status Toggle */}
+        {onStatusChange && (
+          <div className="flex items-center justify-between gap-2 sm:gap-3 md:gap-4 p-3 sm:p-4 md:p-5 rounded-lg sm:rounded-xl border border-gray-200 dark:border-white/10 bg-linear-to-br from-gray-50 to-white dark:from-[#161B22] dark:to-[#161B22] hover:border-gray-300 dark:hover:border-white/20 transition-all duration-200 touch-manipulation">
+            <div className="flex-1 pr-2 sm:pr-0">
+              <span className="text-xs sm:text-sm md:text-base font-medium text-gray-700 dark:text-gray-300 block leading-tight sm:leading-normal">
+                دۆخی پەڕە ({status === "inactive" ? "ناچالاک" : "چالاک"})
+              </span>
+              <span className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 block mt-0.5">
+                {isDefault
+                  ? "پەیجی بنەڕەتی ناتوانرێت ناچالاک بکرێت"
+                  : status === "inactive"
+                  ? "پەڕەکە لەکارخراوە و لە کاتی کردنەوەیدا پەیامی ناچالاکبوون پیشان دەدات"
+                  : "پەڕەکە چالاکە و بەردەستە بۆ هەموو سەردانکەران"}
+              </span>
+            </div>
+            <Tooltip
+              content={
+                isDefault
+                  ? "پەیجی بنەڕەتی ناتوانرێت ناچالاک بکرێت"
+                  : status === "inactive"
+                  ? "کلیک بکە بۆ چالاککردنی پەڕە"
+                  : "کلیک بکە بۆ ناچالاککردنی پەڕە"
+              }
+              side="top"
+            >
+              <button
+                type="button"
+                role="switch"
+                disabled={isDefault}
+                aria-checked={status !== "inactive"}
+                aria-label={
+                  status === "inactive" ? "پەڕە ناچالاکە" : "پەڕە چالاکە"
+                }
+                onClick={() => {
+                  if (isDefault) return;
+                  onStatusChange(status === "inactive" ? "active" : "inactive");
+                }}
+                className={`relative inline-flex h-7 w-12 sm:h-8 sm:w-14 md:h-9 md:w-16 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 touch-manipulation ${
+                  isDefault
+                    ? "opacity-50 cursor-not-allowed bg-gray-300 dark:bg-gray-700"
+                    : status !== "inactive"
+                    ? "cursor-pointer"
+                    : "cursor-pointer bg-gray-300 dark:bg-gray-750"
+                }`}
+                style={
+                  status !== "inactive" && !isDefault
+                    ? ({
+                        background: "var(--theme-css, #10b981)",
+                        "--tw-ring-color": "var(--theme-primary, #10b981)",
+                      } as React.CSSProperties)
+                    : ({
+                        "--tw-ring-color": "var(--theme-primary, #64748b)",
+                      } as React.CSSProperties)
+                }
+              >
+                <span
+                  className={`pointer-events-none inline-block h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                    status !== "inactive"
+                      ? "translate-x-5 sm:translate-x-6 md:translate-x-7"
+                      : "translate-x-0.5 sm:translate-x-0.5 md:translate-x-0.5"
+                  }`}
+                />
+              </button>
+            </Tooltip>
+          </div>
+        )}
 
         {/* Footer Name and Phone */}
         {!hideFooterSection && (

@@ -486,7 +486,6 @@ export function BusinessPageAnalyticsModal({
       void load(false, {});
     });
     return () => window.cancelAnimationFrame(frame);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, load]);
 
   // Re-fetch whenever the effective date range changes (user picks a preset

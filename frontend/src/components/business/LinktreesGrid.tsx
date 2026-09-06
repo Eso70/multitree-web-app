@@ -9,6 +9,10 @@ import {
 } from "react";
 import Image from "next/image";
 import {
+  Archive,
+  ArchiveRestore,
+  CirclePause,
+  CirclePlay,
   Trash2,
   Eye,
   Copy,
@@ -24,6 +28,7 @@ import { copyToClipboard } from "@/lib/utils/clipboard";
 import { formatDate, getAbsoluteUrl } from "@/lib/utils/linktree-utils";
 import {
   LINKTREE_TRAFFIC_LABELS,
+  LinktreeCampaignButton,
   LinktreeMetaBadges,
   LinktreeMetaField,
   type LinktreeMetaBadgesProps,
@@ -63,6 +68,9 @@ interface LinktreesGridProps {
   MetaBadgesComponent?: ComponentType<LinktreeMetaBadgesProps>;
   trafficLabels?: PageListTrafficLabels;
   pagination?: ManagementTablePagination;
+  onToggleCampaign?: (id: string, isCampaignActive: boolean) => void;
+  onToggleArchive?: (id: string, isArchived: boolean) => void;
+  onToggleStatus?: (id: string, status: "active" | "inactive") => void;
 }
 
 function getPublicIdentifier(item: Linktree): string {
@@ -78,6 +86,9 @@ const LinktreeCard = memo(function LinktreeCard({
   onDuplicate,
   onDelete,
   onViewAnalytics,
+  onToggleCampaign,
+  onToggleArchive,
+  onToggleStatus,
   viewActionLabel,
   copiedUid,
   onCopy,
@@ -93,6 +104,9 @@ const LinktreeCard = memo(function LinktreeCard({
   onDuplicate?: (item: Linktree) => void;
   onDelete?: (id: string, uid: string, name: string) => void;
   onViewAnalytics?: (id: string, name: string) => void;
+  onToggleCampaign?: (id: string, isCampaignActive: boolean) => void;
+  onToggleArchive?: (id: string, isArchived: boolean) => void;
+  onToggleStatus?: (id: string, status: "active" | "inactive") => void;
   viewActionLabel: string;
   copiedUid: string | null;
   onCopy: (uid: string, e: React.MouseEvent) => void;
@@ -120,35 +134,56 @@ const LinktreeCard = memo(function LinktreeCard({
     window.open(url, "_blank", "noopener,noreferrer");
   }, [url]);
 
+  const isCampaignActive = !!item.is_campaign_active;
+
   return (
     <div
-      className={`group relative flex h-full flex-col bg-transparent p-4 sm:p-5 md:p-6 hover:bg-slate-50/50 dark:hover:bg-white/5 transition-all duration-300 transform-gpu ${borderClasses}`}
+      className={`group relative flex h-full flex-col p-4 sm:p-5 md:p-6 transition-all duration-300 transform-gpu bg-transparent hover:bg-slate-50/50 dark:hover:bg-white/5 ${borderClasses}`}
       style={{
         contentVisibility: "auto",
         containIntrinsicSize: "320px",
       }}
     >
-      {/* Header Section */}
-      <div className="flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3">
-        <div className="relative w-10 h-10 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-gray-200 shrink-0 shadow-sm">
-          <Image
-            src={
-              item.image ||
-              item.business_default_avatar ||
-              item.business_logo ||
-              "/images/DefaultAvatar.png"
-            }
-            alt={item.name}
-            fill
-            className="object-cover"
-            loading="lazy"
-            sizes="(max-width: 640px) 64px, 80px"
-            quality={75}
-            unoptimized
+      {/* Top right Campaign button */}
+      {!item.is_archived && (onToggleCampaign || isCampaignActive) && (
+        <div className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 z-10">
+          <LinktreeCampaignButton
+            id={item.id}
+            isActive={isCampaignActive}
+            onToggle={onToggleCampaign}
           />
         </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-xs sm:text-base font-bold text-gray-900 mb-0.5 sm:mb-1 truncate">
+      )}
+
+      {/* Header Section */}
+      <div className="flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3">
+        <div className="relative shrink-0">
+          <div className="relative w-10 h-10 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-gray-200 shadow-sm">
+            <Image
+              src={
+                item.image ||
+                item.business_default_avatar ||
+                item.business_logo ||
+                "/images/DefaultAvatar.png"
+              }
+              alt={item.name}
+              fill
+              className="object-cover"
+              loading="lazy"
+              sizes="(max-width: 640px) 64px, 80px"
+              quality={75}
+              unoptimized
+            />
+          </div>
+          {isCampaignActive && (
+            <span
+              className="absolute bottom-0 right-0 h-3 w-3 sm:h-3.5 sm:w-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900"
+              title="کەمپەین چالاکە"
+            />
+          )}
+        </div>
+        <div className="flex-1 min-w-0 pr-20 sm:pr-24">
+          <h3 className="text-xs sm:text-base font-bold text-gray-900 truncate mb-0.5 sm:mb-1">
             {item.name}
           </h3>
           <p className="text-xs text-gray-600 line-clamp-2 mb-1 sm:mb-1.5">
@@ -158,6 +193,8 @@ const LinktreeCard = memo(function LinktreeCard({
             item={item}
             showAgeBadge={showPageMeta}
             showTemplate={showPageMeta}
+            onToggleCampaign={onToggleCampaign}
+            hideCampaignBadge={true}
           />
         </div>
       </div>
@@ -220,21 +257,21 @@ const LinktreeCard = memo(function LinktreeCard({
       {/* Traffic Section */}
       {showPageMeta && item.analytics && (
         <div className="mb-2 grid grid-cols-2 gap-2 sm:mb-3">
-          <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5">
+          <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-white/5 px-2 py-1.5 transition-colors">
             <Eye className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-            <span className="text-xs font-bold text-gray-700">
+            <span className="text-xs font-bold text-gray-700 dark:text-gray-200">
               {item.analytics.unique_views.toLocaleString()}
             </span>
-            <span className="truncate text-[10px] text-gray-500">
+            <span className="truncate text-[10px] text-gray-500 dark:text-gray-400">
               {trafficLabels.views}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5">
+          <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-white/5 px-2 py-1.5 transition-colors">
             <MousePointerClick className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-            <span className="text-xs font-bold text-gray-700">
+            <span className="text-xs font-bold text-gray-700 dark:text-gray-200">
               {item.analytics.unique_clicks.toLocaleString()}
             </span>
-            <span className="truncate text-[10px] text-gray-500">
+            <span className="truncate text-[10px] text-gray-500 dark:text-gray-400">
               {trafficLabels.interactions}
             </span>
           </div>
@@ -242,28 +279,28 @@ const LinktreeCard = memo(function LinktreeCard({
       )}
 
       {/* Actions Section */}
-      <div className="mt-auto flex items-center gap-1.5 sm:gap-2 pt-2 sm:pt-3 border-t border-gray-200">
+      <div className="mt-auto flex items-center gap-1 sm:gap-1.5 pt-2 sm:pt-2.5 border-t border-gray-200">
         {onViewAnalytics && (
-          <Tooltip content={viewActionLabel} side="top" className="flex-1">
+          <Tooltip content={viewActionLabel} side="top" className="flex-1 min-w-0">
             <button
               onClick={() => onViewAnalytics(item.id, item.name)}
-              className="w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-700 hover:text-sky-800 transition-all duration-200 text-xs font-medium cursor-pointer"
+              className="w-full flex items-center justify-center gap-1 px-1.5 sm:px-2 h-7.5 sm:h-8 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-700 hover:text-sky-800 transition-all duration-200 text-[10px] sm:text-[11px] font-medium cursor-pointer min-w-0"
               aria-label={viewActionLabel}
             >
-              <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden lg:inline text-xs">{viewActionLabel}</span>
+              <Eye className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{viewActionLabel}</span>
             </button>
           </Tooltip>
         )}
         {onEdit && (
-          <Tooltip content="دەستکاریکردن" side="top" className="flex-1">
+          <Tooltip content="دەستکاری" side="top" className="flex-1 min-w-0">
             <button
               onClick={() => onEdit(item.id)}
-              className="w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-700 hover:text-yellow-800 transition-all duration-200 text-xs font-medium cursor-pointer"
-              aria-label="دەستکاریکردن"
+              className="w-full flex items-center justify-center gap-1 px-1.5 sm:px-2 h-7.5 sm:h-8 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-700 hover:text-yellow-800 transition-all duration-200 text-[10px] sm:text-[11px] font-medium cursor-pointer min-w-0"
+              aria-label="دەستکاری"
             >
-              <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden lg:inline text-xs">دەستکاریکردن</span>
+              <Edit className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">دەستکاری</span>
             </button>
           </Tooltip>
         )}
@@ -271,7 +308,7 @@ const LinktreeCard = memo(function LinktreeCard({
           <Tooltip content="لەبەرگرتنەوە" side="top">
             <button
               onClick={() => onDuplicate(item)}
-              className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border transition-all duration-200 cursor-pointer hover:brightness-95"
+              className="flex h-7.5 w-7.5 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border transition-all duration-200 cursor-pointer hover:brightness-95"
               style={{
                 background: "color-mix(in srgb, var(--theme-primary, #6366f1) 12%, transparent)",
                 borderColor: "color-mix(in srgb, var(--theme-primary, #6366f1) 28%, transparent)",
@@ -279,7 +316,62 @@ const LinktreeCard = memo(function LinktreeCard({
               }}
               aria-label="لەبەرگرتنەوە"
             >
-              <CopyPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <CopyPlus className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+        )}
+        {onToggleArchive && !item.is_default && (
+          <Tooltip
+            content={item.is_archived ? "گەڕاندنەوە لە ئەرشیف" : "ئەرشیفکردن"}
+            side="top"
+          >
+            <button
+              onClick={() => onToggleArchive(item.id, !item.is_archived)}
+              className={`flex h-7.5 w-7.5 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border transition-all duration-200 cursor-pointer ${
+                item.is_archived
+                  ? "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30 text-emerald-700 hover:text-emerald-800 dark:text-emerald-300"
+                  : "bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/30 text-slate-600 hover:text-slate-800 dark:text-gray-300"
+              }`}
+              aria-label={item.is_archived ? "Restore from archive" : "Archive"}
+            >
+              {item.is_archived ? (
+                <ArchiveRestore className="h-3.5 w-3.5" />
+              ) : (
+                <Archive className="h-3.5 w-3.5" />
+              )}
+            </button>
+          </Tooltip>
+        )}
+        {onToggleStatus && !item.is_default && (
+          <Tooltip
+            content={
+              item.status === "inactive"
+                ? "چالاککردنی پەڕە"
+                : "ناچالاککردنی پەڕە"
+            }
+            side="top"
+          >
+            <button
+              onClick={() =>
+                onToggleStatus(
+                  item.id,
+                  item.status === "inactive" ? "active" : "inactive",
+                )
+              }
+              className={`flex h-7.5 w-7.5 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border transition-all duration-200 cursor-pointer ${
+                item.status === "inactive"
+                  ? "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30 text-emerald-700 hover:text-emerald-800 dark:text-emerald-300"
+                  : "bg-rose-500/10 hover:bg-rose-500/20 border-rose-500/30 text-rose-700 hover:text-rose-800 dark:text-rose-300"
+              }`}
+              aria-label={
+                item.status === "inactive" ? "Activate page" : "Deactivate page"
+              }
+            >
+              {item.status === "inactive" ? (
+                <CirclePlay className="h-3.5 w-3.5" />
+              ) : (
+                <CirclePause className="h-3.5 w-3.5" />
+              )}
             </button>
           </Tooltip>
         )}
@@ -287,20 +379,20 @@ const LinktreeCard = memo(function LinktreeCard({
           <Tooltip content="سڕینەوە" side="top">
             <button
               onClick={() => onDelete(item.id, item.uid, item.name)}
-              className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-700 hover:text-red-800 transition-all duration-200 cursor-pointer"
+              className="flex h-7.5 w-7.5 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-700 hover:text-red-800 transition-all duration-200 cursor-pointer"
               aria-label="سڕینەوە"
             >
-              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
             </button>
           </Tooltip>
         )}
         <Tooltip content="بینینی پەڕە" side="top">
           <button
             onClick={handleView}
-            className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 hover:text-gray-700 transition-all duration-200 cursor-pointer"
+            className="flex h-7.5 w-7.5 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 hover:text-gray-700 transition-all duration-200 cursor-pointer"
             aria-label="بینین"
           >
-            <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <ExternalLink className="h-3.5 w-3.5" />
           </button>
         </Tooltip>
       </div>
@@ -324,6 +416,9 @@ export const LinktreesGrid = memo(function LinktreesGrid({
   MetaBadgesComponent = LinktreeMetaBadges,
   trafficLabels = LINKTREE_TRAFFIC_LABELS,
   pagination = { mode: "client" },
+  onToggleCampaign,
+  onToggleArchive,
+  onToggleStatus,
 }: LinktreesGridProps) {
   const [copiedUid, setCopiedUid] = useState<string | null>(null);
   const displaysPageMeta = showPageMeta ?? showLinktreeMeta;
@@ -389,6 +484,9 @@ export const LinktreesGrid = memo(function LinktreesGrid({
             onDuplicate={onDuplicate}
             onDelete={handleDelete}
             onViewAnalytics={onViewAnalytics}
+            onToggleCampaign={onToggleCampaign}
+            onToggleArchive={onToggleArchive}
+            onToggleStatus={onToggleStatus}
             viewActionLabel={viewActionLabel}
             copiedUid={copiedUid}
             onCopy={handleCopyUrl}

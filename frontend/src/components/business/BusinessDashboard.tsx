@@ -1,7 +1,5 @@
 "use client";
 
-import { MotionPulseIcon } from "@/components/motion/MotionPrimitives";
-
 import {
   memo,
   useState,
@@ -11,12 +9,10 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
-import Image from "next/image";
 import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
 import {
   LayoutTemplate,
   FileText,
-  Search,
   LogOut,
   User,
   Settings,
@@ -576,13 +572,6 @@ export const BusinessDashboard = memo(function BusinessDashboard({
     return linktreesData.filter((item) => item.name.toLowerCase().includes(q));
   }, [linktreesData, searchQuery]);
 
-  // Search results for command palette
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const q = searchQuery.toLowerCase().trim();
-    return linktreesData.filter((item) => item.name.toLowerCase().includes(q));
-  }, [linktreesData, searchQuery]);
-
   const {
     totals: analyticsTotals,
     hasData: hasAnalyticsData,
@@ -818,6 +807,127 @@ export const BusinessDashboard = memo(function BusinessDashboard({
       setLinktreeToDelete(null);
     }
   }, [isDeleting]);
+
+  const handleToggleCampaign = useCallback(
+    async (id: string, nextStatus: boolean) => {
+      mergeLinktree(id, { is_campaign_active: nextStatus });
+
+      try {
+        const response = await fetch(`/api/linktrees/${id}/campaign-status`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ is_campaign_active: nextStatus }),
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          mergeLinktree(id, { is_campaign_active: !nextStatus });
+          const errData = await response.json().catch(() => ({}));
+          toast.error(errData.message || "گۆڕینی دۆخی کەمپەین سەرکەوتوو نەبوو");
+          return;
+        }
+
+        const { clearCachedData } = await import("@/lib/utils/cache");
+        clearCachedData("/api/linktrees");
+        clearCachedData(`/api/linktrees/${id}`);
+
+        if (nextStatus) {
+          toast.success("پەڕەکە بۆ کەمپەین چالاککرا و خرایە سەرووی لیستەکە");
+        } else {
+          toast.info("دۆخی کەمپەینی ئەم پەڕەیە ناچالاککرا");
+        }
+      } catch {
+        mergeLinktree(id, { is_campaign_active: !nextStatus });
+        toast.error("گۆڕینی دۆخی کەمپەین سەرکەوتوو نەبوو");
+      }
+    },
+    [mergeLinktree],
+  );
+
+  const handleToggleArchive = useCallback(
+    async (id: string, nextStatus: boolean) => {
+      mergeLinktree(id, {
+        is_archived: nextStatus,
+        archived_at: nextStatus ? new Date().toISOString() : null,
+        ...(nextStatus ? { is_campaign_active: false } : {}),
+      });
+
+      try {
+        const response = await fetch(`/api/linktrees/${id}/archive`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ is_archived: nextStatus }),
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          await fetchLinktrees(false, true);
+          const errData = await response.json().catch(() => ({}));
+          toast.error(errData.message || "گۆڕینی دۆخی ئەرشیف سەرکەوتوو نەبوو");
+          return;
+        }
+
+        const { clearCachedData } = await import("@/lib/utils/cache");
+        clearCachedData("/api/linktrees");
+        clearCachedData(`/api/linktrees/${id}`);
+
+        if (nextStatus) {
+          toast.success("پەڕەکە ئەرشیفکرا");
+        } else {
+          toast.success("پەڕەکە لە ئەرشیف دەرهێنرا و چالاککرایەوە");
+        }
+      } catch {
+        await fetchLinktrees(false, true);
+        toast.error("گۆڕینی دۆخی ئەرشیف سەرکەوتوو نەبوو");
+      }
+    },
+    [mergeLinktree, fetchLinktrees],
+  );
+
+  const handleToggleStatus = useCallback(
+    async (id: string, nextStatus: "active" | "inactive") => {
+      mergeLinktree(id, {
+        status: nextStatus,
+        ...(nextStatus === "inactive" ? { is_campaign_active: false } : {}),
+      });
+
+      try {
+        const response = await fetch(`/api/linktrees/${id}/status`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: nextStatus }),
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          await fetchLinktrees(false, true);
+          const errData = await response.json().catch(() => ({}));
+          toast.error(errData.message || "گۆڕینی دۆخی پەڕە سەرکەوتوو نەبوو");
+          return;
+        }
+
+        const { clearCachedData } = await import("@/lib/utils/cache");
+        clearCachedData("/api/linktrees");
+        clearCachedData(`/api/linktrees/${id}`);
+
+        if (nextStatus === "active") {
+          toast.success("پەڕەکە چالاککرایەوە");
+        } else {
+          toast.success("پەڕەکە ناچالاککرا");
+        }
+      } catch {
+        await fetchLinktrees(false, true);
+        toast.error("گۆڕینی دۆخی پەڕە سەرکەوتوو نەبوو");
+      }
+    },
+    [mergeLinktree, fetchLinktrees],
+  );
 
   // Left unmemoised on purpose: React Compiler handles the memoisation here, and
   // wrapping it in useCallback trips react-hooks/preserve-manual-memoization.
@@ -1579,6 +1689,9 @@ export const BusinessDashboard = memo(function BusinessDashboard({
                       onDuplicate={(item) => setDuplicateTargetLinktree(item)}
                       onDelete={handleDelete}
                       onViewAnalytics={handleViewAnalytics}
+                      onToggleCampaign={handleToggleCampaign}
+                      onToggleArchive={handleToggleArchive}
+                      onToggleStatus={handleToggleStatus}
                     />
                   ) : activeTab === "tiktok-config" ? (
                     <BusinessTikTokConfigPage />

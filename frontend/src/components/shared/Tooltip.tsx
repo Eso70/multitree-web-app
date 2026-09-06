@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useCallback,
   useId,
+  useSyncExternalStore,
   type ReactNode,
   type ReactElement,
 } from "react";
@@ -29,6 +30,24 @@ interface Coords {
   actualSide: TooltipSide;
 }
 
+const emptySubscribe = () => () => {};
+
+function useIsMounted() {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
+}
+
+function assignRef<T>(ref: React.Ref<T> | undefined, value: T) {
+  if (typeof ref === "function") {
+    ref(value);
+  } else if (ref && typeof ref === "object" && "current" in ref) {
+    (ref as React.MutableRefObject<T>).current = value;
+  }
+}
+
 export function Tooltip({
   content,
   side = "top",
@@ -40,7 +59,7 @@ export function Tooltip({
 }: TooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState<Coords | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsMounted();
 
   const triggerRef = useRef<HTMLElement | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
@@ -48,7 +67,6 @@ export function Tooltip({
   const tooltipId = useId();
 
   useEffect(() => {
-    setMounted(true);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
@@ -188,11 +206,7 @@ export function Tooltip({
       className: mergedClassName,
       ref: (node: HTMLElement | null) => {
         triggerRef.current = node;
-        if (typeof originalRef === "function") {
-          originalRef(node);
-        } else if (originalRef && "current" in originalRef) {
-          (originalRef as React.MutableRefObject<HTMLElement | null>).current = node;
-        }
+        assignRef(originalRef, node);
       },
       onMouseEnter: (e: React.MouseEvent) => {
         if (typeof child.props.onMouseEnter === "function") {

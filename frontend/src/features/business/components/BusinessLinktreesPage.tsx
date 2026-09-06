@@ -1,10 +1,11 @@
 "use client";
 
 import { MotionSpinner } from "@/components/motion/MotionPrimitives";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import dynamic from "next/dynamic";
 import {
+  Archive,
   Eye,
   FileText,
   LayoutGrid,
@@ -84,6 +85,9 @@ interface BusinessLinktreesPageProps {
   onDuplicate?: (item: LinktreeListItem) => void;
   onDelete: (id: string, uid: string, name: string) => void;
   onViewAnalytics: (id: string, name: string) => void;
+  onToggleCampaign?: (id: string, isCampaignActive: boolean) => void | Promise<void>;
+  onToggleArchive?: (id: string, isArchived: boolean) => void | Promise<void>;
+  onToggleStatus?: (id: string, status: "active" | "inactive") => void | Promise<void>;
 }
 
 export function BusinessLinktreesPage({
@@ -109,10 +113,25 @@ export function BusinessLinktreesPage({
   onDuplicate,
   onDelete,
   onViewAnalytics,
+  onToggleCampaign,
+  onToggleArchive,
+  onToggleStatus,
 }: BusinessLinktreesPageProps) {
   const [managementView, setManagementView] = useState<
     "linktrees" | "client-invitations"
   >("linktrees");
+  const [archiveFilter, setArchiveFilter] = useState<"active" | "archived">("active");
+
+  const activeLinktrees = useMemo(
+    () => linktrees.filter((item) => !item.is_archived),
+    [linktrees],
+  );
+  const archivedLinktrees = useMemo(
+    () => linktrees.filter((item) => !!item.is_archived),
+    [linktrees],
+  );
+  const displayedLinktrees = archiveFilter === "archived" ? archivedLinktrees : activeLinktrees;
+
   useRegisterBusinessDashboardRefresh("linktrees", () => onRefresh(true));
   const ctr =
     totalViews > 0 ? ((totalClicks / totalViews) * 100).toFixed(1) : "0.0";
@@ -187,7 +206,7 @@ export function BusinessLinktreesPage({
             description="پەیجەکانت دروست و بەڕێوە ببە و بینین و کلیکەکانی هەر پەیجێک چاودێری بکە."
             icon={FileText}
             action={
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <ClearAnalyticsButton
                   onClick={onClearAnalytics}
                   hasData={hasAnalyticsData}
@@ -244,6 +263,47 @@ export function BusinessLinktreesPage({
                   </button>
                 </Tooltip>
                 <div className="flex items-center h-10 p-1 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 shadow-sm shrink-0">
+                  <Tooltip content="پەڕە چالاکەکان" side="bottom">
+                    <button
+                      type="button"
+                      onClick={() => setArchiveFilter("active")}
+                      className={`flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                        archiveFilter === "active"
+                          ? "shadow-sm text-white"
+                          : "text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/5"
+                      }`}
+                      style={
+                        archiveFilter === "active"
+                          ? { background: "var(--theme-css, #64748b)" }
+                          : undefined
+                      }
+                      aria-label="پەڕە چالاکەکان"
+                    >
+                      <span>چالاک</span>
+                    </button>
+                  </Tooltip>
+                  <Tooltip content="پەڕە ئەرشیفکراوەکان" side="bottom">
+                    <button
+                      type="button"
+                      onClick={() => setArchiveFilter("archived")}
+                      className={`flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                        archiveFilter === "archived"
+                          ? "shadow-sm text-white"
+                          : "text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-white hover:bg-slate-50/50 dark:hover:bg-white/5"
+                      }`}
+                      style={
+                        archiveFilter === "archived"
+                          ? { background: "var(--theme-css, #64748b)" }
+                          : undefined
+                      }
+                      aria-label="پەڕە ئەرشیفکراوەکان"
+                    >
+                      <Archive className="h-3.5 w-3.5" />
+                      <span>ئەرشیف</span>
+                    </button>
+                  </Tooltip>
+                </div>
+                <div className="flex items-center h-10 p-1 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 shadow-sm shrink-0">
                   <Tooltip content="پیشاندانی تۆڕی (گرید)" side="bottom">
                     <button
                       onClick={() => onViewModeChange("grid")}
@@ -289,23 +349,49 @@ export function BusinessLinktreesPage({
           <div className="border-t border-slate-100 dark:border-white/5 pt-6">
             {viewMode === "grid" ? (
               <LinktreesGrid
-                data={linktrees}
+                data={displayedLinktrees}
                 isLoading={isLoading}
                 onEdit={onEdit}
                 onDuplicate={onDuplicate}
                 onDelete={onDelete}
                 onViewAnalytics={onViewAnalytics}
+                onToggleCampaign={onToggleCampaign}
+                onToggleArchive={onToggleArchive}
+                onToggleStatus={onToggleStatus}
                 showLinktreeMeta
+                emptyTitle={
+                  archiveFilter === "archived"
+                    ? "هیچ پەڕەیەکی ئەرشیفکراو نییە"
+                    : undefined
+                }
+                emptyDescription={
+                  archiveFilter === "archived"
+                    ? "ئەو پەڕانەی بە دەستی ئەرشیفیان دەکەیت لێرەدا دەردەکەون."
+                    : undefined
+                }
               />
             ) : (
               <LinktreesTable
-                data={linktrees}
+                data={displayedLinktrees}
                 isLoading={isLoading}
                 onEdit={onEdit}
                 onDuplicate={onDuplicate}
                 onDelete={onDelete}
                 onViewAnalytics={onViewAnalytics}
+                onToggleCampaign={onToggleCampaign}
+                onToggleArchive={onToggleArchive}
+                onToggleStatus={onToggleStatus}
                 showLinktreeMeta
+                emptyTitle={
+                  archiveFilter === "archived"
+                    ? "هیچ پەڕەیەکی ئەرشیفکراو نییە"
+                    : undefined
+                }
+                emptyDescription={
+                  archiveFilter === "archived"
+                    ? "ئەو پەڕانەی بە دەستی ئەرشیفیان دەکەیت لێرەدا دەردەکەون."
+                    : undefined
+                }
               />
             )}
           </div>

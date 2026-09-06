@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { createHash } from 'crypto';
 import type { PoolClient } from 'pg';
 import { DatabaseService } from '../database/database.service';
 import { SecretCryptoService } from './secret-crypto.service';
@@ -108,6 +109,39 @@ export class TikTokPixelConfigService {
     }));
   }
 
+  async getSecret(
+    ownerId: string,
+    id: string,
+  ): Promise<{ events_token: string; token_last_four: string | null }> {
+    const result = await this.database.query<{
+      encrypted_events_token: Buffer | null;
+      token_last_four: string | null;
+    }>(
+      `SELECT encrypted_events_token, token_last_four
+         FROM business_tiktok_pixels
+        WHERE business_id = $1::uuid
+          AND id = $2::uuid
+          AND status = 'active'`,
+      [ownerId, id],
+    );
+    const row = result.rows[0];
+    if (!row) {
+      throw new BadRequestException('TikTok pixel not found');
+    }
+    if (!row.encrypted_events_token) {
+      return { events_token: '', token_last_four: row.token_last_four };
+    }
+    const decrypted = this.secrets.decryptJson(row.encrypted_events_token);
+    const token = decrypted.events_token ?? decrypted.legacyValue;
+    if (typeof token !== 'string' || !token) {
+      throw new BadRequestException('TikTok token cannot be decrypted');
+    }
+    return {
+      events_token: token,
+      token_last_four: row.token_last_four,
+    };
+  }
+
   async replace(
     ownerId: string,
     value: unknown,
@@ -195,5 +229,208 @@ export class TikTokPixelConfigService {
           AND NOT (id = ANY($2::uuid[]))`,
       [ownerId, retainedIds],
     );
+  }
+
+  async testEventsApi(
+    ownerId: string,
+    input: {
+      test_event_code: string;
+      pixel_id?: string;
+      event_name?: string;
+    },
+    context?: { ip?: string; userAgent?: string },
+  ): Promise<{
+    success: boolean;
+    statusCode: number;
+    tiktokCode: number | null;
+    message: string;
+    requestId: string | null;
+    pixelId: string;
+    testEventCode: string;
+    eventName: string;
+    sentAt: string;
+  }> {
+    const testEventCode = (input.test_event_code || '').trim();
+    if (!testEventCode) {
+      throw new BadRequestException('test_event_code is required');
+    }
+
+    const result = await this.database.query<{
+      id: string;
+      pixel_id: string;
+      encrypted_events_token: Buffer | null;
+    }>(
+      `SELECT id::text, pixel_id, encrypted_events_token
+         FROM business_tiktok_pixels
+        WHERE business_id = $1::uuid
+          AND status = 'active'
+          AND ($2::text IS NULL OR pixel_id = $2::text)
+        ORDER BY display_order ASC, created_at ASC`,
+      [ownerId, input.pixel_id ? input.pixel_id.trim() : null],
+    );
+
+    const eventName = input.event_name || 'ViewContent';
+
+    if (result.rows.length === 0) {
+      return {
+        success: false,
+        statusCode: 404,
+        tiktokCode: null,
+        message: input.pixel_id
+          ? `TikTok Pixel ID '${input.pixel_id}' is not configured or inactive.`
+          : 'No active TikTok Pixel configuration found for this account.',
+        requestId: null,
+        pixelId: input.pixel_id || '',
+        testEventCode,
+        eventName,
+        sentAt: new Date().toISOString(),
+      };
+    }
+
+    const targetPixel =
+      result.rows.find((r) => r.encrypted_events_token !== null) ??
+      result.rows[0];
+
+    if (!targetPixel.encrypted_events_token) {
+      return {
+        success: false,
+        statusCode: 400,
+        tiktokCode: null,
+        message: `TikTok Pixel '${targetPixel.pixel_id}' does not have an Events API token configured. Please add and save your Events API Access Token first.`,
+        requestId: null,
+        pixelId: targetPixel.pixel_id,
+        testEventCode,
+        eventName,
+        sentAt: new Date().toISOString(),
+      };
+    }
+
+    const decrypted = this.secrets.decryptJson(
+      targetPixel.encrypted_events_token,
+    );
+    const rawToken = decrypted.events_token ?? decrypted.legacyValue;
+    const token = typeof rawToken === 'string' ? rawToken.trim() : '';
+    if (!token) {
+      return {
+        success: false,
+        statusCode: 400,
+        tiktokCode: null,
+        message: 'Stored Events API token could not be decrypted or is empty.',
+        requestId: null,
+        pixelId: targetPixel.pixel_id,
+        testEventCode,
+        eventName,
+        sentAt: new Date().toISOString(),
+      };
+    }
+
+    const eventTime = Math.floor(Date.now() / 1000);
+    const eventId = crypto.randomUUID();
+    const externalId = createHash('sha256')
+      .update(`test-user-${ownerId}`)
+      .digest('hex');
+
+    const properties =
+      eventName === 'Contact'
+        ? {
+            content_type: 'contact',
+            content_name: 'WhatsApp Contact',
+          }
+        : eventName === 'ClickButton'
+          ? {
+              content_type: 'button',
+              content_name: 'Link Click',
+            }
+          : {
+              content_type: 'linktree',
+              content_name: 'Public Page',
+            };
+
+    const requestBody = {
+      event_source: 'web',
+      event_source_id: targetPixel.pixel_id,
+      test_event_code: testEventCode,
+      data: [
+        {
+          event: eventName,
+          event_time: eventTime,
+          event_id: eventId,
+          user: {
+            ip: context?.ip || '127.0.0.1',
+            user_agent: context?.userAgent || 'MultiTree-EventsAPI/1.0',
+            ttclid: 'test_ttclid_diagnostic',
+            ttp: 'test_ttp_diagnostic',
+            external_id: externalId,
+          },
+          page: {
+            url: 'https://multitree.app/',
+            referrer: 'https://www.tiktok.com/',
+          },
+          properties,
+        },
+      ],
+    };
+
+    try {
+      const response = await fetch(
+        'https://business-api.tiktok.com/open_api/v1.3/event/track/',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Token': token,
+          },
+          body: JSON.stringify(requestBody),
+          signal: AbortSignal.timeout(10_000),
+        },
+      );
+      const text = await response.text();
+      let parsed: {
+        code?: number;
+        message?: string;
+        request_id?: string;
+        requestId?: string;
+      } = {};
+      try {
+        parsed = JSON.parse(text) as typeof parsed;
+      } catch {
+        // non-JSON response from provider
+      }
+
+      const tiktokCode = typeof parsed.code === 'number' ? parsed.code : null;
+      const requestId = parsed.request_id || parsed.requestId || null;
+      const tiktokMessage =
+        parsed.message ||
+        text.replace(/\s+/g, ' ').trim() ||
+        `HTTP ${response.status}`;
+      const success = response.ok && (tiktokCode === 0 || tiktokCode === null);
+
+      return {
+        success,
+        statusCode: response.status,
+        tiktokCode,
+        message: tiktokMessage,
+        requestId,
+        pixelId: targetPixel.pixel_id,
+        testEventCode,
+        eventName,
+        sentAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        statusCode: 502,
+        tiktokCode: null,
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Network request to TikTok Events API failed',
+        requestId: null,
+        pixelId: targetPixel.pixel_id,
+        testEventCode,
+        eventName,
+        sentAt: new Date().toISOString(),
+      };
+    }
   }
 }

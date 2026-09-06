@@ -111,6 +111,19 @@ export class PlatformSettingsService {
     return analytics.retryFailedTikTokEvents(ownerId);
   }
 
+  async testTikTokEvents(
+    input: {
+      test_event_code: string;
+      pixel_id?: string;
+      event_name?: string;
+    },
+    context?: { ip?: string; userAgent?: string },
+  ) {
+    const { workspace, pixels } = this.trackingDependencies();
+    const ownerId = await workspace.getWorkspaceId();
+    return pixels.testEventsApi(ownerId, input, context);
+  }
+
   private lookupEnv(name: string): string | undefined {
     return this.configService?.get<string>(name) ?? process.env[name];
   }

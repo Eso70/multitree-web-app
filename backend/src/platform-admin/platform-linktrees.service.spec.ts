@@ -204,8 +204,12 @@ describe('PlatformLinktreesService', () => {
       input,
       'platform',
     );
-    expect(redis.del).toHaveBeenCalledWith('cache:platform-linktree:random-id-copy');
-    expect(redis.del).toHaveBeenCalledWith('cache:platform-linktree:campaign-copy');
+    expect(redis.del).toHaveBeenCalledWith(
+      'cache:platform-linktree:random-id-copy',
+    );
+    expect(redis.del).toHaveBeenCalledWith(
+      'cache:platform-linktree:campaign-copy',
+    );
   });
 
   it('reports a lost root-slug race on duplicate as a conflict', async () => {

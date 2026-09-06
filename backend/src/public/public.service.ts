@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  GoneException,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { GoneException } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import {
   PUBLIC_PLANS_CACHE_KEY,
@@ -353,7 +358,7 @@ export class PublicService {
     return `SELECT lt.id, lt.name, lt.subtitle, lt.subtitle_color, lt.description, lt.seo_name, lt.uid, lt.image, lt.background_color,
                    ${templateKey} AS template_key,
                    lt.template_config, lt.whatsapp_modal_enabled,
-                   lt.footer_text, lt.footer_phone, lt.footer_hidden, lt.status, lt.is_default,
+                   lt.footer_text, lt.footer_phone, lt.footer_hidden, lt.status, lt.is_campaign_active, lt.is_archived, lt.archived_at, lt.is_default,
                    b.logo AS business_logo, b.favicon AS business_favicon,
                    b.website_color AS business_website_color, b.default_avatar AS business_default_avatar
             FROM linktrees lt
@@ -381,7 +386,7 @@ export class PublicService {
     const base = this.publicLinktreeSelect();
     let ltRes = await this.databaseService.query<PublicLinktreeRow>(
       `${base}
-       WHERE lt.uid = $1 AND lt.status = 'active' AND a.subdomain = $2
+       WHERE lt.uid = $1 AND a.subdomain = $2
          AND a.account_type = 'business'`,
       [uid, subdomain],
     );
@@ -389,7 +394,7 @@ export class PublicService {
     if (!ltRes.rows || ltRes.rows.length === 0) {
       ltRes = await this.databaseService.query<PublicLinktreeRow>(
         `${base}
-         WHERE lt.seo_name = $1 AND lt.status = 'active' AND a.subdomain = $2
+         WHERE lt.seo_name = $1 AND a.subdomain = $2
            AND a.account_type = 'business'`,
         [uid, subdomain],
       );
@@ -411,6 +416,13 @@ export class PublicService {
         }
         throw new NotFoundException('Page not found');
       }
+    }
+
+    if (ltRes.rows[0].status === 'inactive') {
+      throw new HttpException(
+        { error: 'INACTIVE', message: 'This page is inactive' },
+        HttpStatus.FORBIDDEN,
+      );
     }
 
     const linktree = await this.mapLinktreeRow(ltRes.rows[0]);
@@ -484,7 +496,6 @@ export class PublicService {
     const result = await this.databaseService.query<PublicLinktreeRow>(
       `${base}
        WHERE (lt.uid = $1 OR lt.seo_name = $1)
-         AND lt.status = 'active'
          AND a.account_type IN ('platform', 'creator')
          AND EXISTS (
            SELECT 1 FROM root_public_slugs root_slug
@@ -511,6 +522,13 @@ export class PublicService {
         throw new GoneException('Page permanently removed');
       }
       throw new NotFoundException('Page not found');
+    }
+
+    if (result.rows[0].status === 'inactive') {
+      throw new HttpException(
+        { error: 'INACTIVE', message: 'This page is inactive' },
+        HttpStatus.FORBIDDEN,
+      );
     }
 
     const mapped = await this.mapLinktreeRow(result.rows[0]);

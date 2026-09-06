@@ -111,6 +111,7 @@ export class CreatorContentService {
           footer_text: data.footer_text,
           footer_phone: data.footer_phone,
           footer_hidden: data.footer_hidden,
+          status: data.status,
         },
         businessId,
         'platform',
@@ -120,6 +121,17 @@ export class CreatorContentService {
     }
     await this.linktrees.syncSubmittedLinks(id, data, businessId);
     await this.invalidateRootPage(updated?.uid, updated?.seo_name, data.slug);
+    return updated;
+  }
+
+  async toggleLinktreeStatus(
+    id: string,
+    status: 'active' | 'inactive',
+    businessId: string,
+  ) {
+    await this.assertWritableOwner(businessId, 'linktree', id);
+    const updated = await this.linktrees.toggleStatus(id, businessId, status);
+    await this.invalidateRootPage(updated?.uid, updated?.seo_name);
     return updated;
   }
 
@@ -175,6 +187,10 @@ export class CreatorContentService {
     return this.analyticsReads.getTikTokHealth(businessId, {});
   }
 
+  getTikTokSecret(businessId: string, id: string) {
+    return this.tiktokPixels.getSecret(businessId, id);
+  }
+
   /**
    * Returned exactly as the read service shapes it — `{ items: [...] }`. The
    * shared delivery panel reads `.items`, so wrapping it a second time here
@@ -183,6 +199,18 @@ export class CreatorContentService {
    */
   getTikTokErrors(businessId: string) {
     return this.analyticsReads.getTikTokDeliveryErrors(businessId, 20);
+  }
+
+  testTikTok(
+    businessId: string,
+    input: {
+      test_event_code: string;
+      pixel_id?: string;
+      event_name?: string;
+    },
+    context?: { ip?: string; userAgent?: string },
+  ) {
+    return this.tiktokPixels.testEventsApi(businessId, input, context);
   }
 
   listMiniWebsites(businessId: string) {
