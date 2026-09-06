@@ -1420,9 +1420,9 @@ export class LinktreesService {
 
     const res = await this.databaseService.query<LinktreeRow>(
       `UPDATE linktrees
-       SET is_archived = $1,
-           archived_at = CASE WHEN $1 = true THEN NOW() ELSE NULL END,
-           is_campaign_active = CASE WHEN $1 = true THEN false ELSE is_campaign_active END,
+       SET is_archived = $1::boolean,
+           archived_at = CASE WHEN $1::boolean = true THEN NOW() ELSE NULL END,
+           is_campaign_active = CASE WHEN $1::boolean = true THEN false ELSE is_campaign_active END,
            updated_at = NOW()
        WHERE id = $2 AND business_id = $3
        RETURNING id, name, subtitle, subtitle_color, description, seo_name, uid, image, background_color,
@@ -1453,8 +1453,8 @@ export class LinktreesService {
 
     const res = await this.databaseService.query<LinktreeRow>(
       `UPDATE linktrees
-       SET status = $1,
-           is_campaign_active = CASE WHEN $1 = 'inactive' THEN false ELSE is_campaign_active END,
+       SET status = $1::varchar,
+           is_campaign_active = CASE WHEN $1::varchar = 'inactive' THEN false ELSE is_campaign_active END,
            updated_at = NOW()
        WHERE id = $2 AND business_id = $3
        RETURNING id, name, subtitle, subtitle_color, description, seo_name, uid, image, background_color,
@@ -1462,6 +1462,9 @@ export class LinktreesService {
                  footer_text, footer_phone, footer_hidden, status, is_campaign_active, is_archived, archived_at, is_default, created_at, updated_at`,
       [status, id, businessId],
     );
+    if (!res.rows || res.rows.length === 0) {
+      throw new NotFoundException('Linktree page not found');
+    }
     const mapped = await this.mapLinktreeRow(this.databaseService, res.rows[0]);
     await this.clearLinktreeCache(businessId, mapped.uid, mapped.seo_name);
     return mapped;
