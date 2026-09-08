@@ -16,7 +16,6 @@ import {
   Palette,
   RefreshCw,
   Save,
-  Settings,
   ShieldCheck,
   Trash2,
   Upload,
@@ -45,12 +44,14 @@ import { enqueueImageUpload } from "@/lib/api/enqueue-image-upload";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
 import { MULTITREE_LOGO, MULTITREE_LOGO_MARK } from "@/lib/brand/brand-assets";
 import { BusinessTikTokPixelConfigPage } from "@/features/analytics/components/BusinessTikTokPixelConfigPage";
+import { PlatformTikTokAdAccountTab } from "@/features/campaigns/components/PlatformTikTokAdAccountTab";
+import { TbBrandTiktok } from "react-icons/tb";
 import { ThemeProvider } from "@/lib/contexts/ThemeProvider";
 import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
 import { SkeletonActivityList, SkeletonSessionList } from "@/components/shared/SkeletonCommunicationLayouts";
 import { SkeletonMediaSettings, SkeletonRetentionSettings } from "./PlatformSettingsSkeletons";
 
-type Tab = "general" | "security" | "retention" | "media" | "tiktok";
+type Tab = "general" | "security" | "retention" | "media" | "tiktok" | "tiktok-ads";
 
 type PlatformSettings = {
   id: string;
@@ -135,10 +136,20 @@ const tabs = [
     label: DASHBOARD_PAGE_LABELS.tiktokSettings,
     icon: Radio,
   },
+  {
+    id: "tiktok-ads" as const,
+    label: "هەژماری ڕیکلامی تیکتۆک",
+    icon: TbBrandTiktok,
+  },
 ];
 
 export function PlatformSettingsPage() {
-  const [tab, setTab] = useState<Tab>("general");
+  const [tab, setTab] = useState<Tab>(() =>
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("tab") === "tiktok-ads"
+      ? "tiktok-ads"
+      : "general",
+  );
   const [multiTreeName, setMultiTreeName] = useState("MultiTree");
   const [accentColor, setAccentColor] = useState(MULTITREE_ACCENT_COLOR);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -569,7 +580,11 @@ export function PlatformSettingsPage() {
 
   const tabMeta: Record<
     Tab,
-    { title: string; description: string; icon: typeof Settings }
+    {
+      title: string;
+      description: string;
+      icon: React.ComponentType<{ className?: string }>;
+    }
   > = {
     general: {
       title: "ڕێکخستنە گشتییەکان",
@@ -599,6 +614,11 @@ export function PlatformSettingsPage() {
       description:
         "Pixel و Events API بۆ پەڕە گشتییەکانی خاوەندارێتی MultiTree بەڕێوەببە.",
       icon: Radio,
+    },
+    "tiktok-ads": {
+      title: "هەژماری ڕیکلامی تیکتۆک",
+      description: "بەستنەوە و بەڕێوەبردنی هەژماری ڕیکلامی پلاتفۆرم لە تیکتۆک.",
+      icon: TbBrandTiktok,
     },
   };
 
@@ -647,6 +667,12 @@ export function PlatformSettingsPage() {
       {tab === "tiktok" && (
         <ThemeProvider websiteColor={accentColor}>
           <BusinessTikTokPixelConfigPage owner="platform" />
+        </ThemeProvider>
+      )}
+
+      {tab === "tiktok-ads" && (
+        <ThemeProvider websiteColor={accentColor}>
+          <PlatformTikTokAdAccountTab />
         </ThemeProvider>
       )}
 

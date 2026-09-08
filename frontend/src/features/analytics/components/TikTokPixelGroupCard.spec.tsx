@@ -20,6 +20,32 @@ describe("TikTokPixelGroupCard", () => {
     vi.clearAllMocks();
   });
 
+  it("disables deleting the last Pixel group", () => {
+    const onDelete = vi.fn();
+
+    render(
+      <TikTokPixelGroupCard
+        index={0}
+        config={{
+          id: "pixel-1",
+          pixel_id: "C9ABC123456789",
+          events_token: "",
+        }}
+        testEndpoint="/api/analytics/v2/tiktok/test"
+        onUpdate={vi.fn()}
+        canDelete={false}
+        onDelete={onDelete}
+      />,
+    );
+
+    const deleteButton = screen.getByRole("button", {
+      name: "دەبێت لانیکەم یەک گرووپ بمێنێتەوە",
+    });
+    expect(deleteButton).toBeDisabled();
+    fireEvent.click(deleteButton);
+    expect(onDelete).not.toHaveBeenCalled();
+  });
+
   it("copies Pixel ID to clipboard", async () => {
     const onUpdate = vi.fn();
     const onDelete = vi.fn();

@@ -1,5 +1,14 @@
 # Frontend
 
+The Campaigns navigation entry opens an intentionally blank page in the Platform
+dashboard. TikTok Ads account configuration remains available in Platform
+Settings. Business and Creator dashboards expose neither
+feature; `/business/campaigns` and the former `/business/campains` alias are
+removed. Business TikTok Pixel, Events API, and delivery settings remain in
+place. The shared TikTok Pixel editor disables group deletion when only one
+group remains. The Ads OAuth callback requires a verified platform-admin session and
+returns to the configured platform console's Settings > TikTok Ads tab.
+
 ## Creator content workspaces
 
 Creator Linktree and mini-website routes render the same shared page lists,
@@ -837,14 +846,14 @@ segment directly; there is no physical public implementation route.
 
 The console provides:
 
-- platform-owned Linktree creation, editing, uploads, availability checks,
-  deletion, root-domain previews, and a simple lifetime analytics summary,
-  reusing the shared Linktree editor, list projections, and business page
-  analytics modal in summary-only mode; it shows unique viewers, total clicks,
-  unique clickers, and click rate while retaining the shared refresh, loading,
-  and clear-analytics interactions without exposing the advanced business
-  analytics workspace; the list toolbar also reuses the business clear-all
-  analytics button and shared confirmation modal for all platform Linktrees;
+- platform-owned Linktree creation, editing, duplication, uploads, availability
+  checks, campaign/archive/status controls, deletion, and root-domain previews.
+  Business and Platform render one role-configured Linktree manager, including
+  the same six summary cards, archive filter, grid/table views, search, editor,
+  and analytics modal. Platform analytics include date ranges, conversions,
+  and per-button click rows through platform-guarded endpoints; platform role
+  configuration keeps root-domain URLs and excludes business-only client
+  invitations and default-page behavior;
 - platform-owned mini-website creation at root-domain `/bio/:slug`, using the
   exact business manager, editor steps, templates, preview, grid/table,
   skeletons, uploads, map resolution, analytics modal, clear actions, public

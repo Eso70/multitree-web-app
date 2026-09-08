@@ -6,7 +6,7 @@ import { Tooltip } from "@/components/shared/Tooltip";
 export interface SegmentedTab<T extends string> {
   id: T;
   label: string;
-  icon: LucideIcon;
+  icon: LucideIcon | React.ComponentType<{ className?: string }>;
 }
 
 export function SegmentedTabs<T extends string>({

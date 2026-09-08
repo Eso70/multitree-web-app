@@ -260,6 +260,7 @@ export function BusinessTikTokPixelConfigPage({
               testEndpoint={workspace.testEndpoint}
               secretEndpoint={workspace.secretEndpoint}
               onUpdate={(patch) => updateConfig(index, patch)}
+              canDelete={configs.length > 1}
               onDelete={() =>
                 setConfigs((current) =>
                   current.filter((_, configIndex) => configIndex !== index),

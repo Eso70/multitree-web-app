@@ -48,7 +48,7 @@ export function SearchModal({
 
   return createPortal(
     <div
-      className="modal-ltr fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] px-4 bg-black/40 dark:bg-black/60 backdrop-blur-xs transition-opacity duration-300"
+      className="modal-ltr fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] px-4 bg-slate-950/50 backdrop-blur-sm transition-opacity duration-300"
       data-multitree-theme={businessTheme ? undefined : true}
       style={
         businessTheme
@@ -62,12 +62,12 @@ export function SearchModal({
       <div className="fixed inset-0" onClick={onClose} />
       <MotionReveal
         ref={modalRef}
-        className={`relative w-full rounded-2xl bg-white/95 dark:bg-[#161B22]/95 border border-gray-200/80 dark:border-white/10 shadow-2xl overflow-hidden ${businessTheme ? "selection:bg-brand-500/30 dark:selection:bg-brand-500/40" : "selection:bg-lime-500/30 dark:selection:bg-lime-500/40"} ${wide ? "max-w-2xl" : "max-w-lg"}`}
+        className={`relative w-full rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden dark:border-white/10 dark:bg-[#1c222b] ${businessTheme ? "selection:bg-brand-500/30 dark:selection:bg-brand-500/40" : "selection:bg-lime-500/30 dark:selection:bg-lime-500/40"} ${wide ? "max-w-2xl" : "max-w-lg"}`}
         dir="ltr"
       >
         {/* Search Input Box */}
-        <div className="relative flex items-center border-b border-gray-100 dark:border-white/10">
-          <div className="absolute right-4 text-slate-400 dark:text-gray-555 pointer-events-none">
+        <div className="relative flex items-center border-b border-slate-100 bg-linear-to-r from-white to-slate-50/30 dark:border-white/5 dark:from-[#1c222b] dark:to-slate-900/10">
+          <div className="absolute right-4 text-slate-400 dark:text-slate-400 pointer-events-none">
             <Search className="h-5 w-5" />
           </div>
           <input
@@ -82,7 +82,7 @@ export function SearchModal({
                 onClose();
               }
             }}
-            className={`w-full pr-12 py-4 text-sm sm:text-base bg-transparent focus:outline-none text-slate-700 dark:text-gray-200 placeholder-slate-400 dark:placeholder-gray-550 font-kurdish text-left ${searchQuery ? "pl-32" : "pl-24"}`}
+            className={`w-full pr-12 py-4 text-sm sm:text-base bg-transparent focus:outline-none text-slate-700 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-400 font-kurdish text-left ${searchQuery ? "pl-32" : "pl-24"}`}
           />
           <div className="absolute left-4 flex items-center gap-1.5">
             {searchQuery && (
@@ -90,7 +90,7 @@ export function SearchModal({
                 <button
                   type="button"
                   onClick={() => onSearchQueryChange("")}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/5 dark:hover:text-slate-200 cursor-pointer"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white cursor-pointer"
                   aria-label="Clear search"
                 >
                   <X className="h-4 w-4" />
@@ -101,10 +101,10 @@ export function SearchModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-650 dark:hover:bg-white/5 dark:hover:text-gray-300 cursor-pointer"
+                className="rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white cursor-pointer"
                 aria-label="Apply and close"
               >
-                <kbd className="block rounded border border-gray-200 px-2 py-1 font-sans text-[9px] font-bold text-slate-400 dark:border-white/10 dark:text-gray-500">
+                <kbd className="block rounded border border-slate-200 px-2 py-1 font-sans text-[9px] font-bold text-slate-400 dark:border-white/10 dark:text-slate-400 dark:bg-white/5">
                   Enter
                 </kbd>
               </button>

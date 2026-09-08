@@ -4,6 +4,7 @@ export const PLATFORM_ADMIN_PAGES = [
   "mini-websites",
   "users",
   "templates",
+  "campaigns",
   "blocklists",
   "access-control",
   "activity",

@@ -9,6 +9,8 @@ resolves the internal platform workspace and uses the shared encrypted
 outbox select destinations from the canonical public-page owner, requiring a
 live customer entitlement for business owners and allowing the non-billable
 platform owner explicitly.
+Business TikTok updates and approved delete actions must always retain at least
+one active Pixel group once configuration exists.
 
 ## Google business identity configuration
 
@@ -217,12 +219,22 @@ the Pixel group configured in Platform Settings. They never inherit or combine
 with a tenant's Pixel group; owner selection is derived from the internal
 workspace rather than accepted from the request.
 
-`GET /api/platform/linktrees/:id/analytics` reads the shared lifetime summary
-after verifying that the Linktree belongs to the internal platform workspace.
+`GET /api/platform/linktrees/analytics/summary` reads Linktree-only totals for
+the internal platform workspace. `GET /api/platform/linktrees/:id/analytics`
+and `GET /api/platform/linktrees/:id/analytics/actions` accept the shared
+`from`/`to` range and return the same page totals and per-button rows used by
+the business analytics modal, after verifying that the Linktree belongs to the
+internal platform workspace.
 `DELETE /api/platform/linktrees/:id/analytics` performs the same ownership
 check before clearing the page analytics and requires the platform Linktree
 delete capability. Both endpoints power the shared page analytics modal rather
 than a platform-specific modal implementation.
+
+Platform campaign, archive, and publication status endpoints delegate to the
+tenant-scoped Linktree service with the resolved internal workspace ID. The
+browser never supplies an owner ID. Platform Linktree defaults are read from
+the existing `business_defaults` and `business_branding` rows for that internal
+workspace; no parallel platform page or analytics tables are used.
 
 `DELETE /api/platform/linktrees/analytics` clears analytics for every
 platform-owned Linktree and leaves other platform public routes untouched. It

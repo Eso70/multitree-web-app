@@ -20,7 +20,6 @@ import { BatchSyncLinksDto } from '../links/dto/sync-links.dto';
 import { CreateLinktreeDto } from './dto/create-linktree.dto';
 import {
   UpdateLinktreeDto,
-  ToggleLinktreeCampaignDto,
   ToggleLinktreeArchiveDto,
   ToggleLinktreeStatusDto,
 } from './dto/update-linktree.dto';
@@ -183,25 +182,6 @@ export class LinktreesController {
       id,
       updateDto,
       business.id,
-    );
-    return { success: true, data: linktree };
-  }
-
-  @Patch(':id/campaign-status')
-  @RequireCapabilities(Capability.BusinessLinktreesUpdate)
-  @AuditEvent('business.linktree.campaign_status.update', {
-    resourceType: 'linktree',
-    resourceIdParam: 'id',
-  })
-  async toggleCampaignStatus(
-    @Param('id') id: string,
-    @Body() dto: ToggleLinktreeCampaignDto,
-    @CurrentUser() business: SessionUser,
-  ) {
-    const linktree = await this.linktreesService.toggleCampaignActive(
-      id,
-      business.id,
-      dto.is_campaign_active,
     );
     return { success: true, data: linktree };
   }

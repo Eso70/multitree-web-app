@@ -12,6 +12,16 @@ export type PlatformContentBranding = {
   accentColor: string;
 };
 
+export type PlatformLinktreeDefaults = {
+  default_footer_text: string | null;
+  default_footer_phone: string | null;
+  default_template: string | null;
+  default_background_color: string | null;
+  default_footer_hidden: boolean;
+  default_whatsapp_enabled: boolean;
+  default_avatar: string | null;
+};
+
 /** Resolves the single internal owner for all MultiTree root-domain content. */
 @Injectable()
 export class PlatformContentWorkspaceService {
@@ -53,5 +63,34 @@ export class PlatformContentWorkspaceService {
       favicon: row?.favicon || '/favicon.ico',
       accentColor: row?.accent_color || '#b6f20d',
     };
+  }
+
+  async getLinktreeDefaults(): Promise<PlatformLinktreeDefaults> {
+    const workspaceId = await this.getWorkspaceId();
+    const result = await this.database.query<PlatformLinktreeDefaults>(
+      `SELECT defaults.footer_text AS default_footer_text,
+              defaults.footer_phone AS default_footer_phone,
+              defaults.template_key AS default_template,
+              defaults.background_color AS default_background_color,
+              COALESCE(defaults.footer_hidden, false) AS default_footer_hidden,
+              COALESCE(defaults.whatsapp_enabled, false) AS default_whatsapp_enabled,
+              branding.default_avatar
+         FROM businesses business
+         LEFT JOIN business_defaults defaults ON defaults.business_id = business.id
+         LEFT JOIN business_branding branding ON branding.business_id = business.id
+        WHERE business.id = $1`,
+      [workspaceId],
+    );
+    return (
+      result.rows[0] || {
+        default_footer_text: null,
+        default_footer_phone: null,
+        default_template: null,
+        default_background_color: null,
+        default_footer_hidden: false,
+        default_whatsapp_enabled: false,
+        default_avatar: null,
+      }
+    );
   }
 }

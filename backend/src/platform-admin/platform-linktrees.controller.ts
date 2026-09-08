@@ -24,7 +24,11 @@ import { Capability } from '../auth/capabilities';
 import { RequireCapabilities } from '../auth/require-capabilities.decorator';
 import { CreateLinktreeDto } from '../linktrees/dto/create-linktree.dto';
 import { DuplicateLinktreeDto } from '../linktrees/dto/duplicate-linktree.dto';
-import { ToggleLinktreeStatusDto } from '../linktrees/dto/update-linktree.dto';
+import {
+  ToggleLinktreeArchiveDto,
+  ToggleLinktreeCampaignDto,
+  ToggleLinktreeStatusDto,
+} from '../linktrees/dto/update-linktree.dto';
 import { uploadLinktreeImage } from '../linktrees/linktree-image-upload';
 import { PlatformContentWorkspaceService } from '../platform-workspace/platform-content-workspace.service';
 import { StorageService } from '../storage/storage.service';
@@ -76,6 +80,18 @@ export class PlatformLinktreesController {
     return { success: true, data: await this.platformLinktrees.list() };
   }
 
+  @Get('analytics/summary')
+  @RequireCapabilities(Capability.PlatformLinktreesRead)
+  async getAnalyticsSummary(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return {
+      success: true,
+      data: await this.platformLinktrees.getAnalyticsSummary({ from, to }),
+    };
+  }
+
   @Get(':id/edit')
   @RequireCapabilities(Capability.PlatformLinktreesRead)
   async getForEdit(@Param('id') id: string) {
@@ -87,10 +103,27 @@ export class PlatformLinktreesController {
 
   @Get(':id/analytics')
   @RequireCapabilities(Capability.PlatformLinktreesRead)
-  async getAnalytics(@Param('id', ParseUUIDPipe) id: string) {
+  async getAnalytics(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
     return {
       success: true,
-      data: await this.platformLinktrees.getAnalytics(id),
+      data: await this.platformLinktrees.getAnalytics(id, { from, to }),
+    };
+  }
+
+  @Get(':id/analytics/actions')
+  @RequireCapabilities(Capability.PlatformLinktreesRead)
+  async getAnalyticsActions(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return {
+      success: true,
+      data: await this.platformLinktrees.getAnalyticsActions(id, { from, to }),
     };
   }
 
@@ -140,6 +173,41 @@ export class PlatformLinktreesController {
     return {
       success: true,
       data: await this.platformLinktrees.toggleStatus(id, body.status),
+    };
+  }
+
+  @Patch(':id/campaign-status')
+  @RequireCapabilities(Capability.PlatformLinktreesUpdate)
+  @AuditEvent('platform.linktree.campaign_status.update', {
+    resourceType: 'linktree',
+    resourceIdParam: 'id',
+  })
+  async toggleCampaign(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: ToggleLinktreeCampaignDto,
+  ) {
+    return {
+      success: true,
+      data: await this.platformLinktrees.toggleCampaign(
+        id,
+        body.is_campaign_active,
+      ),
+    };
+  }
+
+  @Patch(':id/archive')
+  @RequireCapabilities(Capability.PlatformLinktreesUpdate)
+  @AuditEvent('platform.linktree.archive_status.update', {
+    resourceType: 'linktree',
+    resourceIdParam: 'id',
+  })
+  async toggleArchive(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: ToggleLinktreeArchiveDto,
+  ) {
+    return {
+      success: true,
+      data: await this.platformLinktrees.toggleArchive(id, body.is_archived),
     };
   }
 

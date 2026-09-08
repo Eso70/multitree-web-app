@@ -1724,8 +1724,8 @@ img {
   background-color: var(--color-bg-primary) !important;
 }
 
-.dark .bg-white\/80,
-.dark [data-business-dashboard] .bg-white\/80 {
+.dark .bg-white\/80:not(header),
+.dark [data-business-dashboard] .bg-white\/80:not(header) {
   background-color: var(--color-bg-secondary) !important;
 }
 
@@ -2285,18 +2285,25 @@ img {
 
 /* Keep explicit #161B22 utilities as the primary dark surface. More specific rules above move panels, inputs, and elevated areas to nearby shades. */
 .dark .bg-\[\#161B22\],
-.dark .dark\:bg-\[\#161B22\] {
+.dark .dark\:bg-\[\#161B22\],
+.dark [data-business-dashboard] .bg-\[\#161B22\],
+.dark [data-business-dashboard] .dark\:bg-\[\#161B22\] {
   background-color: var(--color-bg-primary) !important;
 }
 
 /* Translucent utility classes overrides */
 .dark .bg-\[\#161B22\]\/80,
-.dark .dark\:bg-\[\#161B22\]\/80 {
+.dark .dark\:bg-\[\#161B22\]\/80,
+.dark [data-business-dashboard] .bg-\[\#161B22\]\/80,
+.dark [data-business-dashboard] .dark\:bg-\[\#161B22\]\/80,
+.dark [data-business-dashboard] header {
   background-color: var(--color-bg-primary-80) !important;
 }
 
 .dark .bg-\[\#161B22\]\/95,
-.dark .dark\:bg-\[\#161B22\]\/95 {
+.dark .dark\:bg-\[\#161B22\]\/95,
+.dark [data-business-dashboard] .bg-\[\#161B22\]\/95,
+.dark [data-business-dashboard] .dark\:bg-\[\#161B22\]\/95 {
   background-color: rgba(18, 24, 32, 0.95) !important;
 }
 

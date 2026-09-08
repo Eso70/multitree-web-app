@@ -245,13 +245,13 @@ const TableRow = memo(function TableRow({
           <Tooltip content={copiedUid === publicIdentifier ? "کۆپیکرا" : "کۆپیکردنی بەستەر"} side="top">
             <button
               onClick={(e) => onCopy(publicIdentifier, e)}
-              className="p-1 rounded hover:bg-gray-100 transition-colors shrink-0 cursor-pointer"
+              className="p-1 sm:p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-all duration-150 active:scale-90 shrink-0 cursor-pointer"
               aria-label="کۆپیکردنی بەستەر"
             >
               {copiedUid === publicIdentifier ? (
-                <Check className="h-3 w-3 text-green-600" />
+                <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
               ) : (
-                <Copy className="h-3 w-3 text-gray-500 hover:text-gray-700" />
+                <Copy className="h-3 w-3" />
               )}
             </button>
           </Tooltip>
@@ -295,10 +295,10 @@ const TableRow = memo(function TableRow({
             <Tooltip content={viewActionLabel} side="top">
               <button
                 onClick={() => onViewAnalytics(item.id, item.name)}
-                className="p-1 sm:p-1.5 rounded hover:bg-sky-50 transition-colors duration-200 shrink-0 cursor-pointer"
+                className="p-1.5 rounded-lg text-sky-600 hover:text-sky-700 hover:bg-sky-50 dark:text-sky-400 dark:hover:text-sky-300 dark:hover:bg-sky-500/15 transition-all duration-150 active:scale-90 shrink-0 cursor-pointer"
                 aria-label={viewActionLabel}
               >
-                <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-sky-600 hover:text-sky-700" />
+                <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
             </Tooltip>
           )}
@@ -306,10 +306,10 @@ const TableRow = memo(function TableRow({
             <Tooltip content="دەستکاریکردن" side="top">
               <button
                 onClick={() => onEdit(item.id)}
-                className="p-1 sm:p-1.5 rounded hover:bg-yellow-50 transition-colors duration-200 shrink-0 cursor-pointer"
+                className="p-1.5 rounded-lg text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-500/15 transition-all duration-150 active:scale-90 shrink-0 cursor-pointer"
                 aria-label="دەستکاریکردن"
               >
-                <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-600 hover:text-yellow-700" />
+                <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
             </Tooltip>
           )}
@@ -317,8 +317,7 @@ const TableRow = memo(function TableRow({
             <Tooltip content="لەبەرگرتنەوە" side="top">
               <button
                 onClick={() => onDuplicate(item)}
-                className="p-1 sm:p-1.5 rounded transition-colors duration-200 shrink-0 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5"
-                style={{ color: "var(--theme-primary, #6366f1)" }}
+                className="p-1.5 rounded-lg text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-500/15 transition-all duration-150 active:scale-90 shrink-0 cursor-pointer"
                 aria-label="لەبەرگرتنەوە"
               >
                 <CopyPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -332,10 +331,10 @@ const TableRow = memo(function TableRow({
             >
               <button
                 onClick={() => onToggleArchive(item.id, !item.is_archived)}
-                className={`p-1 sm:p-1.5 rounded transition-colors duration-200 shrink-0 cursor-pointer ${
+                className={`p-1.5 rounded-lg transition-all duration-150 active:scale-90 shrink-0 cursor-pointer ${
                   item.is_archived
-                    ? "hover:bg-emerald-50 text-emerald-700 dark:text-emerald-300"
-                    : "hover:bg-slate-100 text-slate-500 hover:text-slate-700 dark:text-gray-400"
+                    ? "hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 dark:hover:bg-emerald-500/15"
+                    : "text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:hover:text-purple-300 dark:hover:bg-purple-500/15"
                 }`}
                 aria-label={item.is_archived ? "Restore from archive" : "Archive"}
               >
@@ -363,10 +362,10 @@ const TableRow = memo(function TableRow({
                     item.status === "inactive" ? "active" : "inactive",
                   )
                 }
-                className={`p-1 sm:p-1.5 rounded transition-colors duration-200 shrink-0 cursor-pointer ${
+                className={`p-1.5 rounded-lg transition-all duration-150 active:scale-90 shrink-0 cursor-pointer ${
                   item.status === "inactive"
-                    ? "hover:bg-emerald-50 text-emerald-700 dark:text-emerald-300"
-                    : "hover:bg-rose-50 text-rose-600 dark:text-rose-400"
+                    ? "hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 dark:hover:bg-emerald-500/15"
+                    : "hover:bg-rose-50 text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 dark:hover:bg-rose-500/15"
                 }`}
                 aria-label={
                   item.status === "inactive" ? "Activate page" : "Deactivate page"
@@ -384,10 +383,10 @@ const TableRow = memo(function TableRow({
             <Tooltip content="سڕینەوە" side="top">
               <button
                 onClick={() => onDelete(item.id, item.uid, item.name)}
-                className="p-1 sm:p-1.5 rounded hover:bg-red-50 transition-colors duration-200 shrink-0 cursor-pointer"
+                className="p-1.5 rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:text-rose-300 dark:hover:bg-rose-500/15 transition-all duration-150 active:scale-90 shrink-0 cursor-pointer"
                 aria-label="سڕینەوە"
               >
-                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600 hover:text-red-700" />
+                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
             </Tooltip>
           )}
@@ -500,10 +499,10 @@ const MobileCard = memo(function MobileCard({
                     e.stopPropagation();
                     onViewAnalytics(item.id, item.name);
                   }}
-                  className="flex items-center justify-center p-2 rounded-lg hover:bg-sky-50 transition-colors cursor-pointer"
+                  className="flex items-center justify-center p-2 rounded-lg text-sky-600 hover:text-sky-700 hover:bg-sky-50 dark:text-sky-400 dark:hover:text-sky-300 dark:hover:bg-sky-500/15 transition-all duration-150 active:scale-90 cursor-pointer"
                   aria-label={viewActionLabel}
                 >
-                  <Eye className="h-4 w-4 text-sky-600" />
+                  <Eye className="h-4 w-4" />
                 </button>
               </Tooltip>
             )}
@@ -514,10 +513,10 @@ const MobileCard = memo(function MobileCard({
                     e.stopPropagation();
                     onEdit(item.id);
                   }}
-                  className="flex items-center justify-center p-2 rounded-lg hover:bg-yellow-50 transition-colors cursor-pointer"
+                  className="flex items-center justify-center p-2 rounded-lg text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-500/15 transition-all duration-150 active:scale-90 cursor-pointer"
                   aria-label="دەستکاریکردن"
                 >
-                  <Edit className="h-4 w-4 text-yellow-600" />
+                  <Edit className="h-4 w-4" />
                 </button>
               </Tooltip>
             )}
@@ -528,8 +527,7 @@ const MobileCard = memo(function MobileCard({
                     e.stopPropagation();
                     onDuplicate(item);
                   }}
-                  className="flex items-center justify-center p-2 rounded-lg transition-colors cursor-pointer hover:bg-slate-100 dark:hover:bg-white/5"
-                  style={{ color: "var(--theme-primary, #6366f1)" }}
+                  className="flex items-center justify-center p-2 rounded-lg text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-500/15 transition-all duration-150 active:scale-90 cursor-pointer"
                   aria-label="لەبەرگرتنەوە"
                 >
                   <CopyPlus className="h-4 w-4" />
@@ -543,10 +541,10 @@ const MobileCard = memo(function MobileCard({
                     e.stopPropagation();
                     onToggleArchive(item.id, !item.is_archived);
                   }}
-                  className={`flex items-center justify-center p-2 rounded-lg transition-colors cursor-pointer ${
+                  className={`flex items-center justify-center p-2 rounded-lg transition-all duration-150 active:scale-90 cursor-pointer ${
                     item.is_archived
-                      ? "hover:bg-emerald-50 text-emerald-700 dark:text-emerald-300"
-                      : "hover:bg-slate-100 text-slate-500 hover:text-slate-700 dark:text-gray-400"
+                      ? "hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 dark:hover:bg-emerald-500/15"
+                      : "hover:bg-purple-50 text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 dark:hover:bg-purple-500/15"
                   }`}
                   aria-label={item.is_archived ? "هێنانەدەرەوە لە ئەرشیف" : "ئەرشیفکردن"}
                 >
@@ -575,10 +573,10 @@ const MobileCard = memo(function MobileCard({
                       item.status === "inactive" ? "active" : "inactive",
                     );
                   }}
-                  className={`flex items-center justify-center p-2 rounded-lg transition-colors cursor-pointer ${
+                  className={`flex items-center justify-center p-2 rounded-lg transition-all duration-150 active:scale-90 cursor-pointer ${
                     item.status === "inactive"
-                      ? "hover:bg-emerald-50 text-emerald-700 dark:text-emerald-300"
-                      : "hover:bg-rose-50 text-rose-600 dark:text-rose-400"
+                      ? "hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 dark:hover:bg-emerald-500/15"
+                      : "hover:bg-rose-50 text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 dark:hover:bg-rose-500/15"
                   }`}
                   aria-label={
                     item.status === "inactive" ? "چالاککردن" : "ناچالاککردن"
@@ -599,10 +597,10 @@ const MobileCard = memo(function MobileCard({
                     e.stopPropagation();
                     onDelete(item.id, item.uid, item.name);
                   }}
-                  className="flex items-center justify-center p-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                  className="flex items-center justify-center p-2 rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:text-rose-300 dark:hover:bg-rose-500/15 transition-all duration-150 active:scale-90 cursor-pointer"
                   aria-label="سڕینەوە"
                 >
-                  <Trash2 className="h-4 w-4 text-red-600" />
+                  <Trash2 className="h-4 w-4" />
                 </button>
               </Tooltip>
             )}

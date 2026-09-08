@@ -808,44 +808,6 @@ export const BusinessDashboard = memo(function BusinessDashboard({
     }
   }, [isDeleting]);
 
-  const handleToggleCampaign = useCallback(
-    async (id: string, nextStatus: boolean) => {
-      mergeLinktree(id, { is_campaign_active: nextStatus });
-
-      try {
-        const response = await fetch(`/api/linktrees/${id}/campaign-status`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ is_campaign_active: nextStatus }),
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          mergeLinktree(id, { is_campaign_active: !nextStatus });
-          const errData = await response.json().catch(() => ({}));
-          toast.error(errData.message || "گۆڕینی دۆخی کەمپەین سەرکەوتوو نەبوو");
-          return;
-        }
-
-        const { clearCachedData } = await import("@/lib/utils/cache");
-        clearCachedData("/api/linktrees");
-        clearCachedData(`/api/linktrees/${id}`);
-
-        if (nextStatus) {
-          toast.success("پەڕەکە بۆ کەمپەین چالاککرا و خرایە سەرووی لیستەکە");
-        } else {
-          toast.info("دۆخی کەمپەینی ئەم پەڕەیە ناچالاککرا");
-        }
-      } catch {
-        mergeLinktree(id, { is_campaign_active: !nextStatus });
-        toast.error("گۆڕینی دۆخی کەمپەین سەرکەوتوو نەبوو");
-      }
-    },
-    [mergeLinktree],
-  );
-
   const handleToggleArchive = useCallback(
     async (id: string, nextStatus: boolean) => {
       mergeLinktree(id, {
@@ -1689,7 +1651,6 @@ export const BusinessDashboard = memo(function BusinessDashboard({
                       onDuplicate={(item) => setDuplicateTargetLinktree(item)}
                       onDelete={handleDelete}
                       onViewAnalytics={handleViewAnalytics}
-                      onToggleCampaign={handleToggleCampaign}
                       onToggleArchive={handleToggleArchive}
                       onToggleStatus={handleToggleStatus}
                     />

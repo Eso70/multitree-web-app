@@ -7,6 +7,7 @@ import { DuplicateLinktreeDto } from '../linktrees/dto/duplicate-linktree.dto';
 import { LinktreesService } from '../linktrees/linktrees.service';
 import { PlatformContentWorkspaceService } from '../platform-workspace/platform-content-workspace.service';
 import { UnifiedAnalyticsService } from '../analytics/unified-analytics.service';
+import { AnalyticsReadService } from '../analytics/analytics-read.service';
 
 @Injectable()
 export class PlatformLinktreesService {
@@ -15,6 +16,7 @@ export class PlatformLinktreesService {
     private readonly workspace: PlatformContentWorkspaceService,
     private readonly redis: RedisService,
     private readonly analytics: UnifiedAnalyticsService,
+    private readonly analyticsReads: AnalyticsReadService,
   ) {}
 
   private async workspaceId() {
@@ -27,9 +29,16 @@ export class PlatformLinktreesService {
   }
 
   async getContext() {
-    const branding = await this.workspace.getBranding();
+    const [branding, defaults] = await Promise.all([
+      this.workspace.getBranding(),
+      this.workspace.getLinktreeDefaults(),
+    ]);
     return {
       branding,
+      defaults: {
+        ...defaults,
+        default_avatar: defaults.default_avatar || branding.avatar,
+      },
       publicPathPrefix: '/linktree',
     };
   }
@@ -57,12 +66,33 @@ export class PlatformLinktreesService {
     return { linktree, links };
   }
 
-  async getAnalytics(id: string) {
+  async getAnalytics(id: string, range: { from?: string; to?: string } = {}) {
     const businessId = await this.workspaceId();
     await this.linktrees.getLinktreeById(id, businessId);
     return this.analytics.getSummary(businessId, {
       pageId: id,
       pageType: 'linktree',
+      ...range,
+    });
+  }
+
+  async getAnalyticsSummary(range: { from?: string; to?: string } = {}) {
+    return this.analytics.getSummary(await this.workspaceId(), {
+      pageType: 'linktree',
+      ...range,
+    });
+  }
+
+  async getAnalyticsActions(
+    id: string,
+    range: { from?: string; to?: string } = {},
+  ) {
+    const businessId = await this.workspaceId();
+    await this.linktrees.getLinktreeById(id, businessId);
+    return this.analyticsReads.getActions(businessId, {
+      pageId: id,
+      pageType: 'linktree',
+      ...range,
     });
   }
 
@@ -168,6 +198,28 @@ export class PlatformLinktreesService {
   async toggleStatus(id: string, status: 'active' | 'inactive') {
     const businessId = await this.workspaceId();
     const updated = await this.linktrees.toggleStatus(id, businessId, status);
+    await this.invalidate(updated.uid, updated.seo_name);
+    return updated;
+  }
+
+  async toggleCampaign(id: string, isCampaignActive: boolean) {
+    const businessId = await this.workspaceId();
+    const updated = await this.linktrees.toggleCampaignActive(
+      id,
+      businessId,
+      isCampaignActive,
+    );
+    await this.invalidate(updated.uid, updated.seo_name);
+    return updated;
+  }
+
+  async toggleArchive(id: string, isArchived: boolean) {
+    const businessId = await this.workspaceId();
+    const updated = await this.linktrees.toggleArchive(
+      id,
+      businessId,
+      isArchived,
+    );
     await this.invalidate(updated.uid, updated.seo_name);
     return updated;
   }

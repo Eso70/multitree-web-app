@@ -132,4 +132,71 @@ describe("BusinessPageAnalyticsModal summary mode", () => {
       screen.queryByRole("button", { name: "پاککردنەوەی داتاکان" }),
     ).toBeNull();
   });
+
+  it("loads platform button analytics and applies the shared date range", async () => {
+    const fetchMock = vi.fn((url: string) =>
+      Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            data: url.includes("/actions")
+              ? [
+                  {
+                    id: "action-1",
+                    label: "Website",
+                    actionType: "custom",
+                    destination: "https://example.com",
+                    totalClicks: 5,
+                    uniqueClickers: 3,
+                    conversions: 1,
+                    conversionValue: 2,
+                    ctr: 25,
+                  },
+                ]
+              : {
+                  total_views: 20,
+                  unique_views: 12,
+                  total_clicks: 8,
+                  unique_clicks: 3,
+                  conversions: 1,
+                  conversion_value: 2,
+                },
+          }),
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <BusinessPageAnalyticsModal
+        isOpen
+        onClose={vi.fn()}
+        pageId="platform-page-id"
+        pageName="Platform page"
+        dataSource="platform-linktree"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/platform/linktrees/platform-page-id/analytics",
+        expect.any(Object),
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/platform/linktrees/platform-page-id/analytics/actions",
+        expect.any(Object),
+      );
+    });
+    expect(await screen.findByText("Website")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /٧ ڕۆژ/ }));
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([url]) =>
+          String(url).match(
+            /^\/api\/platform\/linktrees\/platform-page-id\/analytics\/actions\?from=\d{4}-\d{2}-\d{2}$/,
+          ),
+        ),
+      ).toBe(true),
+    );
+  });
 });

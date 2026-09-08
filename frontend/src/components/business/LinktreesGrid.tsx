@@ -227,13 +227,13 @@ const LinktreeCard = memo(function LinktreeCard({
           <Tooltip content={copiedUid === publicIdentifier ? "کۆپیکرا" : "کۆپیکردنی بەستەر"} side="top">
             <button
               onClick={(e) => onCopy(publicIdentifier, e)}
-              className="p-1 sm:p-1.5 rounded-lg hover:bg-gray-100 transition-colors shrink-0 cursor-pointer"
+              className="p-1 sm:p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-all duration-150 active:scale-90 shrink-0 cursor-pointer"
               aria-label="کۆپیکردنی بەستەر"
             >
               {copiedUid === publicIdentifier ? (
-                <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-600" />
+                <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
               ) : (
-                <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 hover:text-gray-600" />
+                <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               )}
             </button>
           </Tooltip>
@@ -279,15 +279,15 @@ const LinktreeCard = memo(function LinktreeCard({
       )}
 
       {/* Actions Section */}
-      <div className="mt-auto flex items-center gap-1 sm:gap-1.5 pt-2 sm:pt-2.5 border-t border-gray-200">
+      <div className="mt-auto flex items-center gap-1 sm:gap-1.5 pt-2 sm:pt-2.5 border-t border-gray-200 dark:border-white/10">
         {onViewAnalytics && (
           <Tooltip content={viewActionLabel} side="top" className="flex-1 min-w-0">
             <button
               onClick={() => onViewAnalytics(item.id, item.name)}
-              className="w-full flex items-center justify-center gap-1 px-1.5 sm:px-2 h-7.5 sm:h-8 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-700 hover:text-sky-800 transition-all duration-200 text-[10px] sm:text-[11px] font-medium cursor-pointer min-w-0"
+              className="w-full flex items-center justify-center gap-1 px-1.5 sm:px-2 h-7.5 sm:h-8 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-sky-600 hover:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:text-sky-400 dark:hover:text-sky-300 transition-all duration-150 active:scale-95 text-[10px] sm:text-[11px] font-medium cursor-pointer min-w-0"
               aria-label={viewActionLabel}
             >
-              <Eye className="h-3.5 w-3.5 shrink-0" />
+              <Eye className="h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
               <span className="truncate">{viewActionLabel}</span>
             </button>
           </Tooltip>
@@ -296,10 +296,10 @@ const LinktreeCard = memo(function LinktreeCard({
           <Tooltip content="دەستکاری" side="top" className="flex-1 min-w-0">
             <button
               onClick={() => onEdit(item.id)}
-              className="w-full flex items-center justify-center gap-1 px-1.5 sm:px-2 h-7.5 sm:h-8 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-700 hover:text-yellow-800 transition-all duration-200 text-[10px] sm:text-[11px] font-medium cursor-pointer min-w-0"
+              className="w-full flex items-center justify-center gap-1 px-1.5 sm:px-2 h-7.5 sm:h-8 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-amber-600 hover:text-amber-700 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:text-amber-400 dark:hover:text-amber-300 transition-all duration-150 active:scale-95 text-[10px] sm:text-[11px] font-medium cursor-pointer min-w-0"
               aria-label="دەستکاری"
             >
-              <Edit className="h-3.5 w-3.5 shrink-0" />
+              <Edit className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
               <span className="truncate">دەستکاری</span>
             </button>
           </Tooltip>
@@ -308,12 +308,7 @@ const LinktreeCard = memo(function LinktreeCard({
           <Tooltip content="لەبەرگرتنەوە" side="top">
             <button
               onClick={() => onDuplicate(item)}
-              className="flex h-7.5 w-7.5 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border transition-all duration-200 cursor-pointer hover:brightness-95"
-              style={{
-                background: "color-mix(in srgb, var(--theme-primary, #6366f1) 12%, transparent)",
-                borderColor: "color-mix(in srgb, var(--theme-primary, #6366f1) 28%, transparent)",
-                color: "var(--theme-primary, #6366f1)",
-              }}
+              className="flex h-7.5 w-7.5 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-indigo-600 hover:text-indigo-700 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:text-indigo-400 dark:hover:text-indigo-300 transition-all duration-150 active:scale-95 cursor-pointer"
               aria-label="لەبەرگرتنەوە"
             >
               <CopyPlus className="h-3.5 w-3.5" />
@@ -327,10 +322,10 @@ const LinktreeCard = memo(function LinktreeCard({
           >
             <button
               onClick={() => onToggleArchive(item.id, !item.is_archived)}
-              className={`flex h-7.5 w-7.5 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border transition-all duration-200 cursor-pointer ${
+              className={`flex h-7.5 w-7.5 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 transition-all duration-150 active:scale-95 cursor-pointer ${
                 item.is_archived
-                  ? "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30 text-emerald-700 hover:text-emerald-800 dark:text-emerald-300"
-                  : "bg-slate-500/10 hover:bg-slate-500/20 border-slate-500/30 text-slate-600 hover:text-slate-800 dark:text-gray-300"
+                  ? "text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                  : "text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
               }`}
               aria-label={item.is_archived ? "Restore from archive" : "Archive"}
             >
@@ -358,10 +353,10 @@ const LinktreeCard = memo(function LinktreeCard({
                   item.status === "inactive" ? "active" : "inactive",
                 )
               }
-              className={`flex h-7.5 w-7.5 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border transition-all duration-200 cursor-pointer ${
+              className={`flex h-7.5 w-7.5 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 transition-all duration-150 active:scale-95 cursor-pointer ${
                 item.status === "inactive"
-                  ? "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30 text-emerald-700 hover:text-emerald-800 dark:text-emerald-300"
-                  : "bg-rose-500/10 hover:bg-rose-500/20 border-rose-500/30 text-rose-700 hover:text-rose-800 dark:text-rose-300"
+                  ? "text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                  : "text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300"
               }`}
               aria-label={
                 item.status === "inactive" ? "Activate page" : "Deactivate page"
@@ -379,7 +374,7 @@ const LinktreeCard = memo(function LinktreeCard({
           <Tooltip content="سڕینەوە" side="top">
             <button
               onClick={() => onDelete(item.id, item.uid, item.name)}
-              className="flex h-7.5 w-7.5 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-700 hover:text-red-800 transition-all duration-200 cursor-pointer"
+              className="flex h-7.5 w-7.5 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-rose-600 hover:text-rose-700 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:text-rose-400 dark:hover:text-rose-300 transition-all duration-150 active:scale-95 cursor-pointer"
               aria-label="سڕینەوە"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -389,7 +384,7 @@ const LinktreeCard = memo(function LinktreeCard({
         <Tooltip content="بینینی پەڕە" side="top">
           <button
             onClick={handleView}
-            className="flex h-7.5 w-7.5 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 hover:text-gray-700 transition-all duration-200 cursor-pointer"
+            className="flex h-7.5 w-7.5 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 dark:text-gray-300 dark:hover:text-white transition-all duration-150 active:scale-95 cursor-pointer"
             aria-label="بینین"
           >
             <ExternalLink className="h-3.5 w-3.5" />

@@ -17,6 +17,7 @@ import {
   UserCog,
   Link2,
   IdCard,
+  Megaphone,
 } from "lucide-react";
 import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
 import { CreateBusinessModal } from "@/features/platform-admin/components/CreateBusinessModal";
@@ -29,6 +30,14 @@ import { APIManagementPage } from "@/features/platform-admin/components/APIManag
 import { PlatformSettingsPage } from "@/features/platform-admin/components/PlatformSettingsPage";
 import { BillingPage } from "@/features/platform-admin/components/BillingPage";
 import dynamic from "next/dynamic";
+
+const PlatformCampaignsPage = dynamic(
+  () =>
+    import("@/features/campaigns/components/PlatformCampaignsPage").then(
+      (mod) => ({ default: mod.PlatformCampaignsPage }),
+    ),
+  { ssr: false },
+);
 import { toast } from "sonner";
 import { startBusinessImpersonation } from "@/features/platform-admin/api/businesses";
 import { useBusinesses } from "@/features/platform-admin/hooks/useBusinesses";
@@ -322,6 +331,14 @@ export function PlatformAdminDashboard() {
         onClick: () => router.push(`${consoleBasePath}/templates`),
       },
       {
+        id: "campaigns",
+        label: DASHBOARD_PAGE_LABELS.campaigns,
+        icon: <Megaphone className="h-4 w-4" />,
+        active: activePage === "campaigns",
+        hidden: permissionsLoaded && !canPage("campaigns"),
+        onClick: () => router.push(`${consoleBasePath}/campaigns`),
+      },
+      {
         id: "blocklists",
         label: "ڕێساکانی دەستگەیشتن",
         icon: <Shield className="h-4 w-4" />,
@@ -385,6 +402,7 @@ export function PlatformAdminDashboard() {
     "mini-websites": "مینی وێبسایتەکان",
     users: "بەکارهێنەرەکان",
     templates: DASHBOARD_PAGE_LABELS.templates,
+    campaigns: DASHBOARD_PAGE_LABELS.campaigns,
     blocklists: "ڕێساکانی دەستگەیشتن",
     "access-control": "کۆنترۆڵی دەستگەیشتن",
     billing: "پارەدان و بەشدارییەکان",
@@ -670,6 +688,8 @@ export function PlatformAdminDashboard() {
               <PlatformMiniWebsitesPage />
             ) : activePage === "templates" ? (
               <TemplatesPage />
+            ) : activePage === "campaigns" ? (
+              <PlatformCampaignsPage />
             ) : activePage === "billing" ? (
               <BillingPage />
             ) : activePage === "blocklists" ? (

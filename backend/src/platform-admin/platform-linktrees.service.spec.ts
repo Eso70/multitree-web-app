@@ -5,6 +5,7 @@ import { PlatformContentWorkspaceService } from '../platform-workspace/platform-
 import { RedisService } from '../redis/redis.service';
 import { CreateLinktreeDto } from '../linktrees/dto/create-linktree.dto';
 import { UnifiedAnalyticsService } from '../analytics/unified-analytics.service';
+import { AnalyticsReadService } from '../analytics/analytics-read.service';
 
 describe('PlatformLinktreesService', () => {
   const workspaceId = '00000000-0000-4000-8000-000000000001';
@@ -23,10 +24,21 @@ describe('PlatformLinktreesService', () => {
     updateLinktree: jest.fn(),
     syncSubmittedLinks: jest.fn(),
     deleteLinktree: jest.fn(),
+    toggleCampaignActive: jest.fn(),
+    toggleArchive: jest.fn(),
   } as unknown as LinktreesService;
   const workspace = {
     getWorkspaceId: jest.fn().mockResolvedValue(workspaceId),
     getBranding: jest.fn().mockResolvedValue(branding),
+    getLinktreeDefaults: jest.fn().mockResolvedValue({
+      default_footer_text: 'Footer',
+      default_footer_phone: null,
+      default_template: 'glass',
+      default_background_color: '#ffffff',
+      default_footer_hidden: false,
+      default_whatsapp_enabled: false,
+      default_avatar: null,
+    }),
   } as unknown as PlatformContentWorkspaceService;
   const redis = {
     del: jest.fn().mockResolvedValue(undefined),
@@ -35,11 +47,15 @@ describe('PlatformLinktreesService', () => {
     getSummary: jest.fn(),
     clear: jest.fn(),
   } as unknown as UnifiedAnalyticsService;
+  const analyticsReads = {
+    getActions: jest.fn(),
+  } as unknown as AnalyticsReadService;
   const service = new PlatformLinktreesService(
     linktrees,
     workspace,
     redis,
     analytics,
+    analyticsReads,
   );
 
   beforeEach(() => jest.clearAllMocks());
@@ -91,6 +107,15 @@ describe('PlatformLinktreesService', () => {
   it('does not expose the internal owner id in dashboard context', async () => {
     await expect(service.getContext()).resolves.toEqual({
       branding,
+      defaults: {
+        default_footer_text: 'Footer',
+        default_footer_phone: null,
+        default_template: 'glass',
+        default_background_color: '#ffffff',
+        default_footer_hidden: false,
+        default_whatsapp_enabled: false,
+        default_avatar: branding.avatar,
+      },
       publicPathPrefix: '/linktree',
     });
   });
@@ -160,6 +185,63 @@ describe('PlatformLinktreesService', () => {
       pageId: 'page-id',
       pageType: 'linktree',
     });
+  });
+
+  it('forwards date ranges to summary and action analytics', async () => {
+    (linktrees.getLinktreeById as jest.Mock).mockResolvedValue({
+      id: 'page-id',
+    });
+    (analytics.getSummary as jest.Mock).mockResolvedValue({ total_views: 4 });
+    (analyticsReads.getActions as jest.Mock).mockResolvedValue([
+      { id: 'action-id' },
+    ]);
+
+    await service.getAnalytics('page-id', {
+      from: '2026-09-01',
+      to: '2026-09-08',
+    });
+    await service.getAnalyticsActions('page-id', {
+      from: '2026-09-01',
+      to: '2026-09-08',
+    });
+
+    expect(analytics.getSummary).toHaveBeenCalledWith(workspaceId, {
+      pageId: 'page-id',
+      pageType: 'linktree',
+      from: '2026-09-01',
+      to: '2026-09-08',
+    });
+    expect(analyticsReads.getActions).toHaveBeenCalledWith(workspaceId, {
+      pageId: 'page-id',
+      pageType: 'linktree',
+      from: '2026-09-01',
+      to: '2026-09-08',
+    });
+  });
+
+  it('uses the shared tenant-scoped campaign and archive mutations', async () => {
+    (linktrees.toggleCampaignActive as jest.Mock).mockResolvedValue({
+      uid: 'one',
+      seo_name: 'page',
+    });
+    (linktrees.toggleArchive as jest.Mock).mockResolvedValue({
+      uid: 'one',
+      seo_name: 'page',
+    });
+
+    await service.toggleCampaign('page-id', true);
+    await service.toggleArchive('page-id', true);
+
+    expect(linktrees.toggleCampaignActive).toHaveBeenCalledWith(
+      'page-id',
+      workspaceId,
+      true,
+    );
+    expect(linktrees.toggleArchive).toHaveBeenCalledWith(
+      'page-id',
+      workspaceId,
+      true,
+    );
   });
 
   it('clears analytics only after verifying platform workspace ownership', async () => {

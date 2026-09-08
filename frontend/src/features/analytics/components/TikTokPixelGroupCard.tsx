@@ -42,6 +42,7 @@ interface TikTokPixelGroupCardProps {
   testEndpoint: string;
   secretEndpoint?: (id: string) => string;
   onUpdate: (updates: Partial<PixelConfigRow>) => void;
+  canDelete?: boolean;
   onDelete: () => void;
 }
 
@@ -59,6 +60,7 @@ export function TikTokPixelGroupCard({
   testEndpoint,
   secretEndpoint,
   onUpdate,
+  canDelete = true,
   onDelete,
 }: TikTokPixelGroupCardProps) {
   const [showToken, setShowToken] = useState(false);
@@ -253,8 +255,13 @@ export function TikTokPixelGroupCard({
         </div>
 
         <IconActionButton
-          label="سڕینەوەی ئەم گرووپە"
+          label={
+            canDelete
+              ? "سڕینەوەی ئەم گرووپە"
+              : "دەبێت لانیکەم یەک گرووپ بمێنێتەوە"
+          }
           tone="danger"
+          disabled={!canDelete}
           onClick={onDelete}
         >
           <X className="h-4 w-4" />

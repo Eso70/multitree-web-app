@@ -117,12 +117,16 @@ const HEADER_DANGER_BUTTON =
 /** The preset options shown in the time-range filter strip. */
 export type DateRangePreset = "today" | "24h" | "7d" | "all" | "custom";
 
-const DATE_RANGE_OPTIONS: Array<{ id: DateRangePreset; label: string; hint: string }> = [
-  { id: "today", label: "ئەمڕۆ",    hint: "لە سەرەتای ئەمڕۆ"            },
-  { id: "24h",   label: "٢٤ ساعت",  hint: "٢٤ ساعتی ڕابردوو"            },
-  { id: "7d",    label: "٧ ڕۆژ",    hint: "٧ ڕۆژی ڕابردوو"              },
-  { id: "all",   label: "هەموو",    hint: "هەموو ماوەکان"                 },
-  { id: "custom",label: "تایبەت",   hint: "دیاریکردنی بەروار بە دەستی"  },
+const DATE_RANGE_OPTIONS: Array<{
+  id: DateRangePreset;
+  label: string;
+  hint: string;
+}> = [
+  { id: "today", label: "ئەمڕۆ", hint: "لە سەرەتای ئەمڕۆ" },
+  { id: "24h", label: "٢٤ ساعت", hint: "٢٤ ساعتی ڕابردوو" },
+  { id: "7d", label: "٧ ڕۆژ", hint: "٧ ڕۆژی ڕابردوو" },
+  { id: "all", label: "هەموو", hint: "هەموو ماوەکان" },
+  { id: "custom", label: "تایبەت", hint: "دیاریکردنی بەروار بە دەستی" },
 ];
 
 function toLocalDateString(d: Date): string {
@@ -158,7 +162,7 @@ function presetToRange(
   if (preset === "custom") {
     return {
       from: customFrom || undefined,
-      to:   customTo   || undefined,
+      to: customTo || undefined,
     };
   }
   // "all" — no bounds
@@ -309,7 +313,7 @@ function summaryUrl(
   const params = new URLSearchParams();
   if (bypassCache) params.set("_t", String(Date.now()));
   if (from) params.set("from", from);
-  if (to)   params.set("to",   to);
+  if (to) params.set("to", to);
 
   if (dataSource === "client-linktree") {
     const query = params.toString();
@@ -343,9 +347,8 @@ function summaryUrl(
 /**
  * The per-action rows for a page.
  *
- * A Creator sees the same button list as a business, but the business route is
- * behind `BusinessGuard`, so the Creator workspace serves its own copy scoped
- * to the session's own page. Platform surfaces never ask for this list.
+ * Each role uses its own guarded endpoint while this shared modal keeps the
+ * date filters, totals, conversions, and button rows identical.
  */
 function actionsUrl(
   dataSource: PageAnalyticsDataSource,
@@ -357,7 +360,7 @@ function actionsUrl(
   const params = new URLSearchParams();
   if (bypassCache) params.set("_t", String(Date.now()));
   if (from) params.set("from", from);
-  if (to)   params.set("to",   to);
+  if (to) params.set("to", to);
 
   if (dataSource === "client-linktree") {
     const query = params.toString();
@@ -367,6 +370,11 @@ function actionsUrl(
   if (dataSource === "creator-linktree") {
     const query = params.toString();
     return `/api/creator/linktrees/${pageId}/analytics/actions${query ? `?${query}` : ""}`;
+  }
+
+  if (dataSource === "platform-linktree") {
+    const query = params.toString();
+    return `/api/platform/linktrees/${pageId}/analytics/actions${query ? `?${query}` : ""}`;
   }
 
   if (dataSource === "creator-mini-website") {
@@ -410,7 +418,7 @@ export function BusinessPageAnalyticsModal({
   // Time-range filter
   const [preset, setPreset] = useState<DateRangePreset>("all");
   const [customFrom, setCustomFrom] = useState("");
-  const [customTo, setCustomTo]     = useState("");
+  const [customTo, setCustomTo] = useState("");
 
   const [expandedActionId, setExpandedActionId] = useState<string | null>(null);
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
@@ -433,10 +441,20 @@ export function BusinessPageAnalyticsModal({
       // exactly this code path against its own endpoints rather than falling
       // through to the business ones, which are behind `BusinessGuard`.
       const [totalsResult, actionsResult] = await Promise.allSettled([
-        fetchJson<Totals>(summaryUrl(dataSource, pageId, bypassCache, range?.from, range?.to)),
+        fetchJson<Totals>(
+          summaryUrl(dataSource, pageId, bypassCache, range?.from, range?.to),
+        ),
         summaryOnly
           ? Promise.resolve<ActionRow[]>([])
-          : fetchJson<ActionRow[]>(actionsUrl(dataSource, pageId, bypassCache, range?.from, range?.to)),
+          : fetchJson<ActionRow[]>(
+              actionsUrl(
+                dataSource,
+                pageId,
+                bypassCache,
+                range?.from,
+                range?.to,
+              ),
+            ),
       ]);
       if (reqId !== dataRef.current) return;
 
@@ -494,13 +512,16 @@ export function BusinessPageAnalyticsModal({
   const isFirstRender = useRef(true);
   useEffect(() => {
     if (!isOpen) return;
-    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     setLoading(true);
     setExpandedActionId(null);
     void load(false, effectiveRange);
-  // load is stable (useCallback); effectiveRange identity changes only when
-  // preset / customFrom / customTo actually change.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // load is stable (useCallback); effectiveRange identity changes only when
+    // preset / customFrom / customTo actually change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveRange]);
 
   useModalKeyboard({
@@ -690,7 +711,6 @@ export function BusinessPageAnalyticsModal({
               <SkeletonPageAnalyticsContent summaryOnly={summaryOnly} />
             ) : (
               <div className="space-y-5">
-
                 <StatCardGrid columns={2}>
                   {summaryOnly ? (
                     <>
@@ -783,7 +803,11 @@ export function BusinessPageAnalyticsModal({
                           {DATE_RANGE_OPTIONS.map((opt) => {
                             const active = preset === opt.id;
                             return (
-                              <Tooltip key={opt.id} content={opt.hint} side="top">
+                              <Tooltip
+                                key={opt.id}
+                                content={opt.hint}
+                                side="top"
+                              >
                                 <button
                                   type="button"
                                   aria-label={opt.hint}
@@ -797,8 +821,10 @@ export function BusinessPageAnalyticsModal({
                                   style={
                                     active
                                       ? {
-                                          background: "var(--theme-primary, #64748b)",
-                                          borderColor: "var(--theme-primary, #64748b)",
+                                          background:
+                                            "var(--theme-primary, #64748b)",
+                                          borderColor:
+                                            "var(--theme-primary, #64748b)",
                                         }
                                       : undefined
                                   }
@@ -823,7 +849,9 @@ export function BusinessPageAnalyticsModal({
                               max={customTo || undefined}
                             />
                           </div>
-                          <span className="text-slate-300 dark:text-white/20 text-sm font-light shrink-0 mt-5">→</span>
+                          <span className="text-slate-300 dark:text-white/20 text-sm font-light shrink-0 mt-5">
+                            →
+                          </span>
                           <div className="flex-1 min-w-0">
                             <DateTimeInput
                               label="بۆ بەرواری"
@@ -964,7 +992,11 @@ export function BusinessPageAnalyticsModal({
                                       </p>
                                     </div>
                                     {action.destination && (
-                                      <Tooltip content="کردنەوەی بەستەری مەبەست" side="top" className="col-span-2 sm:col-span-1 min-w-0">
+                                      <Tooltip
+                                        content="کردنەوەی بەستەری مەبەست"
+                                        side="top"
+                                        className="col-span-2 sm:col-span-1 min-w-0"
+                                      >
                                         <a
                                           href={action.destination}
                                           target="_blank"

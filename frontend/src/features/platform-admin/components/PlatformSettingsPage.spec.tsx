@@ -230,4 +230,34 @@ describe("PlatformSettingsPage General tab", () => {
       ),
     );
   });
+
+  it("shows the TikTok Ads account tab with the shared ad account connection UI for platform admin", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => {
+      return jsonResponse({ success: true, data: savedSettings });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<PlatformSettingsPage />);
+    await screen.findByDisplayValue("Saved MultiTree");
+
+    fireEvent.click(
+      screen.getByRole("tab", { name: "هەژماری ڕیکلامی تیکتۆک" }),
+    );
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "هەژماری ڕیکلامی تیکتۆک",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "بەستنەوە و بەڕێوەبردنی هەژماری ڕیکلامی تیکتۆک بۆ بەڕێوەبردنی کەمپەینەکانی پلاتفۆرم.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "تەنها ١ هەژماری ڕیکلامی تیکتۆک دەتوانرێت بۆ پلاتفۆرم ببەسترێتەوە.",
+      ),
+    ).toBeInTheDocument();
+  });
 });

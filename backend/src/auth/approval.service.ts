@@ -425,8 +425,9 @@ export class ApprovalService {
         pixel_id: string;
         encrypted_events_token: Buffer | null;
         token_last_four: string | null;
+        status: string;
       }>(
-        `SELECT id, pixel_id, encrypted_events_token, token_last_four
+        `SELECT id, pixel_id, encrypted_events_token, token_last_four, status
          FROM business_tiktok_pixels
          WHERE business_id=$1::uuid
          FOR UPDATE`,
@@ -438,6 +439,14 @@ export class ApprovalService {
       const existingByPixelId = new Map(
         existingResult.rows.map((row) => [row.pixel_id, row]),
       );
+      const activeExistingCount = existingResult.rows.filter(
+        (row) => row.status === 'active',
+      ).length;
+      if (activeExistingCount > 0 && configs.length === 0) {
+        throw new BadRequestException(
+          'At least one TikTok pixel group must remain active',
+        );
+      }
       const retainedIds: string[] = [];
 
       for (const config of configs) {
@@ -501,6 +510,30 @@ export class ApprovalService {
       return;
     }
     if (input.permission === 'business:tiktok:delete' && input.resourceId) {
+      await client.query(
+        `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`,
+        [`tiktok:${input.businessId}`],
+      );
+      const targetResult = await client.query<{
+        status: string;
+        active_count: string;
+      }>(
+        `SELECT pixel.status,
+                (SELECT COUNT(*)::text
+                 FROM business_tiktok_pixels active_pixel
+                 WHERE active_pixel.business_id=$2::uuid
+                   AND active_pixel.status='active') AS active_count
+         FROM business_tiktok_pixels pixel
+         WHERE pixel.id=$1::uuid AND pixel.business_id=$2::uuid
+         FOR UPDATE`,
+        [input.resourceId, input.businessId],
+      );
+      const target = targetResult.rows[0];
+      if (target?.status === 'active' && Number(target.active_count) <= 1) {
+        throw new BadRequestException(
+          'At least one TikTok pixel group must remain active',
+        );
+      }
       await client.query(
         `DELETE FROM business_tiktok_pixels
          WHERE id=$1::uuid AND business_id=$2::uuid`,

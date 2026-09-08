@@ -48,7 +48,7 @@ export function ModalWizardActions({
       : "flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 sm:px-6 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap";
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 border-t border-gray-100/60 p-3.5 sm:p-4 bg-linear-to-r from-white to-slate-50/30">
+    <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 border-t border-slate-100 dark:border-white/5 p-3.5 sm:p-4 bg-linear-to-r from-white to-slate-50/30 dark:from-[#1c222b] dark:to-slate-900/10">
       {!isFirstStep && (
         <Tooltip content="گەڕانەوە بۆ هەنگاوی پێشوو" side="top">
           <button
