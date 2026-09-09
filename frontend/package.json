@@ -20,15 +20,15 @@
   "dependencies": {
     "@linktree/types": "workspace:*",
     "canvas-confetti": "^1.9.4",
-    "lucide-react": "^0.562.0",
-    "motion": "^12.42.2",
-    "next": "^16.3.0",
+    "lucide-react": "^1.41.0",
+    "motion": "^13.2.0",
+    "next": "^16.3.4",
     "qrcode": "^1.5.4",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "react-icons": "^5.5.0",
-    "sharp": "^0.35.3",
-    "sonner": "^2.0.7"
+    "sharp": "^0.35.4",
+    "sonner": "^2.0.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
