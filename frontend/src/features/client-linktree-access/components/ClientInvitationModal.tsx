@@ -6,7 +6,7 @@ import { useTheme } from "@/lib/contexts/ThemeProvider";
 
 type Props = Omit<
   ComponentProps<typeof ManagementModal>,
-  "createBusinessStyle" | "multiTreeTheme" | "accentColor"
+  "createBusinessStyle" | "sponsorKrdTheme" | "accentColor"
 >;
 
 /** Linktree-editor modal shell locked to the active business tenant colour. */
@@ -16,7 +16,7 @@ export function ClientInvitationModal(props: Props) {
     <ManagementModal
       {...props}
       createBusinessStyle
-      multiTreeTheme={false}
+      sponsorKrdTheme={false}
       accentColor={color.primary}
     />
   );

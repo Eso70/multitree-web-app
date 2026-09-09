@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the UI standards for MultiTree.
+This document defines the UI standards for Sponsor.krd.
 
 The goal is to ensure every page, component, and interaction feels like part of the same product while keeping business and platform administration implementations properly separated.
 
@@ -54,7 +54,7 @@ Public business homepages are customer-facing product-style sites, never
 authenticated dashboards. Use strong typography, real business branding and
 published media, restrained color, purposeful whitespace, and a product-style
 public-content preview when it materially helps visitors discover published
-destinations. Reuse the MultiTree homepage's shared floating navigation and
+destinations. Reuse the Sponsor.krd homepage's shared floating navigation and
 theme behavior, supplying tenant branding and public business links through
 its configuration instead of creating a parallel navbar. Reference sites may inform hierarchy, spacing, contrast, and
 interaction rhythm, but their proprietary code, assets, copy, branding, and
@@ -66,15 +66,15 @@ gutters; it is not a full-width or standalone full-viewport section. Its visual
 language may resemble a polished creative editor: a project-tab rail, a small
 public helper sidebar on larger screens, a restrained secondary toolbar, and a
 dense image-led gallery. The helper must remain deterministic and local: greet
-visitors briefly and direct Linktree or mini-website requests to the business
+visitors briefly and direct Linktree requests to the business
 owner without persisting input, calling a backend, or implying access to
 private data. Light mode must provide an equally intentional
 neutral counterpart instead of forcing the entire mockup dark.
 Its tabs must be keyboard-operable, omit unavailable categories, and remain
-limited to published Linktrees and published mini websites. Do not add a
+limited to published Linktrees. Do not add a
 workspace overview tab or a separate brand/status header inside the mockup.
-Render both content types with the same reusable visual-card treatment so tab
-changes do not alter the workspace's density or interaction language. Subtle
+Use the reusable visual-card treatment so navigation does not alter the
+workspace's density or interaction language. Subtle
 window framing, layered surfaces, and tenant-accent details may make the
 preview feel tangible, but must remain decorative, accessible in light and
 dark themes, and secondary to real published content.
@@ -82,28 +82,12 @@ The workspace tab rail must fit its available width without horizontal
 scrolling. Every scrollable surface on a public business homepage, including
 the workspace's internal content area, inherits the tenant accent for its
 scrollbar. The custom cursor and text-selection highlight inherit that same
-accent and restore the MultiTree default when the visitor leaves the page.
+accent and restore the Sponsor.krd default when the visitor leaves the page.
 Business homepage hero and workspace copy may be written in Sorani Kurdish
 while the page and workspace layout remain left-to-right. The shared footer
 keeps its established content contract. Dynamic tenant content keeps automatic
 text direction. Workspace content must explicitly hide horizontal overflow and
 expose only its right-side vertical scrollbar.
-When real partner logos exist, a trusted-by rail may follow the completed
-workspace as a separate section. Match the reference pattern's quiet heading,
-single optical logo line, edge fade, and restrained motion without copying
-third-party logos or trade dress. Logos sit directly on the section surface,
-without individual card containers. Use the shared marquee UI primitive
-rather than implementing animation and measurement inside the feature
-component. It measures one natural content pass and the visible rail, repeats
-that pass only enough to make a viewport-safe block, duplicates the block
-once, and translates exactly half the combined width. Its speed setting
-represents an approximate viewport-crossing time and may define a deliberately
-slower mobile crossing time, so perceived pace never accelerates on narrow
-screens. Recalculate after image
-loading, data changes, and resizing; pause on hover or keyboard focus. Never
-invent endorsements: source logos only
-from enabled partner content on the tenant's published mini websites, remove
-duplicates, omit image-less entries, and hide the entire rail when empty.
 Contact and any future homepage sections remain outside the workspace in their
 appropriate page locations. Avoid unrelated secondary
 marketing sections, decorative dashboard mockups, fake metrics or testimonials, repeated
@@ -118,7 +102,7 @@ placeholders.
 
 # Component Ownership
 
-The MultiTree root marketing website and tenant business websites share the
+The Sponsor.krd root marketing website and tenant business websites share the
 neutral `PublicMarketingSiteShell`. Surface-specific shells are thin adapters:
 they may supply branding, navigation, actions, footer content, and explicit
 capabilities, but must not duplicate navbar behavior, theme handling,
@@ -133,13 +117,13 @@ real. Use clearly illustrative templates and interface states. Keep all copy
 and repeatable data in the centralized marketing content module so a future
 platform content manager can replace the source without replacing the UI.
 
-MultiTree marketing prose and primary calls to action remain Kurdish. English
+Sponsor.krd marketing prose and primary calls to action remain Kurdish. English
 is reserved for established product terms, concise top-level navigation, and
 the intentionally LTR root footer. Root marketing primary CTAs use the fixed
-MultiTree lime color rather than the configurable platform accent. Visible
+Sponsor.krd cyan-to-red brand gradient rather than the configurable platform accent. Visible
 marketing sentences do not use terminal full stops.
 
-Business landing pages, MultiTree marketing pages, and business advertising
+Business landing pages, Sponsor.krd marketing pages, and business advertising
 pages share `PublicMarketingHero`, `PublicHeroAccentBackdrop`,
 `PublicSection`, `PublicSectionHeading`, and `PublicCallToActionSection`.
 Responsive spacing, heading scale, light/dark surfaces, action hierarchy, and
@@ -464,7 +448,7 @@ Signup uses the card's plain compact variant and does not add another visual
 container around the form. Country, city, and social-profile URL fields are
 excluded. Logo, favicon, default avatar, brand color, and footer defaults move
 to the required first-login setup instead of the signup application. Mark those
-setup fields optional and start with the MultiTree color, the neutral person
+setup fields optional and start with the Sponsor.krd color, the neutral person
 avatar, and the neutral logo and favicon placeholders. First-login setup asks
 for the logo only: pass `lockedAssets` to `BrandAssetStack` there, which closes
 the favicon and avatar tiles behind a lock badge because both are supplied
@@ -474,12 +458,13 @@ session, so a business that wants a distinct favicon or avatar is never blocked.
 A favicon the owner uploaded is never overwritten by a later logo upload. Logo
 and favicon pickers both accept JPEG and PNG (favicon also `.ico`); the tile
 markup itself lives in `BrandAssetTile` so a locked tile does not nest a button
-inside a label. MultiTree's own mark
-(`/images/Logo.jpg`) is platform chrome — the home page, the dashboard sidebar,
-the "powered by" footer, the platform manifest, and platform-console branding —
-and must never stand in for a business that has not uploaded its own asset.
-Resolve every fallback from `frontend/src/lib/brand/brand-assets.ts` rather than
-repeating a path. Show the
+inside a label. Sponsor.krd's own assets are platform chrome: use the opaque
+`/images/Logo.jpg` in visible logo tiles, the transparent
+`/images/sponsor-krd-logo-mark.png` for app icons and surfaces that provide
+their own background, and `/favicon.ico` for browser-tab icons. They must never
+stand in for a business that has not uploaded its own asset. Resolve every
+fallback from `frontend/src/lib/brand/brand-assets.ts` rather than repeating a
+path. Show the
 verified owner account name and email read-only in both first-login setup and
 platform business editing. Render setup as a single locked `ManagementModal`
 over the real dashboard: no close control,
@@ -555,13 +540,10 @@ Pills for Linktree pages live in `components/business/LinktreeMeta.tsx`
 - **Template name** — resolved through `getTemplateName` in
   `lib/templates/config.ts`.
 
-Every pill is field-gated. `LinktreesGrid` and `LinktreesTable` are shared with
-the mini-website screen, which passes a partial projection, so a pill whose
-field is absent renders nothing. Fields that cannot be gated (the age tier
+Every pill is field-gated, so a pill whose field is absent renders nothing.
+Fields that cannot be gated (the age tier
 reads `created_at`, which every consumer fills) sit behind the
-`showLinktreeMeta` prop, which only the Linktree dashboard sets. That prop also
-hides the Slug column, which the mini-website screen reuses to render its own
-status label.
+`showLinktreeMeta` prop, which only the Linktree dashboard sets.
 
 The business default page is always sorted first
 (`sortLinktreesForDashboard`), and optimistic list updates demote the previous
@@ -669,7 +651,7 @@ Every public route owns a route-level skeleton. Marketing pages preserve the
 shared navbar plus their actual cards, pricing, article, form, or template body.
 The root loading boundary detects platform versus business hosts so tenant
 requests receive the business landing composition. Public Linktree,
-mini-website, invitation, and results routes reserve their own renderer or
+invitation, and results routes reserve their own renderer or
 branded client-access shell.
 
 ## Dashboard notification bell
@@ -764,23 +746,6 @@ The list-level clear-all action uses the same shared rose analytics button and
 confirmation modal as the business Linktree list; it is disabled when no
 platform Linktree analytics exist.
 
-### Platform mini websites
-
-The Platform and Creator mini-website pages render the same
-`MiniWebsitesPage` manager. Platform customization is limited to workspace
-branding, guarded API endpoints, root `/bio` links, internal template policy,
-and platform analytics ownership. The Business dashboard exposes no Mini
-Website navigation item or route on any plan. Do not fork editor steps, cards,
-grid/table views, skeletons, dialogs, uploads, or the public renderer.
-
-Mini-website lists use the complete shared Linktree grid/table presentation:
-card density, image treatment, metadata rows, traffic blocks, actions,
-responsive mobile cards, table columns, and pagination stay visually aligned.
-`MiniWebsiteListMeta` supplies mini-website status and template badges, and the
-mini-website traffic labels describe the second metric as total actions rather
-than Linktree clickers. Domain wording must be configured without forking the
-shared list layout.
-
 - 6 selectable Linktree templates
 - Registered through the template registry
 - Availability depends on the business subscription
@@ -798,29 +763,6 @@ stay inside icon tiles, while the tenant accent owns the network, card edge,
 arrow, glow, and footer. It must not add share, theme, navigation, badge, or
 header controls that are not part of the Linktree data contract.
 
-### Mini Websites
-
-Persisted visual templates:
-
-- Liquid Glass
-- Editorial
-- Business Pro
-- Sidebar Canvas
-
-Liquid Glass surface variations:
-
-- Soft
-- Glass
-- Minimal
-- Warm
-
-Background styles are independent from the visual template and the Liquid
-Glass surface variation. Profession templates select recommended content sections;
-they are not visual templates. Every visual template must consume the shared
-section registry and render in the scrollable mobile catalog preview.
-
-Subscription plans determine which templates are available.
-
 ---
 
 # UI Review Checklist
@@ -836,4 +778,4 @@ Before completing any UI work, verify:
 - Accessibility has been considered.
 - No unnecessary UI patterns were introduced.
 
-Every new screen should look like it naturally belongs within the existing MultiTree product.
+Every new screen should look like it naturally belongs within the existing Sponsor.krd product.

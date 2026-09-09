@@ -98,6 +98,20 @@ describe('applyForwardMigrations', () => {
     expect(executed).not.toContain('SELECT 2;');
   });
 
+  it('rejects migration files that could commit outside the runner-owned transaction', async () => {
+    const dir = makeMigrationsDir({
+      '2026-08-10_unsafe.sql': 'BEGIN;\nSELECT 1;\nCOMMIT;',
+    });
+    const { client, rows, executed } = createFakeClient();
+
+    await expect(applyForwardMigrations(client as never, dir)).rejects.toThrow(
+      'must not manage its own transaction',
+    );
+
+    expect(rows).toEqual([]);
+    expect(executed).not.toContain('BEGIN');
+  });
+
   it('returns an empty array when there are no forward migration files', async () => {
     const dir = makeMigrationsDir({});
     const { client, executed } = createFakeClient();

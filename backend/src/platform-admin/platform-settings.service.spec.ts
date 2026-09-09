@@ -14,15 +14,15 @@ describe('PlatformSettingsService', () => {
     const profile = {
       id: 'admin-id',
       username: 'operator',
-      name: 'MultiTree',
+      name: 'Sponsor.krd',
       email: 'admin@example.com',
       phone: '+964 750 123 4567',
-      logo: '/images/upload/multitree/logo.png',
-      avatar: '/images/upload/multitree/avatar.png',
-      favicon: '/images/upload/multitree/favicon.ico',
+      logo: '/images/upload/sponsor-krd/logo.png',
+      avatar: '/images/upload/sponsor-krd/avatar.png',
+      favicon: '/images/upload/sponsor-krd/favicon.ico',
       accent_color: '#84cc16',
       accent_ink_color: '#ffffff',
-      app_url: 'https://multitree.example',
+      app_url: 'https://sponsor-krd.example',
     };
     const database = {
       query: jest.fn().mockResolvedValue({ rows: [profile] }),
@@ -30,7 +30,9 @@ describe('PlatformSettingsService', () => {
 
     const service = new PlatformSettingsService(database, redis, {
       get: jest.fn((key: string) =>
-        key === 'NEXT_PUBLIC_APP_URL' ? 'https://multitree.example' : undefined,
+        key === 'NEXT_PUBLIC_APP_URL'
+          ? 'https://sponsor-krd.example'
+          : undefined,
       ),
     } as unknown as ConfigService);
 
@@ -47,7 +49,7 @@ describe('PlatformSettingsService', () => {
           {
             id: 'admin-id',
             username: 'operator',
-            name: 'MultiTree',
+            name: 'Sponsor.krd',
             email: null,
             phone: null,
             logo: null,
@@ -65,8 +67,8 @@ describe('PlatformSettingsService', () => {
       SA_LOGO_WITH_BACKGROUND: '/images/Logo.jpg',
       SA_LOGO_WITHOUT_BACKGROUND: '/images/DefaultAvatar.png',
       SA_FAVICON: '/favicon.ico',
-      SA_WEBSITE_COLOR: '#b6f20d',
-      NEXT_PUBLIC_APP_URL: 'https://multitree.example',
+      SA_WEBSITE_COLOR: '#123456',
+      NEXT_PUBLIC_APP_URL: 'https://sponsor-krd.example',
     };
     const service = new PlatformSettingsService(database, redis, {
       get: jest.fn((key: string) => values[key]),
@@ -78,8 +80,8 @@ describe('PlatformSettingsService', () => {
       logo: '/images/Logo.jpg',
       avatar: '/images/DefaultAvatar.png',
       favicon: '/favicon.ico',
-      accent_color: '#b6f20d',
-      app_url: 'https://multitree.example',
+      accent_color: '#123456',
+      app_url: 'https://sponsor-krd.example',
     });
   });
 

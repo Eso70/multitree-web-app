@@ -138,7 +138,7 @@ export function PlatformBusinessesPage({
         tabs={tabs}
         value={section}
         onChange={setSection}
-        accent="var(--multitree-accent)"
+        accent="var(--sponsor-krd-accent)"
         className="mb-6"
       />
 

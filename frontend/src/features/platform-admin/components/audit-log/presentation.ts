@@ -52,7 +52,7 @@ export function actorTypeLabel(actorType: AuditActorType): string {
     anonymous: "نەناسراو",
     business: "بزنس",
     "platform-admin": "بەڕێوەبەری پلاتفۆرم",
-    multitree: "MultiTree",
+    sponsor_krd: "Sponsor.krd",
   }[actorType];
 }
 

@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/shared/Skeleton";
 import { Tooltip } from "@/components/shared/Tooltip";
 
 interface ModalWizardActionsProps {
-  variant?: "themed" | "multitree";
+  variant?: "themed" | "sponsor-krd";
   isFirstStep: boolean;
   isFinalStep: boolean;
   isLoadingData?: boolean;
@@ -39,11 +39,11 @@ export function ModalWizardActions({
   onSubmit,
 }: ModalWizardActionsProps) {
   const nextClassName =
-    variant === "multitree"
+    variant === "sponsor-krd"
       ? "flex h-11 w-full items-center justify-center rounded-xl px-4 sm:px-6 text-sm font-semibold sa-gradient sa-gradient-hover shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
       : "flex h-11 w-full items-center justify-center rounded-xl px-4 sm:px-6 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap";
   const submitClassName =
-    variant === "multitree"
+    variant === "sponsor-krd"
       ? "flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 sm:px-6 text-sm font-semibold sa-ink shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed sa-gradient sa-gradient-hover cursor-pointer whitespace-nowrap"
       : "flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 sm:px-6 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap";
 
@@ -77,10 +77,10 @@ export function ModalWizardActions({
             disabled={isSubmitting}
             className="flex h-11 w-full items-center justify-center rounded-xl border px-4 sm:px-5 text-sm font-semibold shadow-xs transition-all duration-300 hover:shadow-sm disabled:cursor-wait disabled:opacity-50 sm:w-auto cursor-pointer whitespace-nowrap"
             style={{
-              borderColor: "var(--theme-primary, var(--multitree-accent))",
-              color: "var(--theme-primary, var(--multitree-accent))",
+              borderColor: "var(--theme-primary, var(--sponsor-krd-accent))",
+              color: "var(--theme-primary, var(--sponsor-krd-accent))",
               background:
-                "color-mix(in srgb, var(--theme-primary, var(--multitree-accent)) 8%, transparent)",
+                "color-mix(in srgb, var(--theme-primary, var(--sponsor-krd-accent)) 8%, transparent)",
             }}
           >
             {saveCurrentLabel}
@@ -94,7 +94,7 @@ export function ModalWizardActions({
           content={canContinue ? nextLabel : "تکایە خانە پێویستەکان پڕبکەرەوە"}
           side="top"
         >
-          {variant === "multitree" ? (
+          {variant === "sponsor-krd" ? (
             <button
               type="button"
               onClick={onNext}
@@ -119,7 +119,7 @@ export function ModalWizardActions({
           content={isSubmitting ? "پاشەکەوت دەکرێت..." : submitLabel}
           side="top"
         >
-          {variant === "multitree" ? (
+          {variant === "sponsor-krd" ? (
             <button
               type="button"
               onClick={onSubmit}

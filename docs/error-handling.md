@@ -1,6 +1,6 @@
 # Error Handling
 
-This document defines the standard error-handling strategy for MultiTree.
+This document defines the standard error-handling strategy for Sponsor.krd.
 
 For authentication, authorization, encryption, and security controls, see `docs/security.md`.
 
@@ -108,7 +108,7 @@ Examples:
 
 - missing business
 - missing linktree
-- missing mini-website
+- missing Linktree
 - missing asset
 
 Return:

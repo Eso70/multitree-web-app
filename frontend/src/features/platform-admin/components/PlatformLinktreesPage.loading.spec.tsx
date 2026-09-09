@@ -23,11 +23,11 @@ describe("RootLinktreesPage loading", () => {
       if (url.endsWith("/context")) {
         return Promise.resolve({
           branding: {
-            name: "MultiTree",
+            name: "Sponsor.krd",
             logo: null,
             avatar: null,
             favicon: null,
-            accentColor: "#b6f20d",
+            accentColor: "#25F4EE",
           },
           publicPathPrefix: "/linktree",
         });

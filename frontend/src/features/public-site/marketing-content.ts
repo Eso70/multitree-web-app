@@ -6,7 +6,7 @@ export interface MarketingFeature {
 }
 
 export interface MarketingProduct {
-  id: "linktree" | "mini-website";
+  id: "linktree";
   eyebrow: string;
   title: string;
   description: string;
@@ -35,15 +35,6 @@ export const MARKETING_PRODUCTS: MarketingProduct[] = [
       "هەموو بەستەر و کەناڵەکانت لە پەڕەیەکی خێرا، جوان و گونجاو بۆ ڕیکلامی تۆڕە کۆمەڵایەتییەکان کۆبکەرەوە",
     href: "/link-in-bio",
     bullets: ["بەستەری تایبەت", "دیزاینی مۆبایل", "ئاماری بینین و کلیک"],
-  },
-  {
-    id: "mini-website",
-    eyebrow: "ناساندنی تەواوتر",
-    title: "Mini Website",
-    description:
-      "خزمەتگوزاری، شوێن، کاتەکانی کار، گەلەری، پەیوەندی و زانیارییەکانت لە ماڵپەڕێکی بچووکدا پیشان بدە",
-    href: "/mini-website",
-    bullets: ["بەشە دەوڵەمەندەکان", "فۆڕمی پەیوەندی", "قاڵبی پیشەیی"],
   },
 ];
 
@@ -95,8 +86,8 @@ export const MARKETING_STEPS = [
   },
   {
     number: "02",
-    title: "جۆری پەڕە هەڵبژێرە",
-    description: "Linktree یان Mini Website—ئەوەی بۆ ئامانجەکەت گونجاوترە",
+    title: "پەڕەکەت دروست بکە",
+    description: "Linktree ـێکی جوان و خێرا بۆ بەستەر و کەناڵەکانت دروست بکە",
   },
   {
     number: "03",
@@ -115,14 +106,9 @@ export const MARKETING_USE_CASES = [
 
 export const MARKETING_FAQS: MarketingFaq[] = [
   {
-    question: "جیاوازی Linktree و مینی وێبسایت چییە؟",
+    question: "Linktree چییە؟",
     answer:
-      "Linktree بۆ بەستەر و کردارە خێراکانە؛ Mini Website بۆ ناساندنێکی تەواوتر، خزمەتگوزاری، گەلەری و زانیاری زیاترە",
-  },
-  {
-    question: "دەتوانم هەردووکیان دروست بکەم؟",
-    answer:
-      "هەژماری Creator لە ئێستادا یەک Linktree یان یەک Mini Website دروست دەکات؛ بزنسەکان پلانی جیاوازیان هەیە",
+      "پەڕەیەکی خێرا و گونجاو بۆ مۆبایلە کە هەموو بەستەر و کردارە گرنگەکانت لە یەک شوێن کۆدەکاتەوە",
   },
   {
     question: "تاقیکردنەوە کەی دەست پێدەکات؟",
@@ -142,8 +128,8 @@ export const MARKETING_FAQS: MarketingFaq[] = [
 ];
 
 export const MOCK_TEMPLATES = [
-  { name: "Bold Lime", type: "Linktree", tone: "#b6f20d" },
+  { name: "TikTok Cyan", type: "Linktree", tone: "#25F4EE" },
   { name: "Midnight Profile", type: "Linktree", tone: "#17191b" },
-  { name: "Studio Cards", type: "Mini Website", tone: "#7c3aed" },
-  { name: "Warm Portfolio", type: "Mini Website", tone: "#f59e0b" },
+  { name: "Branch Signal", type: "Linktree", tone: "#7c3aed" },
+  { name: "Warm Links", type: "Linktree", tone: "#f59e0b" },
 ] as const;

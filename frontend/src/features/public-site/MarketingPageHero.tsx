@@ -1,5 +1,8 @@
 import { PublicMarketingHero } from "@/components/public/PublicMarketingHero";
-import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import {
+  SPONSOR_KRD_ACCENT_COLOR,
+  SPONSOR_KRD_ACCENT_GRADIENT,
+} from "@/lib/sponsor-krd-theme";
 
 export function MarketingPageHero({
   eyebrow,
@@ -14,7 +17,7 @@ export function MarketingPageHero({
 }) {
   return (
     <PublicMarketingHero
-      accentColor={MULTITREE_ACCENT_COLOR}
+      accentColor={SPONSOR_KRD_ACCENT_COLOR}
       eyebrow={eyebrow}
       title={title}
       description={description}
@@ -22,7 +25,8 @@ export function MarketingPageHero({
         action
           ? {
               ...action,
-              color: MULTITREE_ACCENT_COLOR,
+              color: SPONSOR_KRD_ACCENT_COLOR,
+              background: SPONSOR_KRD_ACCENT_GRADIENT,
               ink: "#111827",
             }
           : undefined

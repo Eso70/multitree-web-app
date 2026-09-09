@@ -16,11 +16,7 @@ import { RedisService } from '../redis/redis.service';
 import { rootPublicLinktreeCacheKeys } from '../common/root-public-cache';
 import { CreateLinktreeDto } from '../linktrees/dto/create-linktree.dto';
 import { LinktreesService } from '../linktrees/linktrees.service';
-import { SaveMiniWebsiteDto } from '../mini-websites/dto/mini-website.dto';
-import { MiniWebsitesService } from '../mini-websites/mini-websites.service';
 import { CreatorAccountService } from './creator-account.service';
-
-type PageType = 'linktree' | 'mini_website';
 
 @Injectable()
 export class CreatorContentService {
@@ -30,7 +26,6 @@ export class CreatorContentService {
     private readonly database: DatabaseService,
     private readonly accounts: CreatorAccountService,
     private readonly linktrees: LinktreesService,
-    private readonly miniWebsites: MiniWebsitesService,
     private readonly analytics: UnifiedAnalyticsService,
     private readonly analyticsReads: AnalyticsReadService,
     private readonly tiktokPixels: TikTokPixelConfigService,
@@ -49,7 +44,7 @@ export class CreatorContentService {
         favicon: null,
         accentColor: profile.accent_color,
       },
-      publicPathPrefixes: { linktree: '/linktree', miniWebsite: '/bio' },
+      publicPathPrefixes: { linktree: '/linktree' },
     };
   }
 
@@ -66,26 +61,17 @@ export class CreatorContentService {
   }
 
   async createLinktree(data: CreateLinktreeDto, businessId: string) {
-    const reservationToken = await this.reservePageType(businessId, 'linktree');
+    const reservationToken = await this.reservePage(businessId);
     try {
       const created = await this.linktrees.createLinktree(
         { ...data, is_default: false },
         businessId,
         'platform',
       );
-      await this.attachPage(
-        businessId,
-        'linktree',
-        created.id,
-        reservationToken,
-      );
+      await this.attachPage(businessId, created.id, reservationToken);
       return created;
     } catch (error) {
-      await this.releaseEmptyReservation(
-        businessId,
-        'linktree',
-        reservationToken,
-      );
+      await this.releaseEmptyReservation(businessId, reservationToken);
       rethrowRootSlugConflict(error);
     }
   }
@@ -95,7 +81,7 @@ export class CreatorContentService {
     data: CreateLinktreeDto,
     businessId: string,
   ) {
-    await this.assertWritableOwner(businessId, 'linktree', id);
+    await this.assertWritableOwner(businessId, id);
     let updated;
     try {
       updated = await this.linktrees.updateLinktree(
@@ -129,7 +115,7 @@ export class CreatorContentService {
     status: 'active' | 'inactive',
     businessId: string,
   ) {
-    await this.assertWritableOwner(businessId, 'linktree', id);
+    await this.assertWritableOwner(businessId, id);
     const updated = await this.linktrees.toggleStatus(id, businessId, status);
     await this.invalidateRootPage(updated?.uid, updated?.seo_name);
     return updated;
@@ -213,65 +199,16 @@ export class CreatorContentService {
     return this.tiktokPixels.testEventsApi(businessId, input, context);
   }
 
-  listMiniWebsites(businessId: string) {
-    return this.miniWebsites.list(businessId);
-  }
-
-  getMiniWebsite(id: string, businessId: string) {
-    return this.miniWebsites.get(id, businessId);
-  }
-
-  async createMiniWebsite(data: SaveMiniWebsiteDto, businessId: string) {
-    const reservationToken = await this.reservePageType(
-      businessId,
-      'mini_website',
-    );
-    try {
-      const created = await this.miniWebsites.create(
-        data,
-        businessId,
-        'platform',
-      );
-      await this.attachPage(
-        businessId,
-        'mini_website',
-        created.id,
-        reservationToken,
-      );
-      return created;
-    } catch (error) {
-      await this.releaseEmptyReservation(
-        businessId,
-        'mini_website',
-        reservationToken,
-      );
-      rethrowRootSlugConflict(error);
-    }
-  }
-
-  async updateMiniWebsite(
-    id: string,
-    data: SaveMiniWebsiteDto,
-    businessId: string,
-  ) {
-    await this.assertWritableOwner(businessId, 'mini_website', id);
-    try {
-      return await this.miniWebsites.update(id, data, businessId, 'platform');
-    } catch (error) {
-      rethrowRootSlugConflict(error);
-    }
-  }
-
-  async slugAvailable(pageType: PageType, slug: string, excludeId?: string) {
+  async slugAvailable(slug: string, excludeId?: string) {
     const normalized = slug.trim().toLowerCase();
     if (!/^[a-z0-9][a-z0-9-]*$/.test(normalized)) return false;
     const result = await this.database.query<{ available: boolean }>(
       `SELECT NOT EXISTS (
          SELECT 1 FROM root_public_slugs
-          WHERE page_type = $1 AND slug = $2
-            AND ($3::uuid IS NULL OR COALESCE(linktree_id, mini_website_id) <> $3::uuid)
+          WHERE page_type = 'linktree' AND slug = $1
+            AND ($2::uuid IS NULL OR linktree_id <> $2::uuid)
        ) AS available`,
-      [pageType, normalized, excludeId || null],
+      [normalized, excludeId || null],
     );
     return result.rows[0]?.available ?? false;
   }
@@ -280,13 +217,12 @@ export class CreatorContentService {
     return this.linktrees.isNameAvailable(businessId, name, excludeId);
   }
 
-  async analyticsSummary(
-    businessId: string,
-    pageType: PageType,
-    pageId?: string,
-  ) {
-    if (pageId) await this.assertOwner(businessId, pageType, pageId);
-    return this.analytics.getSummary(businessId, { pageType, pageId });
+  async analyticsSummary(businessId: string, pageId?: string) {
+    if (pageId) await this.assertOwner(businessId, pageId);
+    return this.analytics.getSummary(businessId, {
+      pageType: 'linktree',
+      pageId,
+    });
   }
 
   /**
@@ -298,50 +234,42 @@ export class CreatorContentService {
    * session's workspace before the read, and `getActions` is itself scoped to
    * that business id.
    */
-  async pageActions(businessId: string, pageType: PageType, pageId: string) {
-    await this.assertOwner(businessId, pageType, pageId);
+  async pageActions(businessId: string, pageId: string) {
+    await this.assertOwner(businessId, pageId);
     return this.analyticsReads.getActions(businessId, { pageId });
   }
 
-  async clearAnalytics(
-    businessId: string,
-    pageType: PageType,
-    pageId?: string,
-  ) {
+  async clearAnalytics(businessId: string, pageId?: string) {
     if (pageId) {
-      await this.assertWritableOwner(businessId, pageType, pageId);
+      await this.assertWritableOwner(businessId, pageId);
       await this.analytics.clear(businessId, pageId);
       return;
     }
     await this.assertCanWrite(businessId);
-    const pages =
-      pageType === 'linktree'
-        ? await this.linktrees.getAllLinktrees(businessId)
-        : await this.miniWebsites.list(businessId);
+    const pages = await this.linktrees.getAllLinktrees(businessId);
     for (const page of pages) await this.analytics.clear(businessId, page.id);
   }
 
-  private async reservePageType(businessId: string, pageType: PageType) {
+  private async reservePage(businessId: string) {
     await this.assertCanWrite(businessId);
     const reservationToken = randomUUID();
     const result = await this.database.query<{
-      page_type: PageType;
+      page_type: 'linktree';
       linktree_id: string | null;
-      mini_website_id: string | null;
     }>(
       `UPDATE creator_accounts
-          SET page_type = $2,
-              page_reservation_token = $3,
+          SET page_type = 'linktree',
+              page_reservation_token = $2,
               page_reservation_expires_at = NOW() + interval '5 minutes'
         WHERE business_id = $1
-          AND linktree_id IS NULL AND mini_website_id IS NULL
+          AND linktree_id IS NULL
           AND (page_type IS NULL OR page_reservation_expires_at < NOW())
-      RETURNING page_type, linktree_id, mini_website_id`,
-      [businessId, pageType, reservationToken],
+      RETURNING page_type, linktree_id`,
+      [businessId, reservationToken],
     );
     if (!result.rows[0]) {
       throw new ConflictException(
-        'A Creator account can own only one Linktree or one mini website',
+        'A Creator account can own only one Linktree',
       );
     }
     return reservationToken;
@@ -349,64 +277,52 @@ export class CreatorContentService {
 
   private async attachPage(
     businessId: string,
-    pageType: PageType,
     pageId: string,
     reservationToken: string,
   ) {
-    const column = pageType === 'linktree' ? 'linktree_id' : 'mini_website_id';
     await this.database.query(
       `UPDATE creator_accounts
-          SET ${column} = $2,
+          SET linktree_id = $2,
               trial_started_at = COALESCE(trial_started_at, NOW()),
               trial_ends_at = COALESCE(trial_ends_at, NOW() + make_interval(days => trial_days)),
               grace_ends_at = COALESCE(grace_ends_at, NOW() + make_interval(days => trial_days + 3)),
               page_reservation_token = NULL,
               page_reservation_expires_at = NULL
-        WHERE business_id = $1 AND page_type = $3
-          AND page_reservation_token = $4`,
-      [businessId, pageId, pageType, reservationToken],
+        WHERE business_id = $1 AND page_type = 'linktree'
+          AND page_reservation_token = $3`,
+      [businessId, pageId, reservationToken],
     );
   }
 
   private async releaseEmptyReservation(
     businessId: string,
-    pageType: PageType,
     reservationToken: string,
   ) {
     await this.database.query(
       `UPDATE creator_accounts
           SET page_type = NULL, page_reservation_token = NULL,
               page_reservation_expires_at = NULL
-        WHERE business_id = $1 AND page_type = $2
-          AND page_reservation_token = $3
-          AND linktree_id IS NULL AND mini_website_id IS NULL`,
-      [businessId, pageType, reservationToken],
+        WHERE business_id = $1 AND page_type = 'linktree'
+          AND page_reservation_token = $2
+          AND linktree_id IS NULL`,
+      [businessId, reservationToken],
     );
   }
 
-  private async assertOwner(
-    businessId: string,
-    pageType: PageType,
-    pageId: string,
-  ) {
-    const column = pageType === 'linktree' ? 'linktree_id' : 'mini_website_id';
+  private async assertOwner(businessId: string, pageId: string) {
     const result = await this.database.query<{ found: boolean }>(
       `SELECT EXISTS (
          SELECT 1 FROM creator_accounts
-          WHERE business_id = $1 AND page_type = $2 AND ${column} = $3
+          WHERE business_id = $1 AND page_type = 'linktree' AND linktree_id = $2
        ) AS found`,
-      [businessId, pageType, pageId],
+      [businessId, pageId],
     );
     if (!result.rows[0]?.found) throw new NotFoundException('Page not found');
   }
 
-  private async assertWritableOwner(
-    businessId: string,
-    pageType: PageType,
-    pageId: string,
-  ) {
+  private async assertWritableOwner(businessId: string, pageId: string) {
     await this.assertCanWrite(businessId);
-    await this.assertOwner(businessId, pageType, pageId);
+    await this.assertOwner(businessId, pageId);
   }
 
   private async assertCanWrite(businessId: string) {

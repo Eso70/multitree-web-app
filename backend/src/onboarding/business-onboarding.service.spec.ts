@@ -115,8 +115,8 @@ describe('BusinessOnboardingService invitations', () => {
         rows: [
           {
             id: 'admin-1',
-            username: 'multitree-admin',
-            name: 'MultiTree',
+            username: 'sponsor-krd-admin',
+            name: 'Sponsor.krd',
             email: 'esma3ildilshad04x@gmail.com',
           },
         ],
@@ -257,9 +257,9 @@ describe('BusinessOnboardingService invitations', () => {
                 invitation_id: 'invitation-1',
                 user_id: 'user-1',
                 owner_email: 'owner@example.com',
-                business_name: 'Multi Tree',
+                business_name: 'Acme Studio',
                 phone: '7501234567',
-                requested_subdomain: 'multi-tree',
+                requested_subdomain: 'acme-studio',
                 logo: null,
                 favicon: null,
                 default_avatar: null,
@@ -285,11 +285,11 @@ describe('BusinessOnboardingService invitations', () => {
             rows: [
               {
                 id: 'business-1',
-                username: 'multi-tree',
-                name: 'Multi Tree',
+                username: 'acme-studio',
+                name: 'Acme Studio',
                 phone: '7501234567',
                 email: 'owner@example.com',
-                subdomain: 'multi-tree',
+                subdomain: 'acme-studio',
               },
             ],
           };
@@ -617,8 +617,8 @@ describe('BusinessOnboardingService invitations', () => {
           rows: [
             {
               id: 'admin-1',
-              username: 'multitree-admin',
-              name: 'MultiTree',
+              username: 'sponsor-krd-admin',
+              name: 'Sponsor.krd',
             },
           ],
         }),
@@ -657,7 +657,7 @@ describe('BusinessOnboardingService invitations', () => {
           return '/ops-9c741e5b2f8a4d63b017ce95';
         }
         if (key === 'APP_BASE_URL') return 'http://lvh.me:3011';
-        if (key === 'SMTP_USER') return 'multitree-sender@example.test';
+        if (key === 'SMTP_USER') return 'sponsor-krd-sender@example.test';
         return fallback;
       }),
       getOrThrow: jest.fn().mockReturnValue('test-session-secret'),
@@ -689,8 +689,8 @@ describe('BusinessOnboardingService invitations', () => {
     );
     expect(sessions.createPlatformAdminSession).toHaveBeenCalledWith({
       platformAdminId: 'admin-1',
-      username: 'multitree-admin',
-      name: 'MultiTree',
+      username: 'sponsor-krd-admin',
+      name: 'Sponsor.krd',
       ipAddress: '127.0.0.1',
       userAgent: 'test-agent',
       rememberDevice: false,

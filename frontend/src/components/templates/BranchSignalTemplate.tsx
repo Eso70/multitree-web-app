@@ -10,7 +10,7 @@ import {
   platformBackground,
   platformBorder,
 } from "@/lib/brand/platform-brands";
-import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import { SPONSOR_KRD_ACCENT_COLOR } from "@/lib/sponsor-krd-theme";
 import {
   deriveTextColor,
   deriveTextSecondaryColor,
@@ -184,7 +184,7 @@ export const BranchSignalTemplate = memo(function BranchSignalTemplate({
     const value = linktree.business_website_color;
     return isWebsiteColor(value)
       ? parseWebsiteColor(value).primary
-      : MULTITREE_ACCENT_COLOR;
+      : SPONSOR_KRD_ACCENT_COLOR;
   }, [linktree.business_website_color]);
   const isPreview = useMemo(
     () => linktree.id.includes("preview"),

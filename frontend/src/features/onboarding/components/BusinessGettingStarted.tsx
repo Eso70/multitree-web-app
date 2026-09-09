@@ -12,7 +12,7 @@ import { BusinessOwnerIdentityFields } from "@/features/link-editor/components/B
 import { ColorGradientModal } from "@/features/link-editor/ColorGradientModal";
 import { TikTokConfigModal } from "@/features/link-editor/TikTokConfigModal";
 import { modalInputClass } from "@/features/link-editor/modal-input-styles";
-import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import { SPONSOR_KRD_ACCENT_COLOR } from "@/lib/sponsor-krd-theme";
 import { MotionSpinner } from "@/components/motion/MotionPrimitives";
 import { SkeletonBusinessInfoForm } from "@/components/shared/SkeletonModalLayouts";
 
@@ -196,7 +196,7 @@ export function BusinessGettingStarted(_props: { initialStep?: number }) {
           defaultAvatar: data.defaultAvatar.startsWith("/images/upload/")
             ? data.defaultAvatar
             : undefined,
-          websiteColor: data.websiteColor || MULTITREE_ACCENT_COLOR,
+          websiteColor: data.websiteColor || SPONSOR_KRD_ACCENT_COLOR,
           tiktokConfigs: data.tiktokConfigs,
         },
       });
@@ -246,7 +246,7 @@ export function BusinessGettingStarted(_props: { initialStep?: number }) {
         createBusinessStyle
         busy={busy}
         onClose={() => undefined}
-        title="بەخێربێیت بۆ MultiTree"
+        title="بەخێربێیت بۆ Sponsor.krd"
         description="زانیارییەکانی بزنس و براندەکەت پێداچوونەوە بکە"
         headerAction={
           <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500 dark:bg-white/5 dark:text-slate-300">
@@ -259,7 +259,7 @@ export function BusinessGettingStarted(_props: { initialStep?: number }) {
             type="button"
             disabled={busy || !valid}
             onClick={() => void saveAndComplete()}
-            className="ml-auto flex h-11 min-w-40 items-center justify-center gap-2 rounded-xl bg-[var(--multitree-accent)] px-5 text-sm font-bold text-[var(--multitree-accent-ink)] disabled:opacity-50"
+            className="ml-auto flex h-11 min-w-40 items-center justify-center gap-2 rounded-xl bg-[var(--sponsor-krd-accent)] px-5 text-sm font-bold text-[var(--sponsor-krd-accent-ink)] disabled:opacity-50"
           >
             {busy ? (
               <MotionSpinner>
@@ -392,7 +392,7 @@ export function BusinessGettingStarted(_props: { initialStep?: number }) {
         value={data.websiteColor}
         onChange={(websiteColor) => setData({ ...data, websiteColor })}
         onClose={() => setShowColorPicker(false)}
-        solidFallback={MULTITREE_ACCENT_COLOR}
+        solidFallback={SPONSOR_KRD_ACCENT_COLOR}
         gradientFallback="#22c55e"
       />
       <TikTokConfigModal

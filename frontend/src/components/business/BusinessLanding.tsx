@@ -15,10 +15,6 @@ import {
   LayoutGrid,
   SendHorizontal,
 } from "lucide-react";
-import {
-  BusinessTrustedBy,
-  type TrustedPartner,
-} from "@/components/business/BusinessTrustedBy";
 import { BusinessAbout } from "@/components/business/BusinessAbout";
 import { BusinessDigitalPresenceShowcase } from "@/components/business/BusinessDigitalPresenceShowcase";
 import { BusinessMobileShowcase } from "@/components/business/BusinessMobileShowcase";
@@ -31,7 +27,8 @@ import {
   BUSINESS_LANDING_SECTION_HREFS,
   BUSINESS_LANDING_SECTION_IDS,
 } from "@/components/business/business-landing-sections";
-import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import { SPONSOR_KRD_ACCENT_COLOR } from "@/lib/sponsor-krd-theme";
+import { SPONSOR_KRD_LOGO } from "@/lib/brand/brand-assets";
 import { parseWebsiteColor } from "@/lib/utils/parse-website-color";
 
 interface BusinessData {
@@ -49,9 +46,8 @@ interface BusinessData {
   whatsapp_enabled?: boolean | null;
   /** True only when this business has a live advertising page; see the public business endpoint. */
   advertising_enabled?: boolean | null;
-  /** True when the plan includes removing the MultiTree badge. */
+  /** True when the plan includes removing the SponsorKrd badge. */
   branding_removed?: boolean | null;
-  trusted_partners?: TrustedPartner[] | null;
 }
 
 interface LinktreeItem {
@@ -194,7 +190,7 @@ export function BusinessWorkspaceSection({
     const isGreeting = /\b(hello|hi|hey)\b/.test(normalized) || normalized.includes("سڵاو");
     const reply = isGreeting
       ? "سڵاو! 👋"
-      : "بۆ لینکـتری یان ماڵپەڕی بچووک، تکایە لەگەڵ خاوەنی بیزنسەکە قسە بکە.";
+      : "بۆ Linktree، تکایە لەگەڵ خاوەنی بیزنسەکە قسە بکە.";
     setAssistantMessages((current) =>
       [
         ...current,
@@ -255,15 +251,15 @@ export function BusinessWorkspaceSection({
         <aside className="hidden w-[13.5rem] shrink-0 flex-col border-r border-black/10 bg-transparent dark:border-white/10 sm:flex lg:w-60">
           <div className="flex h-12 items-center gap-2 border-b border-black/10 px-4 dark:border-white/10">
             <Image
-              src="/images/Logo.jpg"
-              alt="MultiTree"
+              src={SPONSOR_KRD_LOGO}
+              alt="Sponsor.krd"
               width={24}
               height={24}
               className="h-6 w-6 rounded-lg object-cover shadow-sm ring-1 ring-black/10 dark:ring-white/10"
               unoptimized
             />
             <div className="min-w-0">
-              <p className="truncate text-xs font-semibold">MultiTree AI</p>
+              <p className="truncate text-xs font-semibold">Sponsor.krd AI</p>
               <p className="mt-0.5 text-[0.6rem] text-black/38 dark:text-white/35">
                 وەڵامی خێرا
               </p>
@@ -288,7 +284,7 @@ export function BusinessWorkspaceSection({
             className="border-t border-black/10 p-3 dark:border-white/10"
           >
             <label htmlFor="business-workspace-assistant" className="sr-only">
-              نامە بۆ MultiTree Agent
+              نامە بۆ Sponsor.krd Agent
             </label>
             <div className="flex items-end gap-2 rounded-xl border border-black/10 bg-transparent p-1.5 dark:border-white/10">
               <input
@@ -383,7 +379,7 @@ export function BusinessLanding({
   linktrees: LinktreeItem[];
 }) {
   const accentColor = parseWebsiteColor(
-    business.website_color || MULTITREE_ACCENT_COLOR,
+    business.website_color || SPONSOR_KRD_ACCENT_COLOR,
   ).primary;
   const phone = useMemo(
     () => normalizePhone(business.footer_phone),
@@ -447,10 +443,6 @@ export function BusinessLanding({
 
           <BusinessWorkspaceSection linktrees={linktrees} />
 
-          <div className="relative px-5 sm:px-8">
-            <BusinessTrustedBy partners={business.trusted_partners || []} />
-          </div>
-
         </div>
 
         <BusinessAbout accentColor={accentColor} />
@@ -461,9 +453,6 @@ export function BusinessLanding({
         />
 
         <BusinessMobileShowcase
-          businessName={business.name}
-          businessLogo={business.logo || business.default_avatar}
-          phoneNumber={business.footer_phone}
           accentColor={accentColor}
         />
     </BusinessPublicSiteShell>

@@ -8,7 +8,7 @@ export interface CreatorAccountView {
   status: string;
   phone_last_four: string | null;
   phone_verified_at: string | null;
-  page_type: "linktree" | "mini_website" | null;
+  page_type: "linktree" | null;
   page_slug: string | null;
   trial_days: number;
   trial_started_at: string | null;
@@ -36,5 +36,5 @@ export interface CreatorContext {
     favicon: string | null;
     accentColor: string | null;
   };
-  publicPathPrefixes: { linktree: string; miniWebsite: string };
+  publicPathPrefixes: { linktree: string };
 }

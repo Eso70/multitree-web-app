@@ -43,12 +43,7 @@ export function CreatorAccountSettingsPage({
   account: CreatorAccountView;
 }) {
   const [tab, setTab] = useState<SettingsTab>("account");
-  const pageLabel =
-    account.page_type === "linktree"
-      ? "لینکتری"
-      : account.page_type === "mini_website"
-        ? "مینی وێبسایت"
-        : "دروست نەکراوە";
+  const pageLabel = account.page_type === "linktree" ? "لینکتری" : "دروست نەکراوە";
 
   return (
     <section
@@ -88,7 +83,7 @@ export function CreatorAccountSettingsPage({
         tabs={tabs}
         value={tab}
         onChange={setTab}
-        accent="var(--multitree-accent)"
+        accent="var(--sponsor-krd-accent)"
       />
 
       {tab === "tiktok" ? (

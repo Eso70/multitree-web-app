@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Check, Globe2, Link2 } from "lucide-react";
+import { ArrowLeft, Check, Link2 } from "lucide-react";
 import { MARKETING_PRODUCTS } from "./marketing-content";
 import { MarketingSectionHeading } from "./MarketingSectionHeading";
 import { PublicSection } from "@/components/public/PublicSection";
@@ -8,13 +8,13 @@ export function ProductChoiceSection() {
   return (
     <PublicSection id="products">
         <MarketingSectionHeading
-          eyebrow="دوو ڕێگا، یەک ئامانج"
-          title="ئەو پەڕەیە هەڵبژێرە کە بۆ تۆ گونجاوە"
-          description="بۆ کۆکردنەوەی بەستەرەکان Linktree هەڵبژێرە؛ بۆ ناساندنێکی فراوانتر Mini Website"
+          eyebrow="یەک بەستەر، هەموو کەناڵەکان"
+          title="Linktree ـەکەت بە شێوەی خۆت دروست بکە"
+          description="بەستەر و کردارە گرنگەکانت لە پەڕەیەکی خێرا و جوان کۆبکەرەوە"
         />
-        <div className="mt-12 grid gap-5 lg:grid-cols-2">
+        <div className="mx-auto mt-12 grid max-w-3xl gap-5">
           {MARKETING_PRODUCTS.map((product) => {
-            const Icon = product.id === "linktree" ? Link2 : Globe2;
+            const Icon = Link2;
             return (
               <article
                 key={product.id}
@@ -22,7 +22,7 @@ export function ProductChoiceSection() {
               >
                 <div
                   aria-hidden="true"
-                  className="absolute -left-16 -top-16 h-44 w-44 rounded-full bg-[var(--multitree-accent)]/10 blur-2xl"
+                  className="absolute -left-16 -top-16 h-44 w-44 rounded-full bg-[var(--sponsor-krd-accent)]/10 blur-2xl"
                 />
                 <div className="relative">
                   <span className="grid h-12 w-12 place-items-center rounded-2xl bg-black text-white dark:bg-white dark:text-black">
@@ -41,7 +41,7 @@ export function ProductChoiceSection() {
                         key={bullet}
                         className="flex items-center gap-2 text-sm font-bold text-black/65 dark:text-white/60"
                       >
-                        <Check className="h-4 w-4 text-[var(--multitree-accent)]" />
+                        <Check className="h-4 w-4 text-[var(--sponsor-krd-accent)]" />
                         {bullet}
                       </li>
                     ))}

@@ -1,13 +1,13 @@
-# MultiTree
+# Sponsor.krd
 
-MultiTree is a production-ready, multi-tenant platform for creating branded Linktree pages and mini-websites on custom business subdomains.
+Sponsor.krd is a production-ready, multi-tenant platform for creating branded Linktree pages on custom business subdomains. Its canonical production domain is `sponsor.krd`.
 
 It includes:
 
 - Multi-tenant architecture
 - Business dashboard
 - Platform administration console
-- Public Linktree and mini-website builder
+- Public Linktree builder
 - Analytics and conversion tracking
 - Role, permission, and access management
 - Subscription, entitlement, and quota management
@@ -103,7 +103,7 @@ The detailed project documentation lives in the `docs/` directory.
 | Document                                  | Description                                                                                |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `AGENTS.md`                               | AI development rules, engineering principles, project-wide conventions                     |
-| `docs/architecture.md`                    | MultiTree architecture, module boundaries, storage, scaling, repository structure          |
+| `docs/architecture.md`                    | Sponsor.krd architecture, module boundaries, storage, scaling, repository structure          |
 | `docs/security.md`                        | Authentication, authorization, encryption, rate limiting, uploads, webhooks, audit logging |
 | `docs/frontend.md`                        | Frontend architecture, routing, implemented features, dashboard, public pages              |
 | `docs/backend.md`                         | Backend architecture, analytics, uploads, environment configuration                        |
@@ -115,7 +115,7 @@ The detailed project documentation lives in the `docs/` directory.
 | `docs/coding-standards.md`                | Repository-specific coding conventions                                                     |
 | `docs/ui-guidelines.md`                   | Design system, reusable components, UI consistency rules                                   |
 | `docs/tracking.md`                        | TikTok pixel and Events API scope, the shared page tracker, event deduplication            |
-| `docs/future-dual-domain-architecture.md` | Planned separation of the platform domain from the business tenant domain                  |
+| `docs/production-domain-architecture.md` | Canonical Sponsor.krd production and tenant-domain architecture                            |
 
 ---
 

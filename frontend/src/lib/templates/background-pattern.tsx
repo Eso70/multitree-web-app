@@ -10,7 +10,7 @@ import {
  * The background-pattern catalogue and its renderer.
  *
  * Kept out of any one feature because both surfaces draw the same patterns:
- * the mini website reads it through `mini-website-background-styles`, and the
+ * all public-page renderers read the same canonical pattern definitions, and the
  * linktree templates read it through `TemplateViewportLayout`. The picker
  * modal (`components/shared/BackgroundPatternModal`) renders these previews
  * too, so a pattern only has to be described once.

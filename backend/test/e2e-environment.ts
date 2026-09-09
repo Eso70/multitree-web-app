@@ -30,7 +30,7 @@ import * as dotenv from 'dotenv';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-const E2E_DATABASE = 'multitree_e2e';
+const E2E_DATABASE = 'sponsor_krd_e2e';
 const DISPOSABLE_DATABASE = /(?:^|[_-])(e2e|test)(?:[_-]|$)/i;
 
 process.env.ROOT_DOMAIN = 'localhost';

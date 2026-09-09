@@ -53,7 +53,7 @@ export class AuthService {
               COALESCE(branding.logo, '${BUSINESS_LOGO_PLACEHOLDER}') AS logo,
               COALESCE(branding.favicon, '${BUSINESS_FAVICON_PLACEHOLDER}') AS favicon,
               COALESCE(branding.default_avatar, '${DEFAULT_AVATAR}') AS "defaultAvatar",
-              COALESCE(branding.website_color, '#b6f20d') AS "websiteColor",
+              COALESCE(branding.website_color, 'gradient:to-r:#25F4EE:#FE2C55') AS "websiteColor",
               defaults.footer_text AS "footerText",
               defaults.footer_phone AS "footerPhone",
               COALESCE((
@@ -141,7 +141,7 @@ export class AuthService {
          VALUES ($1, COALESCE($2, '${BUSINESS_LOGO_PLACEHOLDER}'),
                  COALESCE($3, '${BUSINESS_FAVICON_PLACEHOLDER}'),
                  COALESCE($4, '${DEFAULT_AVATAR}'),
-                 COALESCE($5, '#b6f20d'))
+                 COALESCE($5, 'gradient:to-r:#25F4EE:#FE2C55'))
          ON CONFLICT (business_id) DO UPDATE SET
            logo = COALESCE($2, business_branding.logo),
            favicon = COALESCE($3, business_branding.favicon),
@@ -563,8 +563,11 @@ export class AuthService {
         ? this.stringValue(body.default_avatar).trim() || DEFAULT_AVATAR
         : currentBranding?.default_avatar || DEFAULT_AVATAR;
       const websiteColor = Object.hasOwn(body, 'website_color')
-        ? this.stringValue(body.website_color, '#b6f20d').trim()
-        : currentBranding?.website_color || '#b6f20d';
+        ? this.stringValue(
+            body.website_color,
+            'gradient:to-r:#25F4EE:#FE2C55',
+          ).trim()
+        : currentBranding?.website_color || 'gradient:to-r:#25F4EE:#FE2C55';
       if (
         !/^#[0-9a-f]{6}$/i.test(websiteColor) &&
         !websiteColor.startsWith('gradient:')

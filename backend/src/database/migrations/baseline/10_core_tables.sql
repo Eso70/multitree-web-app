@@ -3,7 +3,7 @@
 --
 -- Core tables: identity, authorization, billing, linktrees and operations.
 --
--- Part of the MultiTree baseline. `src/database/baseline.ts` lists the parts
+-- Part of the Sponsor.krd baseline. `src/database/baseline.ts` lists the parts
 -- and the order they are applied in; they are one schema split for reading,
 -- not independent scripts.
 --
@@ -31,7 +31,7 @@ CREATE TABLE public.access_rules (
     CONSTRAINT access_rules_check1 CHECK ((((scope)::text <> 'public_linktree'::text) OR (linktree_id IS NOT NULL))),
     CONSTRAINT access_rules_effect_check CHECK (((effect)::text = ANY (ARRAY[('deny'::character varying)::text, ('allow'::character varying)::text]))),
     CONSTRAINT access_rules_match_count_check CHECK ((match_count >= 0)),
-    CONSTRAINT access_rules_scope_check CHECK (((scope)::text = ANY (ARRAY[('multitree'::character varying)::text, ('platform_admin'::character varying)::text, ('business'::character varying)::text, ('business_admin'::character varying)::text, ('public_linktree'::character varying)::text, ('business_api'::character varying)::text]))),
+    CONSTRAINT access_rules_scope_check CHECK (((scope)::text = ANY (ARRAY[('sponsor_krd'::character varying)::text, ('platform_admin'::character varying)::text, ('business'::character varying)::text, ('business_admin'::character varying)::text, ('public_linktree'::character varying)::text, ('business_api'::character varying)::text]))),
     CONSTRAINT access_rules_status_check CHECK (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('inactive'::character varying)::text])))
 );
 
@@ -430,7 +430,7 @@ CREATE TABLE public.http_request_events (
     user_agent text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     ingestion_key uuid,
-    CONSTRAINT chk_http_request_actor CHECK (((actor_type)::text = ANY (ARRAY[('anonymous'::character varying)::text, ('business'::character varying)::text, ('creator'::character varying)::text, ('platform-admin'::character varying)::text, ('multitree'::character varying)::text]))),
+    CONSTRAINT chk_http_request_actor CHECK (((actor_type)::text = ANY (ARRAY[('anonymous'::character varying)::text, ('business'::character varying)::text, ('creator'::character varying)::text, ('platform-admin'::character varying)::text, ('sponsor_krd'::character varying)::text]))),
     CONSTRAINT chk_http_request_duration CHECK (((duration_ms IS NULL) OR (duration_ms >= 0))),
     CONSTRAINT chk_http_request_method CHECK (((method)::text ~ '^[A-Z]{1,10}$'::text)),
     CONSTRAINT chk_http_request_source CHECK (((source)::text = ANY (ARRAY[('frontend'::character varying)::text, ('backend'::character varying)::text]))),
@@ -595,7 +595,7 @@ CREATE TABLE public.security_audit_events (
     user_agent text,
     metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT chk_security_actor_type CHECK (((actor_type)::text = ANY (ARRAY[('anonymous'::character varying)::text, ('business'::character varying)::text, ('creator'::character varying)::text, ('platform-admin'::character varying)::text, ('multitree'::character varying)::text]))),
+    CONSTRAINT chk_security_actor_type CHECK (((actor_type)::text = ANY (ARRAY[('anonymous'::character varying)::text, ('business'::character varying)::text, ('creator'::character varying)::text, ('platform-admin'::character varying)::text, ('sponsor_krd'::character varying)::text]))),
     CONSTRAINT chk_security_outcome CHECK (((outcome)::text = ANY (ARRAY[('success'::character varying)::text, ('failure'::character varying)::text, ('denied'::character varying)::text])))
 );
 
@@ -643,13 +643,13 @@ CREATE TABLE public.platform_admin_sessions (
 CREATE TABLE public.platform_admins (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     username character varying(100) NOT NULL,
-    name character varying(150) DEFAULT 'MultiTree'::character varying NOT NULL,
+    name character varying(150) DEFAULT 'Sponsor.krd'::character varying NOT NULL,
     email character varying(254),
     phone character varying(32),
     logo text DEFAULT '/images/Logo.jpg'::text,
     avatar text DEFAULT '/images/DefaultAvatar.png'::text,
     favicon text DEFAULT '/favicon.ico'::text,
-    accent_color character varying(100) DEFAULT '#b6f20d'::character varying NOT NULL,
+    accent_color character varying(100) DEFAULT 'gradient:to-r:#25F4EE:#FE2C55'::character varying NOT NULL,
     accent_ink_color character varying(7) DEFAULT '#111827'::character varying NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
@@ -695,4 +695,3 @@ ALTER TABLE ONLY public.http_request_events ALTER COLUMN id SET DEFAULT nextval(
 --
 
 ALTER TABLE ONLY public.security_audit_events ALTER COLUMN id SET DEFAULT nextval('public.security_audit_events_id_seq'::regclass);
-

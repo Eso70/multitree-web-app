@@ -96,9 +96,9 @@ attributed across pages, but the genuine page-level click is not discarded.
 
 File: `backend/src/auth/access-rule-enforcement.service.ts`
 
-Public analytics sends Linktree or mini-website source UUIDs. Access-rule
+Public analytics sends Linktree source UUIDs. Access-rule
 resolution now matches `public_pages.id`, `source_linktree_id`, and
-`source_mini_website_id`, preserving business scoping for every accepted page
+`source_linktree_id`, preserving business scoping for every accepted page
 identifier.
 
 ### 7. Prevent shared proxy addresses from exhausting visitor limits — complete

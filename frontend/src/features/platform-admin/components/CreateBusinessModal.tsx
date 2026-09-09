@@ -14,7 +14,7 @@ import {
 import { Loader2, X } from "lucide-react";
 import { BusinessInfoStep } from "@/features/link-editor/components/BusinessInfoStep";
 import { debounce } from "@/lib/utils/debounce";
-import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import { SPONSOR_KRD_ACCENT_COLOR } from "@/lib/sponsor-krd-theme";
 import { useModalKeyboard } from "@/hooks/useModalKeyboard";
 import { useSubmissionLock } from "@/hooks/useSubmissionLock";
 import { buildSlugFromName } from "@/features/link-editor/modal-utils";
@@ -118,7 +118,7 @@ export const CreateBusinessModal = memo(function CreateBusinessModal({
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlanOption[]>([]);
   const [subscriptionPlansLoading, setSubscriptionPlansLoading] = useState(false);
   const [tiktokConfigs, setTikTokConfigs] = useState<Array<{ pixel_id: string; events_token: string }>>([]);
-  const [websiteColor, setWebsiteColor] = useState(MULTITREE_ACCENT_COLOR);
+  const [websiteColor, setWebsiteColor] = useState(SPONSOR_KRD_ACCENT_COLOR);
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -454,7 +454,7 @@ setUploadError(null);
           .map((item) => ({ pixel_id: item.pixel_id?.trim() || "", events_token: item.events_token?.trim() || "" }))
           .filter((item) => item.pixel_id),
       );
-      setWebsiteColor(editData.website_color || MULTITREE_ACCENT_COLOR);
+      setWebsiteColor(editData.website_color || SPONSOR_KRD_ACCENT_COLOR);
       setLogoFile(null);
       setLogoPreview(editData.logo || null);
       setFaviconFile(null);
@@ -469,7 +469,7 @@ setUploadError(null);
       setBusinessPhone("");
       setSubscriptionPlanId("");
       setTikTokConfigs([]);
-      setWebsiteColor(MULTITREE_ACCENT_COLOR);
+      setWebsiteColor(SPONSOR_KRD_ACCENT_COLOR);
       setLogoFile(null);
       setLogoPreview(null);
       setFaviconFile(null);
@@ -593,7 +593,7 @@ setUploadError(null);
           ...(uploadedLogoUrl ? { logo: uploadedLogoUrl } : {}),
           ...(uploadedFaviconUrl ? { favicon: uploadedFaviconUrl } : {}),
           ...(uploadedDefaultAvatarUrl ? { default_avatar: uploadedDefaultAvatarUrl } : {}),
-          website_color: websiteColor || MULTITREE_ACCENT_COLOR,
+          website_color: websiteColor || SPONSOR_KRD_ACCENT_COLOR,
           pixel_id: primaryTikTok?.pixel_id || undefined,
           events_token: primaryTikTok?.events_token || undefined,
           tiktok_configs: submittedTikTokConfigs,
@@ -609,8 +609,8 @@ setUploadError(null);
 
   useEffect(() => {
     if (!isOpen) return;
-    document.body.classList.add("multitree-theme-portals");
-    return () => document.body.classList.remove("multitree-theme-portals");
+    document.body.classList.add("sponsor-krd-theme-portals");
+    return () => document.body.classList.remove("sponsor-krd-theme-portals");
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -619,8 +619,8 @@ setUploadError(null);
     <div
       className="modal-ltr fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
       dir="ltr"
-      data-multitree-theme
-      style={{ "--theme-primary": "var(--multitree-accent)", "--theme-css": "var(--multitree-accent)" } as React.CSSProperties}
+      data-sponsor-krd-theme
+      style={{ "--theme-primary": "var(--sponsor-krd-accent)", "--theme-css": "var(--sponsor-krd-accent)" } as React.CSSProperties}
     >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-md   duration-300" onClick={onClose} />
 

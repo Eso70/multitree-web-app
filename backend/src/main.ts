@@ -99,14 +99,12 @@ async function bootstrap() {
       '/api/auth',
       '/api/linktrees',
       '/api/links',
-      '/api/mini-websites',
       '/api/analytics',
       '/api/v1',
       '/api/public/business',
       '/api/public/linktrees',
       '/api/public/linktree/',
       '/api/public/platform/linktree/',
-      '/api/public/mini-websites',
       '/api/public/analytics',
     ].some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
     if (

@@ -16,7 +16,7 @@ export const revalidate = 0;
 
 export async function generateMetadata(): Promise<Metadata> {
   const data = await loadAdvertisingPublicData();
-  if (!data) return { title: "Video Code | MultiTree" };
+  if (!data) return { title: "Video Code | Sponsor.krd" };
   const { business } = data;
   const brandImage = business.logo || business.default_avatar;
   const description = `فێرکاری دەرهێنانی کۆدی ڤیدیۆی سپارک ئادسی تیکتۆک لە ${business.name}`;

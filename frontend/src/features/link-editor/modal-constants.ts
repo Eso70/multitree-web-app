@@ -13,7 +13,7 @@ import {
 /**
  * Platforms offered by the link editor, in display order. Names, glyphs and
  * colors are resolved from the shared brand registry so the editor, the public
- * page and the mini website can never drift apart.
+ * every public page can never drift apart.
  */
 const EDITOR_PLATFORM_IDS = [
   "whatsapp",
@@ -61,7 +61,7 @@ export const COUNTRIES_SORTED = COUNTRY_DIAL_CODES_SORTED;
 // Background colors - Mix of gradients and solid colors
 export const BACKGROUND_COLORS = [
   { id: "default", name: "Default", gradient: "from-[#713f12] via-[#eab308] to-[#854d0e]", value: "#eab308", isSolid: false },
-  { id: "multitree-lime", name: "MultiTree Lime", gradient: "from-[#203000] via-[#b6f20d] to-[#ecffc2]", value: "#b6f20d", isSolid: false },
+  { id: "sponsor-krd-gradient", name: "Sponsor.krd TikTok", gradient: "from-[#25F4EE] to-[#FE2C55]", value: "gradient:to-r:#25F4EE:#FE2C55", isSolid: false },
   { id: "blue", name: "Blue", gradient: "from-blue-900 via-blue-800 to-blue-900", value: "#1e40af", isSolid: false },
   { id: "green", name: "Green", gradient: "from-green-900 via-green-800 to-green-900", value: "#166534", isSolid: false },
   { id: "orange", name: "Orange", gradient: "from-orange-900 via-orange-800 to-orange-900", value: "#c2410c", isSolid: false },

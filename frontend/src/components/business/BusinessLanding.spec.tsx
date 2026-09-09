@@ -42,17 +42,7 @@ describe("BusinessLanding", () => {
   it("renders only customer-safe published destinations and contact details", () => {
     const { container } = render(
       <BusinessLanding
-        business={{
-          ...business,
-          trusted_partners: [
-            {
-              id: "partner-1",
-              name: "Partner",
-              image: "/partner.png",
-              url: "https://partner.example",
-            },
-          ],
-        }}
+        business={business}
         linktrees={[
           {
             id: "links-1",
@@ -73,9 +63,6 @@ describe("BusinessLanding", () => {
     expect(
       screen.getByLabelText("پێشبینینی ناوەڕۆکی گشتی"),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "متمانەپێکراو لەلایەن" }),
-    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Previous template" })).toBeInTheDocument();
     const nextTemplateButton = screen.getByRole("button", { name: "Next template" });
     expect(nextTemplateButton).toBeInTheDocument();
@@ -90,10 +77,7 @@ describe("BusinessLanding", () => {
     fireEvent.click(nextTemplateButton);
     expect(activeTemplateStatus?.textContent).not.toBe(initialActiveTemplate);
     expect(container.querySelectorAll('[aria-label$="mobile preview"]')).toHaveLength(3);
-    expect(
-      container.querySelector('a[href="https://partner.example"]'),
-    ).toBeInTheDocument();
-    const assistantInput = screen.getByLabelText("نامە بۆ MultiTree Agent");
+    const assistantInput = screen.getByLabelText("نامە بۆ Sponsor.krd Agent");
     fireEvent.change(assistantInput, { target: { value: "hello" } });
     fireEvent.click(screen.getByRole("button", { name: "ناردنی نامە" }));
     expect(screen.getByText("سڵاو! 👋")).toBeInTheDocument();
@@ -101,7 +85,7 @@ describe("BusinessLanding", () => {
     fireEvent.click(screen.getByRole("button", { name: "ناردنی نامە" }));
     expect(
       screen.getByText(
-        "بۆ لینکـتری یان ماڵپەڕی بچووک، تکایە لەگەڵ خاوەنی بیزنسەکە قسە بکە.",
+        "بۆ Linktree، تکایە لەگەڵ خاوەنی بیزنسەکە قسە بکە.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -110,9 +94,6 @@ describe("BusinessLanding", () => {
     const linktreesTab = screen.getByRole("tab", { name: "لینکترییەکان" });
     expect(linktreesTab).toHaveAttribute("aria-selected", "true");
     expect(screen.getAllByRole("tab")).toHaveLength(1);
-    expect(
-      screen.queryByRole("tab", { name: "ماڵپەڕە بچووکەکان" }),
-    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("tab", { name: "Overview" }),
     ).not.toBeInTheDocument();
@@ -126,14 +107,8 @@ describe("BusinessLanding", () => {
       screen.getByRole("heading", { name: "لینکترییە بڵاوکراوەکان" }),
     ).toBeInTheDocument();
 
-    // Nothing to move to: the landing page no longer lists mini websites.
     fireEvent.keyDown(linktreesTab, { key: "ArrowRight" });
     expect(linktreesTab).toHaveAttribute("aria-selected", "true");
-    expect(
-      screen.queryByRole("heading", {
-        name: "ماڵپەڕە بچووکە بڵاوکراوەکان",
-      }),
-    ).not.toBeInTheDocument();
     const themeToggle = screen.getByRole("button", {
       name: "Toggle theme mode",
     });
@@ -155,9 +130,6 @@ describe("BusinessLanding", () => {
       }),
     ).not.toBeInTheDocument();
     expect(container.querySelector('a[href="/linktree/customer-links"]')).toBeInTheDocument();
-    expect(
-      container.querySelector('a[href="/bio/services"]'),
-    ).not.toBeInTheDocument();
     expect(container.querySelector('a[href="tel:+9647500000000"]')).toBeInTheDocument();
     expect(container.querySelector('a[href*="/business"]')).not.toBeInTheDocument();
     expect(container.querySelector('a[href*="login"]')).not.toBeInTheDocument();

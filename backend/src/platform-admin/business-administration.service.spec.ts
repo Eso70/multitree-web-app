@@ -187,7 +187,7 @@ describe('BusinessAdministrationService', () => {
     );
 
     await service.importBusinessLinktrees('business-1', {
-      format: 'multitree-linktrees',
+      format: 'sponsor-krd-linktrees',
       version: 1,
       linktrees: [
         {

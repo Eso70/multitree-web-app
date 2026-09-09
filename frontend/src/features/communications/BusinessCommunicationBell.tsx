@@ -58,7 +58,7 @@ export function BusinessCommunicationBell() {
       onDeleteAll={notifications.deleteAll}
       modalDescription="ئاگادارییەکانی پلاتفۆرم"
       modalAccentColor={businessTheme.primary}
-      multiTreeModalTheme={false}
+      sponsorKrdModalTheme={false}
       canOpenAction={canOpenBusinessNotification}
       onOpenAction={openAction}
       actionLabel={notificationActionLabel}

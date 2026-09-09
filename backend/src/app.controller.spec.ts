@@ -17,7 +17,7 @@ describe('AppController', () => {
   describe('root', () => {
     it('identifies the API without exposing the framework starter response', () => {
       expect(appController.getInfo()).toEqual({
-        name: 'MultiTree API',
+        name: 'Sponsor.krd API',
         status: 'ok',
       });
     });

@@ -18,7 +18,7 @@ describe('PublicService platform Linktree', () => {
       template_key: 'spectrum',
       template_config: {},
       whatsapp_modal_enabled: false,
-      footer_text: 'MultiTree',
+      footer_text: 'Sponsor.krd',
       footer_phone: null,
       footer_hidden: false,
       status: 'active',
@@ -51,11 +51,11 @@ describe('PublicService platform Linktree', () => {
     } as unknown as PublicPageAnalyticsService;
     const workspace = {
       getBranding: jest.fn().mockResolvedValue({
-        name: 'MultiTree',
+        name: 'Sponsor.krd',
         logo: '/logo.png',
         avatar: '/avatar.png',
         favicon: '/favicon.ico',
-        accentColor: '#b6f20d',
+        accentColor: '#25F4EE',
       }),
     } as unknown as PlatformContentWorkspaceService;
     const service = new PublicService(database, redis, analytics, workspace);

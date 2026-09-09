@@ -1,7 +1,9 @@
 import { existsSync } from "fs";
 import { basename, isAbsolute, join, relative, resolve } from "path";
 
-const LEGACY_MULTITREE_UPLOAD_SEGMENT = "system";
+const LEGACY_SYSTEM_UPLOAD_SEGMENT = "system";
+const LEGACY_MULTITREE_UPLOAD_SEGMENT = "multitree";
+const SPONSOR_KRD_UPLOAD_SEGMENT = "sponsor-krd";
 
 export function getUploadDirectories(
   workingDirectory = process.cwd(),
@@ -60,8 +62,17 @@ export function resolveUploadPath(
   }
 
   const candidatePaths = [pathArray];
-  if (pathArray[0] === LEGACY_MULTITREE_UPLOAD_SEGMENT) {
-    candidatePaths.push(["multitree", ...pathArray.slice(1)]);
+  if (
+    pathArray[0] === LEGACY_SYSTEM_UPLOAD_SEGMENT ||
+    pathArray[0] === LEGACY_MULTITREE_UPLOAD_SEGMENT
+  ) {
+    candidatePaths.push([SPONSOR_KRD_UPLOAD_SEGMENT, ...pathArray.slice(1)]);
+  }
+  if (pathArray[0] === SPONSOR_KRD_UPLOAD_SEGMENT) {
+    candidatePaths.push(
+      [LEGACY_MULTITREE_UPLOAD_SEGMENT, ...pathArray.slice(1)],
+      [LEGACY_SYSTEM_UPLOAD_SEGMENT, ...pathArray.slice(1)],
+    );
   }
   if (pathArray.length === 1) {
     candidatePaths.push(["_legacy", "flat", pathArray[0]]);

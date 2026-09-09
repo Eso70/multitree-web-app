@@ -37,7 +37,7 @@ const basePayload = {
   event: 'Lead',
   event_time: 1_767_225_600,
   event_id: 'e1b9c0de-0000-4000-8000-000000000001',
-  url: 'https://acme.example/bio/page',
+  url: 'https://acme.example/linktree/page',
   referrer: 'https://www.tiktok.com/',
   content_id: 'action-1',
   content_ids: ['action-1'],
@@ -122,7 +122,7 @@ describe('TikTok Events API request body', () => {
     const [event] = bodyFor(basePayload).data as Array<Record<string, unknown>>;
 
     expect(event.page).toEqual({
-      url: 'https://acme.example/bio/page',
+      url: 'https://acme.example/linktree/page',
       referrer: 'https://www.tiktok.com/',
     });
   });
@@ -140,7 +140,7 @@ describe('TikTok Events API request body', () => {
       event: 'ViewContent',
       event_time: 1_767_225_600,
       event_id: 'e1b9c0de-0000-4000-8000-000000000002',
-      url: 'https://acme.example/bio/page',
+      url: 'https://acme.example/linktree/page',
       ip: '203.0.113.9',
       user_agent: 'Mozilla/5.0',
       ttclid: undefined,

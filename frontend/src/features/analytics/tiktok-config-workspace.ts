@@ -37,7 +37,7 @@ export const TIKTOK_CONFIG_WORKSPACES: Record<
     testEndpoint: "/api/platform/settings/tiktok/test",
     pixelLimit: 3,
     description:
-      "Pixel و Events APIی تایبەت بە پەڕە گشتییەکانی MultiTree. هیچ کاتێک بۆ پەڕەی بزنسەکان بەکار نایەت.",
+      "Pixel و Events APIی تایبەت بە پەڕە گشتییەکانی Sponsor.krd. هیچ کاتێک بۆ پەڕەی بزنسەکان بەکار نایەت.",
   },
   creator: {
     settingsEndpoint: "/api/creator/settings/tiktok",
@@ -52,4 +52,3 @@ export const TIKTOK_CONFIG_WORKSPACES: Record<
       "Pixel و Events API بۆ پەیجە گشتییەکەت بەکاربهێنە. نهێنیی Events API بە شێوەی پارێزراو هەڵدەگیرێت.",
   },
 };
-

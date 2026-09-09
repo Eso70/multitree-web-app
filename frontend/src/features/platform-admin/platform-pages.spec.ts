@@ -4,9 +4,6 @@ import { getPlatformPage, isPlatformPage } from "./platform-pages";
 describe("platform pages", () => {
   it("resolves every supported console page", () => {
     expect(getPlatformPage("/secure-console/linktrees")).toBe("linktrees");
-    expect(getPlatformPage("/secure-console/mini-websites")).toBe(
-      "mini-websites",
-    );
     expect(getPlatformPage("/secure-console")).toBe("businesses");
   });
 

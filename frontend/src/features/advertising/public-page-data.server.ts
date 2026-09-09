@@ -39,15 +39,9 @@ interface PublicLinktree {
   seo_name?: string | null;
 }
 
-interface PublicMiniWebsite {
-  name: string;
-  slug: string;
-}
-
 export interface AdvertisingPublicData {
   business: AdvertisingPublicBusiness;
   linktrees: PublicLinktree[];
-  miniWebsites: PublicMiniWebsite[];
   config: AdvertisingServiceConfig;
 }
 
@@ -86,7 +80,7 @@ async function readPublic<T>(
  * unentitled page 404s at the API rather than returning content with a flag,
  * so nothing unpublished reaches the browser.
  *
- * The linktree and mini-website lists are footer navigation. They are fetched
+ * The Linktree list is footer navigation. It is fetched
  * alongside but never gate the page — losing them costs a few links, not the
  * whole route.
  */
@@ -96,11 +90,10 @@ export async function loadAdvertisingPublicData(): Promise<AdvertisingPublicData
   const subdomain = extractSubdomain(host, undefined, ROOT_DOMAIN);
   if (!subdomain) return null;
 
-  const [business, config, linktrees, miniWebsites] = await Promise.all([
+  const [business, config, linktrees] = await Promise.all([
     readPublic<AdvertisingPublicBusiness>("/api/public/business", subdomain),
     readPublic<AdvertisingServiceConfig>("/api/public/advertising", subdomain),
     readPublic<PublicLinktree[]>("/api/public/linktrees", subdomain),
-    readPublic<PublicMiniWebsite[]>("/api/public/mini-websites", subdomain),
   ]);
 
   if (!business || !config) return null;
@@ -108,13 +101,12 @@ export async function loadAdvertisingPublicData(): Promise<AdvertisingPublicData
     business,
     config,
     linktrees: Array.isArray(linktrees) ? linktrees : [],
-    miniWebsites: Array.isArray(miniWebsites) ? miniWebsites : [],
   };
 }
 
 /** The branding and footer props both public advertising components take. */
 export function advertisingPublicProps(data: AdvertisingPublicData) {
-  const { business, linktrees, miniWebsites } = data;
+  const { business, linktrees } = data;
   return {
     branding: {
       name: business.name,
@@ -128,10 +120,6 @@ export function advertisingPublicProps(data: AdvertisingPublicData) {
       linktrees: linktrees.map((item) => ({
         name: item.name,
         href: `/linktree/${item.seo_name || item.uid}`,
-      })),
-      miniWebsites: miniWebsites.map((item) => ({
-        name: item.name,
-        href: `/bio/${item.slug}`,
       })),
     },
   };

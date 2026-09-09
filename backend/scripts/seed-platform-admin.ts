@@ -3,6 +3,7 @@ import {
   readPlatformAdminEnv,
   type PlatformAdminEnvKey,
 } from '../src/common/platform-admin-env';
+import { SPONSOR_KRD_ACCENT_VALUE } from '../src/common/platform-brand';
 
 const fromEnvironment = (name: string) => process.env[name];
 
@@ -13,11 +14,12 @@ function setting(key: PlatformAdminEnvKey): string | undefined {
 
 export async function seedPlatformAdmin(client: PoolClient): Promise<void> {
   const username =
-    setting('PLATFORM_ADMIN_USERNAME')?.toLowerCase() || 'multitree-admin';
-  const name = setting('PLATFORM_ADMIN_NAME') || 'MultiTree';
+    setting('PLATFORM_ADMIN_USERNAME')?.toLowerCase() || 'sponsor-krd-admin';
+  const name = setting('PLATFORM_ADMIN_NAME') || 'Sponsor.krd';
   const email = setting('PLATFORM_ADMIN_EMAIL')?.toLowerCase() || null;
   const phone = setting('PLATFORM_ADMIN_PHONE') || null;
-  const websiteColor = setting('PLATFORM_ADMIN_WEBSITE_COLOR') || '#b6f20d';
+  const websiteColor =
+    setting('PLATFORM_ADMIN_WEBSITE_COLOR') || SPONSOR_KRD_ACCENT_VALUE;
   const logoWithBackground =
     setting('PLATFORM_ADMIN_LOGO_WITH_BACKGROUND') || '/images/Logo.jpg';
   const logoWithoutBackground =
@@ -26,7 +28,9 @@ export async function seedPlatformAdmin(client: PoolClient): Promise<void> {
   const favicon = setting('PLATFORM_ADMIN_FAVICON') || '/favicon.ico';
 
   if (!email) {
-    console.warn('  ! MultiTree seed skipped: PLATFORM_ADMIN_EMAIL is missing');
+    console.warn(
+      '  ! Sponsor.krd seed skipped: PLATFORM_ADMIN_EMAIL is missing',
+    );
     return;
   }
 
@@ -53,5 +57,5 @@ export async function seedPlatformAdmin(client: PoolClient): Promise<void> {
       favicon,
     ],
   );
-  console.log('  OK MultiTree seed checked from environment');
+  console.log('  OK Sponsor.krd seed checked from environment');
 }

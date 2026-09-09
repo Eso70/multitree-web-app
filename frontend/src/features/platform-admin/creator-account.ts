@@ -23,7 +23,7 @@ export type Creator = {
   active_session_count: number;
   status: CreatorStatus;
   risk_level: CreatorRiskLevel;
-  page_type: "linktree" | "mini_website" | null;
+  page_type: "linktree" | null;
   page_slug: string | null;
   phone_last_four: string | null;
   phone_verified_at: string | null;
@@ -43,9 +43,8 @@ export type CreatorManageAction =
   | "cancel_paid"
   | "extend_trial";
 
-export const PAGE_TYPE_LABELS: Record<"linktree" | "mini_website", string> = {
+export const PAGE_TYPE_LABELS: Record<"linktree", string> = {
   linktree: "لینکتری",
-  mini_website: "مینی وێبسایت",
 };
 
 /** `formatDate` echoes whatever it is handed back when it cannot parse it, so
@@ -57,8 +56,7 @@ export function formatOptionalDate(value: string | null) {
 /** The public address of the account's page, or `null` when it has none. */
 export function creatorPageHref(creator: Creator) {
   if (!creator.page_slug) return null;
-  const prefix = creator.page_type === "linktree" ? "linktree" : "bio";
-  return `/${prefix}/${creator.page_slug}`;
+  return `/linktree/${creator.page_slug}`;
 }
 
 /**

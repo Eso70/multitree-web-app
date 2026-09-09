@@ -91,7 +91,7 @@ export class AuditLogController {
       .header('Content-Type', 'text/csv; charset=utf-8')
       .header(
         'Content-Disposition',
-        `attachment; filename="multitree-audit-${date}.csv"`,
+        `attachment; filename="sponsor-krd-audit-${date}.csv"`,
       )
       .send(`\uFEFF${header.join(',')}\n${lines.join('\n')}`);
   }

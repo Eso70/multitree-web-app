@@ -200,9 +200,9 @@ export function BusinessSettingsPage() {
       const detail = (event as CustomEvent<EffectiveAccessManifest>).detail;
       if (detail) setEffectiveAccess(detail);
     };
-    window.addEventListener("multitree:access-updated", syncAccess);
+    window.addEventListener("sponsor-krd:access-updated", syncAccess);
     return () =>
-      window.removeEventListener("multitree:access-updated", syncAccess);
+      window.removeEventListener("sponsor-krd:access-updated", syncAccess);
   }, []);
 
   const save = async () => {
@@ -261,7 +261,7 @@ export function BusinessSettingsPage() {
         setData(normalized);
         setSavedSnapshot(normalized);
         window.dispatchEvent(
-          new CustomEvent("multitree:business-settings-updated", {
+          new CustomEvent("sponsor-krd:business-settings-updated", {
             detail: normalized,
           }),
         );

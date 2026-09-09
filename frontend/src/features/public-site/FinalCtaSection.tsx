@@ -1,10 +1,14 @@
 import { PublicCallToActionSection } from "@/components/public/PublicCallToActionSection";
-import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import {
+  SPONSOR_KRD_ACCENT_COLOR,
+  SPONSOR_KRD_ACCENT_GRADIENT,
+} from "@/lib/sponsor-krd-theme";
 
 export function FinalCtaSection() {
   return (
     <PublicCallToActionSection
-      accentColor={MULTITREE_ACCENT_COLOR}
+      accentColor={SPONSOR_KRD_ACCENT_COLOR}
+      accentBackground={SPONSOR_KRD_ACCENT_GRADIENT}
       accentInk="#111827"
       eyebrow="دەستپێکردن خێرایە"
       title="ئامادەیت شوێنی خۆت لە ئینتەرنێت دروست بکەیت؟"

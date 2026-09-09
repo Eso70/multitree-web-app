@@ -31,7 +31,7 @@ export const ANALYTICS_EVENT_NAMES = [
   'checkout_started',
   'order_completed',
   'download',
-  // Richer interactions a mini website produces and a linktree cannot: opening
+  // Richer interactions public pages can produce: opening
   // a section, a gallery or a player; reaching the form; sharing the page.
   // Already accepted by the events table — only this list was holding them out.
   'action_open',

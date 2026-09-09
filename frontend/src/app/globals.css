@@ -2,91 +2,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-.mini-website-ltr,
-.mini-website-ltr * {
-  direction: ltr !important;
-}
-
-/* Every public dynamic section blurs the real page grid behind it. */
-/*
- * Deliberately without `backdrop-filter`.
- *
- * This class repeats once per section, and a full mini website runs to thirty
- * of them. Each backdrop filter is its own compositing layer that has to
- * resample what sits behind it, and `content-visibility: auto` means a fast
- * scroll asks all of them to do that at once as they come into view. That
- * combination was enough to take the renderer down with STATUS_BREAKPOINT.
- *
- * Nothing visible was lost: a 2px blur behind a 3%-alpha fill is imperceptible.
- * The glass reading comes from the fill and the shadow, which cost nothing.
- * Backdrop filters remain on the one-off surfaces — hero controls, dialogs —
- * where there are one or two of them and the effect actually shows.
- */
-.mini-dynamic-section-glass {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 560px;
-  isolation: isolate;
-  background: rgb(148 184 200 / 0.03);
-  border: 0;
-  box-shadow:
-    0 0 14px -6px rgb(15 23 42 / 0.3),
-    0 20px 48px -28px rgb(15 23 42 / 0.36);
-  transition: box-shadow 450ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.mini-dynamic-section-glass
-  :where(
-    .mini-glass-action,
-    .mini-section-icon,
-    span[style*="background"][class*="rounded"],
-    button[class*="rounded"],
-    a[class*="rounded"],
-    article[class*="rounded"],
-    figure[class*="rounded"]
-  ) {
-  background-image: linear-gradient(
-    135deg,
-    rgb(255 255 255 / 0.1),
-    rgb(148 184 200 / 0.025)
-  );
-  box-shadow:
-    0 0 10px -6px rgb(15 23 42 / 0.24),
-    0 12px 26px -20px rgb(15 23 42 / 0.32);
-  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.mini-dynamic-section-glass
-  :where(
-    .mini-glass-action,
-    article[class*="rounded"],
-    figure[class*="rounded"],
-    button[class*="bg-white"],
-    a[class*="bg-white"]
-  ) {
-  background-color: rgb(148 184 200 / 0.06);
-  border-color: transparent;
-}
-
-.mini-public-footer-glass > footer.bg-white {
-  background: rgb(148 184 200 / 0.03) !important;
-  border: 0;
-  border-radius: 2rem;
-  box-shadow:
-    0 0 14px -6px rgb(15 23 42 / 0.3),
-    0 20px 48px -28px rgb(15 23 42 / 0.36);
-  -webkit-backdrop-filter: blur(2px) saturate(125%);
-  backdrop-filter: blur(2px) saturate(125%);
-  overflow: hidden;
-}
-
-.mini-public-footer-glass > footer > div:last-child {
-  border-color: rgb(148 184 200 / 0.14);
-}
-
-.mini-website-motion :where(a, button, [role="button"]) {
-  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-}
-
 /* Shared, content-measured marquee primitive. Framer Motion owns movement;
    feature components provide only content, spacing, masks, and treatment. */
 
@@ -226,24 +141,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* Becomes a plain swipeable strip when motion is unwelcome. */
-  .mini-logo-marquee {
-    overflow-x: auto;
-    mask-image: none;
-  }
-
-  .mini-website-motion :where(a, button, [role="button"]) {
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* MapLibre's own chrome is disabled — zoom, the 2D/3D toggle and the credit are
-   rendered by LocationMap so they match the rest of the product. Only the
-   cooperative-gesture prompt is left to the library, restyled to suit. */
-.maplibregl-cooperative-gesture-screen {
-  border-radius: 0;
-  font-family: inherit;
-  font-weight: 700;
 }
 
 /* Keep every standalone modal/sidebar X optically centered on touch layouts. */
@@ -420,11 +317,11 @@
 
 :root {
   --custom-cursor-default:
-    url("data:image/svg+xml,%3Csvg%20id%3D%22Layer_1%22%20data-name%3D%22Layer%201%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%20512%20512%22%3E%20%3Cpath%20fill%3D%22%23b6f20d%22%20d%3D%22M154.64%2C27.51c1.46%2C1.23%2C2.93%2C2.46%2C4.4%2C3.69%2C2.84%2C2.39%2C5.68%2C4.79%2C8.51%2C7.22%2C4.72%2C4.01%2C9.5%2C7.93%2C14.31%2C11.85%2C5.8%2C4.74%2C11.58%2C9.5%2C17.36%2C14.27%2C4.8%2C3.96%2C9.61%2C7.92%2C14.42%2C11.88%2C9.21%2C7.56%2C18.38%2C15.17%2C27.45%2C22.89%2C5.06%2C4.3%2C10.21%2C8.44%2C15.42%2C12.56%2C4.74%2C3.83%2C9.37%2C7.78%2C14%2C11.73%2C4.2%2C3.56%2C8.44%2C7.06%2C12.75%2C10.48%2C5.82%2C4.61%2C11.47%2C9.39%2C17.13%2C14.21%2C4.2%2C3.56%2C8.44%2C7.06%2C12.75%2C10.48%2C5.07%2C4.01%2C10.02%2C8.15%2C14.94%2C12.34%2C5.83%2C4.96%2C11.74%2C9.81%2C17.73%2C14.58%2C12.46%2C9.98%2C24.73%2C20.21%2C36.88%2C30.56%2C5.06%2C4.3%2C10.21%2C8.45%2C15.42%2C12.56%2C4.74%2C3.83%2C9.37%2C7.78%2C14%2C11.73%2C4.2%2C3.56%2C8.44%2C7.06%2C12.75%2C10.48%2C24.63%2C19.61%2C37.74%2C35.69%2C39.34%2C48.25%2C1.21%2C15.76-.91%2C28.58-10.74%2C41.4-8.23%2C8.87-18.51%2C17.5-31.12%2C18.36-.89%2C0-1.79%2C0-2.71.02-1.04%2C0-2.06.02-3.13.03-1.12%2C0-2.25%2C0-3.39%2C0-1.19%2C0-2.37.02-3.6.03-2.58.02-5.17.03-7.74.05-4.1.02-8.19.05-12.3.09-11.65.09-23.31.17-34.96.23-7.13.04-14.27.1-21.4.16-2.71.02-5.41.04-8.12.05-34.65.15-65.47%2C4.63-91.74%2C29.61-6.21%2C6.42-11.33%2C13.81-16.57%2C21.01-4.1%2C5.58-8.33%2C11.04-12.54%2C16.53-6.89%2C9.03-13.74%2C18.11-20.55%2C27.21-1.6%2C2.14-3.21%2C4.28-4.81%2C6.42-3.1%2C4.13-6.18%2C8.27-9.25%2C12.42-10.97%2C14.75-21.76%2C29.2-40.92%2C32.81-17.45%2C1.11-31.56-.13-45.48-11.81-11.06-10.59-16.63-23.28-17.38-38.49-.08-1.48-.16-2.98-.23-4.51-.08-1.63-.16-3.25-.23-4.93-.09-1.75-.18-3.5-.26-5.24-.24-4.79-.48-9.6-.71-14.39-.25-5.16-.51-10.31-.77-15.47-.62-12.39-1.23-24.8-1.84-37.19-.28-5.83-.58-11.65-.86-17.48-.06-1.16-.12-2.33-.18-3.52-.12-2.35-.23-4.71-.35-7.05-.29-5.95-.59-11.89-.88-17.84-.06-1.19-.12-2.37-.18-3.59-.36-7.28-.71-14.55-1.07-21.83-1.5-30.73-3.06-61.46-4.64-92.19-.72-14-1.43-28.02-2.13-42.02-.57-11.21-1.14-22.43-1.73-33.64-.4-7.67-.79-15.32-1.17-22.99-.21-4.39-.44-8.78-.68-13.17-1.86-34.44%2C2.53-58.74%2C13.15-72.91%2C27.46-30.32%2C65.85-21.6%2C93.59%2C2.11h.02Z%22%2F%3E%20%3C%2Fsvg%3E")
+    url("data:image/svg+xml,%3Csvg%20id%3D%22Layer_1%22%20data-name%3D%22Layer%201%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%20512%20512%22%3E%20%3Cpath%20fill%3D%22%2325f4ee%22%20d%3D%22M154.64%2C27.51c1.46%2C1.23%2C2.93%2C2.46%2C4.4%2C3.69%2C2.84%2C2.39%2C5.68%2C4.79%2C8.51%2C7.22%2C4.72%2C4.01%2C9.5%2C7.93%2C14.31%2C11.85%2C5.8%2C4.74%2C11.58%2C9.5%2C17.36%2C14.27%2C4.8%2C3.96%2C9.61%2C7.92%2C14.42%2C11.88%2C9.21%2C7.56%2C18.38%2C15.17%2C27.45%2C22.89%2C5.06%2C4.3%2C10.21%2C8.44%2C15.42%2C12.56%2C4.74%2C3.83%2C9.37%2C7.78%2C14%2C11.73%2C4.2%2C3.56%2C8.44%2C7.06%2C12.75%2C10.48%2C5.82%2C4.61%2C11.47%2C9.39%2C17.13%2C14.21%2C4.2%2C3.56%2C8.44%2C7.06%2C12.75%2C10.48%2C5.07%2C4.01%2C10.02%2C8.15%2C14.94%2C12.34%2C5.83%2C4.96%2C11.74%2C9.81%2C17.73%2C14.58%2C12.46%2C9.98%2C24.73%2C20.21%2C36.88%2C30.56%2C5.06%2C4.3%2C10.21%2C8.45%2C15.42%2C12.56%2C4.74%2C3.83%2C9.37%2C7.78%2C14%2C11.73%2C4.2%2C3.56%2C8.44%2C7.06%2C12.75%2C10.48%2C24.63%2C19.61%2C37.74%2C35.69%2C39.34%2C48.25%2C1.21%2C15.76-.91%2C28.58-10.74%2C41.4-8.23%2C8.87-18.51%2C17.5-31.12%2C18.36-.89%2C0-1.79%2C0-2.71.02-1.04%2C0-2.06.02-3.13.03-1.12%2C0-2.25%2C0-3.39%2C0-1.19%2C0-2.37.02-3.6.03-2.58.02-5.17.03-7.74.05-4.1.02-8.19.05-12.3.09-11.65.09-23.31.17-34.96.23-7.13.04-14.27.1-21.4.16-2.71.02-5.41.04-8.12.05-34.65.15-65.47%2C4.63-91.74%2C29.61-6.21%2C6.42-11.33%2C13.81-16.57%2C21.01-4.1%2C5.58-8.33%2C11.04-12.54%2C16.53-6.89%2C9.03-13.74%2C18.11-20.55%2C27.21-1.6%2C2.14-3.21%2C4.28-4.81%2C6.42-3.1%2C4.13-6.18%2C8.27-9.25%2C12.42-10.97%2C14.75-21.76%2C29.2-40.92%2C32.81-17.45%2C1.11-31.56-.13-45.48-11.81-11.06-10.59-16.63-23.28-17.38-38.49-.08-1.48-.16-2.98-.23-4.51-.08-1.63-.16-3.25-.23-4.93-.09-1.75-.18-3.5-.26-5.24-.24-4.79-.48-9.6-.71-14.39-.25-5.16-.51-10.31-.77-15.47-.62-12.39-1.23-24.8-1.84-37.19-.28-5.83-.58-11.65-.86-17.48-.06-1.16-.12-2.33-.18-3.52-.12-2.35-.23-4.71-.35-7.05-.29-5.95-.59-11.89-.88-17.84-.06-1.19-.12-2.37-.18-3.59-.36-7.28-.71-14.55-1.07-21.83-1.5-30.73-3.06-61.46-4.64-92.19-.72-14-1.43-28.02-2.13-42.02-.57-11.21-1.14-22.43-1.73-33.64-.4-7.67-.79-15.32-1.17-22.99-.21-4.39-.44-8.78-.68-13.17-1.86-34.44%2C2.53-58.74%2C13.15-72.91%2C27.46-30.32%2C65.85-21.6%2C93.59%2C2.11h.02Z%22%2F%3E%20%3C%2Fsvg%3E")
       10 2,
     url("/cursors/customCursor.svg") 10 2, default;
   --custom-cursor-text:
-    url("data:image/svg+xml,%3Csvg%20id%3D%22Layer_1%22%20data-name%3D%22Layer%201%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%20512%20512%22%3E%20%3Cpath%20fill%3D%22%23b6f20d%22%20d%3D%22M166.49%2C6.25c.8%2C0%2C1.6%2C0%2C2.4-.01h7.98c1.91%2C0%2C3.82%2C0%2C5.73-.03%2C5.18-.01%2C10.37-.03%2C15.55-.03h9.72c11.3-.01%2C22.6-.03%2C33.9-.03%2C10.52%2C0%2C21.06-.01%2C31.59-.05%2C9.04-.03%2C18.09-.04%2C27.13-.04%2C5.41%2C0%2C10.8%2C0%2C16.2-.03%2C5.08-.01%2C10.16-.01%2C15.24%2C0%2C1.86%2C0%2C3.73%2C0%2C5.59-.01%2C2.55-.01%2C5.09%2C0%2C7.64%2C0%2C.73%2C0%2C1.47-.03%2C2.22-.03%2C6.15.08%2C11.07%2C2.09%2C15.81%2C6.02%2C4.65%2C5.65%2C7.45%2C11.27%2C7.12%2C18.79-.83%2C5.98-2.73%2C11.41-7.11%2C15.67-23.58%2C17.11-56.17%2C5.85-83.81%2C5.85v407.37h72.11c8.29%2C3.11%2C12.24%2C5.07%2C16.57%2C12.67%2C2.94%2C7.91%2C2.73%2C14.38-.58%2C22.02-3.2%2C5.48-8.04%2C9.17-14.03%2C11.11-2.68.18-5.26.27-7.94.26-.79%2C0-1.59%2C0-2.4.01h-7.98c-1.91%2C0-3.82%2C0-5.73.03-5.18.01-10.37.03-15.55.03h-9.72c-11.3.01-22.6.03-33.9.03-10.52%2C0-21.06.01-31.59.05-9.04.03-18.09.04-27.13.04-5.41%2C0-10.8%2C0-16.2.03-5.08.01-10.16.01-15.24%2C0-1.86%2C0-3.73%2C0-5.59.01-2.55.01-5.09%2C0-7.64%2C0-.73%2C0-1.47.03-2.22.03-6.15-.08-11.07-2.09-15.83-6.02-4.65-5.65-7.45-11.27-7.12-18.79.83-5.98%2C2.73-11.41%2C7.11-15.67%2C23.58-17.11%2C56.17-5.85%2C83.81-5.85V52.31h-72.11c-8.29-3.11-12.24-5.07-16.57-12.67-2.94-7.91-2.73-14.38.58-22.02%2C5.02-8.58%2C12.43-11.41%2C21.97-11.37h.01Z%22%2F%3E%20%3C%2Fsvg%3E")
+    url("data:image/svg+xml,%3Csvg%20id%3D%22Layer_1%22%20data-name%3D%22Layer%201%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%20512%20512%22%3E%20%3Cpath%20fill%3D%22%2325f4ee%22%20d%3D%22M166.49%2C6.25c.8%2C0%2C1.6%2C0%2C2.4-.01h7.98c1.91%2C0%2C3.82%2C0%2C5.73-.03%2C5.18-.01%2C10.37-.03%2C15.55-.03h9.72c11.3-.01%2C22.6-.03%2C33.9-.03%2C10.52%2C0%2C21.06-.01%2C31.59-.05%2C9.04-.03%2C18.09-.04%2C27.13-.04%2C5.41%2C0%2C10.8%2C0%2C16.2-.03%2C5.08-.01%2C10.16-.01%2C15.24%2C0%2C1.86%2C0%2C3.73%2C0%2C5.59-.01%2C2.55-.01%2C5.09%2C0%2C7.64%2C0%2C.73%2C0%2C1.47-.03%2C2.22-.03%2C6.15.08%2C11.07%2C2.09%2C15.81%2C6.02%2C4.65%2C5.65%2C7.45%2C11.27%2C7.12%2C18.79-.83%2C5.98-2.73%2C11.41-7.11%2C15.67-23.58%2C17.11-56.17%2C5.85-83.81%2C5.85v407.37h72.11c8.29%2C3.11%2C12.24%2C5.07%2C16.57%2C12.67%2C2.94%2C7.91%2C2.73%2C14.38-.58%2C22.02-3.2%2C5.48-8.04%2C9.17-14.03%2C11.11-2.68.18-5.26.27-7.94.26-.79%2C0-1.59%2C0-2.4.01h-7.98c-1.91%2C0-3.82%2C0-5.73.03-5.18.01-10.37.03-15.55.03h-9.72c-11.3.01-22.6.03-33.9.03-10.52%2C0-21.06.01-31.59.05-9.04.03-18.09.04-27.13.04-5.41%2C0-10.8%2C0-16.2.03-5.08.01-10.16.01-15.24%2C0-1.86%2C0-3.73%2C0-5.59.01-2.55.01-5.09%2C0-7.64%2C0-.73%2C0-1.47.03-2.22.03-6.15-.08-11.07-2.09-15.83-6.02-4.65-5.65-7.45-11.27-7.12-18.79.83-5.98%2C2.73-11.41%2C7.11-15.67%2C23.58-17.11%2C56.17-5.85%2C83.81-5.85V52.31h-72.11c-8.29-3.11-12.24-5.07-16.57-12.67-2.94-7.91-2.73-14.38.58-22.02%2C5.02-8.58%2C12.43-11.41%2C21.97-11.37h.01Z%22%2F%3E%20%3C%2Fsvg%3E")
       16 16,
     url("/cursors/customTextSelect.svg") 16 16, text;
 }
@@ -433,13 +330,13 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Brand-aware text selection for public subdomains, business dashboards, and MultiTree pages. */
+/* Brand-aware text selection for public subdomains, business dashboards, and SponsorKrd pages. */
 ::selection {
   background-color: color-mix(
     in srgb,
     var(
         --business-website-color,
-        var(--admin-website-color, var(--multitree-accent))
+        var(--admin-website-color, var(--sponsor-krd-accent))
       )
       30%,
     transparent
@@ -453,7 +350,7 @@ html {
     in srgb,
     var(
         --business-website-color,
-        var(--admin-website-color, var(--multitree-accent))
+        var(--admin-website-color, var(--sponsor-krd-accent))
       )
       30%,
     transparent
@@ -467,7 +364,7 @@ html.dark ::selection {
     in srgb,
     var(
         --business-website-color,
-        var(--admin-website-color, var(--multitree-accent))
+        var(--admin-website-color, var(--sponsor-krd-accent))
       )
       42%,
     transparent
@@ -479,7 +376,7 @@ html.dark ::-moz-selection {
     in srgb,
     var(
         --business-website-color,
-        var(--admin-website-color, var(--multitree-accent))
+        var(--admin-website-color, var(--sponsor-krd-accent))
       )
       42%,
     transparent
@@ -606,34 +503,34 @@ html.dark ::-moz-selection {
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
 
-  /* Brand palette derived from the single --multitree-accent source. */
-  --color-brand-50: color-mix(in srgb, var(--multitree-accent) 8%, white);
-  --color-brand-100: color-mix(in srgb, var(--multitree-accent) 20%, white);
-  --color-brand-200: color-mix(in srgb, var(--multitree-accent) 38%, white);
-  --color-brand-300: color-mix(in srgb, var(--multitree-accent) 60%, white);
-  --color-brand-400: color-mix(in srgb, var(--multitree-accent) 82%, white);
-  --color-brand-500: var(--multitree-accent);
-  --color-brand-600: color-mix(in srgb, var(--multitree-accent) 88%, black);
-  --color-brand-700: color-mix(in srgb, var(--multitree-accent) 72%, black);
-  --color-brand-800: color-mix(in srgb, var(--multitree-accent) 56%, black);
-  --color-brand-900: color-mix(in srgb, var(--multitree-accent) 43%, black);
-  --color-brand-950: color-mix(in srgb, var(--multitree-accent) 25%, black);
+  /* Brand palette derived from the single --sponsor-krd-accent source. */
+  --color-brand-50: color-mix(in srgb, var(--sponsor-krd-accent) 8%, white);
+  --color-brand-100: color-mix(in srgb, var(--sponsor-krd-accent) 20%, white);
+  --color-brand-200: color-mix(in srgb, var(--sponsor-krd-accent) 38%, white);
+  --color-brand-300: color-mix(in srgb, var(--sponsor-krd-accent) 60%, white);
+  --color-brand-400: color-mix(in srgb, var(--sponsor-krd-accent) 82%, white);
+  --color-brand-500: var(--sponsor-krd-accent);
+  --color-brand-600: color-mix(in srgb, var(--sponsor-krd-accent) 88%, black);
+  --color-brand-700: color-mix(in srgb, var(--sponsor-krd-accent) 72%, black);
+  --color-brand-800: color-mix(in srgb, var(--sponsor-krd-accent) 56%, black);
+  --color-brand-900: color-mix(in srgb, var(--sponsor-krd-accent) 43%, black);
+  --color-brand-950: color-mix(in srgb, var(--sponsor-krd-accent) 25%, black);
 
   /* Primary color aliases for easy reference */
-  --color-primary-yellow: var(--multitree-accent);
+  --color-primary-yellow: var(--sponsor-krd-accent);
   --color-primary-yellow-light: color-mix(
     in srgb,
-    var(--multitree-accent) 72%,
+    var(--sponsor-krd-accent) 72%,
     white
   );
   --color-primary-yellow-dark: color-mix(
     in srgb,
-    var(--multitree-accent) 72%,
+    var(--sponsor-krd-accent) 72%,
     black
   );
   --color-primary-yellow-hover: color-mix(
     in srgb,
-    var(--multitree-accent) 88%,
+    var(--sponsor-krd-accent) 88%,
     black
   );
 
@@ -646,31 +543,31 @@ html.dark ::-moz-selection {
 }
 
 :root {
-  /* --multitree-accent comes from lib/multitree-theme.ts. Everything derives from it. */
-  --multitree-accent-gradient: linear-gradient(
+  /* --sponsor-krd-accent comes from lib/sponsor-krd-theme.ts. Everything derives from it. */
+  --sponsor-krd-accent-gradient: linear-gradient(
     to right,
-    var(--multitree-accent),
-    var(--multitree-accent)
+    #25f4ee 0%,
+    #fe2c55 100%
   );
-  --multitree-accent-hover: color-mix(
+  --sponsor-krd-accent-hover: color-mix(
     in srgb,
-    var(--multitree-accent) 88%,
+    var(--sponsor-krd-accent) 88%,
     black
   );
-  --multitree-accent-ink: #111827;
-  --multitree-accent-text: color-mix(
+  --sponsor-krd-accent-ink: #111827;
+  --sponsor-krd-accent-text: color-mix(
     in srgb,
-    var(--multitree-accent) 44%,
+    var(--sponsor-krd-accent) 44%,
     black
   );
-  --multitree-accent-text-muted: color-mix(
+  --sponsor-krd-accent-text-muted: color-mix(
     in srgb,
-    var(--multitree-accent) 58%,
+    var(--sponsor-krd-accent) 58%,
     black
   );
-  --multitree-accent-text-dark: color-mix(
+  --sponsor-krd-accent-text-dark: color-mix(
     in srgb,
-    var(--multitree-accent) 72%,
+    var(--sponsor-krd-accent) 72%,
     white
   );
 
@@ -686,7 +583,7 @@ html.dark ::-moz-selection {
   --theme-blur-2-opacity: 0.12;
   --theme-blur-3: #ec4899;
   --theme-blur-3-opacity: 0.1;
-  --theme-blur-4: var(--multitree-accent);
+  --theme-blur-4: var(--sponsor-krd-accent);
   --theme-blur-4-opacity: 0.18;
   --theme-blur-5: #38bdf8;
   --theme-blur-5-opacity: 0.14;
@@ -736,22 +633,22 @@ html.dark ::-moz-selection {
 
 /* Platform administrator reusable color utilities */
 .sa-bg {
-  background: var(--multitree-accent) !important;
-  color: var(--multitree-accent-ink) !important;
+  background: var(--sponsor-krd-accent) !important;
+  color: var(--sponsor-krd-accent-ink) !important;
 }
 
 .sa-bg-hover:hover {
-  background: var(--multitree-accent-hover) !important;
+  background: var(--sponsor-krd-accent-hover) !important;
 }
 
 .sa-ink {
-  color: var(--multitree-accent-ink) !important;
+  color: var(--sponsor-krd-accent-ink) !important;
 }
 
 .sa-ink-muted {
   color: color-mix(
     in srgb,
-    var(--multitree-accent-ink) 70%,
+    var(--sponsor-krd-accent-ink) 70%,
     transparent
   ) !important;
 }
@@ -759,7 +656,7 @@ html.dark ::-moz-selection {
 .sa-ink-dot {
   background: color-mix(
     in srgb,
-    var(--multitree-accent-ink) 35%,
+    var(--sponsor-krd-accent-ink) 35%,
     transparent
   ) !important;
 }
@@ -767,49 +664,49 @@ html.dark ::-moz-selection {
 .sa-ink-dot-strong {
   background: color-mix(
     in srgb,
-    var(--multitree-accent-ink) 55%,
+    var(--sponsor-krd-accent-ink) 55%,
     transparent
   ) !important;
 }
 
 .sa-gradient {
   background: var(
-    --multitree-accent-gradient,
-    linear-gradient(to right, var(--multitree-accent), var(--multitree-accent))
+    --sponsor-krd-accent-gradient,
+    linear-gradient(to right, var(--sponsor-krd-accent), var(--sponsor-krd-accent))
   ) !important;
-  color: var(--multitree-accent-ink) !important;
+  color: var(--sponsor-krd-accent-ink) !important;
 }
 
 .sa-gradient-hover:hover {
   background: linear-gradient(
     to right,
-    var(--multitree-accent-hover),
-    var(--multitree-accent-hover)
+    var(--sponsor-krd-accent-hover),
+    var(--sponsor-krd-accent-hover)
   ) !important;
 }
 
 .sa-soft {
   background: color-mix(
     in srgb,
-    var(--multitree-accent) 20%,
+    var(--sponsor-krd-accent) 20%,
     transparent
   ) !important;
-  color: var(--multitree-accent-text) !important;
+  color: var(--sponsor-krd-accent-text) !important;
 }
 
 .dark .sa-soft {
   background: color-mix(
     in srgb,
-    var(--multitree-accent) 15%,
+    var(--sponsor-krd-accent) 15%,
     transparent
   ) !important;
-  color: var(--multitree-accent-text-dark) !important;
+  color: var(--sponsor-krd-accent-text-dark) !important;
 }
 
 .sa-soft-border {
   border-color: color-mix(
     in srgb,
-    var(--multitree-accent) 35%,
+    var(--sponsor-krd-accent) 35%,
     transparent
   ) !important;
 }
@@ -817,7 +714,7 @@ html.dark ::-moz-selection {
 .dark .sa-soft-border {
   border-color: color-mix(
     in srgb,
-    var(--multitree-accent) 25%,
+    var(--sponsor-krd-accent) 25%,
     transparent
   ) !important;
 }
@@ -825,61 +722,61 @@ html.dark ::-moz-selection {
 .sa-step-soft {
   background: linear-gradient(
     to bottom right,
-    color-mix(in srgb, var(--multitree-accent) 15%, transparent),
-    color-mix(in srgb, var(--multitree-accent) 15%, transparent)
+    color-mix(in srgb, var(--sponsor-krd-accent) 15%, transparent),
+    color-mix(in srgb, var(--sponsor-krd-accent) 15%, transparent)
   ) !important;
-  color: var(--multitree-accent-text) !important;
+  color: var(--sponsor-krd-accent-text) !important;
   border-color: color-mix(
     in srgb,
-    var(--multitree-accent) 25%,
+    var(--sponsor-krd-accent) 25%,
     transparent
   ) !important;
 }
 
 .sa-text {
-  color: var(--multitree-accent-text) !important;
+  color: var(--sponsor-krd-accent-text) !important;
 }
 
 .sa-text-muted {
-  color: var(--multitree-accent-text-muted) !important;
+  color: var(--sponsor-krd-accent-text-muted) !important;
 }
 
 .dark .sa-text,
 .dark .sa-text-muted {
-  color: var(--multitree-accent-text-dark) !important;
+  color: var(--sponsor-krd-accent-text-dark) !important;
 }
 
 .group:hover .sa-group-hover-text {
-  color: var(--multitree-accent-text) !important;
+  color: var(--sponsor-krd-accent-text) !important;
 }
 
 .dark .group:hover .sa-group-hover-text {
-  color: var(--multitree-accent-text-dark) !important;
+  color: var(--sponsor-krd-accent-text-dark) !important;
 }
 
 .sa-accent-text {
-  color: var(--multitree-accent) !important;
+  color: var(--sponsor-krd-accent) !important;
 }
 
 .sa-focus:focus {
-  border-color: var(--multitree-accent) !important;
+  border-color: var(--sponsor-krd-accent) !important;
   box-shadow: 0 0 0 2px
-    color-mix(in srgb, var(--multitree-accent) 25%, transparent) !important;
+    color-mix(in srgb, var(--sponsor-krd-accent) 25%, transparent) !important;
 }
 
 .sa-border-top {
-  border-top-color: var(--multitree-accent) !important;
+  border-top-color: var(--sponsor-krd-accent) !important;
 }
 
 .sa-upload-hover:hover {
   border-color: color-mix(
     in srgb,
-    var(--multitree-accent) 60%,
+    var(--sponsor-krd-accent) 60%,
     transparent
   ) !important;
   background: color-mix(
     in srgb,
-    var(--multitree-accent) 10%,
+    var(--sponsor-krd-accent) 10%,
     transparent
   ) !important;
 }
@@ -887,105 +784,108 @@ html.dark ::-moz-selection {
 .dark .sa-upload-hover:hover {
   border-color: color-mix(
     in srgb,
-    var(--multitree-accent) 35%,
+    var(--sponsor-krd-accent) 35%,
     transparent
   ) !important;
   background: color-mix(
     in srgb,
-    var(--multitree-accent) 10%,
+    var(--sponsor-krd-accent) 10%,
     transparent
   ) !important;
 }
 
-[data-multitree-theme],
-body.multitree-theme-portals {
-  --business-website-color: var(--multitree-brand-accent);
-  --multitree-accent: var(--multitree-brand-accent);
-  --multitree-accent-gradient: linear-gradient(
-    to right,
-    var(--multitree-brand-accent),
-    var(--multitree-brand-accent)
+[data-sponsor-krd-theme],
+body.sponsor-krd-theme-portals {
+  --business-website-color: var(--sponsor-krd-brand-accent);
+  --sponsor-krd-accent: var(--sponsor-krd-brand-accent);
+  --sponsor-krd-accent-gradient: var(
+    --sponsor-krd-brand-gradient,
+    linear-gradient(
+      to right,
+      var(--sponsor-krd-brand-accent),
+      var(--sponsor-krd-brand-accent)
+    )
   );
-  --multitree-accent-hover: color-mix(
+  --sponsor-krd-accent-hover: color-mix(
     in srgb,
-    var(--multitree-brand-accent) 88%,
+    var(--sponsor-krd-brand-accent) 88%,
     black
   );
-  --multitree-accent-ink: #111827;
-  --theme-primary: var(--multitree-accent);
-  --theme-css: var(--multitree-accent);
+  --sponsor-krd-accent-ink: #111827;
+  --theme-primary: var(--sponsor-krd-accent);
+  --theme-css: var(--sponsor-krd-accent);
 }
 
-:is([data-multitree-theme], body.multitree-theme-portals) .text-brand-500,
-:is([data-multitree-theme], body.multitree-theme-portals) .text-brand-600,
-:is([data-multitree-theme], body.multitree-theme-portals) .text-brand-700,
-:is([data-multitree-theme], body.multitree-theme-portals) .text-brand-500\/80 {
-  color: var(--multitree-accent-text) !important;
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals) .text-brand-500,
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals) .text-brand-600,
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals) .text-brand-700,
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals) .text-brand-500\/80 {
+  color: var(--sponsor-krd-accent-text) !important;
 }
 
-.dark :is([data-multitree-theme], body.multitree-theme-portals) .text-brand-500,
-.dark :is([data-multitree-theme], body.multitree-theme-portals) .text-brand-600,
-.dark :is([data-multitree-theme], body.multitree-theme-portals) .text-brand-700,
+.dark :is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals) .text-brand-500,
+.dark :is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals) .text-brand-600,
+.dark :is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals) .text-brand-700,
 .dark
-  :is([data-multitree-theme], body.multitree-theme-portals)
+  :is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals)
   .text-brand-500\/80 {
-  color: var(--multitree-accent-text-dark) !important;
+  color: var(--sponsor-krd-accent-text-dark) !important;
 }
 
-:is([data-multitree-theme], body.multitree-theme-portals) .bg-brand-500 {
-  background-color: var(--multitree-accent) !important;
-  color: var(--multitree-accent-ink) !important;
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals) .bg-brand-500 {
+  background-color: var(--sponsor-krd-accent) !important;
+  color: var(--sponsor-krd-accent-ink) !important;
 }
 
-:is([data-multitree-theme], body.multitree-theme-portals)
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals)
   .hover\:bg-brand-50:hover,
-:is([data-multitree-theme], body.multitree-theme-portals)
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals)
   .hover\:bg-brand-50\/50:hover,
-:is([data-multitree-theme], body.multitree-theme-portals)
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals)
   .hover\:bg-brand-500\/10:hover {
   background-color: color-mix(
     in srgb,
-    var(--multitree-accent) 10%,
+    var(--sponsor-krd-accent) 10%,
     transparent
   ) !important;
 }
 
-:is([data-multitree-theme], body.multitree-theme-portals) .border-brand-500,
-:is([data-multitree-theme], body.multitree-theme-portals) .border-brand-500\/70,
-:is([data-multitree-theme], body.multitree-theme-portals)
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals) .border-brand-500,
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals) .border-brand-500\/70,
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals)
   .focus\:border-brand-500:focus,
-:is([data-multitree-theme], body.multitree-theme-portals)
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals)
   .hover\:border-brand-300:hover,
-:is([data-multitree-theme], body.multitree-theme-portals)
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals)
   .hover\:border-brand-500\/40:hover,
-:is([data-multitree-theme], body.multitree-theme-portals)
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals)
   .hover\:border-brand-500:hover {
-  border-color: var(--multitree-accent) !important;
+  border-color: var(--sponsor-krd-accent) !important;
 }
 
-:is([data-multitree-theme], body.multitree-theme-portals) .ring-brand-500\/20 {
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals) .ring-brand-500\/20 {
   --tw-ring-color: color-mix(
     in srgb,
-    var(--multitree-accent) 20%,
+    var(--sponsor-krd-accent) 20%,
     transparent
   ) !important;
 }
 
-:is([data-multitree-theme], body.multitree-theme-portals)
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals)
   .focus\:ring-brand-500\/30:focus,
-:is([data-multitree-theme], body.multitree-theme-portals) .ring-brand-500\/50 {
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals) .ring-brand-500\/50 {
   --tw-ring-color: color-mix(
     in srgb,
-    var(--multitree-accent) 30%,
+    var(--sponsor-krd-accent) 30%,
     transparent
   ) !important;
 }
 
-:is([data-multitree-theme], body.multitree-theme-portals)
+:is([data-sponsor-krd-theme], body.sponsor-krd-theme-portals)
   .shadow-brand-500\/30 {
   --tw-shadow-color: color-mix(
     in srgb,
-    var(--multitree-accent) 30%,
+    var(--sponsor-krd-accent) 30%,
     transparent
   ) !important;
 }
@@ -1243,11 +1143,11 @@ img {
   --card-foreground: oklch(0.18 0.02 250);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.02 250);
-  /* Primary MultiTree accent (lime) */
-  --primary: #6f9607;
-  --primary-foreground: oklch(0.99 0.005 200);
+  /* Primary Sponsor.krd cyan accent */
+  --primary: var(--sponsor-krd-accent);
+  --primary-foreground: #111827;
   /* Secondary light shell shade */
-  --secondary: #ecffc2;
+  --secondary: color-mix(in srgb, var(--sponsor-krd-accent) 16%, white);
   --secondary-foreground: oklch(0.18 0.02 250);
   --muted: oklch(0.96 0.01 200);
   --muted-foreground: oklch(0.45 0.04 250);
@@ -1873,8 +1773,6 @@ img {
   ) !important;
 }
 
-.dark .bg-linear-to-r.from-white.to-\[\#b6f20d\]\/10,
-.dark .bg-gradient-to-r.from-white.to-\[\#b6f20d\]\/10,
 .dark .bg-linear-to-r.from-white.to-brand-100\/10 {
   background: linear-gradient(
     to left,
@@ -1971,13 +1869,6 @@ img {
 .dark header .absolute.right-0.mt-2.w-32 button:hover {
   background-color: var(--color-bg-secondary) !important;
   color: #f3f4f6 !important;
-}
-
-.dark [role="menuitem"].bg-\[\#b6f20d\]\/10,
-.dark [role="menu"] button.bg-\[\#b6f20d\]\/10,
-.dark header .absolute.right-0.mt-2.w-32 button.bg-\[\#b6f20d\]\/10 {
-  background-color: rgba(1, 18, 44, 0.15) !important;
-  color: #b3c5de !important;
 }
 
 /* Profile Dropdown Overrides in Dark Mode */
@@ -2101,23 +1992,6 @@ img {
   color: #d9e2ee !important;
 }
 
-/* Edit buttons with brand border overrides in grid */
-.dark .border-\[\#b6f20d\]\/30 {
-  border-color: rgba(1, 18, 44, 0.25) !important;
-}
-
-.dark .bg-\[\#b6f20d\]\/10 {
-  background-color: rgba(1, 18, 44, 0.1) !important;
-  color: #b3c5de !important;
-}
-
-.dark .bg-\[\#b6f20d\]\/10:hover,
-.dark .hover\:bg-\[\#b6f20d\]\/20:hover {
-  background-color: rgba(1, 18, 44, 0.18) !important;
-  border-color: rgba(1, 18, 44, 0.45) !important;
-  color: #d9e2ee !important;
-}
-
 /* Card layout wrapper overrides */
 .dark .group.relative.bg-white {
   background-color: var(--color-bg-secondary) !important;
@@ -2229,30 +2103,9 @@ img {
   color: #f3f4f6 !important;
 }
 
-.dark
-  [data-business-dashboard]
-  .overflow-y-auto
-  button.w-full.bg-linear-to-r.from-\[\#b6f20d\]\/10,
-.dark
-  [data-business-dashboard]
-  .overflow-y-auto
-  button.w-full.bg-gradient-to-r.from-\[\#b6f20d\]\/10,
-.dark
-  [role="dialog"]
-  .overflow-y-auto
-  button.w-full.bg-linear-to-r.from-\[\#b6f20d\]\/10,
-.dark
-  [role="dialog"]
-  .overflow-y-auto
-  button.w-full.bg-gradient-to-r.from-\[\#b6f20d\]\/10 {
-  background: rgba(1, 18, 44, 0.15) !important;
-  color: #b3c5de !important;
-  border-color: rgba(1, 18, 44, 0.25) !important;
-}
-
 /* Scroll Loading Sentinels and Spinners */
 .dark .border-t-slate-500 {
-  border-top-color: var(--multitree-accent) !important;
+  border-top-color: var(--sponsor-krd-accent) !important;
 }
 
 /* Platform selection buttons (unselected state) */
@@ -2564,19 +2417,8 @@ body * {
   contain: strict;
 }
 
-/* Inside the frame's document. The mini website draws desktop card chrome —
-   a max width, a border, a radius and a shadow — that a real phone would not
-   show at this width, and that would read here as a card inside a phone. */
-.phone-mockup-canvas .mini-website-ltr {
-  width: 100% !important;
-  max-width: none !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-}
-
 .phone-mockup-canvas-scrollable {
-  scrollbar-color: var(--theme-primary, #b6f20d) transparent;
+  scrollbar-color: var(--theme-primary, #25f4ee) transparent;
   scrollbar-width: thin;
 }
 
@@ -2590,8 +2432,8 @@ body * {
   }
 }
 
-/* Global MultiTree scrollbar ------------------------------------------------
-   Mirrors the homepage lime thumb for every nested scroll surface: dashboard
+/* Global Sponsor.krd scrollbar ----------------------------------------------
+   Mirrors the homepage brand thumb for every nested scroll surface: dashboard
    mains, sidebars, tables, modals, pickers, search results, and public pages. */
 html,
 body,
@@ -2599,7 +2441,7 @@ body,
   scrollbar-width: thin !important;
   scrollbar-color: var(
       --business-website-color,
-      var(--admin-website-color, var(--theme-primary, var(--multitree-accent)))
+      var(--admin-website-color, var(--theme-primary, var(--sponsor-krd-accent)))
     )
     transparent !important;
 }
@@ -2626,7 +2468,7 @@ body::-webkit-scrollbar-thumb,
   border-radius: 999px;
   background: var(
     --business-website-color,
-    var(--admin-website-color, var(--theme-primary, var(--multitree-accent)))
+    var(--admin-website-color, var(--theme-primary, var(--sponsor-krd-accent)))
   ) !important;
   background-clip: padding-box !important;
   box-shadow: 0 0 6px
@@ -2636,7 +2478,7 @@ body::-webkit-scrollbar-thumb,
           --business-website-color,
           var(
             --admin-website-color,
-            var(--theme-primary, var(--multitree-accent))
+            var(--theme-primary, var(--sponsor-krd-accent))
           )
         )
         35%,
@@ -2653,7 +2495,7 @@ body::-webkit-scrollbar-thumb:hover,
         --business-website-color,
         var(
           --admin-website-color,
-          var(--theme-primary, var(--multitree-accent))
+          var(--theme-primary, var(--sponsor-krd-accent))
         )
       )
       84%,
@@ -2668,8 +2510,8 @@ body::-webkit-scrollbar-corner,
 }
 
 /* The chains above end at `--theme-primary`, which `:root` defines as the
-   neutral slate `#64748b`. On MultiTree's own pages no tenant colour is set,
-   so the page scrollbar resolved to that slate instead of the lime this block
+   neutral slate `#64748b`. On SponsorKrd's own pages no tenant colour is set,
+   so the page scrollbar resolved to that slate instead of the brand accent this block
    says it mirrors. The document scrollbar therefore skips `--theme-primary`
    and falls back to the brand accent.
 
@@ -2682,7 +2524,7 @@ html,
 body {
   scrollbar-color: var(
       --business-website-color,
-      var(--admin-website-color, var(--multitree-accent))
+      var(--admin-website-color, var(--sponsor-krd-accent))
     )
     transparent !important;
 }
@@ -2691,14 +2533,14 @@ html::-webkit-scrollbar-thumb,
 body::-webkit-scrollbar-thumb {
   background: var(
     --business-website-color,
-    var(--admin-website-color, var(--multitree-accent))
+    var(--admin-website-color, var(--sponsor-krd-accent))
   ) !important;
   box-shadow: 0 0 6px
     color-mix(
       in srgb,
       var(
           --business-website-color,
-          var(--admin-website-color, var(--multitree-accent))
+          var(--admin-website-color, var(--sponsor-krd-accent))
         )
         35%,
       transparent
@@ -2711,7 +2553,7 @@ body::-webkit-scrollbar-thumb:hover {
     in srgb,
     var(
         --business-website-color,
-        var(--admin-website-color, var(--multitree-accent))
+        var(--admin-website-color, var(--sponsor-krd-accent))
       )
       84%,
     #000
@@ -2735,33 +2577,33 @@ html.custom-scrollbar-active body::-webkit-scrollbar {
 }
 
 /* Keep activity-search modal and dropdown scrolling identical to the homepage. */
-.lime-custom-scrollbar {
+.brand-custom-scrollbar {
   scrollbar-width: thin !important;
-  scrollbar-color: var(--multitree-accent) transparent !important;
+  scrollbar-color: var(--sponsor-krd-accent) transparent !important;
 }
 
-.lime-custom-scrollbar::-webkit-scrollbar {
+.brand-custom-scrollbar::-webkit-scrollbar {
   width: 6px !important;
   height: 6px !important;
 }
 
-.lime-custom-scrollbar::-webkit-scrollbar-track {
+.brand-custom-scrollbar::-webkit-scrollbar-track {
   background: transparent !important;
   border-radius: 999px;
 }
 
-.lime-custom-scrollbar::-webkit-scrollbar-thumb {
+.brand-custom-scrollbar::-webkit-scrollbar-thumb {
   min-height: 24px;
   border: 1px solid transparent;
   border-radius: 999px;
-  background: var(--multitree-accent) !important;
+  background: var(--sponsor-krd-accent) !important;
   background-clip: padding-box !important;
   box-shadow: 0 0 6px
-    color-mix(in srgb, var(--multitree-accent) 35%, transparent) !important;
+    color-mix(in srgb, var(--sponsor-krd-accent) 35%, transparent) !important;
 }
 
-.lime-custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--multitree-accent-hover) !important;
+.brand-custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--sponsor-krd-accent-hover) !important;
 }
 
 /* Business-aware scrollbar used by analytics and other themed surfaces. */
@@ -2770,7 +2612,7 @@ html.custom-scrollbar-active body::-webkit-scrollbar {
   scrollbar-width: thin !important;
   scrollbar-color: var(
       --business-website-color,
-      var(--theme-primary, var(--multitree-accent))
+      var(--theme-primary, var(--sponsor-krd-accent))
     )
     transparent !important;
 }
@@ -2794,7 +2636,7 @@ html.custom-scrollbar-active body::-webkit-scrollbar {
   border-radius: 999px;
   background: var(
     --business-website-color,
-    var(--theme-primary, var(--multitree-accent))
+    var(--theme-primary, var(--sponsor-krd-accent))
   ) !important;
   background-clip: padding-box !important;
   box-shadow: 0 0 6px
@@ -2802,7 +2644,7 @@ html.custom-scrollbar-active body::-webkit-scrollbar {
       in srgb,
       var(
           --business-website-color,
-          var(--theme-primary, var(--multitree-accent))
+          var(--theme-primary, var(--sponsor-krd-accent))
         )
         35%,
       transparent
@@ -2813,29 +2655,10 @@ html.custom-scrollbar-active body::-webkit-scrollbar {
 .theme-custom-scrollbar *::-webkit-scrollbar-thumb:hover {
   background: color-mix(
     in srgb,
-    var(--business-website-color, var(--theme-primary, var(--multitree-accent)))
+    var(--business-website-color, var(--theme-primary, var(--sponsor-krd-accent)))
       84%,
     #000
   ) !important;
-}
-
-/*
- * Mini-website editor collections stay flat inside their single glass section.
- * A quiet divider preserves scanning and reorder context without introducing a
- * second card/container around every repeated item.
- */
-.mini-website-editor-item {
-  border-bottom: 1px solid rgb(226 232 240 / 0.72);
-  padding-bottom: 1rem;
-}
-
-.mini-website-editor-item + .mini-website-editor-item {
-  margin-top: 0 !important;
-  padding-top: 1rem;
-}
-
-.dark .mini-website-editor-item {
-  border-bottom-color: rgb(255 255 255 / 0.07);
 }
 
 /* Rabar is the single product typeface. Native controls and SVG labels do not
@@ -2843,21 +2666,4 @@ html.custom-scrollbar-active body::-webkit-scrollbar {
 :where(button, input, textarea, select, optgroup, option),
 svg text {
   font-family: inherit;
-}
-
-/* Requirement markers for simple mini-website fields that keep their input
-   directly inside a label. Complex controls render the same marker component. */
-.mini-website-editor-item
-  label:has(> input:not([type="file"]), > textarea)
-  > span:first-child:not(.mini-website-requirement-label)::after {
-  margin-inline-start: 0.25rem;
-  color: var(--theme-primary, #64748b);
-  content: " (ئارەزوومەندانە)";
-  font-weight: 700;
-}
-
-.mini-website-editor-item
-  label:has(> input[required], > textarea[required])
-  > span:first-child:not(.mini-website-requirement-label)::after {
-  content: " *";
 }

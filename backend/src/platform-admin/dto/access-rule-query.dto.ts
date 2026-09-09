@@ -7,7 +7,7 @@ export class AccessRuleQueryDto {
   @IsOptional() @IsIn(['deny', 'allow']) effect?: 'deny' | 'allow';
   @IsOptional()
   @IsIn([
-    'multitree',
+    'sponsor_krd',
     'platform_admin',
     'business',
     'business_admin',

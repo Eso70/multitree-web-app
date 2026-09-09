@@ -3,23 +3,21 @@
 --
 -- The unified public page model and everything analytics and CRM hang off it.
 --
--- Part of the MultiTree baseline. `src/database/baseline.ts` lists the parts
+-- Part of the Sponsor.krd baseline. `src/database/baseline.ts` lists the parts
 -- and the order they are applied in; they are one schema split for reading,
 -- not independent scripts.
 --
 
 -- UNIFIED PUBLIC PAGE + ANALYTICS SCHEMA BEGIN
--- Linktrees and Mini Websites keep their specialized content models, but both
--- receive one canonical public-page identity and use the same action, visitor,
+-- Linktrees receive one canonical public-page identity and use the same action, visitor,
 -- session, event, CRM, aggregation, and marketing-delivery pipeline.
 
 CREATE TABLE public.public_pages (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   business_id uuid NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
   page_type varchar(20) NOT NULL CONSTRAINT public_pages_page_type_check
-    CHECK (page_type IN ('linktree','mini_website','advertising','route')),
+    CHECK (page_type IN ('linktree','advertising','route')),
   source_linktree_id uuid UNIQUE REFERENCES public.linktrees(id) ON DELETE CASCADE,
-  source_mini_website_id uuid UNIQUE REFERENCES public.mini_websites(id) ON DELETE CASCADE,
   -- The advertising page is a per-business singleton at a fixed route, but it
   -- takes a public_pages identity like the others so its conversions reach the
   -- same action, visitor, session, event, CRM and marketing pipeline. Its slug
@@ -39,16 +37,13 @@ CREATE TABLE public.public_pages (
   -- Specialized pages have exactly one matching source. Fixed routes have no source.
   CONSTRAINT public_pages_source_check CHECK (
     (page_type = 'linktree' AND source_linktree_id IS NOT NULL
-      AND source_mini_website_id IS NULL AND source_advertising_page_id IS NULL)
-    OR
-    (page_type = 'mini_website' AND source_mini_website_id IS NOT NULL
-      AND source_linktree_id IS NULL AND source_advertising_page_id IS NULL)
+      AND source_advertising_page_id IS NULL)
     OR
     (page_type = 'advertising' AND source_advertising_page_id IS NOT NULL
-      AND source_linktree_id IS NULL AND source_mini_website_id IS NULL)
+      AND source_linktree_id IS NULL)
     OR
     (page_type = 'route' AND source_linktree_id IS NULL
-      AND source_mini_website_id IS NULL AND source_advertising_page_id IS NULL)
+      AND source_advertising_page_id IS NULL)
   ),
   UNIQUE (business_id, page_type, slug)
 );
@@ -58,7 +53,7 @@ CREATE TABLE public.public_pages (
 -- page content and analytics are not retained here.
 CREATE TABLE public.public_page_tombstones (
   business_id uuid NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
-  page_type varchar(20) NOT NULL CHECK (page_type IN ('linktree','mini_website','advertising')),
+  page_type varchar(20) NOT NULL CHECK (page_type IN ('linktree','advertising')),
   public_identifier varchar(255) NOT NULL,
   slug varchar(255) NOT NULL,
   deleted_at timestamptz NOT NULL DEFAULT now(),
@@ -325,38 +320,6 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.fn_sync_mini_public_page() RETURNS trigger
-LANGUAGE plpgsql AS $$
-BEGIN
-  IF TG_OP = 'DELETE' THEN
-    DELETE FROM public.public_pages WHERE source_mini_website_id = OLD.id;
-    RETURN OLD;
-  END IF;
-  INSERT INTO public.public_pages (
-    business_id, page_type, source_mini_website_id, name, slug, status,
-    current_version, theme_config, published_at
-  ) VALUES (
-    NEW.business_id, 'mini_website', NEW.id, NEW.name, NEW.slug, NEW.status,
-    NEW.current_version,
-    jsonb_build_object(
-      'variation', NEW.variation,
-      'background_style', NEW.background_style,
-      'accent_color', NEW.accent_color
-    ),
-    NEW.published_at
-  )
-  ON CONFLICT (source_mini_website_id) DO UPDATE SET
-    name = EXCLUDED.name,
-    slug = EXCLUDED.slug,
-    status = EXCLUDED.status,
-    current_version = EXCLUDED.current_version,
-    theme_config = EXCLUDED.theme_config,
-    published_at = EXCLUDED.published_at,
-    updated_at = now();
-  RETURN NEW;
-END;
-$$;
-
 CREATE OR REPLACE FUNCTION public.fn_sync_advertising_public_page() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -452,21 +415,6 @@ SELECT business_id, 'linktree', id, name, seo_name,
 FROM public.linktrees
 ON CONFLICT (source_linktree_id) DO NOTHING;
 
-INSERT INTO public.public_pages (
-  business_id, page_type, source_mini_website_id, name, slug, status,
-  current_version, theme_config, published_at, created_at, updated_at
-)
-SELECT business_id, 'mini_website', id, name, slug, status,
-       current_version,
-       jsonb_build_object(
-         'variation', variation,
-         'background_style', background_style,
-         'accent_color', accent_color
-       ),
-       published_at, created_at, updated_at
-FROM public.mini_websites
-ON CONFLICT (source_mini_website_id) DO NOTHING;
-
 INSERT INTO public.public_page_actions (
   public_page_id, source_link_id, action_key, action_type, label,
   destination, tiktok_event, display_order, metadata, created_at, updated_at
@@ -496,10 +444,6 @@ ON CONFLICT (source_link_id) DO NOTHING;
 CREATE TRIGGER trg_linktree_public_page_sync
 AFTER INSERT OR UPDATE OR DELETE ON public.linktrees
 FOR EACH ROW EXECUTE FUNCTION public.fn_sync_linktree_public_page();
-
-CREATE TRIGGER trg_mini_public_page_sync
-AFTER INSERT OR UPDATE OR DELETE ON public.mini_websites
-FOR EACH ROW EXECUTE FUNCTION public.fn_sync_mini_public_page();
 
 CREATE TRIGGER trg_advertising_public_page_sync
 AFTER INSERT OR UPDATE OR DELETE ON public.advertising_pages
@@ -538,9 +482,9 @@ BEGIN
     INSERT INTO public.public_pages
       (business_id, page_type, name, slug, status, published_at)
     VALUES
-      (NEW.id, 'route', 'MultiTree Home', 'home', 'published', NOW()),
-      (NEW.id, 'route', 'Join MultiTree', 'join', 'published', NOW()),
-      (NEW.id, 'route', 'MultiTree Application', 'join-application', 'published', NOW())
+      (NEW.id, 'route', 'Sponsor.krd Home', 'home', 'published', NOW()),
+      (NEW.id, 'route', 'Join Sponsor.krd', 'join', 'published', NOW()),
+      (NEW.id, 'route', 'Sponsor.krd Application', 'join-application', 'published', NOW())
     ON CONFLICT (business_id, page_type, slug) DO NOTHING;
   ELSIF NEW.account_type = 'business' THEN
     INSERT INTO public.public_pages

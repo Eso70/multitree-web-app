@@ -3,6 +3,10 @@ import {
   type PlatformAdminEnvKey,
 } from '../common/platform-admin-env';
 import {
+  normalizeSponsorKrdAccent,
+  SPONSOR_KRD_ACCENT_VALUE,
+} from '../common/platform-brand';
+import {
   BadRequestException,
   ConflictException,
   Injectable,
@@ -145,7 +149,7 @@ export class PlatformSettingsService {
     return {
       ...profile,
       username: profile.username || this.adminEnv('PLATFORM_ADMIN_USERNAME'),
-      name: profile.name || this.adminEnv('PLATFORM_ADMIN_NAME', 'MultiTree'),
+      name: profile.name || this.adminEnv('PLATFORM_ADMIN_NAME', 'Sponsor.krd'),
       email: profile.email || this.adminEnv('PLATFORM_ADMIN_EMAIL') || null,
       phone: profile.phone || this.adminEnv('PLATFORM_ADMIN_PHONE') || null,
       logo:
@@ -156,21 +160,25 @@ export class PlatformSettingsService {
         ),
       avatar:
         profile.avatar ||
-        // The bare MultiTree mark. This used to point at
+        // The bare SponsorKrd mark. This used to point at
         // `/images/DefaultAvatar.png`, which happened to hold the same artwork
         // until that file became the neutral person placeholder every business
         // falls back to. Platform branding now owns its own file so a change to
-        // the business default can never repaint MultiTree's logo.
+        // the business default can never repaint SponsorKrd's logo.
         this.adminEnv(
           'PLATFORM_ADMIN_LOGO_WITHOUT_BACKGROUND',
-          '/images/multitree-logo-mark.png',
+          '/images/sponsor-krd-logo-mark.png',
         ),
       favicon:
         profile.favicon ||
         this.adminEnv('PLATFORM_ADMIN_FAVICON', '/favicon.ico'),
-      accent_color:
+      accent_color: normalizeSponsorKrdAccent(
         profile.accent_color ||
-        this.adminEnv('PLATFORM_ADMIN_WEBSITE_COLOR', '#b6f20d'),
+          this.adminEnv(
+            'PLATFORM_ADMIN_WEBSITE_COLOR',
+            SPONSOR_KRD_ACCENT_VALUE,
+          ),
+      ),
       accent_ink_color: profile.accent_ink_color || '#000000',
       app_url: this.env('NEXT_PUBLIC_APP_URL', 'http://localhost:3011'),
     };

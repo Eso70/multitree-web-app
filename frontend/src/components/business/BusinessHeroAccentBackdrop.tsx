@@ -10,7 +10,7 @@ interface BusinessHeroAccentBackdropProps {
  * The transparent radial washes preserve the continuous page grid underneath.
  */
 export function BusinessHeroAccentBackdrop({
-  accentColor = "var(--business-accent, var(--multitree-accent))",
+  accentColor = "var(--business-accent, var(--sponsor-krd-accent))",
   className = "",
 }: BusinessHeroAccentBackdropProps) {
   return (

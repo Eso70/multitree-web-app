@@ -1,7 +1,6 @@
 export const BASIC_TEMPLATE_KEYS = [
   'spectrum',
   'spotlight',
-  'liquid-glass',
 ] as const;
 
 export const PRO_TEMPLATE_KEYS = [

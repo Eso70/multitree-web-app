@@ -1,7 +1,6 @@
 export const PLATFORM_ADMIN_PAGES = [
   "businesses",
   "linktrees",
-  "mini-websites",
   "users",
   "templates",
   "campaigns",

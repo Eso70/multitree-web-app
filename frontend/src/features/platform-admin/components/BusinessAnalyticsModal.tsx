@@ -178,7 +178,7 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
       const disposition = response.headers.get("content-disposition") || "";
       const filename =
         disposition.match(/filename="?([^";]+)"?/i)?.[1] ||
-        `${businessName}-linktrees.multitree.json`;
+        `${businessName}-linktrees.sponsor-krd.json`;
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
@@ -393,7 +393,7 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".json,.multitree.json,application/json"
+                  accept=".json,.sponsor-krd.json,application/json"
                   className="hidden"
                   onChange={(event) =>
                     event.target.files?.[0] &&

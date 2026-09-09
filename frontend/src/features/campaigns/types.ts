@@ -37,7 +37,7 @@ export interface TikTokCampaign {
     id: string;
     title: string;
     slug: string;
-    type: "linktree" | "mini_website";
+    type: "linktree";
   };
   targetAudience: {
     location: string;

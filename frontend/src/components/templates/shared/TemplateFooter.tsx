@@ -2,7 +2,7 @@
 
 import { memo, useCallback, type CSSProperties, type MouseEvent } from "react";
 import { SPONSOR_TEXT, DEFAULT_FOOTER_NAME, DEFAULT_FOOTER_PHONE } from "@/lib/constants/footer";
-import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import { SPONSOR_KRD_ACCENT_COLOR } from "@/lib/sponsor-krd-theme";
 
 export interface TemplateFooterProps {
   footerText?: string | null;
@@ -51,7 +51,7 @@ export const TemplateFooter = memo(function TemplateFooter({
   const phoneNumber = footerPhone?.trim() || DEFAULT_FOOTER_PHONE;
   const cleanPhone = phoneNumber.startsWith("+") ? phoneNumber.slice(1) : phoneNumber;
 
-  const handleMultiTreeWhatsApp = useCallback(
+  const handleSponsorKrdWhatsApp = useCallback(
     (e: MouseEvent<HTMLButtonElement | HTMLParagraphElement>) => {
       e.preventDefault();
       e.stopPropagation();
@@ -75,12 +75,12 @@ export const TemplateFooter = memo(function TemplateFooter({
 
   const isLightBackground = textColor !== "#ffffff" && textColor !== "#00ff00";
   const sponsorTextColor = isLightBackground ? "rgba(107, 114, 128, 0.8)" : textSecondaryColor;
-  const businessColor = `var(--business-website-color, ${MULTITREE_ACCENT_COLOR})`;
+  const businessColor = `var(--business-website-color, ${SPONSOR_KRD_ACCENT_COLOR})`;
 
-  const baseBackground = `color-mix(in srgb, var(--business-website-color, ${MULTITREE_ACCENT_COLOR}) 10%, transparent)`;
+  const baseBackground = `color-mix(in srgb, var(--business-website-color, ${SPONSOR_KRD_ACCENT_COLOR}) 10%, transparent)`;
   const hoverBackground =
     nameButtonHoverBackground ??
-    `color-mix(in srgb, var(--business-website-color, ${MULTITREE_ACCENT_COLOR}) 18%, transparent)`;
+    `color-mix(in srgb, var(--business-website-color, ${SPONSOR_KRD_ACCENT_COLOR}) 18%, transparent)`;
 
   return (
     <footer className={className} style={style}>
@@ -90,7 +90,7 @@ export const TemplateFooter = memo(function TemplateFooter({
         </p>
         <button
           type="button"
-          onClick={handleMultiTreeWhatsApp}
+          onClick={handleSponsorKrdWhatsApp}
           className={nameButtonClassName}
           style={{
             borderColor: businessColor,

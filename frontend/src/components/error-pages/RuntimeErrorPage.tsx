@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ErrorPage } from "@/components/error-pages/ErrorPage";
 import {
   businessErrorTheme,
-  MULTITREE_ERROR_THEME,
+  SPONSOR_KRD_ERROR_THEME,
   platformErrorTheme,
   type ErrorPageTheme,
 } from "@/components/error-pages/error-theme";
@@ -27,7 +27,7 @@ export function RuntimeErrorPage({
   reset,
 }: RuntimeErrorPageProps) {
   const [theme, setTheme] = useState<ErrorPageTheme>(() =>
-    context === "platform" ? platformErrorTheme() : MULTITREE_ERROR_THEME,
+    context === "platform" ? platformErrorTheme() : SPONSOR_KRD_ERROR_THEME,
   );
 
   useEffect(() => {

@@ -14,7 +14,7 @@ interface DeviceViewportProps {
   children: ReactNode;
   /**
    * Lets a page taller than the screen scroll rather than being cut off. On by
-   * default: a preview that hides half a mini website is worse than one the
+   * default: a preview that hides half a public page is worse than one the
    * reader can scroll.
    */
   scrollable?: boolean;
@@ -116,7 +116,7 @@ export function DeviceViewport({
         html, body { height: 100%; margin: 0; padding: 0; background: transparent; }
         body { overflow-x: hidden; overflow-y: ${scrollable ? "auto" : "hidden"}; }
         body::-webkit-scrollbar { width: 5px; }
-        body::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--theme-primary, #b6f20d); }
+        body::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--theme-primary, #25F4EE); }
         /* Short pages fill the screen, tall ones grow and scroll: either way
            the page is drawn whole, never cropped to the frame. */
         .phone-mockup-canvas { min-height: 100%; width: 100%; }

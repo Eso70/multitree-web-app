@@ -3,7 +3,7 @@
 --
 -- Statements that must keep migration form so their generated names match.
 --
--- Part of the MultiTree baseline. `src/database/baseline.ts` lists the parts
+-- Part of the Sponsor.krd baseline. `src/database/baseline.ts` lists the parts
 -- and the order they are applied in; they are one schema split for reading,
 -- not independent scripts.
 --
@@ -13,7 +13,7 @@
 --
 -- `pnpm db:reset` applies this file and nothing else -- it never runs the
 -- forward migrations -- so a reset used to produce a schema that still had the
--- password columns, the pre-rename template keys and MultiTree's own logo as
+-- password columns, the pre-rename template keys and Sponsor.krd's own logo as
 -- the business default. Everything through the 2026-08-20 Creator Google
 -- authentication change is now folded in, so a fresh database carries the
 -- complete current schema.

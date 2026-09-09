@@ -5,10 +5,9 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   Link2,
   Megaphone,
-  PanelsTopLeft,
   type LucideIcon,
 } from "lucide-react";
-import { getMultiTreeAccentInk } from "@/lib/multitree-theme";
+import { getSponsorKrdAccentInk } from "@/lib/sponsor-krd-theme";
 import { BusinessCardPreview } from "@/components/business/BusinessCardPreview";
 import { BusinessCardStack } from "@/components/business/BusinessCardStack";
 import { BUSINESS_PROFILE_CARD_PALETTE } from "@/components/business/business-profile-palette";
@@ -52,15 +51,6 @@ const defaultFeatures: ReadonlyArray<BusinessSmartProfileFeature> = [
     icon: Link2,
   },
   {
-    title: "ماڵپەڕی بچووک بۆ ناساندن",
-    description:
-      "چیرۆک، خزمەتگوزاری و زانیارییە گرنگەکانت لە ماڵپەڕێکی کورت و پرۆفیشناڵدا بە شێوازی خۆت پیشان بدە.",
-    previewTitle: "ناسنامەی دیجیتاڵی تەواو",
-    previewLabel: "Mini Website",
-    ...BUSINESS_PROFILE_CARD_PALETTE.miniWebsite,
-    icon: PanelsTopLeft,
-  },
-  {
     title: "لە TikTok Ads ـەوە بۆ پەڕەی دروست",
     description:
       "سەردانکەری ڕیکلام ڕاستەوخۆ بگەیەنە پەڕەیەکی ڕوون کە ناوەڕۆک و پەیامی TikTok Ads ـەکەت تەواو دەکات.",
@@ -87,7 +77,7 @@ export function BusinessDigitalPresenceShowcase({
   if (!activeFeature) return null;
 
   const ActiveIcon = activeFeature.icon;
-  const activeInk = getMultiTreeAccentInk(activeFeature.color);
+  const activeInk = getSponsorKrdAccentInk(activeFeature.color);
 
   return (
     <PublicSection

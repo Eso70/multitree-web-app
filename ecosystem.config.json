@@ -1,7 +1,7 @@
 {
   "apps": [
     {
-      "name": "multitree-backend",
+      "name": "sponsor-krd-backend",
       "cwd": "./backend",
       "script": "dist/src/main.js",
       "instances": 2,
@@ -20,7 +20,7 @@
       "log_date_format": "YYYY-MM-DD HH:mm:ss Z"
     },
     {
-      "name": "multitree-frontend",
+      "name": "sponsor-krd-frontend",
       "cwd": "./frontend",
       "script": "node_modules/next/dist/bin/next",
       "args": "start -p 3011 -H 0.0.0.0",

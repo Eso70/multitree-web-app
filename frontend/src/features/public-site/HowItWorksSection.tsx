@@ -15,7 +15,7 @@ export function HowItWorksSection() {
               key={step.number}
               className="rounded-[1.75rem] border border-black/10 bg-[#f8f9fa] p-7 dark:border-white/10 dark:bg-[#0b0d0e]"
             >
-              <span className="text-4xl font-black text-[var(--multitree-accent)]">
+              <span className="text-4xl font-black text-[var(--sponsor-krd-accent)]">
                 {step.number}
               </span>
               <h3 className="mt-7 text-lg font-black">{step.title}</h3>

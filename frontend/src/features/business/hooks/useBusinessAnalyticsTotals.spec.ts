@@ -37,25 +37,6 @@ describe("useBusinessAnalyticsTotals", () => {
     expect(result.current.totals.total_views).toBe(0);
   });
 
-  it("keeps mini-website totals on the mini-website query boundary", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ data: {} }),
-      }),
-    );
-
-    renderHook(() => useBusinessAnalyticsTotals("mini_website"));
-
-    await waitFor(() =>
-      expect(fetch).toHaveBeenCalledWith(
-        "/api/analytics/v2/summary?pageType=mini_website",
-        expect.objectContaining({ credentials: "include" }),
-      ),
-    );
-  });
-
   it("does not load Linktree totals while another dashboard page is active", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);

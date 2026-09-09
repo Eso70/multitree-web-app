@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import ClientLinktreeAccessPage from "@/features/client-linktree-access/components/ClientLinktreeAccessPage";
 
 export const metadata: Metadata = {
-  title: "دروستکردنی پەڕەی لینکتری | MultiTree",
+  title: "دروستکردنی پەڕەی لینکتری | Sponsor.krd",
   robots: { index: false, follow: false },
 };
 

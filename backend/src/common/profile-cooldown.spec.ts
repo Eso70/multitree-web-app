@@ -11,7 +11,7 @@ const stored: ProfileSnapshot = {
   logo: '/images/upload/businesses/example/branding/logo/logo.png',
   favicon: '/images/upload/businesses/example/branding/favicon/icon.png',
   default_avatar: '/images/DefaultAvatar.png',
-  website_color: '#b6f20d',
+  website_color: '#25F4EE',
 };
 
 describe('changedProfileFields', () => {

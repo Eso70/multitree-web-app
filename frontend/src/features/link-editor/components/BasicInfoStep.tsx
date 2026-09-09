@@ -429,7 +429,7 @@ export const BasicInfoStep = memo(function BasicInfoStep({
               )}
             </EditorField>
 
-            {/* Background Pattern — the same picker the mini website uses */}
+            {/* Background Pattern — the shared public-page picker */}
             {onBackgroundPatternChange && (
               <EditorField label="شێوازی پاشبنەما">
                 <Tooltip content="دیاریکردنی نەخشی پاشبنەمای پەڕە" side="top">
@@ -535,7 +535,7 @@ export const BasicInfoStep = memo(function BasicInfoStep({
                     value={footerText}
                     onChange={(e) => onFooterTextChange(e.target.value)}
                     className={modalInputClass()}
-                    placeholder="بۆ نموونە: MultiTree"
+                    placeholder="بۆ نموونە: Sponsor.krd"
                     dir="auto"
                   />
                 </EditorField>

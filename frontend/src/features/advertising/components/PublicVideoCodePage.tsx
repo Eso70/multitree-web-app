@@ -15,7 +15,6 @@ interface PublicVideoCodePageProps {
     phone?: string | null;
     whatsappEnabled?: boolean | null;
     linktrees?: Array<{ name: string; href: string }>;
-    miniWebsites?: Array<{ name: string; href: string }>;
   };
 }
 
@@ -45,7 +44,6 @@ export function PublicVideoCodePage({
         // footer can link to them.
         advertisingEnabled: true,
         linktrees: footer?.linktrees,
-        miniWebsites: footer?.miniWebsites,
       }}
     >
       <section className="relative overflow-hidden bg-transparent px-5 pb-20 pt-36 text-center sm:px-8 sm:pb-24 sm:pt-40">

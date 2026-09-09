@@ -29,12 +29,6 @@ Settings are resolved server-side and are never accepted from the browser.
 Events API tokens are AES-GCM encrypted at rest and responses expose only the
 last four characters.
 
-Platform mini-website administration never accepts an owner id. Every CRUD,
-upload, analytics, and clear request resolves the singleton platform workspace
-server-side and is protected by dedicated platform capabilities. Root `/bio`
-reads require a root-domain request and query only `account_type='platform'`;
-tenant `/bio` reads retain their subdomain and entitlement predicates.
-
 Browser Pixel loading and Events API outbox creation both require explicit
 marketing consent. The public cookie control is available only on the approved
 marketing route allowlist and supports withdrawal. Login, authentication,
@@ -82,7 +76,7 @@ cooldown, and are atomically consumed. Request rate limits apply per IP and per
 hashed email. Successful verification creates the same host-only
 business session as Google. SMTP credentials remain server-only.
 
-This document describes MultiTree's actual security implementation: what
+This document describes Sponsor.krd's actual security implementation: what
 mechanism protects what, where it lives in the code, and where it currently
 falls short. The root [README.md](../README.md) is a short summary that
 links here; this is the full reference. For the routing/tenancy model, see
@@ -180,19 +174,10 @@ codebase. The resolved policy (permissions, entitlements, templates, pending
 approvals) is cached per business in Redis for 60 seconds and explicitly
 invalidated on policy-changing writes.
 
-Business customers have no Mini Website dashboard navigation item or route on
-any subscription plan and cannot create Mini Websites. The Business API
-intentionally has no Mini Website collection `POST` route and the business
-permission catalog contains no creation capability, so an old plan grant or a
-hand-crafted request cannot bypass the creation boundary. Existing stored Mini
-Websites remain tenant-scoped and their public pages continue to render.
-Creator and Platform workspaces keep their separate authenticated management
-and creation routes.
-
 The backward-compatible `limit.linktrees` entitlement remains the maximum
-number of active public pages considered by Linktree creation. Its authoritative
-usage query counts Linktrees plus non-archived Mini Websites already owned by
-the authenticated business. The seeded plan limits are five public pages and
+number of active Linktrees considered by Linktree creation. Its authoritative
+usage query counts active Linktrees owned by the authenticated business. The
+seeded plan limits are five public pages and
 one active TikTok Pixel group for Basic, twenty public pages and two Pixel
 groups for Pro, and unlimited public pages plus three Pixel groups for Ultra.
 
@@ -410,7 +395,7 @@ bounded text fields and an absolute HTTP(S) URL, and batch deletion identifiers
 must be UUIDs. These checks apply consistently to business and developer API
 routes, including the legacy-compatible batch payload shape.
 
-Every stored page colour — linktree background, mini-website accent, banner
+Every stored page colour — Linktree background, banner
 colour, onboarding and platform branding — is validated against the single
 `common/website-color.ts` pattern: `#rgb`, `#rrggbb`, or
 `gradient:<direction>:<hex>:<hex>`, bounded in length. These values are
@@ -443,7 +428,7 @@ layers:
   (JPEG, PNG, or ICO signatures) against the declared type — not the
   filename extension or the `Content-Type` header — and rejects anything
   else. This is applied consistently at every upload call site in the
-  codebase (business auth, linktrees, mini-websites, platform business
+  codebase (business auth, Linktrees, platform business
   administration, platform settings, developer API assets).
 - **Path safety**: the storage driver resolves the target key and asserts the
   result stays within its configured root directory before writing, and the
@@ -469,20 +454,20 @@ type does not match their magic bytes return 422, and oversized payloads return
 ## IP allow/deny rules
 
 `access_rules` supports six scopes, enforced at the database level via a
-`CHECK` constraint: `multitree`, `platform_admin`, `business`, `business_admin`,
+`CHECK` constraint: `sponsor_krd`, `platform_admin`, `business`, `business_admin`,
 `public_linktree`, `business_api`. The platform console can fully manage
 these rules (list, create, update, enable/disable, delete).
 
 `AccessRuleEnforcementService` enforces active, unexpired rules using
 PostgreSQL's native `inet`/`cidr` containment operator. Enforcement covers
-MultiTree-wide endpoints, platform-administrator login and guarded requests, business
+Sponsor.krd-wide endpoints, platform-administrator login and guarded requests, business
 login and guarded requests, developer API clients, public business reads,
-public Linktrees, public mini-websites, and public analytics ingestion. Every
+public Linktrees and public analytics ingestion. Every
 winning match increments
 `match_count` and updates `last_matched_at`.
 
 Rule resolution is deterministic. The most specific applicable scope wins
-(`public_linktree`, specialized admin/API scope, business, then `multitree`), then
+(`public_linktree`, specialized admin/API scope, business, then `sponsor_krd`), then
 the longest network prefix. A deny wins only when scope and prefix specificity
 are equal. An explicit host allow such as `/32` can therefore override a
 broader denied subnet, while an equally specific conflict fails closed.
@@ -522,7 +507,7 @@ the IPv4 rules. Redirects are disabled on the delivery request
 request into an internal network afterward. Delivery has a 10-second timeout.
 
 Deliveries are signed with HMAC-SHA256 over `${unixTimestamp}.${jsonBody}`,
-sent as `x-multitree-signature: v1=<hex>`. Failed deliveries retry up to 6
+sent as `x-sponsor-krd-signature: v1=<hex>`. Failed deliveries retry up to 6
 times with backoff of 1m / 5m / 30m / 2h / 6h / 12h. An endpoint is
 automatically disabled after 20 consecutive failures.
 

@@ -198,7 +198,7 @@ export function BusinessSignupWizard() {
                 if (!subdomain) return;
                 window.location.href = getBusinessWorkspaceEntryUrl(subdomain);
               }}
-              className="mt-4 h-12 w-full rounded-xl bg-[var(--multitree-accent)] text-sm font-bold text-[var(--multitree-accent-ink)]"
+              className="mt-4 h-12 w-full rounded-xl bg-[var(--sponsor-krd-accent)] text-sm font-bold text-[var(--sponsor-krd-accent-ink)]"
             >
               چوونەژوورەوەی بزنس
             </button>
@@ -300,7 +300,7 @@ export function BusinessSignupWizard() {
             type="button"
             disabled={busy}
             onClick={() => void submit()}
-            className="flex h-12 w-full items-center justify-center rounded-xl bg-[var(--multitree-accent)] px-5 text-sm font-bold text-[var(--multitree-accent-ink)] transition hover:brightness-95 disabled:opacity-50"
+            className="flex h-12 w-full items-center justify-center rounded-xl bg-[var(--sponsor-krd-accent)] px-5 text-sm font-bold text-[var(--sponsor-krd-accent-ink)] transition hover:brightness-95 disabled:opacity-50"
           >
             {busy ? (
               <MotionSpinner>

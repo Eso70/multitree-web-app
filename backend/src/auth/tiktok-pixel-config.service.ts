@@ -357,13 +357,13 @@ export class TikTokPixelConfigService {
           event_id: eventId,
           user: {
             ip: context?.ip || '127.0.0.1',
-            user_agent: context?.userAgent || 'MultiTree-EventsAPI/1.0',
+            user_agent: context?.userAgent || 'Sponsor.krd-EventsAPI/1.0',
             ttclid: 'test_ttclid_diagnostic',
             ttp: 'test_ttp_diagnostic',
             external_id: externalId,
           },
           page: {
-            url: 'https://multitree.app/',
+            url: 'https://sponsor.krd/',
             referrer: 'https://www.tiktok.com/',
           },
           properties,

@@ -59,7 +59,7 @@ export function AuditEventDrawer({ event, onClose }: AuditEventDrawerProps) {
         aria-label="داخستنی وردەکاری"
       />
       <aside
-        className="absolute inset-y-0 right-0 flex w-full max-w-xl select-text flex-col border-l border-slate-200 bg-white text-left shadow-2xl [--business-website-color:var(--multitree-accent)] dark:border-white/10 dark:bg-[#161B22]"
+        className="absolute inset-y-0 right-0 flex w-full max-w-xl select-text flex-col border-l border-slate-200 bg-white text-left shadow-2xl [--business-website-color:var(--sponsor-krd-accent)] dark:border-white/10 dark:bg-[#161B22]"
         dir="ltr"
       >
         <header className="flex items-start justify-between gap-3 border-b border-slate-200 px-3.5 py-3.5 dark:border-white/10 sm:px-4">
@@ -87,7 +87,7 @@ export function AuditEventDrawer({ event, onClose }: AuditEventDrawerProps) {
           </button>
         </header>
 
-        <div className="custom-scrollbar lime-custom-scrollbar flex-1 space-y-3 overflow-y-auto overscroll-contain p-3.5 sm:p-4">
+        <div className="custom-scrollbar brand-custom-scrollbar flex-1 space-y-3 overflow-y-auto overscroll-contain p-3.5 sm:p-4">
           <StatCardGrid columns={2}>
             <StatCard icon={UserRound} label={actorTypeLabel(event.actorType)} value={event.actorLabel} color="blue" compact />
             <StatCard icon={Clock3} label="Time" value={formatAuditDate(event.createdAt)} color="purple" compact />
@@ -140,7 +140,7 @@ export function AuditEventDrawer({ event, onClose }: AuditEventDrawerProps) {
           </InfoSection>
 
           <InfoSection title="Metadata" icon={Code2}>
-            <pre className="custom-scrollbar lime-custom-scrollbar max-h-56 overflow-auto overscroll-contain rounded-xl border border-slate-200 bg-slate-950 p-2.5 text-left text-[10px] leading-5 text-emerald-300 shadow-inner" dir="ltr">
+            <pre className="custom-scrollbar brand-custom-scrollbar max-h-56 overflow-auto overscroll-contain rounded-xl border border-slate-200 bg-slate-950 p-2.5 text-left text-[10px] leading-5 text-emerald-300 shadow-inner" dir="ltr">
               {JSON.stringify(event.metadata, null, 2)}
             </pre>
           </InfoSection>

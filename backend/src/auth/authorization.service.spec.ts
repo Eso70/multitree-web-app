@@ -321,7 +321,7 @@ describe('AuthorizationService business policy engine', () => {
     });
   });
 
-  it('counts Linktrees and non-archived mini-websites in one quota query', async () => {
+  it('counts active Linktrees in the public-page quota query', async () => {
     jest.restoreAllMocks();
     database.query.mockResolvedValue({ rows: [{ used: 4 }] });
     service = new AuthorizationService(database as never, redis as never);
@@ -334,9 +334,7 @@ describe('AuthorizationService business policy engine', () => {
 
     expect(usage).toBe(4);
     expect(database.query).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /FROM linktrees[\s\S]+FROM mini_websites[\s\S]+status <> 'archived'/,
-      ),
+      expect.stringMatching(/FROM linktrees[\s\S]+status <> 'deleted'/),
       [businessId],
     );
   });

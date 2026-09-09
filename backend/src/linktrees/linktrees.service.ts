@@ -178,8 +178,7 @@ export function defaultContactLinks(phone: string | null): SyncLinkInput[] {
 
 /**
  * The default dialling code, matching the fallback the rest of the backend
- * already uses for a phone with no country attached
- * (`mini-websites.service.ts`).
+ * uses for a phone with no country attached.
  */
 const DEFAULT_DIALLING_CODE = '964';
 

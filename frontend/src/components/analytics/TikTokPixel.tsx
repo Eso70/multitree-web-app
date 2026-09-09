@@ -25,7 +25,7 @@ function normalizePixelIds(pixelIds?: string[] | null): string[] {
 /**
  * Loads a business's TikTok pixels and reports the page view.
  *
- * Only the public linktree page and the public mini website page may mount
+ * Only explicitly approved public marketing pages may mount
  * this. `pixel-placement.spec.ts` enforces that; docs/tracking.md explains why.
  */
 export function TikTokPixel({

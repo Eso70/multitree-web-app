@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 
 export function PublicHeroAccentBackdrop({
-  accentColor = "var(--business-accent, var(--multitree-accent))",
+  accentColor = "var(--business-accent, var(--sponsor-krd-accent))",
   className = "",
 }: {
   accentColor?: string;

@@ -70,19 +70,15 @@ interface ActionRow {
 /**
  * The kind of page being inspected.
  *
- * Only the empty-state wording and the action labelling differ: a linktree's
- * actions are all buttons, while a mini website's are sections, offers, plans
- * and a form. Everything measured is the same, which is why one modal serves
- * both rather than a second copy drifting away from this one.
+ * Linktree analytics use the shared modal across business, Creator, client,
+ * and platform workspaces.
  */
-export type AnalyticsPageKind = "linktree" | "mini_website";
+export type AnalyticsPageKind = "linktree";
 
 export type PageAnalyticsDataSource =
   | "business"
   | "platform-linktree"
-  | "platform-mini-website"
   | "creator-linktree"
-  | "creator-mini-website"
   | "client-linktree";
 
 interface BusinessPageAnalyticsModalProps {
@@ -167,39 +163,6 @@ function presetToRange(
   }
   // "all" — no bounds
   return {};
-}
-
-/**
- * The section an action belongs to, for a mini website.
- *
- * Keys are `mini:<kind>:<id>`, so the kind is enough to group a long list of
- * actions into the sections the business actually edits.
- */
-const MINI_SECTION_LABELS: Record<string, string> = {
-  social: "سۆشیال میدیا",
-  service: "خزمەتگوزاری",
-  booking: "حجزکردن",
-  plan: "پلان و پاکێج",
-  offer: "ئۆفەر",
-  event: "ڕووداو",
-  document: "بەڵگەنامە",
-  audio: "دەنگ",
-  team: "تیم",
-  property: "براند و پەیج",
-  partner: "هاوبەش",
-  video: "ڤیدیۆ",
-  story: "ستۆری",
-  credential: "بڕوانامە",
-  process: "هەنگاوەکان",
-  location: "شوێن",
-  section: "بەش",
-  media: "وێنە",
-};
-
-export function miniActionSection(actionKey: string): string | null {
-  if (!actionKey.startsWith("mini:")) return null;
-  const kind = actionKey.split(":")[1] || "";
-  return MINI_SECTION_LABELS[kind] ?? null;
 }
 
 /**
@@ -325,19 +288,9 @@ function summaryUrl(
     return `/api/platform/linktrees/${pageId}/analytics${query ? `?${query}` : ""}`;
   }
 
-  if (dataSource === "platform-mini-website") {
-    const query = params.toString();
-    return `/api/platform/mini-websites/${pageId}/analytics${query ? `?${query}` : ""}`;
-  }
-
   if (dataSource === "creator-linktree") {
     const query = params.toString();
     return `/api/creator/linktrees/${pageId}/analytics${query ? `?${query}` : ""}`;
-  }
-
-  if (dataSource === "creator-mini-website") {
-    const query = params.toString();
-    return `/api/creator/mini-websites/${pageId}/analytics${query ? `?${query}` : ""}`;
   }
 
   params.set("pageId", pageId);
@@ -377,11 +330,6 @@ function actionsUrl(
     return `/api/platform/linktrees/${pageId}/analytics/actions${query ? `?${query}` : ""}`;
   }
 
-  if (dataSource === "creator-mini-website") {
-    const query = params.toString();
-    return `/api/creator/mini-websites/${pageId}/analytics/actions${query ? `?${query}` : ""}`;
-  }
-
   params.set("pageId", pageId);
   return `/api/analytics/v2/pages/${pageId}/actions?${params}`;
 }
@@ -389,13 +337,9 @@ function actionsUrl(
 function clearUrl(dataSource: PageAnalyticsDataSource, pageId: string): string {
   return dataSource === "platform-linktree"
     ? `/api/platform/linktrees/${pageId}/analytics`
-    : dataSource === "platform-mini-website"
-      ? `/api/platform/mini-websites/${pageId}/analytics`
-      : dataSource === "creator-linktree"
+    : dataSource === "creator-linktree"
         ? `/api/creator/linktrees/${pageId}/analytics`
-        : dataSource === "creator-mini-website"
-          ? `/api/creator/mini-websites/${pageId}/analytics`
-          : `/api/analytics/v2/pages/${pageId}`;
+        : `/api/analytics/v2/pages/${pageId}`;
 }
 
 export function BusinessPageAnalyticsModal({
@@ -403,7 +347,6 @@ export function BusinessPageAnalyticsModal({
   onClose,
   pageId,
   pageName,
-  pageKind = "linktree",
   canClearAnalytics = true,
   summaryOnly = false,
   dataSource = "business",
@@ -891,13 +834,7 @@ export function BusinessPageAnalyticsModal({
                           const platform = resolvePlatform(action);
                           const colors = getPlatformColors(platform);
                           const icon = getPlatformIcon(platform, "h-4 w-4");
-                          // A mini website's actions are sections, offers, plans
-                          // and a form, so the section it belongs to says more
-                          // than the platform a linktree button would show.
-                          const rowCaption =
-                            (pageKind === "mini_website" &&
-                              miniActionSection(action.actionKey || "")) ||
-                            getPlatformName(platform);
+                          const rowCaption = getPlatformName(platform);
                           const isExpanded = expandedActionId === action.id;
                           return (
                             <div key={action.id}>

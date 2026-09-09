@@ -136,8 +136,8 @@ export class BusinessAdministrationController {
       .toLowerCase();
     const filename = `${sanitizedBaseName}-${timestamp}-${random}.${extension}`;
     const folder =
-      scope === 'multitree'
-        ? `multitree/branding/${assetType}`
+      scope === 'sponsor_krd'
+        ? `sponsor-krd/branding/${assetType}`
         : `businesses/${businessKey}/branding/${assetType}`;
     const storagePath = `${folder}/${filename}`;
 
@@ -267,7 +267,7 @@ export class BusinessAdministrationController {
       .header('Content-Type', 'application/json; charset=utf-8')
       .header(
         'Content-Disposition',
-        `attachment; filename="${safeName}-linktrees.multitree.json"`,
+        `attachment; filename="${safeName}-linktrees.sponsor-krd.json"`,
       )
       .send(JSON.stringify(backup, null, 2));
   }

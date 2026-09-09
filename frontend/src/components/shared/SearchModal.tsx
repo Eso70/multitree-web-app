@@ -49,20 +49,20 @@ export function SearchModal({
   return createPortal(
     <div
       className="modal-ltr fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] px-4 bg-slate-950/50 backdrop-blur-sm transition-opacity duration-300"
-      data-multitree-theme={businessTheme ? undefined : true}
+      data-sponsor-krd-theme={businessTheme ? undefined : true}
       style={
         businessTheme
           ? undefined
           : ({
-              "--theme-primary": "var(--multitree-accent)",
-              "--theme-css": "var(--multitree-accent)",
+              "--theme-primary": "var(--sponsor-krd-accent)",
+              "--theme-css": "var(--sponsor-krd-accent)",
             } as React.CSSProperties)
       }
     >
       <div className="fixed inset-0" onClick={onClose} />
       <MotionReveal
         ref={modalRef}
-        className={`relative w-full rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden dark:border-white/10 dark:bg-[#1c222b] ${businessTheme ? "selection:bg-brand-500/30 dark:selection:bg-brand-500/40" : "selection:bg-lime-500/30 dark:selection:bg-lime-500/40"} ${wide ? "max-w-2xl" : "max-w-lg"}`}
+        className={`relative w-full rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden dark:border-white/10 dark:bg-[#1c222b] selection:bg-brand-500/30 dark:selection:bg-brand-500/40 ${wide ? "max-w-2xl" : "max-w-lg"}`}
         dir="ltr"
       >
         {/* Search Input Box */}
@@ -114,7 +114,7 @@ export function SearchModal({
 
         {/* Results List */}
         <div
-          className={`custom-scrollbar lime-custom-scrollbar theme-custom-scrollbar overscroll-contain ${wide ? "max-h-[540px]" : "max-h-[320px]"} overflow-y-auto p-2`}
+          className={`custom-scrollbar brand-custom-scrollbar theme-custom-scrollbar overscroll-contain ${wide ? "max-h-[540px]" : "max-h-[320px]"} overflow-y-auto p-2`}
         >
           {children}
         </div>

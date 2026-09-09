@@ -114,7 +114,7 @@ export const ConfirmDeleteModal = memo(function ConfirmDeleteModal({
                 active:scale-[0.99]
                 disabled:opacity-50 disabled:cursor-not-allowed
                 flex items-center justify-center gap-2
-                ${tone === "accent" ? "bg-[var(--multitree-accent)] text-[var(--multitree-accent-ink)] hover:brightness-95 shadow-[color-mix(in_srgb,var(--multitree-accent)_18%,transparent)]" : "bg-red-500/18 text-red-600 shadow-red-500/10 hover:bg-red-500/28 hover:text-red-700 hover:shadow-md hover:shadow-red-500/15 dark:bg-red-500/16 dark:text-red-200 dark:hover:bg-red-500/26 dark:hover:text-red-100"}
+                ${tone === "accent" ? "bg-[var(--sponsor-krd-accent)] text-[var(--sponsor-krd-accent-ink)] hover:brightness-95 shadow-[color-mix(in_srgb,var(--sponsor-krd-accent)_18%,transparent)]" : "bg-red-500/18 text-red-600 shadow-red-500/10 hover:bg-red-500/28 hover:text-red-700 hover:shadow-md hover:shadow-red-500/15 dark:bg-red-500/16 dark:text-red-200 dark:hover:bg-red-500/26 dark:hover:text-red-100"}
               `}
             >
               {isDeleting ? (

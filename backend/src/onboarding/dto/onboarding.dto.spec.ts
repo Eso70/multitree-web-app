@@ -6,9 +6,9 @@ describe('UpdateSignupApplicationDto', () => {
   it('accepts signup without social profiles, brand images, or color', async () => {
     const dto = plainToInstance(UpdateSignupApplicationDto, {
       ownerName: 'Ismail Dilshad',
-      businessName: 'Multi Tree',
+      businessName: 'Acme Studio',
       phone: '7501234567',
-      requestedSubdomain: 'multi-tree',
+      requestedSubdomain: 'acme-studio',
       acceptTerms: true,
       acceptPrivacy: true,
     });

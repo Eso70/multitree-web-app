@@ -76,7 +76,7 @@ export const PlatformIcon = memo(function PlatformIcon({
 
 /**
  * A platform's glyph on its brand background — the standard round/rounded chip
- * used in link lists, social rows and the mini website.
+ * used in link lists and social rows.
  */
 export const PlatformBadge = memo(function PlatformBadge({
   platform,

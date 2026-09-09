@@ -4,7 +4,6 @@ import Image from "next/image";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { PAYMENT_PROVIDER_LOGOS } from "@/features/mini-website/payment-providers";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { Tooltip } from "@/components/shared/Tooltip";
 import type { PaymentProvider } from "../journey-types";
@@ -14,12 +13,12 @@ import type { AdvertisingPaymentProvider } from "../types";
 // "cash"/"bankTransfer"/"custom" from the source catalog have no logo asset,
 // so they're deliberately left out here.
 export const PROVIDER_LOGOS: Partial<Record<PaymentProvider, string>> = {
-  FIB: PAYMENT_PROVIDER_LOGOS.fib,
-  QiCard: PAYMENT_PROVIDER_LOGOS.qicard,
-  FastPay: PAYMENT_PROVIDER_LOGOS.fastpay,
-  Korek: PAYMENT_PROVIDER_LOGOS.korek,
-  ZainCash: PAYMENT_PROVIDER_LOGOS.zaincash,
-  NassWallet: PAYMENT_PROVIDER_LOGOS.nasspay,
+  FIB: "/images/payment-providers/fib.jpg",
+  QiCard: "/images/payment-providers/qicard.jpg",
+  FastPay: "/images/payment-providers/fastpay.jpg",
+  Korek: "/images/payment-providers/korek.jpg",
+  ZainCash: "/images/payment-providers/zaincash.jpg",
+  NassWallet: "/images/payment-providers/nasswallet.jpg",
 };
 
 interface AdvertisingPaymentStepProps {

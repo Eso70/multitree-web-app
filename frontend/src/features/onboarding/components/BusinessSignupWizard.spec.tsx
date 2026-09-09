@@ -24,16 +24,16 @@ describe("BusinessSignupWizard application status", () => {
       .mockResolvedValueOnce({
         status: "pending",
         ownerEmail: "owner@example.com",
-        businessName: "MultiTree",
+        businessName: "Sponsor.krd",
         phone: "7501234567",
         requestedSubdomain: null,
       })
       .mockResolvedValueOnce({
         status: "approved",
         ownerEmail: "owner@example.com",
-        businessName: "MultiTree",
+        businessName: "Sponsor.krd",
         phone: "7501234567",
-        requestedSubdomain: "multitree",
+        requestedSubdomain: "sponsor-krd",
       });
 
     render(<BusinessSignupWizard />);

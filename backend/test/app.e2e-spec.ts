@@ -238,7 +238,7 @@ describe('critical architecture matrix (e2e)', () => {
     expect(wrongTenant.statusCode).toBe(401);
   });
 
-  it('creates tenant-owned linktree and mini-site records and denies cross-tenant reads', async () => {
+  it('creates tenant-owned Linktrees and denies cross-tenant reads', async () => {
     const create = (cookie: string, subdomain: string, slug: string) =>
       app.inject({
         method: 'POST',
@@ -269,24 +269,6 @@ describe('critical architecture matrix (e2e)', () => {
       },
     });
     expect(crossTenant.statusCode).toBe(404);
-
-    const miniSite = await app.inject({
-      method: 'POST',
-      url: '/api/mini-websites',
-      headers: {
-        cookie: businessACookie,
-        host: 'h8-tenant-a.localhost',
-        origin: 'http://h8-tenant-a.localhost',
-        'x-subdomain': 'h8-tenant-a',
-      },
-      payload: { name: 'H8 Mini Site', slug: 'h8-mini-site', status: 'draft' },
-    });
-    expect(miniSite.statusCode).toBe(201);
-    const storedMiniSite = await fixturePool.query<{ business_id: string }>(
-      'SELECT business_id::text FROM mini_websites WHERE id=$1',
-      [String(data(miniSite).id)],
-    );
-    expect(storedMiniSite.rows[0].business_id).toBe(BUSINESS_A_ID);
   });
 
   it('covers API management, scope denial, and idempotent developer writes', async () => {

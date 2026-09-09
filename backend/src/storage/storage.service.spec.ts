@@ -117,7 +117,7 @@ describe('StorageService', () => {
 
   it('optimizes and inventories new images through the shared service', async () => {
     const source = await sharp({
-      create: { width: 1200, height: 800, channels: 4, background: '#b6f20d' },
+      create: { width: 1200, height: 800, channels: 4, background: '#25F4EE' },
     })
       .png()
       .toBuffer();

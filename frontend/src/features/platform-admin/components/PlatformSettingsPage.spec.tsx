@@ -22,15 +22,15 @@ vi.mock("@/features/link-editor/ColorGradientModal", () => ({
 const savedSettings = {
   id: "admin-id",
   username: "operator",
-  name: "Saved MultiTree",
+  name: "Saved SponsorKrd",
   email: "admin@example.com",
   phone: "+964 750 123 4567",
-  logo: "/images/upload/multitree/logo.png",
-  avatar: "/images/upload/multitree/avatar.png",
-  favicon: "/images/upload/multitree/favicon.ico",
-  accent_color: "#b6f20d",
+  logo: "/images/upload/sponsor-krd/logo.png",
+  avatar: "/images/upload/sponsor-krd/avatar.png",
+  favicon: "/images/upload/sponsor-krd/favicon.ico",
+  accent_color: "gradient:to-r:#25F4EE:#FE2C55",
   accent_ink_color: "#ffffff",
-  app_url: "https://multitree.example",
+  app_url: "https://sponsor-krd.example",
 };
 
 function jsonResponse(body: unknown, status = 200) {
@@ -56,16 +56,16 @@ describe("PlatformSettingsPage General tab", () => {
 
     render(<PlatformSettingsPage />);
 
-    await screen.findByDisplayValue("Saved MultiTree");
+    await screen.findByDisplayValue("Saved SponsorKrd");
     expect(screen.getByDisplayValue("operator")).toBeInTheDocument();
     expect(screen.getByDisplayValue("admin@example.com")).toBeInTheDocument();
     expect(screen.getByDisplayValue("+964 750 123 4567")).toBeInTheDocument();
     expect(
-      screen.getByDisplayValue("https://multitree.example"),
+      screen.getByDisplayValue("https://sponsor-krd.example"),
     ).toBeInTheDocument();
     expect(screen.getByAltText("Logo")).toHaveAttribute(
       "src",
-      "/images/upload/multitree/logo.png",
+      "/images/upload/sponsor-krd/logo.png",
     );
 
     fireEvent.click(screen.getByRole("button", { name: "پاشەکەوتکردن" }));
@@ -95,7 +95,7 @@ describe("PlatformSettingsPage General tab", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(<PlatformSettingsPage />);
-    await screen.findByDisplayValue("Saved MultiTree");
+    await screen.findByDisplayValue("Saved SponsorKrd");
     expect(screen.queryByText("Google OAuth چالاکە")).not.toBeInTheDocument();
 
     fireEvent.click(
@@ -134,7 +134,7 @@ describe("PlatformSettingsPage General tab", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
     render(<PlatformSettingsPage />);
-    await screen.findByDisplayValue("Saved MultiTree");
+    await screen.findByDisplayValue("Saved SponsorKrd");
 
     fireEvent.click(screen.getByRole("tab", { name: "داتا و ماوەی هەڵگرتن" }));
 
@@ -170,7 +170,7 @@ describe("PlatformSettingsPage General tab", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
     render(<PlatformSettingsPage />);
-    await screen.findByDisplayValue("Saved MultiTree");
+    await screen.findByDisplayValue("Saved SponsorKrd");
 
     fireEvent.click(screen.getByRole("tab", { name: "میدیا و بارکردن" }));
 
@@ -205,7 +205,7 @@ describe("PlatformSettingsPage General tab", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(<PlatformSettingsPage />);
-    await screen.findByDisplayValue("Saved MultiTree");
+    await screen.findByDisplayValue("Saved SponsorKrd");
 
     expect(
       screen.queryByRole("tab", { name: "TikTok Tracking" }),
@@ -220,7 +220,7 @@ describe("PlatformSettingsPage General tab", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Pixel و Events APIی تایبەت بە پەڕە گشتییەکانی MultiTree. هیچ کاتێک بۆ پەڕەی بزنسەکان بەکار نایەت.",
+        "Pixel و Events APIی تایبەت بە پەڕە گشتییەکانی Sponsor.krd. هیچ کاتێک بۆ پەڕەی بزنسەکان بەکار نایەت.",
       ),
     ).toBeInTheDocument();
     await waitFor(() =>
@@ -238,7 +238,7 @@ describe("PlatformSettingsPage General tab", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(<PlatformSettingsPage />);
-    await screen.findByDisplayValue("Saved MultiTree");
+    await screen.findByDisplayValue("Saved SponsorKrd");
 
     fireEvent.click(
       screen.getByRole("tab", { name: "هەژماری ڕیکلامی تیکتۆک" }),

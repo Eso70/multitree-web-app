@@ -5,9 +5,10 @@ import { BusinessGridBackdrop } from "@/components/business/BusinessGridBackdrop
 import { CustomScrollbar } from "@/components/home/CustomScrollbar";
 import { PublicSiteNavbar } from "@/components/public/PublicSiteNavbar";
 import {
-  getMultiTreeAccentInk,
-  MULTITREE_ACCENT_COLOR,
-} from "@/lib/multitree-theme";
+  getSponsorKrdAccentInk,
+  SPONSOR_KRD_ACCENT_COLOR,
+  SPONSOR_KRD_ACCENT_GRADIENT,
+} from "@/lib/sponsor-krd-theme";
 import { applyCursorColor, resetCursorColor } from "@/lib/utils/cursor-theme";
 
 export interface PublicMarketingAction {
@@ -18,6 +19,7 @@ export interface PublicMarketingAction {
 
 interface PublicMarketingSiteShellProps {
   accentColor: string;
+  accentBackground?: string;
   brandName: string;
   children: ReactNode;
   footer: ReactNode;
@@ -30,12 +32,13 @@ interface PublicMarketingSiteShellProps {
   primaryActionInk?: string;
   secondaryAction?: PublicMarketingAction | null;
   emphasizeFirstNavItem?: boolean;
-  appearance?: "business" | "multitree";
+  appearance?: "business" | "sponsor-krd";
   embedded?: boolean;
 }
 
 export function PublicMarketingSiteShell({
   accentColor,
+  accentBackground,
   brandName,
   children,
   footer,
@@ -51,37 +54,38 @@ export function PublicMarketingSiteShell({
   appearance = "business",
   embedded = false,
 }: PublicMarketingSiteShellProps) {
-  const accentInk = getMultiTreeAccentInk(accentColor);
+  const accentInk = getSponsorKrdAccentInk(accentColor);
 
   useEffect(() => {
     if (embedded) return;
     let cancelled = false;
     const root = document.documentElement;
     root.style.setProperty("--business-website-color", accentColor);
-    root.style.setProperty("--multitree-accent", accentColor);
+    root.style.setProperty("--sponsor-krd-accent", accentColor);
     root.style.setProperty(
-      "--multitree-accent-gradient",
-      `linear-gradient(to right, ${accentColor}, ${accentColor})`,
+      "--sponsor-krd-accent-gradient",
+      accentBackground ||
+        `linear-gradient(to right, ${accentColor}, ${accentColor})`,
     );
-    root.style.setProperty("--multitree-accent-ink", accentInk);
+    root.style.setProperty("--sponsor-krd-accent-ink", accentInk);
     void applyCursorColor(accentColor, root, () => !cancelled).catch(
       () => undefined,
     );
     return () => {
       cancelled = true;
       root.style.removeProperty("--business-website-color");
-      root.style.setProperty("--multitree-accent", MULTITREE_ACCENT_COLOR);
+      root.style.setProperty("--sponsor-krd-accent", SPONSOR_KRD_ACCENT_COLOR);
       root.style.setProperty(
-        "--multitree-accent-gradient",
-        `linear-gradient(to right, ${MULTITREE_ACCENT_COLOR}, ${MULTITREE_ACCENT_COLOR})`,
+        "--sponsor-krd-accent-gradient",
+        SPONSOR_KRD_ACCENT_GRADIENT,
       );
       root.style.setProperty(
-        "--multitree-accent-ink",
-        getMultiTreeAccentInk(MULTITREE_ACCENT_COLOR),
+        "--sponsor-krd-accent-ink",
+        getSponsorKrdAccentInk(SPONSOR_KRD_ACCENT_COLOR),
       );
       resetCursorColor(root);
     };
-  }, [accentColor, accentInk, embedded]);
+  }, [accentBackground, accentColor, accentInk, embedded]);
 
   const content = (
     <>

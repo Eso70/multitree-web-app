@@ -3,13 +3,13 @@ import { getUploadDirectories, resolveUploadPath } from "./upload-path";
 import { getUploadContentType } from "./content-type";
 
 describe("uploaded image compatibility route", () => {
-  const runtimeDirectory = resolve("C:/multitree/.runtime/uploads");
+  const runtimeDirectory = resolve("C:/sponsor-krd/.runtime/uploads");
   const legacyDirectory = resolve(
-    "C:/multitree/frontend/public/images/upload",
+    "C:/sponsor-krd/frontend/public/images/upload",
   );
 
   it("uses the unwatched runtime directory before the legacy public directory", () => {
-    expect(getUploadDirectories("C:/multitree/frontend", undefined)).toEqual([
+    expect(getUploadDirectories("C:/sponsor-krd/frontend", undefined)).toEqual([
       runtimeDirectory,
       legacyDirectory,
     ]);
@@ -26,10 +26,10 @@ describe("uploaded image compatibility route", () => {
     ).toBe(runtimeImage);
   });
 
-  it("resolves a persisted legacy MultiTree URL from the renamed namespace", () => {
+  it("resolves a persisted legacy SponsorKrd URL from the renamed namespace", () => {
     const expectedPath = join(
       legacyDirectory,
-      "multitree",
+      "sponsor-krd",
       "branding",
       "logo.png",
     );

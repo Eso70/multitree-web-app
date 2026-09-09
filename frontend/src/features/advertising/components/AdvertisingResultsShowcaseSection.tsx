@@ -7,11 +7,11 @@ import { ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import { BusinessSectionDecorations } from "@/components/business/BusinessSectionDecorations";
 import { PublicSectionHeading } from "@/components/public/PublicSectionHeading";
 import { PublicSection } from "@/components/public/PublicSection";
-import {
-  GLASS_CONTROL_SHADOW,
-  GLASS_SURFACE_CLASS,
-} from "@/components/templates/mini-website/liquid-glass/liquid-glass-utils";
 import type { AdvertisingResultColor, AdvertisingResultItem } from "../types";
+
+const GLASS_SURFACE_CLASS =
+  "bg-slate-950/45 text-white ring-1 ring-white/35 backdrop-blur-md";
+const GLASS_CONTROL_SHADOW = "0 6px 20px -8px rgba(15,23,42,0.55)";
 
 interface AdvertisingResultTheme {
   tone: string;

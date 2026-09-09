@@ -28,9 +28,9 @@ import { StatCard } from "@/components/shared/StatCard";
 import { ColorGradientModal } from "@/features/link-editor/ColorGradientModal";
 import { parseWebsiteColor } from "@/lib/utils/parse-website-color";
 import {
-  getMultiTreeAccentInk,
-  MULTITREE_ACCENT_COLOR,
-} from "@/lib/multitree-theme";
+  getSponsorKrdAccentInk,
+  SPONSOR_KRD_ACCENT_COLOR,
+} from "@/lib/sponsor-krd-theme";
 import { CustomSelect } from "@/components/shared/CustomSelect";
 import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
 import { InlineRequestError } from "@/components/shared/InlineRequestError";
@@ -42,7 +42,11 @@ import {
 } from "@/lib/api/inline-request-error";
 import { enqueueImageUpload } from "@/lib/api/enqueue-image-upload";
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
-import { MULTITREE_LOGO, MULTITREE_LOGO_MARK } from "@/lib/brand/brand-assets";
+import {
+  SPONSOR_KRD_FAVICON,
+  SPONSOR_KRD_LOGO,
+  SPONSOR_KRD_LOGO_MARK,
+} from "@/lib/brand/brand-assets";
 import { BusinessTikTokPixelConfigPage } from "@/features/analytics/components/BusinessTikTokPixelConfigPage";
 import { PlatformTikTokAdAccountTab } from "@/features/campaigns/components/PlatformTikTokAdAccountTab";
 import { TbBrandTiktok } from "react-icons/tb";
@@ -150,8 +154,8 @@ export function PlatformSettingsPage() {
       ? "tiktok-ads"
       : "general",
   );
-  const [multiTreeName, setMultiTreeName] = useState("MultiTree");
-  const [accentColor, setAccentColor] = useState(MULTITREE_ACCENT_COLOR);
+  const [sponsorKrdName, setSponsorKrdName] = useState("Sponsor.krd");
+  const [accentColor, setAccentColor] = useState(SPONSOR_KRD_ACCENT_COLOR);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
@@ -183,14 +187,14 @@ export function PlatformSettingsPage() {
   const [showMediaCleanupConfirm, setShowMediaCleanupConfirm] = useState(false);
 
   const applySettings = useCallback((settings: PlatformSettings) => {
-    setMultiTreeName(settings.name);
+    setSponsorKrdName(settings.name);
     setUsername(settings.username);
     setAdminEmail(settings.email || "");
     setPhone(settings.phone || "");
     setLogo(settings.logo);
     setAvatar(settings.avatar);
     setFavicon(settings.favicon);
-    setAccentColor(settings.accent_color || MULTITREE_ACCENT_COLOR);
+    setAccentColor(settings.accent_color || SPONSOR_KRD_ACCENT_COLOR);
     setAppUrl(settings.app_url || "");
   }, []);
 
@@ -226,11 +230,11 @@ export function PlatformSettingsPage() {
   useEffect(() => {
     const root = document.documentElement;
     const parsed = parseWebsiteColor(accentColor);
-    root.style.setProperty("--multitree-accent", parsed.primary);
-    root.style.setProperty("--multitree-accent-gradient", parsed.css);
+    root.style.setProperty("--sponsor-krd-accent", parsed.primary);
+    root.style.setProperty("--sponsor-krd-accent-gradient", parsed.css);
     root.style.setProperty(
-      "--multitree-accent-ink",
-      getMultiTreeAccentInk(parsed.primary),
+      "--sponsor-krd-accent-ink",
+      getSponsorKrdAccentInk(parsed.primary),
     );
   }, [accentColor]);
 
@@ -516,7 +520,7 @@ export function PlatformSettingsPage() {
         request("/api/platform/settings/branding", {
           method: "PUT",
           body: JSON.stringify({
-            name: multiTreeName.trim(),
+            name: sponsorKrdName.trim(),
             logo,
             avatar,
             favicon,
@@ -612,7 +616,7 @@ export function PlatformSettingsPage() {
     tiktok: {
       title: DASHBOARD_PAGE_LABELS.tiktokSettings,
       description:
-        "Pixel و Events API بۆ پەڕە گشتییەکانی خاوەندارێتی MultiTree بەڕێوەببە.",
+        "Pixel و Events API بۆ پەڕە گشتییەکانی خاوەندارێتی Sponsor.krd بەڕێوەببە.",
       icon: Radio,
     },
     "tiktok-ads": {
@@ -661,7 +665,7 @@ export function PlatformSettingsPage() {
         tabs={tabs}
         value={tab}
         onChange={changeTab}
-        accent="var(--multitree-accent)"
+        accent="var(--sponsor-krd-accent)"
       />
 
       {tab === "tiktok" && (
@@ -696,7 +700,7 @@ export function PlatformSettingsPage() {
                   <div className="relative h-44 w-72 sm:h-48 sm:w-80">
                     <label className="group absolute left-5 top-7 h-24 w-24 rotate-[-8deg] cursor-pointer overflow-hidden rounded-full border-4 border-white bg-white shadow-xl ring-1 ring-gray-200 transition hover:z-30 hover:rotate-0 hover:scale-105 dark:border-[#161B22] dark:bg-[#161B22] dark:ring-white/10">
                       <Image
-                        src={avatar || MULTITREE_LOGO_MARK}
+                        src={avatar || SPONSOR_KRD_LOGO_MARK}
                         alt="Default avatar"
                         width={112}
                         height={112}
@@ -718,7 +722,7 @@ export function PlatformSettingsPage() {
                     </label>
                     <label className="group absolute right-6 top-4 h-20 w-20 rotate-[10deg] cursor-pointer overflow-hidden rounded-2xl border-4 border-white bg-white p-2 shadow-lg ring-1 ring-gray-200 transition hover:z-30 hover:rotate-0 hover:scale-105 dark:border-[#161B22] dark:bg-[#161B22] dark:ring-white/10">
                       <Image
-                        src={favicon || MULTITREE_LOGO}
+                        src={favicon || SPONSOR_KRD_FAVICON}
                         alt="Favicon"
                         width={96}
                         height={96}
@@ -740,7 +744,7 @@ export function PlatformSettingsPage() {
                     </label>
                     <label className="group absolute left-1/2 top-12 z-20 h-32 w-32 -translate-x-1/2 cursor-pointer overflow-hidden rounded-3xl border-4 border-white bg-white p-3 shadow-2xl ring-1 ring-gray-200 transition hover:scale-105 dark:border-[#161B22] dark:bg-[#161B22] dark:ring-white/10">
                       <Image
-                        src={logo || MULTITREE_LOGO}
+                        src={logo || SPONSOR_KRD_LOGO}
                         alt="Logo"
                         width={144}
                         height={144}
@@ -793,9 +797,9 @@ export function PlatformSettingsPage() {
               </div>
               <Field label="ناوی سیستەم">
                 <input
-                  value={multiTreeName}
-                  onChange={(e) => setMultiTreeName(e.target.value)}
-                  placeholder="بۆ نموونە: MultiTree"
+                  value={sponsorKrdName}
+                  onChange={(e) => setSponsorKrdName(e.target.value)}
+                  placeholder="بۆ نموونە: Sponsor.krd"
                   className={inputClass}
                   dir="ltr"
                 />
@@ -869,7 +873,7 @@ export function PlatformSettingsPage() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/5">
                   <ShieldCheck
                     className="h-5 w-5"
-                    style={{ color: "var(--multitree-accent)" }}
+                    style={{ color: "var(--sponsor-krd-accent)" }}
                   />
                 </div>
                 <div>
@@ -940,8 +944,8 @@ export function PlatformSettingsPage() {
                               className="rounded-full px-2 py-0.5 text-[10px] font-bold"
                               style={{
                                 background:
-                                  "color-mix(in srgb, var(--multitree-accent) 20%, transparent)",
-                                color: "var(--multitree-accent)",
+                                  "color-mix(in srgb, var(--sponsor-krd-accent) 20%, transparent)",
+                                color: "var(--sponsor-krd-accent)",
                               }}
                             >
                               Current
@@ -1228,7 +1232,7 @@ export function PlatformSettingsPage() {
                             format,
                           )}
                           onChange={() => toggleMediaFormat(format)}
-                          className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-[var(--multitree-accent)]"
+                          className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-[var(--sponsor-krd-accent)]"
                         />
                         <span className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
                           {format === "jpeg" ? "JPG / JPEG" : format}
@@ -1358,7 +1362,7 @@ export function PlatformSettingsPage() {
         value={accentColor}
         onChange={setAccentColor}
         onClose={() => setShowColorPicker(false)}
-        solidFallback={MULTITREE_ACCENT_COLOR}
+        solidFallback={SPONSOR_KRD_ACCENT_COLOR}
         gradientFallback="#0066ff"
       />
       <ConfirmDeleteModal
@@ -1401,7 +1405,7 @@ function RetentionCount({
       <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-slate-100 dark:bg-white/5">
         <Icon
           className="h-4 w-4"
-          style={{ color: "var(--multitree-accent)" }}
+          style={{ color: "var(--sponsor-krd-accent)" }}
         />
       </span>
       <div className="min-w-0">
@@ -1477,7 +1481,7 @@ function MediaSizeCard({
       <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-slate-100 dark:bg-white/5">
         <Icon
           className="h-4 w-4"
-          style={{ color: "var(--multitree-accent)" }}
+          style={{ color: "var(--sponsor-krd-accent)" }}
         />
       </span>
       <div className="min-w-0">

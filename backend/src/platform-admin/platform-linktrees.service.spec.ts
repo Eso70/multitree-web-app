@@ -10,11 +10,11 @@ import { AnalyticsReadService } from '../analytics/analytics-read.service';
 describe('PlatformLinktreesService', () => {
   const workspaceId = '00000000-0000-4000-8000-000000000001';
   const branding = {
-    name: 'MultiTree',
+    name: 'Sponsor.krd',
     logo: '/logo.png',
     avatar: '/avatar.png',
     favicon: '/favicon.ico',
-    accentColor: '#b6f20d',
+    accentColor: '#25F4EE',
   };
   const linktrees = {
     getAllLinktrees: jest.fn(),

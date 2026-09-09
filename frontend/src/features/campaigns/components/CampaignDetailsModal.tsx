@@ -14,14 +14,14 @@ interface CampaignDetailsModalProps {
   campaign: TikTokCampaign | null;
   isOpen: boolean;
   onClose: () => void;
-  multiTreeTheme?: boolean;
+  sponsorKrdTheme?: boolean;
 }
 
 export function CampaignDetailsModal({
   campaign,
   isOpen,
   onClose,
-  multiTreeTheme = false,
+  sponsorKrdTheme = false,
 }: CampaignDetailsModalProps) {
   if (!campaign) return null;
 
@@ -34,7 +34,7 @@ export function CampaignDetailsModal({
     <ManagementModal
       isOpen={isOpen}
       onClose={onClose}
-      multiTreeTheme={multiTreeTheme}
+      sponsorKrdTheme={sponsorKrdTheme}
       title={campaign.name}
       description={`وردەکاری ئەنجام و زانیارییەکانی کەمپەین لە تیکتۆک`}
       wide

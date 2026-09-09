@@ -8,7 +8,6 @@ import {
   SkeletonForm,
   SkeletonList,
   SkeletonManagementPage,
-  SkeletonMiniWebsiteTemplate,
   SkeletonModal,
   SkeletonPublicLandingPage,
   SkeletonPublicLinktreePage,
@@ -134,14 +133,6 @@ describe("loading skeletons", () => {
     render(<SkeletonTemplatePage />);
     expect(
       screen.getByRole("status", { name: "Loading templates" }),
-    ).toBeInTheDocument();
-    expect(screen.getAllByRole("status")).toHaveLength(1);
-  });
-
-  it("provides one accessible status while a mini-website template bundle loads", () => {
-    render(<SkeletonMiniWebsiteTemplate />);
-    expect(
-      screen.getByRole("status", { name: "Loading mini website" }),
     ).toBeInTheDocument();
     expect(screen.getAllByRole("status")).toHaveLength(1);
   });

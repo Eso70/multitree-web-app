@@ -39,7 +39,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       connectionTimeoutMillis,
       query_timeout: queryTimeoutMillis,
       statement_timeout: queryTimeoutMillis,
-      application_name: 'multitree-backend',
+      application_name: 'sponsor-krd-backend',
       options: '-c client_encoding=UTF8',
       maxUses: 7500,
     });

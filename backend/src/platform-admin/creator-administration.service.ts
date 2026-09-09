@@ -6,7 +6,6 @@ import {
 import { SessionService } from '../auth/session.service';
 import { DatabaseService } from '../database/database.service';
 import { LinktreesService } from '../linktrees/linktrees.service';
-import { MiniWebsitesService } from '../mini-websites/mini-websites.service';
 import {
   ListCreatorsDto,
   ManageCreatorDto,
@@ -18,7 +17,6 @@ export class CreatorAdministrationService {
     private readonly database: DatabaseService,
     private readonly sessions: SessionService,
     private readonly linktrees: LinktreesService,
-    private readonly miniWebsites: MiniWebsitesService,
   ) {}
 
   async list(query: ListCreatorsDto) {
@@ -29,7 +27,7 @@ export class CreatorAdministrationService {
     const params: unknown[] = [search, query.status || null, limit, offset];
     const where = `WHERE ($1::text IS NULL OR user_account.email ILIKE '%' || $1 || '%'
                               OR user_account.display_name ILIKE '%' || $1 || '%'
-                              OR COALESCE(linktree.seo_name, website.slug, '') ILIKE '%' || $1 || '%')
+                              OR COALESCE(linktree.seo_name, '') ILIKE '%' || $1 || '%')
                      AND ($2::text IS NULL OR creator.status = $2)`;
     const [rows, count, stats] = await Promise.all([
       this.database.query(
@@ -47,7 +45,7 @@ export class CreatorAdministrationService {
                 (SELECT COUNT(*)::int FROM business_sessions session
                   WHERE session.business_id = creator.business_id
                     AND session.session_expires_at > NOW()) AS active_session_count,
-                COALESCE(linktree.seo_name, website.slug) AS page_slug,
+                linktree.seo_name AS page_slug,
                 CASE
                   WHEN creator.paid_started_at IS NOT NULL THEN 'active'
                   WHEN creator.trial_started_at IS NULL THEN 'not_started'
@@ -61,7 +59,6 @@ export class CreatorAdministrationService {
              ON google_identity.user_id = user_account.id
             AND google_identity.provider = 'google'
            LEFT JOIN linktrees linktree ON linktree.id=creator.linktree_id
-           LEFT JOIN mini_websites website ON website.id=creator.mini_website_id
            ${where}
           ORDER BY creator.created_at DESC LIMIT $3 OFFSET $4`,
         params,
@@ -71,7 +68,6 @@ export class CreatorAdministrationService {
            FROM creator_accounts creator
            JOIN users user_account ON user_account.id=creator.user_id
            LEFT JOIN linktrees linktree ON linktree.id=creator.linktree_id
-           LEFT JOIN mini_websites website ON website.id=creator.mini_website_id
            ${where}`,
         params.slice(0, 2),
       ),
@@ -169,11 +165,10 @@ export class CreatorAdministrationService {
   async deletePage(id: string) {
     const account = await this.database.query<{
       business_id: string;
-      page_type: 'linktree' | 'mini_website' | null;
+      page_type: 'linktree' | null;
       linktree_id: string | null;
-      mini_website_id: string | null;
     }>(
-      `SELECT business_id, page_type, linktree_id, mini_website_id
+      `SELECT business_id, page_type, linktree_id
          FROM creator_accounts
         WHERE id=$1`,
       [id],
@@ -184,30 +179,19 @@ export class CreatorAdministrationService {
       throw new BadRequestException('Creator does not have a page');
     }
 
-    if (current.page_type === 'linktree') {
-      if (!current.linktree_id) {
-        throw new BadRequestException('Creator linktree is not attached');
-      }
-      await this.linktrees.deleteLinktree(
-        current.linktree_id,
-        current.business_id,
-        'platform',
-      );
-    } else {
-      if (!current.mini_website_id) {
-        throw new BadRequestException('Creator mini website is not attached');
-      }
-      await this.miniWebsites.remove(
-        current.mini_website_id,
-        current.business_id,
-      );
+    if (!current.linktree_id) {
+      throw new BadRequestException('Creator linktree is not attached');
     }
+    await this.linktrees.deleteLinktree(
+      current.linktree_id,
+      current.business_id,
+      'platform',
+    );
 
     await this.database.query(
       `UPDATE creator_accounts
           SET page_type=NULL,
               linktree_id=NULL,
-              mini_website_id=NULL,
               page_reservation_token=NULL,
               page_reservation_expires_at=NULL
         WHERE id=$1`,

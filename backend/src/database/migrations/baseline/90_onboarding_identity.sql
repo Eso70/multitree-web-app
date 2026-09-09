@@ -3,7 +3,7 @@
 --
 -- Invite-only Google onboarding: users, identities, memberships, applications.
 --
--- Part of the MultiTree baseline. `src/database/baseline.ts` lists the parts
+-- Part of the Sponsor.krd baseline. `src/database/baseline.ts` lists the parts
 -- and the order they are applied in; they are one schema split for reading,
 -- not independent scripts.
 --
@@ -90,7 +90,7 @@ CREATE TABLE public.business_signup_applications (
     logo text,
     favicon text,
     default_avatar text,
-    website_color character varying(255) DEFAULT '#b6f20d' NOT NULL,
+    website_color character varying(255) DEFAULT 'gradient:to-r:#25F4EE:#FE2C55' NOT NULL,
     terms_version character varying(40),
     privacy_version character varying(40),
     terms_accepted_at timestamp with time zone,
@@ -144,5 +144,4 @@ CREATE TRIGGER trg_business_memberships_updated_at BEFORE UPDATE ON public.busin
 FOR EACH ROW EXECUTE FUNCTION public.fn_set_updated_at();
 CREATE TRIGGER trg_business_signup_applications_updated_at BEFORE UPDATE ON public.business_signup_applications
 FOR EACH ROW EXECUTE FUNCTION public.fn_set_updated_at();
-
 

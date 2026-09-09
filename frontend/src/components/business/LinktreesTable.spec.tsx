@@ -61,7 +61,7 @@ describe("LinktreesTable column alignment", () => {
   });
 
   /**
-   * The mini-website screen reuses this table without the Linktree-only
+   * Other management screens may reuse this table without the Linktree-only
    * projection, so the slug column comes back and the counts have to follow.
    */
   it("keeps rows aligned for the partial projection", () => {

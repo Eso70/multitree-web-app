@@ -238,8 +238,8 @@ export function ColorGradientModal({
 
   const activeValue = activeColor === "from" ? from : to;
   const themedButtonStyle = {
-    background: "var(--theme-css, var(--multitree-accent))",
-    color: "var(--theme-ink, var(--multitree-accent-ink))",
+    background: "var(--theme-css, var(--sponsor-krd-accent))",
+    color: "var(--theme-ink, var(--sponsor-krd-accent-ink))",
   };
   const rgb = hexToRgb(activeValue);
   const hsl = hexToHsl(activeValue);
@@ -435,7 +435,7 @@ export function ColorGradientModal({
                   // Commit as soon as the draft is a whole colour, so the
                   // preview tracks typing without the field ever fighting it.
                   // Expanded to six digits on the way in: `#abc` is a colour a
-                  // person may reasonably type, but the mini-website and
+                  // person may reasonably type, while public-page and
                   // onboarding validators accept `#rrggbb` only, so committing
                   // it verbatim saved a value the API answered with a 400.
                   // Every other source here — presets, RGB/HSL, the eyedropper,
@@ -565,7 +565,7 @@ export function ColorGradientModal({
                         setDirection(item.id as WebsiteGradientDirection)
                       }
                       className={`h-11 sm:h-9 w-full rounded-xl text-base sm:text-sm font-medium border transition-all cursor-pointer ${direction === item.id ? "border-transparent shadow-sm" : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"}`}
-                      style={direction === item.id ? { ...themedButtonStyle, borderColor: "var(--theme-primary, var(--multitree-accent))" } : undefined}
+                      style={direction === item.id ? { ...themedButtonStyle, borderColor: "var(--theme-primary, var(--sponsor-krd-accent))" } : undefined}
                     >
                       {item.label}
                     </button>

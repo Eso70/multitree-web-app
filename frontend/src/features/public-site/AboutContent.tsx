@@ -10,7 +10,7 @@ export function AboutContent() {
         />
         <div className="mt-12 grid gap-5 md:grid-cols-2">
           <article className="rounded-[2rem] border border-black/10 bg-white/55 p-8 dark:border-white/10 dark:bg-white/[0.03]">
-            <h3 className="text-xl font-black">MultiTree چییە؟</h3>
+            <h3 className="text-xl font-black">Sponsor.krd چییە؟</h3>
             <p className="mt-4 text-sm leading-8 text-black/50 dark:text-white/45">
               پلاتفۆرمێکە بۆ دروستکردن و بەڕێوەبردنی پەڕە گشتییە جوانەکان؛ تاک،
               بزنس و ئاژانس دەتوانن ناوەڕۆک و بەستەرەکانیان بە ڕێکخراوی بڵاو

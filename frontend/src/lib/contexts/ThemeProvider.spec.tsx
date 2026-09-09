@@ -58,9 +58,9 @@ describe('ThemeProvider', () => {
       expect(root.getAttribute('data-business-theme-active')).toBe('true');
       expect(root.style.getPropertyValue('--business-website-color')).toBe('#123456');
       expect(root.style.getPropertyValue('--business-website-css')).toBe('#123456');
-      expect(root.style.getPropertyValue('--multitree-accent')).toBe('#123456');
-      expect(root.style.getPropertyValue('--multitree-accent-gradient')).toBe('#123456');
-      expect(root.style.getPropertyValue('--multitree-accent-ink')).toBe('#ffffff');
+      expect(root.style.getPropertyValue('--sponsor-krd-accent')).toBe('#123456');
+      expect(root.style.getPropertyValue('--sponsor-krd-accent-gradient')).toBe('#123456');
+      expect(root.style.getPropertyValue('--sponsor-krd-accent-ink')).toBe('#ffffff');
     });
 
     it('keeps template-only providers from replacing the platform accent', () => {
@@ -74,7 +74,7 @@ describe('ThemeProvider', () => {
         document.documentElement.style.getPropertyValue('--business-website-color'),
       ).toBe('');
       expect(
-        document.documentElement.style.getPropertyValue('--multitree-accent'),
+        document.documentElement.style.getPropertyValue('--sponsor-krd-accent'),
       ).toBe('');
     });
   });
@@ -99,7 +99,7 @@ describe('ThemeProvider', () => {
     });
 
     it('restores the previous platform accent after a business theme unmounts', () => {
-      document.documentElement.style.setProperty('--multitree-accent', '#b6f20d');
+      document.documentElement.style.setProperty('--sponsor-krd-accent', '#25F4EE');
       const { unmount } = render(
         <ThemeProvider websiteColor="#123456" documentTheme="business">
           <div>children</div>
@@ -109,8 +109,8 @@ describe('ThemeProvider', () => {
       unmount();
 
       expect(
-        document.documentElement.style.getPropertyValue('--multitree-accent'),
-      ).toBe('#b6f20d');
+        document.documentElement.style.getPropertyValue('--sponsor-krd-accent'),
+      ).toBe('#25F4EE');
       expect(
         document.documentElement.style.getPropertyValue('--business-website-color'),
       ).toBe('');

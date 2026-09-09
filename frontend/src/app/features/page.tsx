@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { MultiTreeMarketingShell } from "@/features/public-site/MultiTreeMarketingShell";
+import { SponsorKrdMarketingShell } from "@/features/public-site/SponsorKrdMarketingShell";
 import { MarketingPageHero } from "@/features/public-site/MarketingPageHero";
 import { FeatureGridSection } from "@/features/public-site/FeatureGridSection";
 import { HowItWorksSection } from "@/features/public-site/HowItWorksSection";
 import { FinalCtaSection } from "@/features/public-site/FinalCtaSection";
 
 export const metadata: Metadata = {
-  title: "تایبەتمەندییەکان | MultiTree",
-  description: "تایبەتمەندییەکانی Linktree و Mini Website ـی MultiTree",
+  title: "تایبەتمەندییەکان | Sponsor.krd",
+  description: "تایبەتمەندییەکانی Linktree ـی Sponsor.krd",
 };
 export default function FeaturesPage() {
   return (
-    <MultiTreeMarketingShell>
+    <SponsorKrdMarketingShell>
       <MarketingPageHero
         eyebrow="تایبەتمەندییەکان"
         title="هەموو ئەو ئامرازانەی بۆ پەڕەیەکی کاریگەر پێویستن"
@@ -21,6 +21,6 @@ export default function FeaturesPage() {
       <FeatureGridSection />
       <HowItWorksSection />
       <FinalCtaSection />
-    </MultiTreeMarketingShell>
+    </SponsorKrdMarketingShell>
   );
 }

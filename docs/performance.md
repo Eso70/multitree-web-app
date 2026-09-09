@@ -1,6 +1,6 @@
 # Performance
 
-This document defines the performance standards and optimization principles for MultiTree.
+This document defines the performance standards and optimization principles for Sponsor.krd.
 
 Performance is important, but it should never come at the cost of correctness, security, maintainability, or readability.
 

@@ -121,9 +121,9 @@ export function BusinessTikTokPixelConfigPage({
       const detail = (event as CustomEvent<EffectiveAccessManifest>).detail;
       if (detail) setAccess(detail);
     };
-    window.addEventListener("multitree:access-updated", syncAccess);
+    window.addEventListener("sponsor-krd:access-updated", syncAccess);
     return () =>
-      window.removeEventListener("multitree:access-updated", syncAccess);
+      window.removeEventListener("sponsor-krd:access-updated", syncAccess);
   }, []);
 
   const updateConfig = (index: number, patch: Partial<PixelConfig>) => {
@@ -165,7 +165,7 @@ export function BusinessTikTokPixelConfigPage({
       const nextConfigs = normalizeConfigs(payload?.data?.tiktok_configs);
       setConfigs(nextConfigs);
       window.dispatchEvent(
-        new CustomEvent("multitree:business-settings-updated", {
+        new CustomEvent("sponsor-krd:business-settings-updated", {
           detail: payload?.data,
         }),
       );

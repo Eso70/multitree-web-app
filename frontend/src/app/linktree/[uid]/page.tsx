@@ -7,7 +7,7 @@ import type {
   PublicLinktree as Linktree,
   PublicPageAnalytics,
 } from "@linktree/types";
-import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import { SPONSOR_KRD_ACCENT_COLOR } from "@/lib/sponsor-krd-theme";
 import {
   INTERNAL_PROXY_KEY_HEADER,
   internalProxyKey,
@@ -193,7 +193,7 @@ export async function generateMetadata({ params }: PageProps) {
   // Redirect /id to root in metadata as well
   if (uid === "id") {
     return {
-      title: "MultiTree",
+      title: "Sponsor.krd",
       description: "بۆ پەیوەندی کردن, کلیک لەم لینکانەی خوارەوە بکە",
     };
   }
@@ -242,7 +242,7 @@ export async function generateMetadata({ params }: PageProps) {
         linktree.business_default_avatar ||
         BUSINESS_LOGO_PLACEHOLDER,
     },
-    themeColor: linktree.business_website_color || MULTITREE_ACCENT_COLOR,
+    themeColor: linktree.business_website_color || SPONSOR_KRD_ACCENT_COLOR,
     openGraph: {
       title: linktree.name,
       description:

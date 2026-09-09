@@ -17,7 +17,7 @@ export function AuthenticationPreviewPanel({
   businessTenant = false,
 }: AuthenticationPreviewPanelProps) {
   const effectiveBrandName =
-    brandName || (businessTenant ? "بزنس" : "MultiTree");
+    brandName || (businessTenant ? "بزنس" : "Sponsor.krd");
   const effectiveBrandLogo =
     brandLogo !== undefined
       ? brandLogo
@@ -26,12 +26,12 @@ export function AuthenticationPreviewPanel({
         : null;
   const effectiveTitle =
     title ??
-    (businessTenant || effectiveBrandName !== "MultiTree"
+    (businessTenant || effectiveBrandName !== "Sponsor.krd"
       ? "پانێڵی بزنس"
       : "پانێڵی پلاتفۆڕم");
 
   return (
-    <aside className="relative hidden min-h-[calc(100vh-1.5rem)] overflow-hidden rounded-[32px] bg-[var(--multitree-accent)] p-10 lg:flex lg:items-center lg:justify-center lg:ml-4 lg:mr-[-2.5rem] lg:min-h-[calc(100vh-2rem)]">
+    <aside className="relative hidden min-h-[calc(100vh-1.5rem)] overflow-hidden rounded-[32px] bg-[var(--sponsor-krd-accent)] p-10 lg:flex lg:items-center lg:justify-center lg:ml-4 lg:mr-[-2.5rem] lg:min-h-[calc(100vh-2rem)]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_12%,rgba(255,255,255,.5),transparent_28%),linear-gradient(145deg,transparent,rgba(15,23,42,.1))]" />
       <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full border border-slate-900/10" />
       <div className="absolute -bottom-28 -left-20 h-96 w-96 rounded-full border border-slate-900/10" />

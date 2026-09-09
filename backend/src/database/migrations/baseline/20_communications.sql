@@ -3,7 +3,7 @@
 --
 -- Communication Center: announcements, deliveries, inboxes, conversations.
 --
--- Part of the MultiTree baseline. `src/database/baseline.ts` lists the parts
+-- Part of the Sponsor.krd baseline. `src/database/baseline.ts` lists the parts
 -- and the order they are applied in; they are one schema split for reading,
 -- not independent scripts.
 --
@@ -108,7 +108,7 @@ CREATE TABLE public.communication_conversations (
     status varchar(20) NOT NULL DEFAULT 'open',
     assigned_admin_id uuid REFERENCES public.platform_admins(id) ON DELETE SET NULL,
     created_by_type varchar(20) NOT NULL,
-    multitree_key varchar(80),
+    sponsor_krd_key varchar(80),
     last_message_at timestamptz NOT NULL DEFAULT now(),
     business_last_read_at timestamptz,
     platform_last_read_at timestamptz,
@@ -179,9 +179,9 @@ CREATE INDEX idx_communication_conversations_business_activity
   ON public.communication_conversations(business_id, last_message_at DESC);
 CREATE INDEX idx_communication_conversations_platform_queue
   ON public.communication_conversations(status, priority, last_message_at DESC);
-CREATE UNIQUE INDEX idx_communication_conversations_multitree_key
-  ON public.communication_conversations(business_id, multitree_key)
-  WHERE multitree_key IS NOT NULL;
+CREATE UNIQUE INDEX idx_communication_conversations_sponsor_krd_key
+  ON public.communication_conversations(business_id, sponsor_krd_key)
+  WHERE sponsor_krd_key IS NOT NULL;
 CREATE INDEX idx_communication_messages_conversation
   ON public.communication_messages(conversation_id, created_at ASC);
 CREATE INDEX idx_communication_homepage_priority
@@ -225,8 +225,8 @@ SELECT seed.id, seed.title, seed.message, seed.announcement_type,
 FROM (
   VALUES
     ('7b100000-0000-4000-8000-000000000001'::uuid,
-     'بەخێربێیت بۆ MultiTree',
-     'بەخێربێیت بۆ MultiTree. هیوادارین ئەزموونێکی خۆشت هەبێت.',
+     'بەخێربێیت بۆ Sponsor.krd',
+     'بەخێربێیت بۆ Sponsor.krd. هیوادارین ئەزموونێکی خۆشت هەبێت.',
      'general', 'normal', ARRAY['business_bell']::text[], NULL, NULL)
 ) AS seed(id, title, message, announcement_type, priority, channels, cta_label, cta_url)
 CROSS JOIN LATERAL (
@@ -297,19 +297,19 @@ BEGIN
 
   FOR target IN SELECT id, name FROM public.businesses LOOP
     SELECT id INTO thread_id FROM public.communication_conversations
-    WHERE business_id=target.id AND multitree_key='business_welcome'
+    WHERE business_id=target.id AND sponsor_krd_key='business_welcome'
     ORDER BY created_at ASC LIMIT 1;
 
     IF thread_id IS NULL THEN
       INSERT INTO public.communication_conversations
-        (business_id, subject, category, priority, status, multitree_key, assigned_admin_id,
+        (business_id, subject, category, priority, status, sponsor_krd_key, assigned_admin_id,
          created_by_type, platform_last_read_at)
-      VALUES (target.id, 'بەخێربێیت بۆ MultiTree', 'account', 'normal',
+      VALUES (target.id, 'بەخێربێیت بۆ Sponsor.krd', 'account', 'normal',
               'waiting_business', 'business_welcome', seed_admin, 'platform-admin', now())
       RETURNING id INTO thread_id;
 
       welcome_body := 'سڵاو ' || target.name ||
-        '، بەخێربێیت بۆ MultiTree. هیوادارین ئەزموونێکی خۆشت هەبێت.';
+        '، بەخێربێیت بۆ Sponsor.krd. هیوادارین ئەزموونێکی خۆشت هەبێت.';
 
       INSERT INTO public.communication_messages
         (conversation_id, sender_type, sender_admin_id, body)
@@ -319,18 +319,18 @@ BEGIN
         (recipient_type, business_id, kind, priority, title, body,
          source_type, source_id, action_url)
       VALUES ('business', target.id, 'platform_reply', 'important',
-              'بەخێربێیت بۆ MultiTree', welcome_body, 'conversation', thread_id,
+              'بەخێربێیت بۆ Sponsor.krd', welcome_body, 'conversation', thread_id,
               '/business?communication=' || thread_id::text);
     ELSE
       welcome_body := 'سڵاو ' || target.name ||
-        '، بەخێربێیت بۆ MultiTree. هیوادارین ئەزموونێکی خۆشت هەبێت.';
+        '، بەخێربێیت بۆ Sponsor.krd. هیوادارین ئەزموونێکی خۆشت هەبێت.';
       UPDATE public.communication_messages
       SET body=welcome_body, encrypted_body=NULL
       WHERE id=(SELECT id FROM public.communication_messages
                 WHERE conversation_id=thread_id AND sender_type='platform-admin'
                 ORDER BY created_at ASC LIMIT 1);
       UPDATE public.communication_notifications
-      SET title='بەخێربێیت بۆ MultiTree', body=welcome_body,
+      SET title='بەخێربێیت بۆ Sponsor.krd', body=welcome_body,
           encrypted_content=NULL
       WHERE recipient_type='business' AND business_id=target.id
         AND source_type='conversation' AND source_id=thread_id;

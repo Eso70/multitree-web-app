@@ -11,7 +11,7 @@ describe("shared dashboard chrome", () => {
 
     render(
       <DashboardSidebar
-        brandName="MultiTree"
+        brandName="Sponsor.krd"
         brandSubtitle="Dashboard"
         brandImage="/images/Logo.jpg"
         items={[

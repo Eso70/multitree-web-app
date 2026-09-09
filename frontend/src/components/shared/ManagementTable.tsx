@@ -54,7 +54,7 @@ export interface ManagementTableColumn {
 export type ManagementTablePagination =
   /**
    * The screen already holds every row, so the table pages through them
-   * itself. Used by the linktree and mini-website lists, which fetch the whole
+   * itself. Used by management lists that fetch the whole
    * collection in one request.
    */
   | { mode: "client"; pageSize?: number }

@@ -4,10 +4,10 @@ import { ModalWizardActions } from "@/components/shared/ModalWizardActions";
 import { ModalWizardProgress } from "@/components/shared/ModalWizardProgress";
 
 describe("shared modal wizard presentation", () => {
-  it("preserves MultiTree active and completed step classes", () => {
+  it("preserves SponsorKrd active and completed step classes", () => {
     const { container } = render(
       <ModalWizardProgress
-        variant="multitree"
+        variant="sponsor-krd"
         currentStep="details"
         steps={[
           { id: "business", label: "Business" },

@@ -682,7 +682,7 @@ export class ApprovalService {
       const page = await client.query<{ id: string }>(
         `SELECT id FROM public_pages
          WHERE business_id=$1::uuid
-           AND (id=$2::uuid OR source_linktree_id=$2::uuid OR source_mini_website_id=$2::uuid)`,
+           AND (id=$2::uuid OR source_linktree_id=$2::uuid)`,
         [input.businessId, input.resourceId],
       );
       if (page.rows[0]) {

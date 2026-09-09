@@ -129,7 +129,7 @@ export function EmailCodeAuthenticationForm({
           onChange={(event) =>
             setCode(event.target.value.replace(/\D/g, "").slice(0, 6))
           }
-          className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-center text-lg font-black tracking-[0.45em] text-slate-900 outline-none transition focus:border-[var(--multitree-accent)] focus:ring-2 focus:ring-[var(--multitree-accent)]/20 dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
+          className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-center text-lg font-black tracking-[0.45em] text-slate-900 outline-none transition focus:border-[var(--sponsor-krd-accent)] focus:ring-2 focus:ring-[var(--sponsor-krd-accent)]/20 dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
         />
         {error ? (
           <p
@@ -142,7 +142,7 @@ export function EmailCodeAuthenticationForm({
         <button
           type="submit"
           disabled={busy || code.length !== 6}
-          className="flex h-12 w-full items-center justify-center rounded-xl bg-[var(--multitree-accent)] px-4 text-sm font-bold text-[var(--multitree-accent-ink)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-12 w-full items-center justify-center rounded-xl bg-[var(--sponsor-krd-accent)] px-4 text-sm font-bold text-[var(--sponsor-krd-accent-ink)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy ? (
             <MotionSpinner>
@@ -178,7 +178,7 @@ export function EmailCodeAuthenticationForm({
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder={emailPlaceholder}
-          className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[var(--multitree-accent)] focus:ring-2 focus:ring-[var(--multitree-accent)]/20 dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
+          className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[var(--sponsor-krd-accent)] focus:ring-2 focus:ring-[var(--sponsor-krd-accent)]/20 dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
         />
       </div>
       {error ? (
@@ -192,7 +192,7 @@ export function EmailCodeAuthenticationForm({
       <button
         type="submit"
         disabled={busy}
-        className="flex h-12 w-full items-center justify-center rounded-xl bg-[var(--multitree-accent)] px-4 text-sm font-bold text-[var(--multitree-accent-ink)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-12 w-full items-center justify-center rounded-xl bg-[var(--sponsor-krd-accent)] px-4 text-sm font-bold text-[var(--sponsor-krd-accent-ink)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {busy ? (
           <MotionSpinner>

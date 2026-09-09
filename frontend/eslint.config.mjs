@@ -12,9 +12,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Generated third-party MapLibre bundles are copied during prebuild.
-    "public/maplibre/**",
-    // Node.js scripts use CommonJS (require) intentionally
+    // Build-support scripts use Node.js module conventions intentionally.
     "scripts/**",
   ]),
   {

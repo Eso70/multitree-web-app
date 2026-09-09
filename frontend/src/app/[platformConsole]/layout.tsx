@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
+import { SPONSOR_KRD_FAVICON } from "@/lib/brand/brand-assets";
 
 export const metadata: Metadata = {
-  title: "Admin | MultiTree",
+  title: "Admin | Sponsor.krd",
   robots: "noindex, nofollow",
   icons: {
-    icon: "/favicon.ico",
+    icon: SPONSOR_KRD_FAVICON,
   },
 };
 

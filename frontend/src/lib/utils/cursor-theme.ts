@@ -1,4 +1,4 @@
-import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import { SPONSOR_KRD_ACCENT_COLOR } from "@/lib/sponsor-krd-theme";
 
 let cursorAssetsPromise: Promise<[string, string]> | null = null;
 
@@ -18,7 +18,7 @@ export async function applyCursorColor(
   const [defaultCursor, textCursor] = await loadCursorAssets();
   if (!isActive()) return;
   const tint = (svg: string) =>
-    encodeURIComponent(svg.replaceAll(MULTITREE_ACCENT_COLOR, accentColor));
+    encodeURIComponent(svg.replaceAll(SPONSOR_KRD_ACCENT_COLOR, accentColor));
 
   root.style.setProperty(
     "--custom-cursor-default",

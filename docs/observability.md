@@ -1,6 +1,6 @@
 # Observability
 
-This document defines the observability standards for MultiTree.
+This document defines the observability standards for Sponsor.krd.
 
 Observability enables developers and operators to understand the health, performance, and behavior of the platform in development and production.
 

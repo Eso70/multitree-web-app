@@ -354,7 +354,7 @@ export class CreatorAuthService {
     await client.query(
       `INSERT INTO business_branding
         (business_id, logo, favicon, default_avatar, website_color)
-       VALUES ($1, $2, $3, $4, '#b6f20d')`,
+       VALUES ($1, $2, $3, $4, 'gradient:to-r:#25F4EE:#FE2C55')`,
       [
         businessId,
         BUSINESS_LOGO_PLACEHOLDER,

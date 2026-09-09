@@ -26,8 +26,10 @@ describe('readPlatformAdminEnv', () => {
   });
 
   it('treats an empty current value as unset so the alias still applies', () => {
-    const read = from({ PLATFORM_ADMIN_NAME: '', SA_NAME: 'MultiTree' });
-    expect(readPlatformAdminEnv('PLATFORM_ADMIN_NAME', read)).toBe('MultiTree');
+    const read = from({ PLATFORM_ADMIN_NAME: '', SA_NAME: 'Sponsor.krd' });
+    expect(readPlatformAdminEnv('PLATFORM_ADMIN_NAME', read)).toBe(
+      'Sponsor.krd',
+    );
   });
 
   it('returns undefined when neither name is set', () => {

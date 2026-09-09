@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils";
 import { RequiredMark } from "./RequiredMark";
 
 /**
- * Labeled field wrapper matching the linktree/mini-website editors' local
- * `Field` components (e.g. MiniWebsiteContentStep). Shared so new editor
+ * Labeled field wrapper matching the public-page editors' local
+ * field components. Shared so new editor
  * surfaces don't grow yet another copy of the same label/hint markup.
  */
 export function EditorField({

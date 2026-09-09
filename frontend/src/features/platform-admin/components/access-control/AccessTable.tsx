@@ -11,7 +11,7 @@ export function AccessTable({
   onPermission: (permission: Permission) => void;
 }) {
   return (
-    <div className="overflow-x-auto custom-scrollbar lime-custom-scrollbar">
+    <div className="overflow-x-auto custom-scrollbar brand-custom-scrollbar">
       <table className="w-full min-w-[760px] text-left text-xs">
         <thead>
           <tr className="border-b border-slate-100 text-slate-400 dark:border-white/5">

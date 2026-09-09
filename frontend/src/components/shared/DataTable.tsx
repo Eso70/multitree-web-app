@@ -34,7 +34,7 @@ export function DataTable<T>({
   }
 
   return (
-    <div className="custom-scrollbar lime-custom-scrollbar theme-custom-scrollbar overflow-x-auto overscroll-contain">
+    <div className="custom-scrollbar brand-custom-scrollbar theme-custom-scrollbar overflow-x-auto overscroll-contain">
       <table className={`w-full ${minWidthClassName} text-left text-xs`}>
         <thead>
           <tr className="border-b border-slate-100 text-slate-400 dark:border-white/5">

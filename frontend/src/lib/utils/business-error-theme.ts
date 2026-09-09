@@ -2,11 +2,11 @@ import {
   parseWebsiteColor,
   type ParsedColor,
 } from "@/lib/utils/parse-website-color";
-import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import { SPONSOR_KRD_ACCENT_COLOR } from "@/lib/sponsor-krd-theme";
 import { businessTabTitle } from "./tab-title";
 
 /** Root Platform Administrator fallback when no business theme is available. */
-export const DEFAULT_BUSINESS_ACCENT = MULTITREE_ACCENT_COLOR;
+export const DEFAULT_BUSINESS_ACCENT = SPONSOR_KRD_ACCENT_COLOR;
 
 export interface BusinessFooterData {
   footerText?: string | null;
@@ -15,7 +15,6 @@ export interface BusinessFooterData {
   advertisingEnabled?: boolean;
   brandingRemoved?: boolean;
   linktrees?: Array<{ name: string; href: string }>;
-  miniWebsites?: Array<{ name: string; href: string }>;
 }
 
 export interface BusinessSubdomainTheme extends BusinessFooterData {
@@ -109,18 +108,13 @@ export async function fetchBusinessFooterData(
 
   try {
     const signal = AbortSignal.timeout(10_000);
-    const [businessRes, linktreesRes, miniWebsitesRes] = await Promise.all([
+    const [businessRes, linktreesRes] = await Promise.all([
       fetch(publicApiUrl("/api/public/business"), {
         headers,
         cache: "no-store",
         signal,
       }),
       fetch(publicApiUrl("/api/public/linktrees"), {
-        headers,
-        cache: "no-store",
-        signal,
-      }),
-      fetch(publicApiUrl("/api/public/mini-websites"), {
         headers,
         cache: "no-store",
         signal,
@@ -157,18 +151,6 @@ export async function fetchBusinessFooterData(
         .map((item) => ({
           name: item.name as string,
           href: `/linktree/${item.seo_name || item.uid}`,
-        }));
-    }
-
-    if (miniWebsitesRes.ok) {
-      const payload = (await miniWebsitesRes.json()) as {
-        data?: Array<{ name?: string | null; slug?: string | null }>;
-      };
-      footer.miniWebsites = (payload.data || [])
-        .filter((item) => item.name && item.slug)
-        .map((item) => ({
-          name: item.name as string,
-          href: `/bio/${item.slug}`,
         }));
     }
 

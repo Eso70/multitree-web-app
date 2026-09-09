@@ -73,7 +73,7 @@ const actorOptions: CustomSelectOption<string>[] = [
   { value: "business", label: "بزنس" },
   { value: "platform-admin", label: "بەڕێوەبەری پلاتفۆرم" },
   { value: "anonymous", label: "میوان" },
-  { value: "multitree", label: "سیستەم" },
+  { value: "sponsor_krd", label: "سیستەم" },
 ];
 
 const kindOptions: CustomSelectOption<string>[] = [
@@ -196,7 +196,7 @@ export function ActivityLogPage() {
     }
     const anchor = document.createElement("a");
     anchor.href = `/api/platform/audit-events/export?${params}`;
-    anchor.download = "multitree-audit.csv";
+    anchor.download = "sponsor-krd-audit.csv";
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();

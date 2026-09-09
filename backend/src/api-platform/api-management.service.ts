@@ -550,7 +550,7 @@ export class ApiManagementService {
         method: 'HEAD',
         redirect: 'error',
         signal: AbortSignal.timeout(8000),
-        headers: { 'user-agent': 'MultiTree-Webhook-Validator/1.0' },
+        headers: { 'user-agent': 'Sponsor.krd-Webhook-Validator/1.0' },
       });
       status = response.status;
     } catch (error) {
@@ -655,7 +655,7 @@ export class ApiManagementService {
       : '';
     const announcement = await this.communications.createAnnouncement(
       {
-        title: `MultiTree API ${version.version}`,
+        title: `Sponsor.krd API ${version.version}`,
         message: `API version ${version.version} is ${version.status}.${retirement}`,
         announcementType: 'feature',
         priority: version.status === 'deprecated' ? 'important' : 'normal',

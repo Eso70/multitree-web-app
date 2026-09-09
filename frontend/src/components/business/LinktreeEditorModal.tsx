@@ -870,7 +870,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       const sanitizedFooterText = (linktree.footer_text || "")
         .trim()
         .slice(0, 200);
-      // Always default to "MultiTree" if empty
+      // Always default to "Sponsor.krd" if empty
       setFooterText(sanitizedFooterText || DEFAULT_FOOTER_TEXT);
 
       // Validate and sanitize footer phone
@@ -1563,7 +1563,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
 
   // Handle submit - ONLY called when "پاشەکەوتکردن" button is clicked,
   // or by "تۆمارکردنەوە" save-current on edit mode (which allows saving
-  // without advancing to the final step, mirroring the mini website editor).
+  // without advancing to the final step).
   const handleSubmit = async (
     e: React.FormEvent,
     opts?: { allowNonFinalStep?: boolean },
@@ -2055,7 +2055,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
             : "لینکەکان زیاد بکە"
       }
       createBusinessStyle
-      multiTreeTheme={false}
+      sponsorKrdTheme={false}
       // The page being designed owns the modal's colour, so a checkbox or a
       // required marker in here matches what the visitor will actually see.
       accentColor={businessTheme.primary}

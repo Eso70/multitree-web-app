@@ -27,7 +27,7 @@ const INTEGER_QUERY_LIMITS: Record<string, { min: number; max: number }> = {
 
 const DATE_QUERIES = new Set(['from', 'to']);
 const ENUM_QUERY_VALUES: Record<string, ReadonlySet<string>> = {
-  pageType: new Set(['linktree', 'mini_website']),
+  pageType: new Set(['linktree']),
   order: new Set(['asc', 'desc']),
 };
 

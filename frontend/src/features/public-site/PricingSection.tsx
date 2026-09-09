@@ -23,25 +23,25 @@ export function PricingSection() {
             </p>
             <ul className="mt-6 space-y-3 text-sm font-bold">
               {[
-                "یەک Linktree یان مینی وێبسایت",
+                "یەک Linktree",
                 "هەموو ئامرازە سەرەتاییەکان",
                 "ئاماری پەڕە",
               ].map((item) => (
                 <li key={item} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[var(--multitree-accent)]" />
+                  <Check className="h-4 w-4 text-[var(--sponsor-krd-accent)]" />
                   {item}
                 </li>
               ))}
             </ul>
             <Link
               href="/signup"
-              className="mt-8 flex h-12 items-center justify-center rounded-xl bg-[#b6f20d] text-sm font-black text-[#111827] transition-colors hover:bg-[#a8df0c]"
+              className="sa-gradient mt-8 flex h-12 items-center justify-center rounded-xl text-sm font-black transition-opacity hover:opacity-90"
             >
               بەخۆڕایی دەست پێ بکە
             </Link>
           </article>
-          <article className="relative overflow-hidden rounded-[2rem] border border-[var(--multitree-accent)] bg-[var(--multitree-accent)]/10 p-8">
-            <span className="absolute left-5 top-5 rounded-full bg-[var(--multitree-accent)] px-3 py-1 text-[0.65rem] font-black text-[var(--multitree-accent-ink)]">
+          <article className="relative overflow-hidden rounded-[2rem] border border-[var(--sponsor-krd-accent)] bg-[var(--sponsor-krd-accent)]/10 p-8">
+            <span className="absolute left-5 top-5 rounded-full bg-[var(--sponsor-krd-accent)] px-3 py-1 text-[0.65rem] font-black text-[var(--sponsor-krd-accent-ink)]">
               بەم زووانە
             </span>
             <p className="text-xs font-black text-black/40 dark:text-white/35">
@@ -59,7 +59,7 @@ export function PricingSection() {
                 "پارەدانی پارێزراو بە webhook",
               ].map((item) => (
                 <li key={item} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[var(--multitree-accent)]" />
+                  <Check className="h-4 w-4 text-[var(--sponsor-krd-accent)]" />
                   {item}
                 </li>
               ))}

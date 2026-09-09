@@ -1,5 +1,5 @@
 --
--- MultiTree baseline catalog data
+-- Sponsor.krd baseline catalog data
 --
 -- The rows the application cannot boot without: the permission catalogue, the
 -- billing plans and their grants, the access rules, and the platform
@@ -22,11 +22,11 @@
 -- Data for Name: access_rules; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO public.access_rules (id, effect, scope, ip_network, business_id, linktree_id, reason, status, expires_at, match_count, last_matched_at, created_by, created_at, updated_at) VALUES ('26fc6418-e097-4a56-9659-5236952c5a45', 'deny', 'multitree', '192.0.2.0/24', NULL, NULL, 'Simulated malicious web scraper network (TEST-NET-1)', 'active', NULL, 0, NULL, NULL, '2026-07-16 21:31:41.917504+03', '2026-07-16 21:31:41.917504+03');
-INSERT INTO public.access_rules (id, effect, scope, ip_network, business_id, linktree_id, reason, status, expires_at, match_count, last_matched_at, created_by, created_at, updated_at) VALUES ('fab41f72-eaa9-4b4e-a041-ae58dc14624b', 'deny', 'multitree', '198.51.100.0/24', NULL, NULL, 'Simulated comment spam botnet segment (TEST-NET-2)', 'active', NULL, 0, NULL, NULL, '2026-07-16 21:31:41.917504+03', '2026-07-16 21:31:41.917504+03');
-INSERT INTO public.access_rules (id, effect, scope, ip_network, business_id, linktree_id, reason, status, expires_at, match_count, last_matched_at, created_by, created_at, updated_at) VALUES ('4eb09659-a0e9-4617-99b4-6dc245f46184', 'deny', 'multitree', '203.0.113.42/32', NULL, NULL, 'Simulated brute-force attack source (TEST-NET-3)', 'active', NULL, 0, NULL, NULL, '2026-07-16 21:31:41.917504+03', '2026-07-16 21:31:41.917504+03');
-INSERT INTO public.access_rules (id, effect, scope, ip_network, business_id, linktree_id, reason, status, expires_at, match_count, last_matched_at, created_by, created_at, updated_at) VALUES ('e55c05d9-3e6c-4119-9a5d-0e2c640d75d6', 'allow', 'multitree', '127.0.0.1/32', NULL, NULL, 'Whitelist localhost loopback address for development testing', 'active', NULL, 0, NULL, NULL, '2026-07-16 21:31:41.917504+03', '2026-07-16 21:31:41.917504+03');
-INSERT INTO public.access_rules (id, effect, scope, ip_network, business_id, linktree_id, reason, status, expires_at, match_count, last_matched_at, created_by, created_at, updated_at) VALUES ('e86a9887-4e27-47cd-a783-79ef1705ba16', 'allow', 'multitree', '192.0.2.100/32', NULL, NULL, 'Developer proxy office IP (TEST-NET-1)', 'active', NULL, 0, NULL, NULL, '2026-07-16 21:31:41.917504+03', '2026-07-16 21:31:41.917504+03');
+INSERT INTO public.access_rules (id, effect, scope, ip_network, business_id, linktree_id, reason, status, expires_at, match_count, last_matched_at, created_by, created_at, updated_at) VALUES ('26fc6418-e097-4a56-9659-5236952c5a45', 'deny', 'sponsor_krd', '192.0.2.0/24', NULL, NULL, 'Simulated malicious web scraper network (TEST-NET-1)', 'active', NULL, 0, NULL, NULL, '2026-07-16 21:31:41.917504+03', '2026-07-16 21:31:41.917504+03');
+INSERT INTO public.access_rules (id, effect, scope, ip_network, business_id, linktree_id, reason, status, expires_at, match_count, last_matched_at, created_by, created_at, updated_at) VALUES ('fab41f72-eaa9-4b4e-a041-ae58dc14624b', 'deny', 'sponsor_krd', '198.51.100.0/24', NULL, NULL, 'Simulated comment spam botnet segment (TEST-NET-2)', 'active', NULL, 0, NULL, NULL, '2026-07-16 21:31:41.917504+03', '2026-07-16 21:31:41.917504+03');
+INSERT INTO public.access_rules (id, effect, scope, ip_network, business_id, linktree_id, reason, status, expires_at, match_count, last_matched_at, created_by, created_at, updated_at) VALUES ('4eb09659-a0e9-4617-99b4-6dc245f46184', 'deny', 'sponsor_krd', '203.0.113.42/32', NULL, NULL, 'Simulated brute-force attack source (TEST-NET-3)', 'active', NULL, 0, NULL, NULL, '2026-07-16 21:31:41.917504+03', '2026-07-16 21:31:41.917504+03');
+INSERT INTO public.access_rules (id, effect, scope, ip_network, business_id, linktree_id, reason, status, expires_at, match_count, last_matched_at, created_by, created_at, updated_at) VALUES ('e55c05d9-3e6c-4119-9a5d-0e2c640d75d6', 'allow', 'sponsor_krd', '127.0.0.1/32', NULL, NULL, 'Whitelist localhost loopback address for development testing', 'active', NULL, 0, NULL, NULL, '2026-07-16 21:31:41.917504+03', '2026-07-16 21:31:41.917504+03');
+INSERT INTO public.access_rules (id, effect, scope, ip_network, business_id, linktree_id, reason, status, expires_at, match_count, last_matched_at, created_by, created_at, updated_at) VALUES ('e86a9887-4e27-47cd-a783-79ef1705ba16', 'allow', 'sponsor_krd', '192.0.2.100/32', NULL, NULL, 'Developer proxy office IP (TEST-NET-1)', 'active', NULL, 0, NULL, NULL, '2026-07-16 21:31:41.917504+03', '2026-07-16 21:31:41.917504+03');
 
 
 --
@@ -37,7 +37,6 @@ INSERT INTO public.auth_permissions (id, permission_key, resource, action, descr
 INSERT INTO public.auth_permissions (id, permission_key, resource, action, description, risk_level, created_at, category, display_order, field_schema, supports_approval, status, updated_at) VALUES ('db78a685-cb71-40ad-b2d9-4ca6b2de62e4', 'business:pages:templates-access', 'business.pages', 'templates-access', 'Open the templates page', 'standard', '2026-07-16 22:06:14.312012+03', 'Business navigation', 12, '{}', false, 'active', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.auth_permissions (id, permission_key, resource, action, description, risk_level, created_at, category, display_order, field_schema, supports_approval, status, updated_at) VALUES ('5ba6c5f9-12af-4573-9db6-990a74943aa0', 'business:pages:profile-access', 'business.pages', 'profile-access', 'Open the business profile page', 'standard', '2026-07-16 22:06:14.312012+03', 'Business navigation', 13, '{}', false, 'active', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.auth_permissions (id, permission_key, resource, action, description, risk_level, created_at, category, display_order, field_schema, supports_approval, status, updated_at) VALUES ('071506c7-4c6d-46e2-bb8a-12ef55ae5ea6', 'business:pages:settings-access', 'business.pages', 'settings-access', 'Open the business settings page', 'standard', '2026-07-16 22:06:14.312012+03', 'Business navigation', 14, '{}', false, 'active', '2026-07-16 22:06:14.312012+03');
-INSERT INTO public.auth_permissions (id, permission_key, resource, action, description, risk_level, created_at, category, display_order, field_schema, supports_approval, status, updated_at) VALUES ('b5e9d58c-3c70-4f0a-9684-2ee2f20efc41', 'business:pages:mini-websites-access', 'business.pages', 'mini-websites-access', 'Open and manage the mini websites page', 'standard', '2026-07-27 00:00:00+03', 'Business navigation', 19, '{}', false, 'active', '2026-07-27 00:00:00+03');
 INSERT INTO public.auth_permissions (id, permission_key, resource, action, description, risk_level, created_at, category, display_order, field_schema, supports_approval, status, updated_at) VALUES ('a1d4e7c0-1b2f-4a63-9c81-5e0a7d3b4f11', 'business:pages:advertising-access', 'business.pages', 'advertising-access', 'Open the advertising page', 'standard', '2026-08-05 00:00:00+03', 'Business navigation', 20, '{}', false, 'active', '2026-08-05 00:00:00+03');
 INSERT INTO public.auth_permissions (id, permission_key, resource, action, description, risk_level, created_at, category, display_order, field_schema, supports_approval, status, updated_at) VALUES ('a1d4e7c0-1b2f-4a63-9c81-5e0a7d3b4f12', 'business:advertising:read', 'business.advertising', 'read', 'View the advertising service page', 'standard', '2026-08-05 00:00:00+03', 'Advertising', 246, '{}', false, 'active', '2026-08-05 00:00:00+03');
 INSERT INTO public.auth_permissions (id, permission_key, resource, action, description, risk_level, created_at, category, display_order, field_schema, supports_approval, status, updated_at) VALUES ('a1d4e7c0-1b2f-4a63-9c81-5e0a7d3b4f13', 'business:advertising:update', 'business.advertising', 'update', 'Edit the advertising service page', 'sensitive', '2026-08-05 00:00:00+03', 'Advertising', 247, '{}', false, 'active', '2026-08-05 00:00:00+03');
@@ -100,9 +99,8 @@ INSERT INTO public.billing_entitlements (id, entitlement_key, name, description,
 INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('53dfb3bf-cfc9-4189-9c7c-879fca9db420', 'feature.premium_templates', 'Premium templates', 'Allow premium visual templates', 'boolean', NULL, 'content', 'active', '2026-07-16 21:31:41.878112+03', '2026-07-16 21:31:41.878112+03');
 INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('3b9f4737-a022-4af9-ba7b-e4ccb1805e6f', 'feature.pixel_tracking', 'Pixel tracking', 'Allow supported advertising pixels', 'boolean', NULL, 'analytics', 'active', '2026-07-16 21:31:41.878112+03', '2026-07-16 21:31:41.878112+03');
 INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('a1d4e7c0-1b2f-4a63-9c81-5e0a7d3b4f20', 'feature.advertising_page', 'Advertising page', 'Allow the TikTok sponsorship service page', 'boolean', NULL, 'content', 'active', '2026-08-05 00:00:00+03', '2026-08-05 00:00:00+03');
-INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('a1d4e7c0-1b2f-4a63-9c81-5e0a7d3b4f21', 'feature.mini_websites', 'Mini websites', 'Allow published mini website pages', 'boolean', NULL, 'content', 'active', '2026-08-05 00:00:00+03', '2026-08-05 00:00:00+03');
 INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('bf2db4ff-f256-4fe8-9b8b-891b5feac367', 'feature.remove_branding', 'Remove branding', 'Allow platform branding removal', 'boolean', NULL, 'content', 'active', '2026-07-16 21:31:41.878112+03', '2026-07-16 21:31:41.878112+03');
-INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('fd265354-836b-4561-bae9-fda950a08d64', 'limit.linktrees', 'Public page limit', 'Maximum active Linktrees and mini-websites', 'integer', 'pages', 'limits', 'active', '2026-07-16 21:31:41.878112+03', '2026-08-01 00:00:00+03');
+INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('fd265354-836b-4561-bae9-fda950a08d64', 'limit.linktrees', 'Public page limit', 'Maximum active Linktrees', 'integer', 'pages', 'limits', 'active', '2026-07-16 21:31:41.878112+03', '2026-08-01 00:00:00+03');
 INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('1fbcc8f4-3d50-4c5d-b35a-cca221b66421', 'limit.api_requests_monthly', 'Monthly API requests', 'Maximum API requests per billing period', 'integer', 'requests', 'limits', 'active', '2026-07-16 21:31:41.878112+03', '2026-07-16 21:31:41.878112+03');
 INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('44a0832d-86e8-4ab1-83a9-416b67d4ec33', 'limit.api_clients', 'API client limit', 'Maximum active API clients', 'integer', 'clients', 'limits', 'active', '2026-07-16 21:31:41.878112+03', '2026-07-16 21:31:41.878112+03');
 INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('5a1095de-55bd-4022-a2aa-5389df26ccc6', 'limit.webhook_endpoints', 'Webhook endpoint limit', 'Maximum active webhook endpoints', 'integer', 'endpoints', 'limits', 'active', '2026-07-16 21:31:41.878112+03', '2026-07-16 21:31:41.878112+03');
@@ -264,7 +262,6 @@ INSERT INTO public.billing_plan_permissions (plan_configuration_id, permission_i
 INSERT INTO public.billing_plan_permissions (plan_configuration_id, permission_id, access_mode, field_modes, resource_scope, conditions, created_at, updated_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', 'db78a685-cb71-40ad-b2d9-4ca6b2de62e4', 'direct', '{}', '{"type": "all"}', '{}', '2026-07-16 22:06:14.312012+03', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_permissions (plan_configuration_id, permission_id, access_mode, field_modes, resource_scope, conditions, created_at, updated_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', '5ba6c5f9-12af-4573-9db6-990a74943aa0', 'direct', '{}', '{"type": "all"}', '{}', '2026-07-16 22:06:14.312012+03', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_permissions (plan_configuration_id, permission_id, access_mode, field_modes, resource_scope, conditions, created_at, updated_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', '071506c7-4c6d-46e2-bb8a-12ef55ae5ea6', 'direct', '{}', '{"type": "all"}', '{}', '2026-07-16 22:06:14.312012+03', '2026-07-16 22:06:14.312012+03');
-INSERT INTO public.billing_plan_permissions (plan_configuration_id, permission_id, access_mode, field_modes, resource_scope, conditions, created_at, updated_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', 'b5e9d58c-3c70-4f0a-9684-2ee2f20efc41', 'direct', '{}', '{"type": "all"}', '{}', '2026-07-27 00:00:00+03', '2026-07-27 00:00:00+03');
 INSERT INTO public.billing_plan_permissions (plan_configuration_id, permission_id, access_mode, field_modes, resource_scope, conditions, created_at, updated_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', '6e795805-5513-4c2b-a29a-ea50d3d9bcbf', 'direct', '{}', '{"type": "all"}', '{}', '2026-07-16 22:06:14.312012+03', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_permissions (plan_configuration_id, permission_id, access_mode, field_modes, resource_scope, conditions, created_at, updated_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', 'dc4467b8-45d0-4672-a1ae-962670c4ea10', 'direct', '{}', '{"type": "all"}', '{}', '2026-07-16 22:06:14.312012+03', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_permissions (plan_configuration_id, permission_id, access_mode, field_modes, resource_scope, conditions, created_at, updated_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', '4e81f943-2177-43eb-ae9b-93359ea72b1a', 'direct', '{}', '{"type": "all"}', '{}', '2026-07-16 22:06:14.312012+03', '2026-07-16 22:06:14.312012+03');
@@ -299,63 +296,34 @@ INSERT INTO public.billing_plan_permissions (plan_configuration_id, permission_i
 INSERT INTO public.billing_plan_permissions (plan_configuration_id, permission_id, access_mode, field_modes, resource_scope, conditions, created_at, updated_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', '68c6ec50-aa2d-4865-bed5-205f62dd96ef', 'direct', '{}', '{"type": "all"}', '{}', '2026-07-16 22:06:14.312012+03', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_permissions (plan_configuration_id, permission_id, access_mode, field_modes, resource_scope, conditions, created_at, updated_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', 'd22f67a9-e32c-4cda-9b7e-56474492775d', 'direct', '{}', '{"type": "all"}', '{}', '2026-07-16 22:06:14.312012+03', '2026-07-16 22:06:14.312012+03');
 
--- The advertising page follows each plan's existing mini-website policy: a plan
--- that can open and manage mini websites can open and manage this page too.
--- Written set-based rather than as fixed pairs so it stays correct if the plan
--- configurations above are edited.
+-- Advertising is enabled for the Ultra plan.
 INSERT INTO public.billing_plan_permissions
   (plan_configuration_id, permission_id, access_mode, field_modes, resource_scope, conditions, created_at, updated_at)
-SELECT rule.plan_configuration_id,
+SELECT rule.id,
        granted.permission_id,
-       rule.access_mode, rule.field_modes, rule.resource_scope,
-       rule.conditions, '2026-08-05 00:00:00+03', '2026-08-05 00:00:00+03'
-FROM public.billing_plan_permissions rule
+       'direct', '{}'::jsonb, '{"type": "all"}'::jsonb,
+       '{}'::jsonb, '2026-08-05 00:00:00+03', '2026-08-05 00:00:00+03'
+FROM public.billing_plan_configurations rule
 CROSS JOIN (VALUES
   ('a1d4e7c0-1b2f-4a63-9c81-5e0a7d3b4f11'::uuid),
   ('a1d4e7c0-1b2f-4a63-9c81-5e0a7d3b4f12'::uuid),
   ('a1d4e7c0-1b2f-4a63-9c81-5e0a7d3b4f13'::uuid),
   ('a1d4e7c0-1b2f-4a63-9c81-5e0a7d3b4f14'::uuid)
 ) AS granted(permission_id)
-WHERE rule.permission_id = 'b5e9d58c-3c70-4f0a-9684-2ee2f20efc41';
-
--- Mini websites are an Ultra feature, but until now that was expressed only as
--- a dashboard permission, so a downgraded business kept its /bio pages online
--- with no way to edit or remove them. This entitlement is what the public read
--- checks; it is granted to exactly the plans that can manage mini websites.
-INSERT INTO public.billing_plan_entitlements
-  (plan_configuration_id, entitlement_id, value, created_at, updated_at)
-SELECT rule.plan_configuration_id,
-       'a1d4e7c0-1b2f-4a63-9c81-5e0a7d3b4f21'::uuid,
-       'true', '2026-08-05 00:00:00+03', '2026-08-05 00:00:00+03'
-FROM public.billing_plan_permissions rule
-WHERE rule.permission_id = 'b5e9d58c-3c70-4f0a-9684-2ee2f20efc41';
-
--- Plans without it record an explicit false rather than a missing row, so the
--- billing screens show the feature as withheld instead of unknown.
-INSERT INTO public.billing_plan_entitlements
-  (plan_configuration_id, entitlement_id, value, created_at, updated_at)
-SELECT cfg.id, 'a1d4e7c0-1b2f-4a63-9c81-5e0a7d3b4f21'::uuid,
-       'false', '2026-08-05 00:00:00+03', '2026-08-05 00:00:00+03'
-FROM public.billing_plan_configurations cfg
-WHERE NOT EXISTS (
-  SELECT 1 FROM public.billing_plan_entitlements existing
-   WHERE existing.plan_configuration_id = cfg.id
-     AND existing.entitlement_id = 'a1d4e7c0-1b2f-4a63-9c81-5e0a7d3b4f21'::uuid
-);
+WHERE rule.id = '3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd';
 
 -- The entitlement the three advertising permissions require, granted to the
 -- same plans, so a plan that carries the permissions can actually use them.
 INSERT INTO public.billing_plan_entitlements
   (plan_configuration_id, entitlement_id, value, created_at, updated_at)
-SELECT rule.plan_configuration_id,
+SELECT rule.id,
        'a1d4e7c0-1b2f-4a63-9c81-5e0a7d3b4f20'::uuid,
        'true', '2026-08-05 00:00:00+03', '2026-08-05 00:00:00+03'
-FROM public.billing_plan_permissions rule
-WHERE rule.permission_id = 'b5e9d58c-3c70-4f0a-9684-2ee2f20efc41';
+FROM public.billing_plan_configurations rule
+WHERE rule.id = '3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd';
 
 -- Plans without it record an explicit false rather than a missing row, so the
--- billing screens show the feature as withheld instead of unknown — the same
--- treatment feature.mini_websites gets above.
+-- billing screens show the feature as withheld instead of unknown.
 INSERT INTO public.billing_plan_entitlements
   (plan_configuration_id, entitlement_id, value, created_at, updated_at)
 SELECT cfg.id, 'a1d4e7c0-1b2f-4a63-9c81-5e0a7d3b4f20'::uuid,
@@ -374,24 +342,19 @@ WHERE NOT EXISTS (
 
 -- Linktree keys are the post-rename ones (2026-08-12_rename_linktree_templates.sql);
 -- hero-image and dark-card were retired by 2026-08-11_remove_hero_image_dark_card_templates.sql.
--- liquid-glass is granted to every active plan, and is the only surviving
--- mini-website template after 2026-08-18_retire_soft_horizon_mini_website_template.sql.
 INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', 'spectrum', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', 'spotlight', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', 'frost', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', 'aurora', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', 'serenity', '2026-07-16 22:06:14.312012+03');
-INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', 'liquid-glass', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', 'branch-signal', '2026-08-27 00:00:00+03');
 INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('9996df1b-cb4f-47e2-8b9c-e8105a1adf6c', 'spectrum', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('9996df1b-cb4f-47e2-8b9c-e8105a1adf6c', 'spotlight', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('9996df1b-cb4f-47e2-8b9c-e8105a1adf6c', 'frost', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('9996df1b-cb4f-47e2-8b9c-e8105a1adf6c', 'aurora', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('9996df1b-cb4f-47e2-8b9c-e8105a1adf6c', 'serenity', '2026-07-16 22:06:14.312012+03');
-INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('9996df1b-cb4f-47e2-8b9c-e8105a1adf6c', 'liquid-glass', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('80e77fb4-e4c2-428c-bfd0-1183a88371ce', 'spectrum', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('80e77fb4-e4c2-428c-bfd0-1183a88371ce', 'spotlight', '2026-07-16 22:06:14.312012+03');
-INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('80e77fb4-e4c2-428c-bfd0-1183a88371ce', 'liquid-glass', '2026-07-16 22:06:14.312012+03');
 
 
 --
@@ -559,17 +522,17 @@ CROSS JOIN public.billing_entitlements entitlement
 WHERE entitlement.entitlement_key IN ('feature.api_access','feature.webhooks','limit.api_requests_monthly','limit.api_clients','limit.webhook_endpoints')
 ON CONFLICT (plan_configuration_id, entitlement_id) DO NOTHING;
 
--- The one non-customer workspace that owns MultiTree root-domain content.
+-- The one non-customer workspace that owns Sponsor.krd root-domain content.
 INSERT INTO public.businesses (
   id, username, name, email, phone, subdomain, status, plan, max_linktrees,
   account_type, onboarding_step, onboarding_version, onboarding_completed_at
 ) VALUES (
   '00000000-0000-4000-8000-000000000001',
-  'multitree-platform',
-  'MultiTree',
+  'sponsor-krd-platform',
+  'Sponsor.krd',
   NULL,
   NULL,
-  'multitree-platform',
+  'sponsor-krd-platform',
   'active',
   'enterprise',
   32767,
@@ -583,10 +546,10 @@ INSERT INTO public.business_branding (
   business_id, logo, favicon, default_avatar, website_color
 ) VALUES (
   '00000000-0000-4000-8000-000000000001',
-  '/images/multitree-logo-mark.png',
+  '/images/sponsor-krd-logo-mark.png',
   '/favicon.ico',
-  '/images/multitree-logo-mark.png',
-  '#b6f20d'
+  '/images/sponsor-krd-logo-mark.png',
+  'gradient:to-r:#25F4EE:#FE2C55'
 );
 
 INSERT INTO public.business_defaults (
@@ -594,7 +557,7 @@ INSERT INTO public.business_defaults (
   footer_hidden, whatsapp_enabled
 ) VALUES (
   '00000000-0000-4000-8000-000000000001',
-  'MultiTree',
+  'Sponsor.krd',
   NULL,
   'spectrum',
   '#ffffff',
@@ -614,25 +577,15 @@ INSERT INTO public.auth_permissions (
    'tiktok-update', 'Manage platform TikTok Pixel and Events API configuration',
    'critical', 729, false, 'active'),
   ('platform:linktrees:read', 'Platform Linktrees', 'platform.linktrees', 'read',
-   'View MultiTree root-domain Linktrees', 'standard', 772, false, 'active'),
+   'View Sponsor.krd root-domain Linktrees', 'standard', 772, false, 'active'),
   ('platform:linktrees:create', 'Platform Linktrees', 'platform.linktrees', 'create',
-   'Create MultiTree root-domain Linktrees', 'sensitive', 773, false, 'active'),
+   'Create Sponsor.krd root-domain Linktrees', 'sensitive', 773, false, 'active'),
   ('platform:linktrees:update', 'Platform Linktrees', 'platform.linktrees', 'update',
-   'Update MultiTree root-domain Linktrees', 'sensitive', 774, false, 'active'),
+   'Update Sponsor.krd root-domain Linktrees', 'sensitive', 774, false, 'active'),
   ('platform:linktrees:delete', 'Platform Linktrees', 'platform.linktrees', 'delete',
-   'Delete MultiTree root-domain Linktrees', 'critical', 775, false, 'active'),
+   'Delete Sponsor.krd root-domain Linktrees', 'critical', 775, false, 'active'),
   ('platform:linktrees:upload', 'Platform Linktrees', 'platform.linktrees', 'upload',
-   'Upload assets for MultiTree root-domain Linktrees', 'sensitive', 776, false, 'active'),
-  ('platform:mini-websites:read', 'Platform Mini Websites', 'platform.mini-websites', 'read',
-   'View MultiTree root-domain mini websites', 'standard', 777, false, 'active'),
-  ('platform:mini-websites:create', 'Platform Mini Websites', 'platform.mini-websites', 'create',
-   'Create MultiTree root-domain mini websites', 'sensitive', 778, false, 'active'),
-  ('platform:mini-websites:update', 'Platform Mini Websites', 'platform.mini-websites', 'update',
-   'Update MultiTree root-domain mini websites', 'sensitive', 779, false, 'active'),
-  ('platform:mini-websites:delete', 'Platform Mini Websites', 'platform.mini-websites', 'delete',
-   'Delete MultiTree root-domain mini websites or their analytics', 'critical', 780, false, 'active'),
-  ('platform:mini-websites:upload', 'Platform Mini Websites', 'platform.mini-websites', 'upload',
-   'Upload assets for MultiTree root-domain mini websites', 'sensitive', 781, false, 'active'),
+   'Upload assets for Sponsor.krd root-domain Linktrees', 'sensitive', 776, false, 'active'),
   ('platform:creators:read', 'Creator administration', 'platform.creators', 'read',
    'View self-service Creator accounts and their trial state', 'standard', 782, false, 'active'),
   ('platform:creators:manage', 'Creator administration', 'platform.creators', 'manage',

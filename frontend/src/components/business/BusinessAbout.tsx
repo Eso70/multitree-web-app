@@ -26,7 +26,6 @@ export function BusinessAbout({
   const profileTypes = [
     ["TikTok Ads", BUSINESS_PROFILE_CARD_PALETTE.tiktokAds.color],
     ["Linktree", BUSINESS_PROFILE_CARD_PALETTE.linktree.color],
-    ["Mini Website", BUSINESS_PROFILE_CARD_PALETTE.miniWebsite.color],
   ] as const;
 
   return (

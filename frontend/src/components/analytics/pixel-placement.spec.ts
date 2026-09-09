@@ -5,8 +5,7 @@ import { describe, expect, it } from "vitest";
 /**
  * Where the TikTok pixel is allowed to exist.
  *
- * Two surfaces, both public and both per-business: the public linktree page and
- * the public mini website page. Those are the pages a business actually sends
+ * Approved public marketing surfaces are the pages a business actually sends
  * ad traffic to, and they are the only places a pixel earns its keep.
  *
  * Everywhere else is excluded on purpose. A business signing in or editing
@@ -27,8 +26,6 @@ const SOURCE_ROOT = join(process.cwd(), "src");
 const ALLOWED = new Set([
   // Public linktree pages.
   "components/public/LinktreePage.tsx",
-  // Public mini website pages.
-  "features/mini-website/PublicMiniWebsite.tsx",
   // Central fixed-route allowlist (home, join and advertising routes).
   "components/analytics/PublicRouteTracking.tsx",
 ]);
@@ -112,18 +109,15 @@ describe("TikTok pixel placement", () => {
     ]);
   });
 
-  it("server-renders the base code from the two public pages only", () => {
+  it("server-renders the base code from the public Linktree page only", () => {
     // The inline base code is what TikTok's verifier finds in the served
     // HTML, so it is subject to the same placement rule as the client pixel:
-    // the linktree and mini-website public pages, and nowhere else.
+    // the Linktree public page, and nowhere else.
     const pages = filesMounting(
       /from "@\/components\/analytics\/TikTokPixelBaseCode"/,
     );
 
-    expect(pages.sort()).toEqual([
-      "app/bio/[slug]/page.tsx",
-      "app/linktree/[uid]/page.tsx",
-    ]);
+    expect(pages.sort()).toEqual(["app/linktree/[uid]/page.tsx"]);
 
     // And the snippet is generated in the shared builder — plain, without
     // "use client", so the server component may call it — with the component

@@ -26,7 +26,7 @@ export interface AnalyticsRequestContext {
 interface PublicPageRow {
   id: string;
   business_id: string;
-  page_type: 'linktree' | 'mini_website' | 'advertising' | 'route';
+  page_type: 'linktree' | 'advertising' | 'route';
   timezone: string;
   name: string;
   slug: string;
@@ -37,7 +37,7 @@ interface PublicPageRow {
  * Route identities are created only for the explicit marketing allowlist.
  */
 const TIKTOK_FORWARDED_PAGE_TYPES: ReadonlySet<PublicPageRow['page_type']> =
-  new Set(['linktree', 'mini_website', 'advertising', 'route']);
+  new Set(['linktree', 'advertising', 'route']);
 
 /**
  * Internal events that describe engagement rather than a conversion.
@@ -355,7 +355,6 @@ export class UnifiedAnalyticsService {
          AND (
            id = $1::uuid
            OR source_linktree_id = $1::uuid
-           OR source_mini_website_id = $1::uuid
          )
        LIMIT 1`,
       [sourceOrPublicPageId],
@@ -408,7 +407,6 @@ export class UnifiedAnalyticsService {
        WHERE (
            page.id = $1::uuid
            OR page.source_linktree_id = $1::uuid
-           OR page.source_mini_website_id = $1::uuid
          )
          AND action.id = $2::uuid
          AND page.deleted_at IS NULL
@@ -856,7 +854,7 @@ export class UnifiedAnalyticsService {
     businessId: string,
     filters: {
       pageId?: string;
-      pageType?: 'linktree' | 'mini_website';
+      pageType?: 'linktree';
       from?: string;
       to?: string;
     } = {},
@@ -866,7 +864,7 @@ export class UnifiedAnalyticsService {
     if (filters.pageId) {
       values.push(filters.pageId);
       where.push(
-        `(page.id = $${values.length}::uuid OR page.source_linktree_id = $${values.length}::uuid OR page.source_mini_website_id = $${values.length}::uuid)`,
+        `(page.id = $${values.length}::uuid OR page.source_linktree_id = $${values.length}::uuid)`,
       );
     }
     if (filters.pageType) {
@@ -911,7 +909,7 @@ export class UnifiedAnalyticsService {
        FROM analytics_events event
        JOIN public_pages page ON page.id = event.public_page_id
        WHERE page.business_id = $1
-         AND ($2::uuid IS NULL OR page.id = $2 OR page.source_linktree_id = $2 OR page.source_mini_website_id = $2)
+         AND ($2::uuid IS NULL OR page.id = $2 OR page.source_linktree_id = $2)
          AND ($3::varchar IS NULL OR page.page_type = $3)
          AND ($4::date IS NULL OR event.occurred_at >= $4::date)
          AND ($5::date IS NULL OR event.occurred_at < $5::date + interval '1 day')`,
@@ -967,7 +965,7 @@ export class UnifiedAnalyticsService {
                 (now() AT TIME ZONE page.timezone)::date AS local_today
          FROM public_pages page
          WHERE page.business_id = $1
-           AND (page.id = $2 OR page.source_linktree_id = $2 OR page.source_mini_website_id = $2)
+           AND (page.id = $2 OR page.source_linktree_id = $2)
        ),
        day_uniques AS (
          SELECT (event.occurred_at AT TIME ZONE page.timezone)::date AS day,
@@ -1014,7 +1012,7 @@ export class UnifiedAnalyticsService {
         const result = await client.query<{ id: string }>(
           `SELECT id FROM public_pages
            WHERE business_id = $1
-             AND (id = $2 OR source_linktree_id = $2 OR source_mini_website_id = $2)`,
+             AND (id = $2 OR source_linktree_id = $2)`,
           [businessId, pageId],
         );
         if (!result.rows[0])

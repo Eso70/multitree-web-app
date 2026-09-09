@@ -1,7 +1,10 @@
 # Frontend
 
-The Campaigns navigation entry opens an intentionally blank page in the Platform
-dashboard. TikTok Ads account configuration remains available in Platform
+The Campaigns navigation entry currently shows a shared six-card performance
+summary in the Platform dashboard while the management body remains empty.
+The cards derive campaign count, active campaigns, impressions, clicks, spend,
+and conversions from the current campaign collection. TikTok Ads account
+configuration remains available in Platform
 Settings. Business and Creator dashboards expose neither
 feature; `/business/campaigns` and the former `/business/campains` alias are
 removed. Business TikTok Pixel, Events API, and delivery settings remain in
@@ -11,20 +14,14 @@ returns to the configured platform console's Settings > TikTok Ads tab.
 
 ## Creator content workspaces
 
-Creator Linktree and mini-website routes render the same shared page lists,
-grid/table views, editors, analytics modal, statistics, loading skeletons, and
-empty states as Platform. Workspace differences are supplied only through
-typed endpoints and capability props. A Creator configuration limits
-the workspace to one page, hides page deletion, and disables the opposite page
-type after creation; it must never fork or copy the shared presentation.
+Creator Linktree routes render the same shared page lists, grid/table views,
+editors, analytics modal, statistics, loading skeletons, and empty states as
+Platform. Workspace differences are supplied only through typed endpoints and
+capability props. A Creator configuration limits the workspace to one page and
+hides page deletion; it must never fork or copy the shared presentation.
 Shared Business, Platform, and Creator navigation names come from
 `components/shared/dashboard-page-labels.ts`; do not introduce surface-local
 copies for names that describe the same workspace.
-The Business dashboard does not expose a Mini Website navigation item or route
-on any plan. Creator and Platform retain the shared Mini Website manager and
-creation workflow through their own guarded endpoints. Existing public
-`/bio/:slug` pages remain renderable; removing the Business management page
-does not remove stored public content.
 `/account/templates` renders the same `TemplatesPage` used by Business and
 Platform. Creator users receive its view-only configuration with the full
 template catalogue; template creation controls remain platform-only.
@@ -38,8 +35,8 @@ keeps account information first. Its TikTok tab renders the same
 `components/analytics/PublicRouteTracking.tsx` is the central positive
 allowlist for fixed public routes. It resolves the canonical server identity,
 reports through `createPageTracker`, and mounts the shared TikTok loader.
-Tracking starts automatically on allowlisted public pages. Linktree and
-mini-website renderers keep their specialized action tracking but use the same
+Tracking starts automatically on allowlisted public pages. Linktree renderers
+keep their specialized action tracking but use the same
 dispatch primitives. Individual landing, join, and advertising components
 must not call TikTok directly.
 
@@ -69,8 +66,8 @@ a loading state; invalid or expired handoffs return automatically to the tenant
 login without exposing a stale retry screen. Tenant login loads the public business name, logo, favicon, and website color before
 applying the shared authentication design; the tenant color reaches the page's text selection and window scrollbar through the
 same document-level theme variables used by the public pages. Tenant-free shells (platform admin login, invite signup, signup
-wizard) mark their surface with `data-multitree-theme` instead, so text selection, scrollbars, and brand utilities resolve to the
-MultiTree lime everywhere on the auth sheet. Handoff consumption is guarded against duplicate React
+wizard) mark their surface with `data-sponsor-krd-theme` instead, so text selection, scrollbars, and brand utilities resolve to the
+Sponsor.krd cyan-to-red brand treatment everywhere on the auth sheet. Handoff consumption is guarded against duplicate React
 effects, uses an eight-second client/proxy deadline, and performs a hard
 dashboard navigation after the session cookie is stored. Initial dashboard
 session, access-manifest, and page requests run concurrently.
@@ -78,7 +75,7 @@ Newly approved businesses enter the real dashboard with its entire surface
 marked inert behind a non-dismissible required form. The single setup screen
 uses the same
 stacked brand asset control and grouped fields as business management: optional
-brand assets and MultiTree default color, editable name and phone, read-only
+brand assets and Sponsor.krd default color, editable name and phone, read-only
 assigned subdomain, and plan-limited TikTok Pixel/Events API configuration.
 System page defaults are applied automatically rather than presented as a
 separate step. It also shows the verified owner account name and email as
@@ -132,7 +129,7 @@ The Business dashboard publishes the tenant's effective website color at the
 document boundary. Text selection, the custom cursor, native page scrollbars,
 nested scroll surfaces, portalled dialogs, and shared accent controls therefore
 use the tenant color on every Business route. The Templates catalogue is the
-deliberate exception: it establishes a MultiTree theme boundary so template
+deliberate exception: it establishes a Sponsor.krd theme boundary so template
 artwork and catalogue controls are not repainted by the current tenant.
 
 Both dashboards render notifications through the communications feature's
@@ -149,9 +146,9 @@ The Creator `/account` workspace is a third thin configuration of the same
 dashboard chrome. It supplies only Creator navigation, billing badge, account
 identity, logout action, and page-workspace configuration; the shared sidebar,
 header, profile menu, theme controls, refresh behavior, loading shell, content
-container, Linktree UI, and mini-website UI remain the same implementations.
+container and Linktree UI remain the same implementations.
 Every `/account` route uses the shared dashboard route skeleton. Heavy Creator
-Linktree, mini-website, template, and settings bundles use the same management,
+Linktree, template, and settings bundles use the same management,
 template, and form skeletons as their Business equivalents, including the
 shared editor and analytics modal fallbacks.
 Dialog bundles are mounted only while their dialog is open. Their full-screen
@@ -166,8 +163,7 @@ restricted to HTTPS `lh3.googleusercontent.com` OpenID avatar paths (`/a/**`
 and `/a-/**`) rather than permitting arbitrary remote Google content.
 
 Large pages and templates compose focused modules rather than owning every
-data lifecycle and renderer inline. The liquid-glass mini-website template uses
-dedicated shared-frame, visual-utility, and informational-section modules.
+data lifecycle and renderer inline.
 Business dashboard analytics totals are loaded and normalized by
 `useBusinessAnalyticsTotals`; the dashboard consumes the hook and remains
 responsible for page composition and cross-feature coordination. Cached
@@ -175,8 +171,8 @@ domain responses are validated before feature hooks consume them. A legacy
 or malformed Linktree-list cache entry is discarded and refetched instead of
 reaching dashboard sorting or rendering code.
 
-Add new liquid-glass sections in focused renderer modules and add new dashboard
-network lifecycles as feature hooks. Do not place new independent persistence,
+Add new dashboard network lifecycles as feature hooks. Do not place new
+independent persistence,
 fetching, or rendering systems directly in the large entry components.
 
 ## Request and state boundaries
@@ -188,11 +184,6 @@ bodies, unwraps the standard backend envelope, converts normalized failures to
 HEAD requests retry short-lived network, 502, 503, and 504 failures with a
 small bounded backoff; mutations are never retried automatically. Feature code
 must not duplicate response parsing or error-envelope extraction.
-
-Mini-website create and update requests additionally pass through
-`createMiniWebsiteSavePayload`. The editor consumes derived list-response
-fields for presentation, but only the explicit `SaveMiniWebsiteDto` field set
-may be sent back to the strict API boundary.
 
 Domain endpoints belong in feature API modules such as `features/business/api`,
 `features/communications/api`, and `features/platform-admin/api`. React hooks
@@ -228,10 +219,6 @@ multi-step transforms belong to Motion. Do not use Tailwind `animate-*`
 utilities, inline `animation` declarations, injected keyframe styles, or
 manual DOM animation loops for these behaviors.
 
-MapLibre remains the owner of geographic map tilt and building extrusion. It
-is an independent map renderer and must not be wrapped in or replaced by an
-unrelated motion or rendering abstraction.
-
 Next.js 16 (App Router) / React 19. See
 [docs/architecture.md](architecture.md#frontend-boundaries) for feature and
 component ownership and the enforced ESLint boundaries between business and
@@ -263,12 +250,12 @@ only enabled public configuration.
 The business homepage navigation links to the public advertising route. The
 advertising surface follows the public site's left-to-right page structure and
 reuses `BusinessPublicFooter`, the same tenant footer composition used by the
-business homepage, including published Linktree, mini-website, and configured
+business homepage, including published Linktree and configured
 contact columns. Public-route loading uses the current full-width 60px navbar
 footprint rather than the retired floating-header skeleton.
 
 The advertising surface also installs the tenant accent as the public cursor,
-text-selection, native/custom scrollbar, and theme color, restoring MultiTree
+text-selection, native/custom scrollbar, and theme color, restoring Sponsor.krd
 defaults when it unmounts. Its metadata uses the tenant favicon plus logo or
 default-avatar fallback for browser and social-preview imagery. Authenticated
 business routes use short English browser-tab suffixes, and public content
@@ -329,15 +316,15 @@ surface. Its full-width footer progress track uses five softly differentiated
 segments matching the tutorial's blue, violet, amber, rose, and emerald steps;
 future segments remain visible at reduced opacity.
 
-- The root domain renders the MultiTree landing page.
+- The root domain renders the Sponsor.krd landing page.
 - Published platform announcements can appear as root-domain banners or
   feature cards.
 - Each active business owns one unique subdomain.
 - A business subdomain homepage shows that business's published linktrees
-  and mini-websites.
+  Linktrees.
 - The business homepage uses one concise customer-facing composition in both
   light and dark themes: the same shared floating navigation used by the
-  MultiTree homepage, a centered grid-backed hero, a responsive public
+  Sponsor.krd homepage, a centered grid-backed hero, a responsive public
   workspace, and the shared public footer. The workspace intentionally has no
   separate heading or description; the hero action leads directly to its
   compact `max-w-6xl` preview. The preview keeps page-edge gutters and a bounded
@@ -348,16 +335,16 @@ future segments remain visible at reduced opacity.
   one solid surface per theme; neutral borders provide their separation. Tabs
   retain that shared surface and distinguish selection only through semantic
   state, stronger type, and a neutral inset edge rather than another fill
-  color. The public helper uses the MultiTree logo and MultiTree AI label. It contains no tenant
+  color. The public helper uses the Sponsor.krd logo and Sponsor.krd AI label. It contains no tenant
   accent glow or colored blur. Its top rail owns the public content tabs,
   while a compact
   sidebar offers a deterministic public helper on larger screens. The helper
-  handles a simple greeting locally and directs Linktree or mini-website
+  handles a simple greeting locally and directs Linktree
   requests to the business owner; it performs no network request, collects no
   visitor data, and must not claim access to private business information. The
   main panel renders the real destinations as a dense responsive visual gallery. It uses
   accessible, keyboard-operable tabs only for published Linktrees and published
-  mini websites; tabs without data are omitted and the workspace is omitted
+  Linktrees; the workspace is omitted
   when neither content type is published. Every
   destination opens its real published route. Public contact remains outside
   the workspace in the configured navigation action and footer. Additional
@@ -368,7 +355,7 @@ future segments remain visible at reduced opacity.
   section using the same heading scale, responsive section spacing, and content
   width as the other landing sections. Its larger logo rail is populated only
   from enabled partner items belonging
-  to published mini websites for the same tenant, deduplicates repeated logos,
+  to approved tenant content, deduplicates repeated logos,
   and is omitted when no real partner logos are configured. Its visual base
   sequence and visible rail are measured at runtime by the shared
   `components/ui/marquee.tsx` primitive. The business-specific component only
@@ -382,7 +369,7 @@ future segments remain visible at reduced opacity.
   and cannot create duplicate keyboard stops. The hidden measurement unit uses
   `width: max-content`, no wrapping, and non-shrinking children so its observed
   box changes when natural logo dimensions resolve.
-  The preview is a functional MultiTree composition built from real published
+  The preview is a functional Sponsor.krd composition built from real published
   tenant content, not a copied third-party interface. It never presents an
   internal dashboard mockup,
   management or login actions, plan information, analytics, drafts, or other
@@ -406,7 +393,7 @@ future segments remain visible at reduced opacity.
   content surface is always a 390 x 858 logical mobile viewport, scaled as one
   unit into the chosen device width. This keeps template layout, safe-area
   spacing, and overflow behavior consistent in the Templates catalog, the
-  MultiTree homepage, and business public pages while allowing each consumer
+  Sponsor.krd homepage, and business public pages while allowing each consumer
   to provide its own screen content and theme. The
   registry-driven stack keeps three straight phones visible on mobile and five
   from the small-tablet breakpoint upward, with one focused device and an equal
@@ -432,8 +419,8 @@ future segments remain visible at reduced opacity.
   escaping the device screen. Linktree
   phones reuse `DynamicTemplate`
   and the same shared preview fixtures as the dashboard Templates page, with the
-  same MultiTree fixture data and standardized WhatsApp, Viber, and phone
-  actions shown in the Templates catalog. Mini-website
+  same Sponsor.krd fixture data and standardized WhatsApp, Viber, and phone
+  actions shown in the Templates catalog. Public-page
   phones use the real registered template component and published tenant
   content. Heavy template trees are isolated behind a memoized phone-content
   boundary, while the five-device composition uses Motion position-only layout
@@ -442,7 +429,7 @@ future segments remain visible at reduced opacity.
   motion is honored, and the previews remain non-interactive so they cannot
   trigger contact actions or expose dashboard or private data.
   The public homepage route renders the shared `SkeletonPublicLandingPage`
-  composition while server-side business, Linktree, and mini-website requests
+  composition while server-side business and Linktree requests
   are pending. It preserves the navbar, hero, workspace, and following-section
   footprints using the existing theme-aware `Skeleton` primitive. Registered
   phone-template content is synchronous and does not introduce a second local
@@ -484,9 +471,9 @@ future segments remain visible at reduced opacity.
   retains Next.js `Link` for route navigation, preventing fragment routing from
   mixing with application routes.
   The shared `components/public/PublicSiteNavbar.tsx` replaces the former
-  floating navbar on both MultiTree and tenant pages. It uses a full-width,
+  floating navbar on both Sponsor.krd and tenant pages. It uses a full-width,
   fixed 60px header with a centered inner container, square page edges, and the
-  stable MultiTree page surface and a transparent business surface at the top.
+  stable Sponsor.krd page surface and a transparent business surface at the top.
   After scrolling, the business appearance adds a restrained glass version of
   its background in both themes with no visible border, lower surface opacity,
   stronger backdrop blur and saturation, and a compact shadow. Its mobile menu
@@ -514,7 +501,7 @@ future segments remain visible at reduced opacity.
 - Public linktrees render at `/linktree/:uid`. The same route also resolves a
   linktree by its SEO name.
 - On the configured root domain (including `www`), `/linktree/:uid` resolves
-  only a MultiTree-owned platform Linktree. On a business subdomain the same
+  only a Sponsor.krd-owned platform Linktree. On a business subdomain the same
   path remains strictly tenant-scoped. Host resolution chooses two explicit
   backend endpoints; an empty subdomain is never treated as an implicit
   business lookup. Root-owned pages keep first-party analytics but mount no
@@ -558,9 +545,7 @@ future segments remain visible at reduced opacity.
   turned out to be — gradient, solid colour or uploaded image. The catalogue and
   the SVG renderer live in `lib/templates/background-pattern.tsx`, and the
   picker in `components/shared/BackgroundPatternModal`; the linktree editor and
-  the mini-website editor open the same modal, and `features/mini-website`
-  keeps thin aliases (`MiniWebsiteBackgroundPattern`,
-  `MiniWebsiteBackgroundStyleModal`) so its own code reads unchanged. The
+  all Linktree editing surfaces open the same modal. The
   choice lives in `template_config.background_pattern`, validated on read by
   `readBackgroundPattern` and stripped server-side by
   `common/linktree-background-pattern.ts` when it is outside the catalogue.
@@ -573,15 +558,11 @@ future segments remain visible at reduced opacity.
   unique clickers, served by `GET /linktrees`. The table's traffic column is
   gated on one table-level flag rather than per row, so a row without totals
   cannot shear the column out of line with its header.
-- Public mini-websites render at `/bio/:slug`.
-- These two routes are the only ones that load a business's TikTok pixel, and
-  both report through `createPageTracker`
+- Approved public marketing routes load a business's TikTok pixel and report
+  through `createPageTracker`
   (`features/analytics/page-tracking.ts`). Adding tracking to anything on
   either page follows [docs/tracking.md](tracking.md); mounting the pixel on a
   third surface fails `components/analytics/pixel-placement.spec.ts`.
-- On full public mini-websites, the theme and share controls sit in a utility
-  row below the cover beside the overlapping profile area, so they remain
-  readable without obscuring the business's cover image.
 - Why-choose-us items use a rotating accessible color palette for their icon
   badges, with translucent fills that remain visible in light and dark modes.
 - The public services/products section uses prominent two-column showcase
@@ -591,23 +572,6 @@ future segments remain visible at reduced opacity.
   their configured platform/brand color. Service images open in the shared
   keyboard- and touch-friendly image viewer; compact dashboard previews retain
   their horizontal rail.
-- Mini-websites have one persisted visual template. `liquid-glass` is the
-  default and the only option, and keeps its `soft`, `glass`, `minimal`, and
-  `warm` surface variations. Profession templates remain content/section
-  presets rather than page layouts. The template supports the currently
-  enabled section types: social links,
-  locations, business hours, gallery, FAQ, services, appointment booking,
-  team members, certificates and achievements, videos and reels, partner
-  brands, business-authored reviews, before-and-after comparisons, languages,
-  payment methods, special offers, events and workshops, audio and podcasts,
-  business advantages, impact stats, a process/how-it-works timeline,
-  documents and downloads, owned brands and pages, education history, work
-  experience, a lead-capture enquiry form, pricing plans, and stories.
-- The mini-website editor offers no visual-template control. With one template
-  there is nothing to choose, and `templateKey` already defaults to it; a
-  one-option picker would only be dead UI. Linktree selection keeps the shared
-  compact selector shell, cards, animations, selection state, and plan locks.
-  An absent or retired key still resolves to Liquid.
 - `branch-signal` is the Ultra-only premium Branch Signal Linktree template. It
   supports the complete shared solid, gradient, custom-gradient, uploaded-image,
   and pattern background system. Text contrast follows that background, while
@@ -616,15 +580,11 @@ future segments remain visible at reduced opacity.
   stored link title, description, platform icon, URL, and default message;
   share/theme/header controls are not invented inside the template. The shared
   phone supplies preview-only device chrome.
-- Neither the templates page nor the business subdomain landing page shows
-  mini-websites. The templates page catalogues Linktree templates only and no
-  longer carries category tabs; the landing page lists Linktrees alone and
-  does not fetch `/api/public/mini-websites`. The public advertising page
-  footer still links to them. The Business dashboard has no Mini Website route;
-  public `/bio/:slug` pages remain available.
+- The templates page catalogues Linktree templates only and carries no category
+  tabs; the business subdomain landing page lists Linktrees alone.
 - Appointment cards can open a business's public Calendly, Cal.com, Google
   Calendar, or custom HTTPS booking page, or start a WhatsApp conversation.
-  MultiTree stores the appointment details and click analytics; availability,
+  Sponsor.krd stores the appointment details and click analytics; availability,
   confirmation, cancellation, and reminders remain with the selected
   provider.
 - Team members can include a photo, role, experience, biography, and an
@@ -686,23 +646,23 @@ future segments remain visible at reduced opacity.
     500, 502, 503, and 504 states replace the homepage content while retaining the
     real public navbar and footer. The error-content region fills the small viewport,
     keeping the footer below the initial fold until the visitor scrolls. All
-    three scopes — MultiTree root, business subdomain, and platform console —
+    three scopes — Sponsor.krd root, business subdomain, and platform console —
     render through one `PublicMarketingSiteShell`, so the page frame, the
     32-pixel grid backdrop, the hero accent atmosphere, spacing, typography,
     buttons, and light/dark surfaces are identical everywhere. Scope differences
     are branding only, supplied through the typed `ErrorPageTheme` adapter:
     business pages pass the current business color, favicon, logo, and name;
-    root and console pages pass MultiTree's own accent and logo. Navigation and
+    root and console pages pass Sponsor.krd's own accent and logo. Navigation and
     footer content follow the same adapter — business errors keep the tenant
-    navigation and footer, root errors keep the MultiTree marketing footer with
-    signup and login actions, and console errors keep MultiTree branding without
+    navigation and footer, root errors keep the Sponsor.krd marketing footer with
+    signup and login actions, and console errors keep Sponsor.krd branding without
     account actions. `ErrorPage.tsx` must not grow a second layout branch per
     scope. The platform route-level 403, 404, 500, 502, 503, and 504 states all use
     this shared presentation. Every error-page home action points
     to `/` on the current host; error pages never link to a dashboard or login.
     Authorization failures use 403 only when the authenticated user may safely
     know the page exists. Concealed private routes and cross-tenant resources
-    continue to use 404. Public Linktree and mini-website URLs return 410 only
+    continue to use 404. Public Linktree URLs return 410 only
     when a tenant-scoped deletion tombstone proves that the content previously
     existed and was permanently removed; unknown URLs remain 404. A 429 response
     uses the same large presentation as 500
@@ -758,7 +718,7 @@ the visual requirements of each context without duplicating metric markup.
 Color, icon, compact sizing, descriptions, actions, and loading state remain
 configurable. The component's loading state selects the matching
 `SkeletonStatCard` shape so data arrival does not change the card's footprint.
-Linktree and mini-website initial data, lazy page bundles, grids, tables, edit
+Linktree initial data, lazy page bundles, grids, tables, edit
 forms, and analytics content use the matching shared skeleton composition.
 Per-page analytics, Event Tracking, TikTok configuration, Settings,
 sessions, business messages, and communication inboxes follow the same rule:
@@ -772,8 +732,8 @@ management tables and cards, page management, settings, advertising, TikTok,
 business directories, client invitations/results, analytics modals, editor
 forms, and communication lists. A route shell and an embedded content fallback
 are kept distinct when the surrounding header or dashboard chrome is already
-mounted. Linktree and mini-website previews both render lazily.
-Mini-website cards use the stable MultiTree fixture and the real public mobile
+mounted. Linktree previews render lazily.
+Public-page cards use the stable Sponsor.krd fixture and the real public mobile
 composition inside a scrollable shared phone. Preview interactions are
 disabled, and the preview canvas forces mobile grids even when the surrounding
 dashboard is wide enough to match desktop media queries.
@@ -790,13 +750,9 @@ unsaved local input; they may refresh only independent read-only data.
 The platform header refresh also invokes the shared notification adapter, so
 its communication inbox and permission-specific pending approvals refresh with
 the rest of the platform dashboard rather than waiting for the next poll.
-The shared Linktree and Mini Website managers expose six equivalent
-metrics—owned page count, views, unique visitors, interactions, interaction
-rate, and conversions—but query them through separate analytics page-type
-boundaries. Linktree summaries use `pageType=linktree`; mini-website summaries
-use `pageType=mini_website`. Mini Website management is available only in the
-Creator and Platform workspaces. Clearing analytics is scoped to its page type
-and must never remove the other type's data.
+The shared Linktree manager exposes six metrics—owned page count, views,
+unique visitors, interactions, interaction rate, and conversions. Linktree
+summaries use `pageType=linktree`; clearing analytics remains page-scoped.
 
 - linktree creation, editing, deletion, publication status, default-page
   selection, slug checks, link ordering, link batch synchronization, image
@@ -854,17 +810,11 @@ The console provides:
   and per-button click rows through platform-guarded endpoints; platform role
   configuration keeps root-domain URLs and excludes business-only client
   invitations and default-page behavior;
-- platform-owned mini-website creation at root-domain `/bio/:slug`, using the
-  exact business manager, editor steps, templates, preview, grid/table,
-  skeletons, uploads, map resolution, analytics modal, clear actions, public
-  renderer and tracking behavior through workspace configuration;
-  the grid and table also reuse the Linktree list presentation while injecting
-  mini-website status/template badges and action-specific analytics labels;
 - business editing, deletion, session revocation, profile-change
   request review, session revocation, asset uploads, TikTok configuration,
   and linktree import/export;
 - global linktree template availability and configuration;
-- IP/CIDR allow and deny rules scoped to MultiTree, platform administrators,
+- IP/CIDR allow and deny rules scoped to Sponsor.krd, platform administrators,
   businesses, business administrators, public linktrees, or the business API
   (see [docs/security.md](security.md#ip-allowdeny-rules) — this feature is
   currently unenforced);
@@ -907,10 +857,8 @@ Assume `ROOT_DOMAIN=example.com` and a business subdomain of `acme`.
 | `https://example.com/<PLATFORM_ADMIN_PATH>`         | Platform console                             |
 | `https://www.example.com/`                          | Treated as root domain                       |
 | `https://example.com/linktree/:uid`                 | Platform-owned Linktree                      |
-| `https://example.com/bio/:slug`                     | Platform-owned mini website                  |
 | `https://acme.example.com/`                         | Business public landing page                 |
 | `https://acme.example.com/linktree/:uid`            | Public linktree                              |
-| `https://acme.example.com/bio/:slug`                | Public mini-website                          |
 | `https://acme.example.com/login`                    | Tenant 404                                   |
 | `https://acme.example.com/business/workspace-entry` | Business sign-in                             |
 | `https://acme.example.com/business`                 | Dashboard with session; otherwise tenant 404 |
@@ -924,11 +872,11 @@ rewritten to the tenant 404 page.
 
 The root-domain marketing website uses the same public design system as the
 business website through `PublicMarketingSiteShell`, `PublicSiteNavbar`, and
-`PublicSiteFooter`. MultiTree provides only branding, navigation, authentication
+`PublicSiteFooter`. Sponsor.krd provides only branding, navigation, authentication
 actions, and marketing content; it must not fork those shared primitives.
 
-Public marketing routes are `/`, `/features`, `/link-in-bio`,
-`/mini-website`, `/templates`, `/pricing`, `/about`, and `/contact`. They are
+Public marketing routes are `/`, `/features`, `/link-in-bio`, `/templates`,
+`/pricing`, `/about`, and `/contact`. They are
 root-domain routes and are rejected on business subdomains. The navbar always
 offers Creator sign-up and sign-in. Business authentication remains a tenant
 subdomain concern and must not be linked from the root-domain website.
@@ -977,7 +925,7 @@ The retired `/system` path remains a deny-only proxy tombstone so old links
 cannot expose the platform-administrator console. Persisted administrator
 notifications that still begin with `/system/` are normalized to the active
 configured console path when opened. Likewise, legacy
-`/images/upload/system/` URLs are read through the new `multitree` media
+`/images/upload/system/` URLs are read through the new `sponsor-krd` media
 namespace. These aliases are read-only compatibility behavior: no route,
 notification, or upload is newly created with the retired term.
 
@@ -987,8 +935,8 @@ notification, or upload is newly created with the retired term.
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `pnpm dev:fe`                       | Start the frontend development server on port `3011` with Webpack (the stable fallback for local route compilation) |
 | `pnpm build:fe`                     | Generate `frontend/.env` from allowlisted root/process values, then build                                           |
-| `pnpm --filter frontend dev`        | Sync the MapLibre worker and run Next.js on port `3011`                                                             |
-| `pnpm --filter frontend build`      | Sync the MapLibre worker and create a production build                                                              |
+| `pnpm --filter frontend dev`        | Sync frontend environment values and run Next.js on port `3011`                                                     |
+| `pnpm --filter frontend build`      | Sync frontend environment values and create a production build                                                      |
 | `pnpm --filter frontend start`      | Run the production build on port `3011`                                                                             |
 | `pnpm --filter frontend lint`       | Run ESLint                                                                                                          |
 | `pnpm --filter frontend lint:fix`   | Run ESLint and apply fixes                                                                                          |

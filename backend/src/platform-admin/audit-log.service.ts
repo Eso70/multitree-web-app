@@ -62,7 +62,7 @@ const UNIFIED_SELECT = `
       CASE
         WHEN e.actor_type = 'platform-admin' THEN pa.name
         WHEN e.actor_type = 'business' THEN actor_business.name
-        WHEN e.actor_type = 'multitree' THEN 'MultiTree'
+        WHEN e.actor_type = 'sponsor_krd' THEN 'Sponsor.krd'
         ELSE 'Anonymous'
       END,
       'Unknown'
@@ -168,7 +168,7 @@ const UNIFIED_SELECT = `
     'Visitor'::varchar AS actor_label,
     ae.business_id::text AS business_id,
     b.name AS business_label,
-    COALESCE(pp.source_linktree_id, pp.source_mini_website_id)::text AS linktree_id,
+    pp.source_linktree_id::text AS linktree_id,
     pp.name AS linktree_label,
     CASE
       WHEN ae.event_name = 'page_view' THEN 'analytics.page_view'
@@ -199,7 +199,8 @@ const UNIFIED_SELECT = `
     NULL::varchar AS http_method,
     CASE
       WHEN pp.page_type = 'linktree' THEN '/linktree/' || pp.slug
-      ELSE '/bio/' || pp.slug
+      WHEN pp.page_type = 'advertising' THEN '/advertising'
+      ELSE '/' || pp.slug
     END AS request_path,
     NULL::smallint AS status_code,
     NULL::integer AS duration_ms,
@@ -224,12 +225,12 @@ const UNIFIED_SELECT = `
   SELECT
     'integration:' || attempt.id::text AS id,
     'integration'::text AS record_kind,
-    'multitree'::varchar AS actor_type,
+    'sponsor_krd'::varchar AS actor_type,
     NULL::text AS actor_id,
     'TikTok Events API'::varchar AS actor_label,
     outbox.business_id::text AS business_id,
     b.name AS business_label,
-    COALESCE(page.source_linktree_id, page.source_mini_website_id)::text AS linktree_id,
+    page.source_linktree_id::text AS linktree_id,
     page.name AS linktree_label,
     'integration.tiktok.events_api.' || lower(outbox.event_name) AS event_type,
     CASE WHEN attempt.outcome='success' THEN 'success' ELSE 'failure' END::varchar AS outcome,
@@ -382,7 +383,7 @@ export class AuditLogService {
         query.kind === 'tiktok-events-api') &&
       (!query.source || query.source === 'backend') &&
       (!query.httpMethod || query.httpMethod === 'POST') &&
-      (!query.actorType || query.actorType === 'multitree');
+      (!query.actorType || query.actorType === 'sponsor_krd');
 
     const requestParams: unknown[] = [];
     const requestClauses: string[] = [];

@@ -13,7 +13,7 @@ interface ConnectTikTokAdModalProps {
   onClose: () => void;
   onConnect: (account: TikTokAdAccount) => void;
   initialAccount?: TikTokAdAccount | null;
-  multiTreeTheme?: boolean;
+  sponsorKrdTheme?: boolean;
 }
 
 export function ConnectTikTokAdModal({
@@ -21,7 +21,7 @@ export function ConnectTikTokAdModal({
   onClose,
   onConnect,
   initialAccount,
-  multiTreeTheme = false,
+  sponsorKrdTheme = false,
 }: ConnectTikTokAdModalProps) {
   const [appId, setAppId] = useState("");
   const [appSecret, setAppSecret] = useState("");
@@ -43,7 +43,7 @@ export function ConnectTikTokAdModal({
           advertiserId: "ADV-TIKTOK-DEMO",
           advertiserName:
             initialAccount?.advertiserName ||
-            (multiTreeTheme ? "هەژماری ڕیکلامی پلاتفۆرم" : "هەژماری ڕیکلامی بزنس"),
+            (sponsorKrdTheme ? "هەژماری ڕیکلامی پلاتفۆرم" : "هەژماری ڕیکلامی بزنس"),
           currency: "USD",
           timezone: "Asia/Baghdad",
           status: "connected",
@@ -67,7 +67,7 @@ export function ConnectTikTokAdModal({
     <ManagementModal
       isOpen={isOpen}
       onClose={onClose}
-      multiTreeTheme={multiTreeTheme}
+      sponsorKrdTheme={sponsorKrdTheme}
       title="بەستنەوەی هەژماری تیکتۆک"
       description="زانیارییەکانی بەستنەوە داخڵ بکە بۆ پەیوەستکردنی هەژماری ڕیکلام."
       footer={

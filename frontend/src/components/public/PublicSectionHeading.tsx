@@ -17,7 +17,7 @@ export function PublicSectionHeading({
     <header className="mx-auto max-w-4xl text-center" dir="rtl">
       {eyebrow ? (
         <p
-          className="mb-4 text-xs font-black tracking-wide text-[var(--section-heading-accent,var(--multitree-accent))]"
+          className="mb-4 text-xs font-black tracking-wide text-[var(--section-heading-accent,var(--sponsor-krd-accent))]"
           style={
             eyebrowColor
               ? ({ "--section-heading-accent": eyebrowColor } as CSSProperties)

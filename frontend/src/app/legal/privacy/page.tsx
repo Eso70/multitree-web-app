@@ -3,8 +3,8 @@ import { LEGAL_PRIVACY_VERSION } from "@linktree/types";
 import { LegalDocumentPage } from "@/components/shared/LegalDocumentPage";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | MultiTree",
-  description: "سیاسەتی تایبەتمەندی MultiTree",
+  title: "Privacy Policy | Sponsor.krd",
+  description: "سیاسەتی تایبەتمەندی Sponsor.krd",
 };
 
 export default function PrivacyPage() {

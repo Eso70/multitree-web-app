@@ -1,6 +1,6 @@
 # Accessibility
 
-This document defines the accessibility standards for MultiTree.
+This document defines the accessibility standards for Sponsor.krd.
 
 Accessibility is a core quality requirement. Every feature should be usable by as many people as possible, regardless of ability or device.
 
@@ -274,7 +274,7 @@ Essential functionality must not depend on animations.
 
 # Public Pages
 
-Public linktrees and mini-websites should:
+Public Linktrees should:
 
 - remain fully keyboard accessible
 - expose meaningful page titles

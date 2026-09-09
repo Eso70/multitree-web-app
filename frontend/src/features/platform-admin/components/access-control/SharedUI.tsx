@@ -23,17 +23,17 @@ export function Modal({
   return createPortal(
     <div
       className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-[2px]"
-      data-multitree-theme
+      data-sponsor-krd-theme
       style={
         {
-          "--theme-primary": "var(--multitree-accent)",
-          "--theme-css": "var(--multitree-accent)",
+          "--theme-primary": "var(--sponsor-krd-accent)",
+          "--theme-css": "var(--sponsor-krd-accent)",
         } as React.CSSProperties
       }
     >
       <button className="absolute inset-0" onClick={onClose} />
       <div
-        className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-white dark:bg-[#161B22] border border-slate-200 dark:border-white/10 shadow-2xl    duration-300 flex flex-col max-h-[95vh] sm:max-h-[90vh] selection:bg-lime-500/30 dark:selection:bg-lime-500/40"
+        className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-white dark:bg-[#161B22] border border-slate-200 dark:border-white/10 shadow-2xl    duration-300 flex flex-col max-h-[95vh] sm:max-h-[90vh] selection:bg-brand-500/30 dark:selection:bg-brand-500/40"
         dir="ltr"
       >
         <div
@@ -56,7 +56,7 @@ export function Modal({
             <X className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 md:p-6 space-y-4 custom-scrollbar lime-custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 md:p-6 space-y-4 custom-scrollbar brand-custom-scrollbar">
           {children}
         </div>
         {footer && (

@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   FileText,
-  IdCard,
   LayoutTemplate,
   LogOut,
   Settings,
@@ -24,11 +23,10 @@ import {
   SkeletonPageManagement,
   SkeletonSettingsPage,
 } from "@/components/shared/SkeletonPageLayouts";
-import { CREATOR_MINI_WEBSITE_WORKSPACE } from "@/features/mini-website/workspace-config";
 import { apiRequest } from "@/lib/api/request";
 import { persistAppTheme, readAppTheme, type AppTheme } from "@/lib/app-theme";
 import { ThemeProvider } from "@/lib/contexts/ThemeProvider";
-import { CreatorPageTypeLocked } from "./CreatorPageTypeLocked";
+import { SPONSOR_KRD_LOGO } from "@/lib/brand/brand-assets";
 import { CreatorSidebarFooter } from "./CreatorSidebarFooter";
 import type { CreatorContext } from "./creator-dashboard.types";
 
@@ -37,14 +35,6 @@ const RootLinktreesPage = dynamic(
     import("@/features/platform-admin/components/PlatformLinktreesPage").then(
       (module) => ({ default: module.RootLinktreesPage }),
     ),
-  { ssr: false, loading: () => <SkeletonPageManagement /> },
-);
-
-const MiniWebsitesPage = dynamic(
-  () =>
-    import("@/features/mini-website/MiniWebsitesPage").then((module) => ({
-      default: module.MiniWebsitesPage,
-    })),
   { ssr: false, loading: () => <SkeletonPageManagement /> },
 );
 
@@ -67,13 +57,11 @@ const CreatorAccountSettingsPage = dynamic(
   },
 );
 
-type CreatorDashboardPage =
-  "home" | "linktree" | "mini_website" | "templates" | "settings";
+type CreatorDashboardPage = "home" | "linktree" | "templates" | "settings";
 
 const PAGE_TITLES: Record<CreatorDashboardPage, string> = {
   home: DASHBOARD_PAGE_LABELS.linktrees,
   linktree: DASHBOARD_PAGE_LABELS.linktrees,
-  mini_website: DASHBOARD_PAGE_LABELS.miniWebsite,
   templates: DASHBOARD_PAGE_LABELS.templates,
   settings: DASHBOARD_PAGE_LABELS.settings,
 };
@@ -81,7 +69,6 @@ const PAGE_TITLES: Record<CreatorDashboardPage, string> = {
 function activeDashboardPage(pathname: string): CreatorDashboardPage {
   if (pathname.endsWith("/settings")) return "settings";
   if (pathname.endsWith("/linktree")) return "linktree";
-  if (pathname.endsWith("/mini-website")) return "mini_website";
   if (pathname.endsWith("/templates")) return "templates";
   return "home";
 }
@@ -91,9 +78,6 @@ export function CreatorDashboard() {
   const pathname = usePathname();
   const activePage = activeDashboardPage(pathname);
   const [context, setContext] = useState<CreatorContext | null>(null);
-  const [committedPageType, setCommittedPageType] = useState<
-    "linktree" | "mini_website" | null
-  >(null);
   const [theme, setTheme] = useState<AppTheme>(() => readAppTheme());
   const [mounted, setMounted] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -127,19 +111,13 @@ export function CreatorDashboard() {
 
   useEffect(() => {
     if (pathname !== "/account" || !context) return;
-    router.replace(
-      context.account.page_type === "mini_website"
-        ? "/account/mini-website"
-        : "/account/linktree",
-    );
+    router.replace("/account/linktree");
   }, [context, pathname, router]);
 
   const logout = useCallback(async () => {
     await apiRequest("/api/creator/auth/logout", { method: "POST" });
     router.replace("/login");
   }, [router]);
-
-  const ownedPageType = context?.account.page_type || committedPageType;
 
   const sidebarItems = useMemo<DashboardSidebarItem[]>(
     () => [
@@ -148,18 +126,7 @@ export function CreatorDashboard() {
         label: DASHBOARD_PAGE_LABELS.linktrees,
         icon: <FileText className="h-4 w-4" />,
         active: activePage === "linktree",
-        disabled: ownedPageType === "mini_website",
-        disabledReason: "هەژمارەکەت پێشتر مینی وێبسایتێکی هەیە",
         onClick: () => router.push("/account/linktree"),
-      },
-      {
-        id: "mini-website",
-        label: DASHBOARD_PAGE_LABELS.miniWebsite,
-        icon: <IdCard className="h-4 w-4" />,
-        active: activePage === "mini_website",
-        disabled: ownedPageType === "linktree",
-        disabledReason: "هەژمارەکەت پێشتر لینکترییەکی هەیە",
-        onClick: () => router.push("/account/mini-website"),
       },
       {
         id: "templates",
@@ -176,30 +143,28 @@ export function CreatorDashboard() {
         onClick: () => router.push("/account/settings"),
       },
     ],
-    [activePage, ownedPageType, router],
+    [activePage, router],
   );
 
   if (!context)
     return (
-      <SkeletonDashboardShell navigationItems={4}>
+      <SkeletonDashboardShell navigationItems={3}>
         <SkeletonPageManagement />
       </SkeletonDashboardShell>
     );
-
-  const pageType = ownedPageType;
 
   return (
     <ThemeProvider websiteColor={context.branding.accentColor}>
       <div
         className="relative flex h-screen flex-col overflow-hidden bg-slate-50 text-slate-800 dark:bg-[#161B22] dark:text-gray-100 md:flex-row"
         dir="ltr"
-        data-multitree-theme
+        data-sponsor-krd-theme
       >
         <DashboardSidebar
-          brandName="MultiTree"
+          brandName="Sponsor.krd"
           brandSubtitle="داشبۆردی بەکارهێنەر"
-          brandImage="/images/Logo.jpg"
-          brandImageAlt="MultiTree"
+          brandImage={SPONSOR_KRD_LOGO}
+          brandImageAlt="Sponsor.krd"
           items={sidebarItems}
           collapsed={isSidebarCollapsed}
           mobileOpen={isMobileSidebarOpen}
@@ -210,7 +175,7 @@ export function CreatorDashboard() {
               billingStatus={context.account.billingStatus}
             />
           }
-          accent="var(--multitree-accent)"
+          accent="var(--sponsor-krd-accent)"
         />
 
         <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
@@ -272,28 +237,13 @@ export function CreatorDashboard() {
                 <CreatorAccountSettingsPage account={context.account} />
               ) : activePage === "home" ? (
                 <SkeletonPageManagement />
-              ) : activePage === "linktree" && pageType === "mini_website" ? (
-                <CreatorPageTypeLocked ownedPageType="mini_website" />
-              ) : activePage === "mini_website" && pageType === "linktree" ? (
-                <CreatorPageTypeLocked ownedPageType="linktree" />
-              ) : activePage === "linktree" ? (
+              ) : (
                 <RootLinktreesPage
                   apiBase="/api/creator/linktrees"
                   analyticsDataSource="creator-linktree"
                   ownerLabel="تۆ"
                   maxPages={1}
                   canDelete={false}
-                  onCreated={() => setCommittedPageType("linktree")}
-                />
-              ) : (
-                <MiniWebsitesPage
-                  businessLogo={context.branding.logo}
-                  businessDefaultAvatar={context.branding.avatar}
-                  websiteColor={context.branding.accentColor}
-                  workspaceConfig={CREATOR_MINI_WEBSITE_WORKSPACE}
-                  maxPages={1}
-                  canDelete={false}
-                  onCreated={() => setCommittedPageType("mini_website")}
                 />
               )}
             </div>

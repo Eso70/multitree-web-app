@@ -25,7 +25,7 @@ export default function BusinessWorkspaceEntryPage() {
     <AuthenticationShell
       brandDescription="بڕۆ ژوورەوە بۆ بەڕێوەبردنی بزنس"
       brandName={theme?.name || "بزنس"}
-      // Explicit, never the shell's MultiTree default: a tenant page shows the
+      // Explicit, never the shell's SponsorKrd default: a tenant page shows the
       // business logo or the neutral placeholder, never the platform's mark.
       brandLogo={theme?.logo ?? BUSINESS_LOGO_PLACEHOLDER}
       accentColor={theme?.websiteColor.raw}

@@ -48,6 +48,11 @@ It is recorded in `schema_migrations` under the compatibility ledger name
 
 It requires the PostgreSQL `pg_trgm` and `pgcrypto` extensions.
 
+Dated forward-migration SQL files must not include their own `BEGIN`, `COMMIT`,
+or `ROLLBACK` wrapper. The migration runner owns that transaction and records
+the migration in the same commit, ensuring a failed migration leaves both the
+schema and its ledger unchanged.
+
 ## Schema groups
 
 The active schema is grouped as follows:
@@ -57,7 +62,6 @@ The active schema is grouped as follows:
 | Platform identity and access     | `platform_admins`, `platform_admin_sessions`, `access_rules`, `platform_permission_denies`, `auth_permissions`, `permission_approval_requests`, `security_audit_events`                                                                                                                                                                    |
 | Businesses and sessions          | `businesses`, `business_branding`, `business_defaults`, `business_profile_change_requests`, `business_sessions`, `business_tiktok_pixels`                                                                                                                                                                                                  |
 | Linktrees and public content     | `linktrees`, `links`, `whatsapp_questions`, `template_global_settings`, `public_pages`, `public_page_versions`, `public_page_actions`, `public_page_tombstones`                                                                                                                                                                            |
-| Mini-websites                    | `mini_websites`, `mini_website_sections`, `mini_website_social_links`, `mini_website_locations`, `mini_website_hours`, `mini_website_items`, `mini_website_versions`                                                                                                                                                                       |
 | Advertising service              | `advertising_pages`, `advertising_sections`, `advertising_package_categories`, `advertising_package_tiers`, `advertising_results`, `advertising_testimonials`, `advertising_faqs`, `advertising_payment_providers`, `advertising_page_versions`                                                                                            |
 | Billing and access configuration | `billing_entitlements`, `billing_plans`, `billing_plan_configurations`, `billing_plan_entitlements`, `billing_plan_permissions`, `billing_plan_templates`, `billing_subscription_plans`, `business_subscriptions`, `billing_usage_counters`, `billing_policy_audit_events`                                                                 |
 | Analytics and marketing delivery | `analytics_visitors`, `analytics_sessions`, `analytics_events`, `analytics_page_daily`, `analytics_action_daily`, `marketing_event_outbox`, `marketing_delivery_attempts`                                                                                                                                                                  |
@@ -72,7 +76,7 @@ These were delivered as dated forward migrations and folded into
 reasoning lives here. Everything below is simply how the baseline is now.
 
 **CRM and Advanced Analytics retirement.** The baseline no longer creates the
-CRM tables, mini-website lead-form settings, Advanced Analytics dimension
+CRM tables, retired lead-form settings, Advanced Analytics dimension
 rollup, or acquisition-only daily-rollup columns. It also omits the retired
 Advanced Analytics permissions, entitlements, and plan grants. Core page/action
 totals, exact unique counts, and TikTok delivery data remain. The two dated
@@ -104,10 +108,10 @@ database that predates their removal.
 
 **Neutral brand placeholders.** `business_branding.logo` and `.favicon` default
 to `/images/business-logo-placeholder.png` and
-`/images/business-favicon-placeholder.png`. They used to default to MultiTree's
+`/images/business-favicon-placeholder.png`. They used to default to Sponsor.krd's
 own `/images/Logo.jpg` and `/favicon.ico`, so a business that skipped the
 optional upload rendered the platform's mark on its own public pages.
-`platform_admins` keeps the platform mark — that row _is_ MultiTree's console
+`platform_admins` keeps the platform mark — that row _is_ Sponsor.krd's console
 branding. `business_branding.default_avatar` deliberately keeps
 `/images/DefaultAvatar.png`: it is a sentinel other SQL compares against to mean
 "still the default", and the artwork behind the path was replaced at the asset
@@ -129,22 +133,6 @@ were retired. `business_defaults.template_key` and `linktrees.template_key` both
 default to `spectrum`. Branch Signal is assigned only to Ultra in the
 consolidated baseline; runtime plan checks also reject accidental non-Ultra
 assignments.
-
-**Mini-website templates.** `liquid-glass` is the only one
-(`mini_websites_template_key_check`), and therefore the only default. The set
-went through Editorial/Business Pro/Sidebar Canvas → Side Profile → Studio Grid
-→ Soft Horizon → Liquid Glass; each step moved every persisted selection rather
-than clearing it, so no page was ever left failing a template lookup.
-
-One artefact of that sequence is worth remembering: forward migrations apply in
-ascending _filename_ order, and `2026-08-17_rename_studio_grid_to_soft_horizon`
-sorted **before** `2026-08-17_replace_side_profile_with_studio_grid` — the
-reverse of the order they were written. The rename cleared the `studio-grid`
-grants and the replace inserted them again, and the Soft Horizon retirement
-deleted only `soft-horizon`, so every database that ran the sequence kept
-`studio-grid` rows in `billing_plan_templates` for a template nothing could
-render. `2026-08-19_remove_orphaned_studio_grid_grants.sql` removed them before
-the rebaseline. **Date a migration so it sorts in the order it must run.**
 
 **Retired link platform.** `website` was folded into `custom`, which already
 accepted a bare domain and stored the same `https://…` url. Destination urls
@@ -184,7 +172,6 @@ single transaction by both `db:migrate` and `db:reset`:
 | `20_communications.sql`          | Communication Center                                    |
 | `30_api_platform.sql`            | Developer API, usage governance, webhooks               |
 | `40_operations_and_media.sql`    | data retention and media policy                         |
-| `50_mini_websites.sql`           | mini-website profile, content, versions                 |
 | `60_advertising.sql`             | advertising pages, packages, versions                   |
 | `70_public_pages_analytics.sql`  | unified public page model and analytics                 |
 | `80_performance.sql`             | FK-column indexes and per-table storage tuning          |
@@ -236,7 +223,7 @@ _which baseline_ a database was built from, not which files carried it, and
 The consolidated baseline carries the durable `businesses.account_type`
 ownership discriminator and creates exactly one internal platform workspace.
 A partial unique index enforces the singleton.
-The same workspace owns platform Linktrees and platform mini websites; no
+The same workspace owns platform Linktrees; no
 feature-specific owner table or nullable ownership column is introduced.
 Existing and future customer rows default to `business`; platform and public
 services use explicit account-type predicates so the internal owner never
@@ -248,7 +235,7 @@ The workspace deliberately owns ordinary `linktrees`, `links`, `public_pages`,
 tables keep their non-null foreign keys and existing triggers. The normal
 post-insert subscription is removed because this is not a billable customer;
 platform write policy is enforced by the guarded platform service instead.
-`99_data.sql` registers the platform Linktree, mini-website, TikTok, and
+`99_data.sql` registers the platform Linktree, TikTok, and
 Creator-administration capabilities with that workspace.
 
 ## Baseline rebaseline, 2026-08-24
@@ -261,7 +248,7 @@ folded into the appropriate baseline domains.
 This was needed because `db:reset` applies the baseline and nothing else —
 `db-reset.ts` never calls `applyForwardMigrations`, and it asserts the ledger
 holds exactly one row. A reset therefore produced a schema that still had the
-password columns, the pre-rename linktree template keys, MultiTree's own logo
+password columns, the pre-rename linktree template keys, Sponsor.krd's own logo
 as the business default, and no impersonation columns. `db:migrate` did not
 have this problem, because it runs the forward migrations after the baseline.
 
@@ -328,6 +315,13 @@ baseline still creates the columns, so an entry there would reject every fresh
 install. Fresh and existing databases both converge on the columns being absent
 once the forward migrations run.
 
+The migration compatibility check likewise accepts the exact pre-rebrand
+`communication_conversations.multitree_key` column and matching index only in
+the check immediately before forward migrations. The strict check after those
+migrations still requires `sponsor_krd_key` and its renamed index. This lets a
+valuable existing database reach the rebrand migration without weakening the
+final schema guarantee.
+
 `trg_business_default_subscription` creates a default subscription immediately
 after a business row is inserted. Any workflow that creates a business with an
 explicit reviewed plan must upsert `business_subscriptions` on `business_id` so
@@ -335,8 +329,8 @@ the reviewed plan replaces that trigger-created default. A second plain insert
 will violate `business_subscriptions_business_id_key`.
 
 The former `page_views`, `link_clicks`, `analytics_totals`,
-`mini_website_events`, `mini_website_analytics_daily`, and
-`integration_delivery_events` tables are not created by the consolidated
+legacy public-page analytics tables and `integration_delivery_events` are not
+created by the consolidated
 schema, and neither are the four legacy analytics helper functions or the
 `links.click_count` column. Current code uses the unified analytics and
 marketing tables above.
@@ -414,7 +408,7 @@ and executes
 `FLUSHALL` on the configured Redis instance. **It
 permanently destroys the configured application database and all data in the
 configured Redis instance.** Set `DB_RESET_REQUIRE_STOPPED_BACKEND=true` when
-an environment must refuse resets while MultiTree backend connections are
+an environment must refuse resets while Sponsor.krd backend connections are
 active.
 
 Use `db:reset` only when complete data loss is intended.

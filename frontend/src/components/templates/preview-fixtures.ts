@@ -4,6 +4,7 @@ import type {
 } from "@linktree/types";
 import type { TemplateKey } from "@/lib/templates/config";
 import type { TemplateTheme } from "@/components/templates/types";
+import { SPONSOR_KRD_LOGO } from "@/lib/brand/brand-assets";
 
 const DEFAULT_PREVIEW_SUBTITLE = "Digital Presence Platform";
 
@@ -68,12 +69,12 @@ export function createBusinessContactPreviewLinks(
 
 export function createLinktreeTemplatePreview({
   templateId,
-  businessName = "MultiTree",
+  businessName = "Sponsor.krd",
   subtitle = DEFAULT_PREVIEW_SUBTITLE,
   description,
-  businessLogo = "/images/Logo.jpg",
+  businessLogo = SPONSOR_KRD_LOGO,
   phoneNumber,
-  accentColor = "#b6f20d",
+  accentColor = "#25F4EE",
 }: {
   templateId: TemplateKey;
   businessName?: string;

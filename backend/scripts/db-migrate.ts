@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Database Migration Script
  * Applies the consolidated baseline (migrations/baseline/*.sql) to an empty database.
  * Existing databases are baselined only when they already match that schema,
@@ -29,7 +29,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 async function migrate() {
-  const dbName = process.env.DB_NAME || 'multitree';
+  const dbName = process.env.DB_NAME || 'sponsor_krd';
   if (
     !/^[A-Za-z_][A-Za-z0-9_-]{0,62}$/.test(dbName) ||
     ['postgres', 'template0', 'template1'].includes(dbName.toLowerCase())
@@ -79,7 +79,7 @@ async function migrate() {
   const client = await pool.connect();
   const schemaFile = BASELINE_LEDGER_NAME;
   let appliedCount = 0;
-  const migrationLockKey = 'multitree:schema-migrations';
+  const migrationLockKey = 'sponsor-krd:schema-migrations';
 
   try {
     await client.query('SELECT pg_advisory_lock(hashtextextended($1, 0))', [
@@ -123,7 +123,10 @@ async function migrate() {
         [schemaFile],
       );
       if (check.rows.length > 0) {
-        await assertSupportedSchema(client);
+        await assertSupportedSchema(client, {
+          allowPendingSponsorKrdRebrand: true,
+          allowPendingMiniWebsiteRemoval: true,
+        });
         console.log(`  OK ${schemaFile} already applied`);
       } else {
         const legacyCheck = await client.query(
@@ -144,7 +147,10 @@ async function migrate() {
         }
 
         if (Number(existingTables.rows[0]?.count || 0) > 0) {
-          await assertSupportedSchema(client);
+          await assertSupportedSchema(client, {
+            allowPendingSponsorKrdRebrand: true,
+            allowPendingMiniWebsiteRemoval: true,
+          });
           await client.query(
             'INSERT INTO schema_migrations (filename) VALUES ($1) ON CONFLICT DO NOTHING',
             [schemaFile],
@@ -162,7 +168,10 @@ async function migrate() {
           appliedCount += 1;
           console.log(`  OK ${schemaFile} applied`);
         }
-        await assertSupportedSchema(client);
+        await assertSupportedSchema(client, {
+          allowPendingSponsorKrdRebrand: true,
+          allowPendingMiniWebsiteRemoval: true,
+        });
       }
     }
 
@@ -171,9 +180,7 @@ async function migrate() {
       migrationsDir,
     );
     appliedCount += forwardMigrations.length;
-    if (forwardMigrations.length) {
-      await assertSupportedSchema(client);
-    }
+    await assertSupportedSchema(client);
 
     await seedPlatformAdmin(client);
     await ensureApiPlatform(client);

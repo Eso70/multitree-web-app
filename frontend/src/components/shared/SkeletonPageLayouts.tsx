@@ -115,7 +115,7 @@ export function SkeletonLinktreeGrid({
   );
 }
 
-/** Exact initial layout shared by Linktree and mini-website management pages. */
+/** Exact initial layout shared by public-page management screens. */
 export function SkeletonPageManagement({
   showTabs = false,
 }: {

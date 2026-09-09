@@ -207,7 +207,7 @@ function ClientLinktreeAccessContent({
             setEditorOpen(false);
           }}
           businessDefaults={{
-            default_footer_text: "MultiTree",
+            default_footer_text: "Sponsor.krd",
             default_footer_hidden: true,
             default_whatsapp_enabled: true,
           }}

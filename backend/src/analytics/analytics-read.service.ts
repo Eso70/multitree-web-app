@@ -5,7 +5,7 @@ import { AnalyticsReadRepository } from './analytics-read.repository';
 
 interface AnalyticsFilters {
   pageId?: string;
-  pageType?: 'linktree' | 'mini_website';
+  pageType?: 'linktree';
   from?: string;
   to?: string;
 }
@@ -39,7 +39,6 @@ export class AnalyticsReadService {
             AND (
               page.id = $2
               OR page.source_linktree_id = $2
-              OR page.source_mini_website_id = $2
             )
         )
       )
@@ -92,7 +91,6 @@ export class AnalyticsReadService {
              $2::uuid IS NULL
              OR id = $2
              OR source_linktree_id = $2
-             OR source_mini_website_id = $2
            )
            AND ($5::varchar IS NULL OR page_type = $5)
        ),
@@ -165,7 +163,7 @@ export class AnalyticsReadService {
     );
     return result.rows.map((row) => ({
       id: row.id,
-      // The stable key the page tags its buttons with. A mini website groups a
+      // The stable key the page tags its buttons with. Rich public pages group a
       // long action list by the section encoded in it.
       actionKey: row.action_key,
       // Carries what the row actually is — its section, and the brand it points
@@ -201,7 +199,7 @@ export class AnalyticsReadService {
            SELECT page.id
            FROM public_pages page
            WHERE page.business_id=$1
-             AND (page.id=$2 OR page.source_linktree_id=$2 OR page.source_mini_website_id=$2)
+             AND (page.id=$2 OR page.source_linktree_id=$2)
          )
          SELECT
            COALESCE(SUM(daily.total_views),0)::bigint AS views,
@@ -221,7 +219,7 @@ export class AnalyticsReadService {
          FROM analytics_page_daily daily
          JOIN public_pages page ON page.id=daily.public_page_id
          WHERE daily.business_id=$1
-           AND (page.id=$2 OR page.source_linktree_id=$2 OR page.source_mini_website_id=$2)`,
+           AND (page.id=$2 OR page.source_linktree_id=$2)`,
         [businessId, pageId, [...CLICK_EVENTS]],
       ),
       this.getActions(businessId, { pageId }),
@@ -290,7 +288,7 @@ export class AnalyticsReadService {
            OR event.public_page_id IN (
              SELECT page.id FROM public_pages page
              WHERE page.business_id = $1
-               AND (page.id = $2 OR page.source_linktree_id = $2 OR page.source_mini_website_id = $2)
+               AND (page.id = $2 OR page.source_linktree_id = $2)
            )
          )
          AND ($3::date IS NULL OR outbox.created_at >= $3::date)
@@ -414,7 +412,6 @@ export class AnalyticsReadService {
                AND (
                  page.id=$2::uuid
                  OR page.source_linktree_id=$2::uuid
-                 OR page.source_mini_website_id=$2::uuid
                )
            )
          )`,

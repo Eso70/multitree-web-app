@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { HomeLanding } from "@/components/home/HomeLanding";
 import { BusinessLanding } from "@/components/business/BusinessLanding";
 import { extractSubdomain } from "@/lib/subdomain-utils";
-import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import { SPONSOR_KRD_ACCENT_COLOR } from "@/lib/sponsor-krd-theme";
 import type { ComponentProps } from "react";
 import { BusinessServiceUnavailablePage } from "@/components/error-pages/BusinessServiceUnavailablePage";
 import { BusinessBadGatewayPage } from "@/components/error-pages/BusinessBadGatewayPage";
@@ -16,7 +16,8 @@ import {
 import {
   BUSINESS_FAVICON_PLACEHOLDER,
   BUSINESS_LOGO_PLACEHOLDER,
-  MULTITREE_LOGO_MARK,
+  SPONSOR_KRD_FAVICON,
+  SPONSOR_KRD_LOGO_MARK,
 } from "@/lib/brand/brand-assets";
 
 export const dynamic = "force-dynamic";
@@ -154,7 +155,7 @@ export async function generateMetadata() {
             title: businessTabTitle(business.name, "Home"),
             description: `Explore ${business.name}'s official public pages and contact information.`,
             icons,
-            themeColor: business.website_color || MULTITREE_ACCENT_COLOR,
+            themeColor: business.website_color || SPONSOR_KRD_ACCENT_COLOR,
           };
         }
       }
@@ -163,18 +164,18 @@ export async function generateMetadata() {
 
   // Root domain only — a business subdomain returned above with its own icons.
   // Declared explicitly rather than left to the implicit `/favicon.ico` pickup,
-  // so MultiTree's own mark is stated in the same place a tenant's is.
+  // so SponsorKrd's own mark is stated in the same place a tenant's is.
   return {
-    title: "MultiTree",
+    title: "Sponsor.krd",
     description:
       "Create branded public link pages, manage multiple businesses, and understand every connection from one secure platform.",
     icons: {
       icon: [
-        { url: "/favicon.ico" },
-        { url: MULTITREE_LOGO_MARK, sizes: "512x512" },
+        { url: SPONSOR_KRD_FAVICON },
+        { url: SPONSOR_KRD_LOGO_MARK, sizes: "512x512" },
       ],
-      apple: MULTITREE_LOGO_MARK,
+      apple: SPONSOR_KRD_LOGO_MARK,
     },
-    themeColor: MULTITREE_ACCENT_COLOR,
+    themeColor: SPONSOR_KRD_ACCENT_COLOR,
   };
 }

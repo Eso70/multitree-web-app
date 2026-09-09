@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { ErrorPage, ErrorPagePanel } from "./ErrorPage";
 import {
   businessErrorTheme,
-  MULTITREE_ERROR_THEME,
+  SPONSOR_KRD_ERROR_THEME,
   platformErrorTheme,
 } from "./error-theme";
 import { parseWebsiteColor } from "@/lib/utils/parse-website-color";
@@ -15,15 +15,15 @@ describe("platformErrorTheme branding", () => {
    * to reach the shared navbar, which substitutes the neutral *business*
    * placeholder — the one thing platform chrome must never show.
    */
-  it("falls back to the MultiTree mark for a null logo, not only a missing one", () => {
-    expect(platformErrorTheme({ name: "MultiTree", logo: null }).logo).toBe(
+  it("falls back to the SponsorKrd mark for a null logo, not only a missing one", () => {
+    expect(platformErrorTheme({ name: "Sponsor.krd", logo: null }).logo).toBe(
       platformErrorTheme().logo,
     );
     expect(platformErrorTheme({ logo: null }).logo).toBeTruthy();
   });
 
-  it("falls back to the MultiTree name for a null name", () => {
-    expect(platformErrorTheme({ name: null }).name).toBe("MultiTree");
+  it("falls back to the Sponsor.krd name for a null name", () => {
+    expect(platformErrorTheme({ name: null }).name).toBe("Sponsor.krd");
   });
 
   it("still prefers a configured platform logo", () => {
@@ -34,13 +34,13 @@ describe("platformErrorTheme branding", () => {
 });
 
 describe("ErrorPage", () => {
-  it("uses the same layout with the MultiTree theme", () => {
+  it("uses the same layout with the SponsorKrd theme", () => {
     const { container } = render(
       <ErrorPage
         code="404"
         title="Not found"
         description="Missing page"
-        theme={MULTITREE_ERROR_THEME}
+        theme={SPONSOR_KRD_ERROR_THEME}
         homeHref="/"
       />,
     );
@@ -99,13 +99,13 @@ describe("ErrorPage", () => {
     const { container } = render(
       <ErrorPage
         {...ERROR_PAGE_COPY.serviceUnavailable}
-        theme={platformErrorTheme({ name: "MultiTree Control" })}
+        theme={platformErrorTheme({ name: "SponsorKrd Control" })}
         homeHref="/"
         showRetry
       />,
     );
 
-    expect(screen.getAllByText("MultiTree Control").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("SponsorKrd Control").length).toBeGreaterThan(0);
     expect(container.querySelector("main")).toHaveClass("dark:bg-[#0b0d0e]");
     expect(
       screen.getByRole("button", { name: "هەوڵ بدەوە" }),
@@ -115,7 +115,7 @@ describe("ErrorPage", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("keeps the business, platform, and MultiTree grid structure identical", () => {
+  it("keeps the business, platform, and SponsorKrd grid structure identical", () => {
     const business = render(
       <ErrorPage
         {...ERROR_PAGE_COPY.forbidden}
@@ -161,25 +161,25 @@ describe("ErrorPage", () => {
     expect(platformGrid?.style.backgroundImage).toBe(businessGridBackground);
     platform.unmount();
 
-    const multitree = render(
+    const sponsorKrd = render(
       <ErrorPage
         {...ERROR_PAGE_COPY.forbidden}
-        theme={MULTITREE_ERROR_THEME}
+        theme={SPONSOR_KRD_ERROR_THEME}
         homeHref="/"
       />,
     );
-    const multitreeGrid = multitree.container.querySelector<HTMLElement>(
+    const sponsorKrdGrid = sponsorKrd.container.querySelector<HTMLElement>(
       'div[style*="background-image"]',
     );
 
-    expect(multitree.container.querySelector("main")?.className).toBe(
+    expect(sponsorKrd.container.querySelector("main")?.className).toBe(
       businessMainClass,
     );
-    expect(multitree.container.querySelector("section")?.className).toBe(
+    expect(sponsorKrd.container.querySelector("section")?.className).toBe(
       businessSectionClass,
     );
-    expect(multitreeGrid?.parentElement?.className).toBe(businessGridClass);
-    expect(multitreeGrid?.style.backgroundImage).toBe(businessGridBackground);
+    expect(sponsorKrdGrid?.parentElement?.className).toBe(businessGridClass);
+    expect(sponsorKrdGrid?.style.backgroundImage).toBe(businessGridBackground);
   });
 
   it("seats every scope's footer on the same surface as the shell", () => {
@@ -195,7 +195,7 @@ describe("ErrorPage", () => {
         subdomain: "business",
       }),
       platformErrorTheme(),
-      MULTITREE_ERROR_THEME,
+      SPONSOR_KRD_ERROR_THEME,
     ].map((theme) => {
       const view = render(
         <ErrorPage {...ERROR_PAGE_COPY.notFound} theme={theme} homeHref="/" />,
@@ -210,22 +210,22 @@ describe("ErrorPage", () => {
     expect(surfaces[2]).toBe(surfaces[0]);
   });
 
-  it("brands the MultiTree and platform shells with MultiTree's own logo", () => {
-    const multitree = render(
+  it("brands the SponsorKrd and platform shells with SponsorKrd's own logo", () => {
+    const sponsorKrd = render(
       <ErrorPage
         {...ERROR_PAGE_COPY.notFound}
-        theme={MULTITREE_ERROR_THEME}
+        theme={SPONSOR_KRD_ERROR_THEME}
         homeHref="/"
       />,
     );
 
     // A `branding` prop with no logo falls back to the neutral business
-    // placeholder, which must never stand in for MultiTree's own chrome.
+    // placeholder, which must never stand in for SponsorKrd's own chrome.
     expect(
-      multitree.container.querySelector('img[src*="business-logo-placeholder"]'),
+      sponsorKrd.container.querySelector('img[src*="business-logo-placeholder"]'),
     ).toBeNull();
     expect(screen.getByRole("link", { name: "هەژمار دروست بکە" })).toBeInTheDocument();
-    multitree.unmount();
+    sponsorKrd.unmount();
 
     const platform = render(
       <ErrorPage
@@ -244,7 +244,7 @@ describe("ErrorPage", () => {
     render(
       <ErrorPage
         {...ERROR_PAGE_COPY.forbidden}
-        theme={MULTITREE_ERROR_THEME}
+        theme={SPONSOR_KRD_ERROR_THEME}
         homeHref="/"
       />,
     );
@@ -264,7 +264,7 @@ describe("ErrorPage", () => {
         code="429"
         title="Too many requests"
         description="Try again later"
-        theme={MULTITREE_ERROR_THEME}
+        theme={SPONSOR_KRD_ERROR_THEME}
       />,
     );
 
@@ -281,7 +281,7 @@ describe("ErrorPage", () => {
     render(
       <ErrorPage
         {...ERROR_PAGE_COPY.serviceUnavailable}
-        theme={MULTITREE_ERROR_THEME}
+        theme={SPONSOR_KRD_ERROR_THEME}
         homeHref="/"
         showRetry
       />,
@@ -303,7 +303,7 @@ describe("ErrorPage", () => {
     render(
       <ErrorPage
         {...ERROR_PAGE_COPY.badGateway}
-        theme={MULTITREE_ERROR_THEME}
+        theme={SPONSOR_KRD_ERROR_THEME}
         homeHref="/"
         showRetry
       />,
@@ -325,7 +325,7 @@ describe("ErrorPage", () => {
     render(
       <ErrorPage
         {...ERROR_PAGE_COPY.gatewayTimeout}
-        theme={MULTITREE_ERROR_THEME}
+        theme={SPONSOR_KRD_ERROR_THEME}
         homeHref="/"
         showRetry
       />,
@@ -347,7 +347,7 @@ describe("ErrorPage", () => {
     render(
       <ErrorPage
         {...ERROR_PAGE_COPY.gone}
-        theme={MULTITREE_ERROR_THEME}
+        theme={SPONSOR_KRD_ERROR_THEME}
         homeHref="/"
       />,
     );

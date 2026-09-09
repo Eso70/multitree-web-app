@@ -25,14 +25,14 @@ interface ManagementModalProps {
   extraWide?: boolean;
   busy?: boolean;
   createBusinessStyle?: boolean;
-  multiTreeTheme?: boolean;
+  sponsorKrdTheme?: boolean;
   locked?: boolean;
   /**
    * The colour this modal's controls should use, when it is editing something
    * that has a colour of its own.
    *
    * The modal renders through a portal on `document.body`, so without this it
-   * inherits `--multitree-accent` — MultiTree's own accent — and a business ends up
+   * inherits `--sponsor-krd-accent` — SponsorKrd's own accent — and a business ends up
    * designing their page surrounded by our brand colour. Setting the accent
    * variables here rather than in each field means every reusable control
    * inside (checkboxes, selects, wizard actions) follows along untouched.
@@ -54,7 +54,7 @@ export function ManagementModal({
   extraWide = false,
   busy = false,
   createBusinessStyle = false,
-  multiTreeTheme = true,
+  sponsorKrdTheme = true,
   locked = false,
   accentColor = null,
 }: ManagementModalProps) {
@@ -77,22 +77,22 @@ export function ManagementModal({
         "--theme-primary": accent.primary,
         "--theme-css": accent.css,
         "--theme-ink": readableInk(accent.primary),
-        "--multitree-accent": accent.primary,
-        "--multitree-accent-ink": readableInk(accent.primary),
-        "--multitree-accent-hover": `color-mix(in srgb, ${accent.primary} 88%, black)`,
+        "--sponsor-krd-accent": accent.primary,
+        "--sponsor-krd-accent-ink": readableInk(accent.primary),
+        "--sponsor-krd-accent-hover": `color-mix(in srgb, ${accent.primary} 88%, black)`,
       } as React.CSSProperties)
-    : multiTreeTheme
+    : sponsorKrdTheme
       ? ({
-          "--theme-primary": "var(--multitree-accent)",
-          "--theme-css": "var(--multitree-accent)",
-          "--theme-ink": "var(--multitree-accent-ink)",
+          "--theme-primary": "var(--sponsor-krd-accent)",
+          "--theme-css": "var(--sponsor-krd-accent)",
+          "--theme-ink": "var(--sponsor-krd-accent-ink)",
         } as React.CSSProperties)
       : undefined;
 
   return createPortal(
     <div
       className="modal-ltr fixed inset-0 z-[140] flex items-center justify-center p-2 sm:p-4"
-      data-multitree-theme={multiTreeTheme && !accent ? true : undefined}
+      data-sponsor-krd-theme={sponsorKrdTheme && !accent ? true : undefined}
       dir="ltr"
       style={themeStyle}
       onMouseDown={(event) => {
@@ -150,7 +150,7 @@ export function ManagementModal({
         </header>
         {progress}
         <div
-          className={`custom-scrollbar ${multiTreeTheme && !accent ? "lime-custom-scrollbar" : ""} flex-1 overflow-y-auto p-4 sm:p-5 md:p-6 ${createBusinessStyle ? "bg-linear-to-br from-white to-slate-50/20 dark:from-[#1c222b] dark:to-slate-900/10" : ""}`}
+          className={`custom-scrollbar ${sponsorKrdTheme && !accent ? "brand-custom-scrollbar" : ""} flex-1 overflow-y-auto p-4 sm:p-5 md:p-6 ${createBusinessStyle ? "bg-linear-to-br from-white to-slate-50/20 dark:from-[#1c222b] dark:to-slate-900/10" : ""}`}
         >
           {children}
         </div>

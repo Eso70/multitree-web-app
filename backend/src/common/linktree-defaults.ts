@@ -42,7 +42,7 @@ export const DEFAULT_LINKTREE_SUBTITLE = '';
 export const DEFAULT_LINKTREE_DESCRIPTION =
   'بۆ پەیوەندی کردن, کلیک لەم لینکانەی خوارەوە بکە';
 
-export const DEFAULT_LINKTREE_FOOTER_TEXT = 'MultiTree';
+export const DEFAULT_LINKTREE_FOOTER_TEXT = 'Sponsor.krd';
 
 export const DEFAULT_LINKTREE_FOOTER_PHONE = '7502485829';
 

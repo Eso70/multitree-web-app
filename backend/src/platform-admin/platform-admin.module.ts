@@ -28,9 +28,6 @@ import { PlatformLinktreesController } from './platform-linktrees.controller';
 import { PlatformLinktreesService } from './platform-linktrees.service';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { PlatformContentWorkspaceModule } from '../platform-workspace/platform-content-workspace.module';
-import { MiniWebsitesModule } from '../mini-websites/mini-websites.module';
-import { PlatformMiniWebsitesController } from './platform-mini-websites.controller';
-import { PlatformMiniWebsitesService } from './platform-mini-websites.service';
 import { CreatorAdministrationController } from './creator-administration.controller';
 import { CreatorAdministrationService } from './creator-administration.service';
 
@@ -44,7 +41,6 @@ import { CreatorAdministrationService } from './creator-administration.service';
     LinktreesModule,
     AnalyticsModule,
     PlatformContentWorkspaceModule,
-    MiniWebsitesModule,
   ],
   controllers: [
     BusinessAdministrationController,
@@ -57,7 +53,6 @@ import { CreatorAdministrationService } from './creator-administration.service';
     BusinessAccessController,
     ApprovalManagementController,
     PlatformLinktreesController,
-    PlatformMiniWebsitesController,
     CreatorAdministrationController,
   ],
   providers: [
@@ -76,7 +71,6 @@ import { CreatorAdministrationService } from './creator-administration.service';
     BillingManagementService,
     DataRetentionService,
     PlatformLinktreesService,
-    PlatformMiniWebsitesService,
     CreatorAdministrationService,
   ],
   exports: [

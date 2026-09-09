@@ -106,7 +106,7 @@ export class WebhookDeliveryService implements OnModuleInit, OnModuleDestroy {
          VALUES($1,'webhook.test','webhook',$2::jsonb) RETURNING id::text`,
         [
           endpoint.rows[0].business_id,
-          JSON.stringify({ message: 'MultiTree webhook test' }),
+          JSON.stringify({ message: 'Sponsor.krd webhook test' }),
         ],
       );
       await client.query(
@@ -186,11 +186,11 @@ export class WebhookDeliveryService implements OnModuleInit, OnModuleDestroy {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'user-agent': 'MultiTree-Webhooks/1.0',
-          'x-multitree-event': job.event_type,
-          'x-multitree-delivery': job.id,
-          'x-multitree-timestamp': timestamp,
-          'x-multitree-signature': `v1=${signature}`,
+          'user-agent': 'Sponsor.krd-Webhooks/1.0',
+          'x-sponsor-krd-event': job.event_type,
+          'x-sponsor-krd-delivery': job.id,
+          'x-sponsor-krd-timestamp': timestamp,
+          'x-sponsor-krd-signature': `v1=${signature}`,
         },
         body,
         redirect: 'error',

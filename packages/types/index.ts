@@ -1,6 +1,5 @@
 ﻿export * from "./business.types";
 export * from "./linktree.types";
-export * from "./mini-website.types";
 export * from "./advertising.types";
 export * from "./analytics.types";
 export * from "./billing.types";

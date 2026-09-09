@@ -4,7 +4,7 @@ import { ThemeToggleButton } from "@/components/shared/ThemeToggleButton";
 import { parseWebsiteColor, readableInk } from "@/lib/utils/parse-website-color";
 import {
   BUSINESS_LOGO_PLACEHOLDER,
-  MULTITREE_LOGO,
+  SPONSOR_KRD_LOGO,
 } from "@/lib/brand/brand-assets";
 
 interface AuthenticationShellProps {
@@ -40,39 +40,39 @@ export function AuthenticationShell({
         "--business-website-color": accent.primary,
         "--theme-primary": accent.primary,
         "--theme-css": accent.css,
-        "--multitree-accent": accent.primary,
-        "--multitree-accent-ink": readableInk(accent.primary),
-        "--multitree-accent-hover": `color-mix(in srgb, ${accent.primary} 86%, black)`,
+        "--sponsor-krd-accent": accent.primary,
+        "--sponsor-krd-accent-ink": readableInk(accent.primary),
+        "--sponsor-krd-accent-hover": `color-mix(in srgb, ${accent.primary} 86%, black)`,
       } as React.CSSProperties)
     : businessTenant
       ? ({
           "--business-website-color": "var(--theme-primary, #64748b)",
           "--theme-primary": "var(--theme-primary, #64748b)",
           "--theme-css": "var(--theme-css, #64748b)",
-          "--multitree-accent": "var(--business-website-color, #1e293b)",
-          "--multitree-accent-ink": "#ffffff",
-          "--multitree-accent-hover":
-            "color-mix(in srgb, var(--multitree-accent, #1e293b) 86%, black)",
+          "--sponsor-krd-accent": "var(--business-website-color, #1e293b)",
+          "--sponsor-krd-accent-ink": "#ffffff",
+          "--sponsor-krd-accent-hover":
+            "color-mix(in srgb, var(--sponsor-krd-accent, #1e293b) 86%, black)",
         } as React.CSSProperties)
       : undefined;
 
   const effectiveBrandName =
-    brandName ?? (businessTenant ? "بزنس" : "MultiTree");
+    brandName ?? (businessTenant ? "بزنس" : "Sponsor.krd");
   const effectiveBrandLogo =
     brandLogo !== undefined
       ? brandLogo
       : businessTenant
         ? BUSINESS_LOGO_PLACEHOLDER
-        : MULTITREE_LOGO;
+        : SPONSOR_KRD_LOGO;
   const effectivePreviewTitle =
     previewTitle ??
-    (businessTenant || effectiveBrandName !== "MultiTree"
+    (businessTenant || effectiveBrandName !== "Sponsor.krd"
       ? "پانێڵی بزنس"
       : undefined);
 
   return (
     <main
-      data-multitree-theme={accent || businessTenant ? undefined : true}
+      data-sponsor-krd-theme={accent || businessTenant ? undefined : true}
       className={`${accent ? "custom-scrollbar theme-custom-scrollbar" : ""} relative h-screen overflow-hidden bg-[#f7f8fa] text-slate-900 transition-colors dark:bg-[#0d0f12] dark:text-white`}
       style={themeStyle}
     >

@@ -3,7 +3,7 @@
  * Used to generate accent colors, highlights, and other UI colors from the main theme
  */
 
-import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import { SPONSOR_KRD_ACCENT_COLOR } from "@/lib/sponsor-krd-theme";
 
 /**
  * Convert hex color to RGB
@@ -85,7 +85,7 @@ function primaryHexColor(value: string | null | undefined): string | null {
 export function deriveSubtitleColor(
   tenantAccent: string | null | undefined,
 ): string {
-  return primaryHexColor(tenantAccent) || MULTITREE_ACCENT_COLOR;
+  return primaryHexColor(tenantAccent) || SPONSOR_KRD_ACCENT_COLOR;
 }
 
 /**

@@ -11,9 +11,8 @@ export interface CreatorAccountRecord {
   status: string;
   phone_last_four: string | null;
   phone_verified_at: string | null;
-  page_type: 'linktree' | 'mini_website' | null;
+  page_type: 'linktree' | null;
   linktree_id: string | null;
-  mini_website_id: string | null;
   trial_days: number;
   trial_started_at: string | null;
   trial_ends_at: string | null;
@@ -44,14 +43,14 @@ export class CreatorAccountService {
               user_account.email, user_account.display_name,
               user_account.avatar_url, creator.status,
               creator.phone_last_four, creator.phone_verified_at,
-              creator.page_type, creator.linktree_id, creator.mini_website_id,
+              creator.page_type, creator.linktree_id,
               creator.trial_days, creator.trial_started_at,
               creator.trial_ends_at, creator.grace_ends_at,
               creator.paid_started_at, creator.last_login_at,
               creator.created_at, creator.risk_level,
               branding.logo, branding.default_avatar AS avatar,
               branding.website_color AS accent_color,
-              COALESCE(linktree.seo_name, website.slug) AS page_slug,
+              linktree.seo_name AS page_slug,
               google_identity.provider_email AS google_email,
               COALESCE(google_identity.email_verified, false) AS google_email_verified,
               google_identity.last_authenticated_at AS google_last_authenticated_at
@@ -63,7 +62,6 @@ export class CreatorAccountService {
           AND google_identity.provider = 'google'
          LEFT JOIN business_branding branding ON branding.business_id = business.id
          LEFT JOIN linktrees linktree ON linktree.id = creator.linktree_id
-         LEFT JOIN mini_websites website ON website.id = creator.mini_website_id
         WHERE creator.business_id = $1 AND business.account_type = 'creator'`,
       [businessId],
     );

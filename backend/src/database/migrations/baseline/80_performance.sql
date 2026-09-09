@@ -3,7 +3,7 @@
 --
 -- Indexes for otherwise-unindexed foreign keys, plus per-table storage tuning.
 --
--- Part of the MultiTree baseline. `src/database/baseline.ts` lists the parts
+-- Part of the Sponsor.krd baseline. `src/database/baseline.ts` lists the parts
 -- and the order they are applied in; they are one schema split for reading,
 -- not independent scripts.
 --

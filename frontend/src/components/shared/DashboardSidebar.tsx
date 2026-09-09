@@ -39,7 +39,7 @@ export function DashboardSidebar({
   mobileOpen,
   onCloseMobile,
   footer,
-  accent = "var(--theme-css, var(--multitree-accent, #64748b))",
+  accent = "var(--theme-css, var(--sponsor-krd-accent, #64748b))",
 }: DashboardSidebarProps) {
   return (
     <>

@@ -58,7 +58,7 @@ const LinktreeTemplatePreview = memo(function LinktreeTemplatePreview({
             className="h-full overflow-hidden"
             style={
               {
-                "--business-website-color": "#b6f20d",
+                "--business-website-color": "#25F4EE",
               } as React.CSSProperties
             }
           >
@@ -162,7 +162,7 @@ export function TemplatesPage({
 
   return (
     <section
-      data-multitree-theme
+      data-sponsor-krd-theme
       className="w-full min-w-0 space-y-4 pb-8 sm:space-y-6 sm:pb-10"
       dir="ltr"
     >

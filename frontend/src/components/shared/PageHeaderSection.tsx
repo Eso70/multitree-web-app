@@ -10,7 +10,7 @@ import { PageHeader } from "./PageHeader";
  * BusinessSettingsPage's `SettingsSection`). Centralized here so new tabbed
  * pages (e.g. the
  * advertising service tabs) share the exact same header icon/title sizing
- * as the Linktrees, Mini Website, and Settings pages instead of growing
+ * as the Linktrees and Settings pages instead of growing
  * their own header style.
  */
 export function PageHeaderSection({

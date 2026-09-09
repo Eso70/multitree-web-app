@@ -1,6 +1,6 @@
 import { HomepageCommunications } from "@/features/communications/HomepageCommunications";
-import { MultiTreeMarketingShell } from "@/features/public-site/MultiTreeMarketingShell";
-import { MultiTreeHero } from "@/features/public-site/MultiTreeHero";
+import { SponsorKrdMarketingShell } from "@/features/public-site/SponsorKrdMarketingShell";
+import { SponsorKrdHero } from "@/features/public-site/SponsorKrdHero";
 import { ProductChoiceSection } from "@/features/public-site/ProductChoiceSection";
 import { HowItWorksSection } from "@/features/public-site/HowItWorksSection";
 import { FeatureGridSection } from "@/features/public-site/FeatureGridSection";
@@ -12,9 +12,9 @@ import { FinalCtaSection } from "@/features/public-site/FinalCtaSection";
 
 export function HomeLanding() {
   return (
-    <MultiTreeMarketingShell>
+    <SponsorKrdMarketingShell>
       <HomepageCommunications />
-      <MultiTreeHero />
+      <SponsorKrdHero />
       <ProductChoiceSection />
       <HowItWorksSection />
       <FeatureGridSection />
@@ -23,6 +23,6 @@ export function HomeLanding() {
       <PricingSection />
       <FaqSection />
       <FinalCtaSection />
-    </MultiTreeMarketingShell>
+    </SponsorKrdMarketingShell>
   );
 }

@@ -29,7 +29,7 @@ export async function getBusinessDashboardState(): Promise<{
   return { effectiveAccess, profile: profile.user ?? null };
 }
 
-export type AnalyticsPageType = "linktree" | "mini_website";
+export type AnalyticsPageType = "linktree";
 
 export function getBusinessAnalyticsSummary(
   pageType?: AnalyticsPageType,

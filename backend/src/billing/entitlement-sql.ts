@@ -70,7 +70,6 @@ export function entitledSql(
 /** Boolean entitlements that gate a public surface. */
 export const ENTITLEMENT = {
   advertisingPage: 'feature.advertising_page',
-  miniWebsites: 'feature.mini_websites',
   removeBranding: 'feature.remove_branding',
   tiktok: 'feature.tiktok',
 } as const;

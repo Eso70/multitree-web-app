@@ -2,22 +2,22 @@ import type {
   PublicPageAnalytics,
   PublicRouteTracking,
 } from "./analytics.types";
-import {
-  MINI_WEBSITE_BACKGROUND_STYLES,
-  type MiniWebsiteBackgroundStyle,
-} from "./mini-website.types";
-
 /**
- * The background pattern catalogue, shared by the linktree page and the mini
- * website.
- *
- * One set, aliased rather than copied: the pattern renderer and the picker
- * modal are the same components on both surfaces, so a value either page can
- * store has to be a value the other can draw.
+ * The background pattern catalogue used by Linktree pages.
  */
-export const BACKGROUND_PATTERN_STYLES = MINI_WEBSITE_BACKGROUND_STYLES;
+export const BACKGROUND_PATTERN_STYLES = [
+  "none",
+  "grid",
+  "grid45",
+  "dots",
+  "diagonal",
+  "cross",
+  "circles",
+  "waves",
+  "zigzag",
+] as const;
 
-export type BackgroundPatternStyle = MiniWebsiteBackgroundStyle;
+export type BackgroundPatternStyle = (typeof BACKGROUND_PATTERN_STYLES)[number];
 
 /**
  * Where a linktree keeps its pattern choice.
@@ -51,7 +51,7 @@ export const LINKTREE_DEFAULT_SUBTITLE = "";
 export const LINKTREE_DEFAULT_DESCRIPTION =
   "بۆ پەیوەندی کردن, کلیک لەم لینکانەی خوارەوە بکە";
 
-export const LINKTREE_DEFAULT_FOOTER_TEXT = "MultiTree";
+export const LINKTREE_DEFAULT_FOOTER_TEXT = "Sponsor.krd";
 
 export const LINKTREE_DEFAULT_FOOTER_PHONE = "7502485829";
 
@@ -93,7 +93,7 @@ export interface LinktreeLink extends LinkMetadata {
   metadata: LinkMetadata;
 }
 
-/** Common list-card projection shared by Linktree and mini-website screens. */
+/** Linktree list-card projection. */
 export interface LinktreeListItem {
   id: string;
   uid: string;

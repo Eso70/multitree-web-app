@@ -21,7 +21,7 @@ interface NotificationBellProps {
   additionalContent?: ReactNode;
   modalDescription: string;
   modalAccentColor?: string | null;
-  multiTreeModalTheme?: boolean;
+  sponsorKrdModalTheme?: boolean;
   canOpenAction?: (notification: CommunicationNotification) => boolean;
   onOpenAction?: (notification: CommunicationNotification) => void;
   actionLabel?: (notification: CommunicationNotification) => string;
@@ -39,7 +39,7 @@ export function NotificationBell({
   additionalContent,
   modalDescription,
   modalAccentColor = null,
-  multiTreeModalTheme = true,
+  sponsorKrdModalTheme = true,
   canOpenAction = () => false,
   onOpenAction,
   actionLabel = () => "بینین",
@@ -102,7 +102,7 @@ export function NotificationBell({
       style={
         {
           "--notification-accent":
-            modalAccentColor || "var(--multitree-accent)",
+            modalAccentColor || "var(--sponsor-krd-accent)",
         } as React.CSSProperties
       }
     >
@@ -283,7 +283,7 @@ export function NotificationBell({
         title={selectedNotification?.title ?? ""}
         description={modalDescription}
         createBusinessStyle
-        multiTreeTheme={multiTreeModalTheme}
+        sponsorKrdTheme={sponsorKrdModalTheme}
         accentColor={modalAccentColor}
         footer={
           selectedNotification ? (

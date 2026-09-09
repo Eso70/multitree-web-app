@@ -3,7 +3,7 @@
 --
 -- Advertising service pages, sections, packages and version history.
 --
--- Part of the MultiTree baseline. `src/database/baseline.ts` lists the parts
+-- Part of the Sponsor.krd baseline. `src/database/baseline.ts` lists the parts
 -- and the order they are applied in; they are one schema split for reading,
 -- not independent scripts.
 --
@@ -12,7 +12,7 @@
 -- One TikTok sponsorship-service page per business, served at /advertising on
 -- the business subdomain and edited from the dashboard's Ads tab.
 --
--- Content is relational for the same reasons the mini website content is: an
+-- Content is relational because an
 -- id to hang analytics on, ordering that changes without rewriting an array,
 -- and colours and prices the database can constrain. The single jsonb here is
 -- the published version snapshot, which is read whole or not at all.
@@ -39,7 +39,7 @@ CREATE TABLE public.advertising_pages (
   closing_cta_button_label varchar(40) NOT NULL DEFAULT '',
   -- One full international number, digits only, which is what the editor's
   -- single field collects. Deliberately not split into number + dialling code
-  -- like mini_website_social_links: that split exists because that editor has
+  -- split into number and dialling code because the editor has
   -- a separate country picker, and this one does not. The service strips
   -- everything that is not a digit before storing, so a pasted
   -- "+964 750 111 2222" is normalized rather than rejected, and the server
@@ -50,11 +50,11 @@ CREATE TABLE public.advertising_pages (
   -- The code-extraction video, shared by journey step 5 and the standalone
   -- /advertising/video-code page. Referenced by URL rather than uploaded:
   -- platform_media_settings allows only jpeg/png/ico, so the platform has no
-  -- video ingest path. Same treatment as mini_websites.hero_video_url.
+  -- video ingest path.
   video_url varchar(2048) NOT NULL DEFAULT '',
   video_tutorial_title varchar(90) NOT NULL DEFAULT '',
   -- Ordered plain strings with no identity of their own, the same shape as
-  -- mini_website_items.options. A table of one text column would buy nothing.
+  -- configuration. A table of one text column would buy nothing.
   tutorial_steps text[] NOT NULL DEFAULT '{}'::text[]
     CHECK (cardinality(tutorial_steps) <= 20),
 
@@ -67,7 +67,7 @@ CREATE TABLE public.advertising_pages (
 );
 
 -- Which sections the public page shows, and in what order. Mirrors
--- mini_website_sections.
+-- the page sections.
 CREATE TABLE public.advertising_sections (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   advertising_page_id uuid NOT NULL REFERENCES public.advertising_pages(id) ON DELETE CASCADE,
@@ -92,7 +92,7 @@ CREATE TABLE public.advertising_package_categories (
   category_key varchar(120) NOT NULL,
   label varchar(30) NOT NULL DEFAULT '',
   -- A preset name or an explicit hex; the shared colour picker produces both.
-  -- Constrained the same way as mini_websites.accent_color.
+  -- Constrained as a canonical hex colour.
   color varchar(20) NOT NULL DEFAULT 'lime'
     CHECK (color ~ '^(#[0-9A-Fa-f]{6}|lime|violet|amber|cyan|rose|blue|fuchsia|emerald)$'),
   position integer NOT NULL DEFAULT 0 CHECK (position >= 0),
@@ -181,7 +181,7 @@ CREATE TABLE public.advertising_payment_providers (
 );
 
 -- An immutable snapshot of everything above, written on publish. Matches
--- mini_website_versions.
+-- other public-page versions.
 CREATE TABLE public.advertising_page_versions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   advertising_page_id uuid NOT NULL REFERENCES public.advertising_pages(id) ON DELETE CASCADE,
@@ -224,4 +224,3 @@ CREATE TRIGGER trg_advertising_faqs_updated_at BEFORE UPDATE ON public.advertisi
 DROP TRIGGER IF EXISTS trg_advertising_providers_updated_at ON public.advertising_payment_providers;
 CREATE TRIGGER trg_advertising_providers_updated_at BEFORE UPDATE ON public.advertising_payment_providers FOR EACH ROW EXECUTE FUNCTION public.fn_set_updated_at();
 -- ADVERTISING SERVICE SCHEMA END
-

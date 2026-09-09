@@ -3,7 +3,7 @@ import { isIP } from 'node:net';
 import { DatabaseService } from '../database/database.service';
 
 export type AccessRuleScope =
-  | 'multitree'
+  | 'sponsor_krd'
   | 'platform_admin'
   | 'business'
   | 'business_admin'
@@ -11,7 +11,7 @@ export type AccessRuleScope =
   | 'business_api';
 
 export interface AccessRuleContext {
-  scope: Exclude<AccessRuleScope, 'multitree'>;
+  scope: Exclude<AccessRuleScope, 'sponsor_krd'>;
   businessId?: string;
   linktreeId?: string;
 }
@@ -45,8 +45,8 @@ export class AccessRuleEnforcementService {
     if (!isIP(ip)) return true;
 
     const params: unknown[] = [ip];
-    const matches = [`rule.scope='multitree'`];
-    const ranks = [`WHEN 'multitree' THEN 10`];
+    const matches = [`rule.scope='sponsor_krd'`];
+    const ranks = [`WHEN 'sponsor_krd' THEN 10`];
     const rankByScope: Record<AccessRuleContext['scope'], number> = {
       platform_admin: 50,
       business: 40,
@@ -159,8 +159,7 @@ export class AccessRuleEnforcementService {
       `SELECT DISTINCT business_id::text
        FROM public_pages
        WHERE id=ANY($1::uuid[])
-          OR source_linktree_id=ANY($1::uuid[])
-          OR source_mini_website_id=ANY($1::uuid[])`,
+          OR source_linktree_id=ANY($1::uuid[])`,
       [uniquePageIds],
     );
     if (!result.rows.length) {

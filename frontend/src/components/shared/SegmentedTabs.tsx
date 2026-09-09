@@ -25,7 +25,7 @@ export function SegmentedTabs<T extends string>({
   className?: string;
 }) {
   return (
-    <div className={`custom-scrollbar lime-custom-scrollbar theme-custom-scrollbar overflow-x-auto rounded-2xl border border-slate-200/80 bg-white p-1.5 shadow-sm dark:border-white/10 dark:bg-[#1c222b] ${fullWidth ? "w-full" : ""} ${className ?? ""}`}>
+    <div className={`custom-scrollbar brand-custom-scrollbar theme-custom-scrollbar overflow-x-auto rounded-2xl border border-slate-200/80 bg-white p-1.5 shadow-sm dark:border-white/10 dark:bg-[#1c222b] ${fullWidth ? "w-full" : ""} ${className ?? ""}`}>
       <div className={`flex gap-1 ${fullWidth ? "w-full" : "min-w-max sm:min-w-0"}`}>
         {tabs.map((tab) => (
           <Tooltip key={tab.id} content={tab.label} side="top" className="flex-1">

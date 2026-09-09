@@ -66,6 +66,14 @@ export async function applyForwardMigrations(
   for (const file of pending) {
     const filePath = path.join(migrationsDir, file);
     const sql = fs.readFileSync(filePath, 'utf8').replace(/^\uFEFF/, '');
+    if (
+      /^\s*(?:BEGIN|START\s+TRANSACTION)\s*;/i.test(sql) ||
+      /(?:COMMIT|ROLLBACK)\s*;\s*$/i.test(sql)
+    ) {
+      throw new Error(
+        `Forward migration ${file} must not manage its own transaction; the migration runner owns BEGIN, COMMIT, and ROLLBACK`,
+      );
+    }
 
     console.log(`  Applying forward migration: ${file}`);
     await client.query('BEGIN');

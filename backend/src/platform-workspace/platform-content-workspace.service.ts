@@ -1,5 +1,6 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
+import { normalizeSponsorKrdAccent } from '../common/platform-brand';
 
 export const PLATFORM_CONTENT_WORKSPACE_ID =
   '00000000-0000-4000-8000-000000000001';
@@ -22,7 +23,7 @@ export type PlatformLinktreeDefaults = {
   default_avatar: string | null;
 };
 
-/** Resolves the single internal owner for all MultiTree root-domain content. */
+/** Resolves the single internal owner for all SponsorKrd root-domain content. */
 @Injectable()
 export class PlatformContentWorkspaceService {
   constructor(private readonly database: DatabaseService) {}
@@ -57,11 +58,11 @@ export class PlatformContentWorkspaceService {
     );
     const row = result.rows[0];
     return {
-      name: row?.name?.trim() || 'MultiTree',
+      name: row?.name?.trim() || 'Sponsor.krd',
       logo: row?.logo || '/images/Logo.jpg',
-      avatar: row?.avatar || '/images/multitree-logo-mark.png',
+      avatar: row?.avatar || '/images/sponsor-krd-logo-mark.png',
       favicon: row?.favicon || '/favicon.ico',
-      accentColor: row?.accent_color || '#b6f20d',
+      accentColor: normalizeSponsorKrdAccent(row?.accent_color),
     };
   }
 

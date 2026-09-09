@@ -268,7 +268,7 @@ export function CreatorUsersPage() {
             <MotionPulseIcon>
               <Search
                 className="h-5 w-5 opacity-40"
-                style={{ color: "var(--multitree-accent)" }}
+                style={{ color: "var(--sponsor-krd-accent)" }}
               />
             </MotionPulseIcon>
             <span>گەڕان بۆ بەکارهێنەران بکە.....</span>
@@ -303,7 +303,7 @@ export function CreatorUsersPage() {
                 </div>
                 <div
                   className="translate-x-1 pl-2 text-xs font-semibold opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100"
-                  style={{ color: "var(--multitree-accent)" }}
+                  style={{ color: "var(--sponsor-krd-accent)" }}
                 >
                   وردەکاری ←
                 </div>

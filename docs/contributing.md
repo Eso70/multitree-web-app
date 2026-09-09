@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for contributing to MultiTree.
+Thank you for contributing to Sponsor.krd.
 
 This document describes the expected workflow for contributing to the project.
 

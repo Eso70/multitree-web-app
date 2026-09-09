@@ -12,8 +12,8 @@ not invitations and they do not use a business subdomain.
   exposed for Creator accounts.
 - One stable Google subject, verified email, and remembered device can claim
   only one Creator trial.
-- A Creator can own exactly one Linktree **or** one mini website at a time.
-- Creator navigation exposes the same Linktree and mini-website workspaces used
+- A Creator can own exactly one Linktree at a time.
+- Creator navigation exposes the same Linktree workspace used
   elsewhere. After the first page is committed, the opposite workspace is
   disabled in the dashboard and the server remains the authoritative lock.
 - Creators cannot delete their public page. Only a platform administrator with
@@ -48,7 +48,7 @@ trialing, or inside grace.
 ## Shared UI and services
 
 The Creator dashboard is a thin workspace configuration around the same
-Linktree editor, mini-website editor, grid/table views, analytics modal,
+Linktree editor, grid/table views, analytics modal,
 skeletons, uploads, and public renderers used by business and platform
 workspaces. Shared behavior must be changed in the shared implementation and
 verified in all applicable workspaces. Platform-only administration controls
@@ -58,14 +58,14 @@ A Creator owns the page it inspects, so `BusinessPageAnalyticsModal` runs in
 its full mode there — the same loading skeleton, stat cards, conversion tiles,
 sort controls, per-button list, refresh, and clear controls a business sees.
 Only the endpoints differ: totals and action rows are read from
-`/api/creator/{linktrees,mini-websites}/:id/analytics` and
+`/api/creator/linktrees/:id/analytics` and
 `.../analytics/actions`, which resolve the workspace from the `creator_session`
 and prove ownership before reading. The business `/api/analytics/v2` routes are
 never called from a Creator workspace. Analytics now stays inside the shared
 per-page modal for both Creator and Business workspaces. Platform administration
 keeps the summary-only mode, since it reviews pages it does not own.
 
-The `/account/linktree`, `/account/mini-website`, and `/account/settings`
+The `/account/linktree` and `/account/settings`
 workspaces also use the same `DashboardSidebar`,
 `DashboardHeader`, viewport shell, profile menu, theme persistence, responsive
 mobile drawer, page container, surfaces, statistic cards, tabs, and skeletons

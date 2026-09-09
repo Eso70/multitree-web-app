@@ -13,9 +13,11 @@ import { STORAGE_DRIVER, type StorageDriver } from './storage.driver';
 
 const UPLOAD_URL_PREFIX = '/images/upload/';
 const MEDIA_FORMATS = ['jpeg', 'png', 'ico'] as const;
-// Existing external storage keys may use the namespace that preceded
-// `multitree`. New writes always use `multitree/`.
-const LEGACY_MULTITREE_STORAGE_PREFIX = 'system/';
+// Existing deployments may still contain either pre-rebrand namespace.
+// New writes always use `sponsor-krd/`.
+const LEGACY_SYSTEM_STORAGE_PREFIX = 'system/';
+const LEGACY_MULTITREE_STORAGE_PREFIX = 'multitree/';
+const SPONSOR_KRD_STORAGE_PREFIX = 'sponsor-krd/';
 type MediaFormat = (typeof MEDIA_FORMATS)[number];
 
 export type MediaPolicy = {
@@ -148,9 +150,10 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
               storage_key: file.key,
               public_url: `${UPLOAD_URL_PREFIX}${file.key}`,
               scope:
-                file.key.startsWith('multitree/') ||
-                file.key.startsWith(LEGACY_MULTITREE_STORAGE_PREFIX)
-                  ? 'multitree'
+                file.key.startsWith(SPONSOR_KRD_STORAGE_PREFIX) ||
+                file.key.startsWith(LEGACY_MULTITREE_STORAGE_PREFIX) ||
+                file.key.startsWith(LEGACY_SYSTEM_STORAGE_PREFIX)
+                  ? 'sponsor_krd'
                   : file.key.startsWith('businesses/')
                     ? 'business'
                     : 'other',
@@ -356,10 +359,6 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
          SELECT 1 FROM platform_admins admin WHERE $1 IN (admin.logo,admin.avatar,admin.favicon)
          UNION ALL SELECT 1 FROM business_branding branding WHERE $1 IN (branding.logo,branding.favicon,branding.default_avatar)
          UNION ALL SELECT 1 FROM linktrees tree WHERE tree.image=$1 OR tree.template_config::text LIKE '%'||$1||'%'
-         UNION ALL SELECT 1 FROM mini_websites website WHERE $1 IN (website.avatar,website.cover)
-         UNION ALL SELECT 1 FROM mini_website_locations place WHERE place.image=$1
-         UNION ALL SELECT 1 FROM mini_website_items item WHERE $1 IN (item.image,item.secondary_image)
-         UNION ALL SELECT 1 FROM mini_website_social_links link WHERE link.custom_icon LIKE '%'||$1||'%'
          UNION ALL SELECT 1 FROM business_profile_change_requests request WHERE request.status='pending' AND request.changes::text LIKE '%'||$1||'%'
          UNION ALL SELECT 1 FROM permission_approval_requests approval WHERE approval.status='pending' AND approval.requested_changes::text LIKE '%'||$1||'%'
          UNION ALL SELECT 1 FROM api_assets api_asset WHERE api_asset.url=$1
@@ -484,9 +483,10 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
     if (!this.database) return;
     const ownerMatch = input.key.match(/^businesses\/([0-9a-f-]{36})\//i);
     const scope =
-      input.key.startsWith('multitree/') ||
-      input.key.startsWith(LEGACY_MULTITREE_STORAGE_PREFIX)
-        ? 'multitree'
+      input.key.startsWith(SPONSOR_KRD_STORAGE_PREFIX) ||
+      input.key.startsWith(LEGACY_MULTITREE_STORAGE_PREFIX) ||
+      input.key.startsWith(LEGACY_SYSTEM_STORAGE_PREFIX)
+        ? 'sponsor_krd'
         : input.key.startsWith('businesses/')
           ? 'business'
           : 'other';
@@ -521,10 +521,6 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
     return `NOT EXISTS (SELECT 1 FROM platform_admins admin WHERE ${alias}.public_url IN (admin.logo,admin.avatar,admin.favicon))
       AND NOT EXISTS (SELECT 1 FROM business_branding branding WHERE ${alias}.public_url IN (branding.logo,branding.favicon,branding.default_avatar))
       AND NOT EXISTS (SELECT 1 FROM linktrees tree WHERE tree.image=${alias}.public_url OR tree.template_config::text LIKE '%'||${alias}.public_url||'%')
-      AND NOT EXISTS (SELECT 1 FROM mini_websites website WHERE ${alias}.public_url IN (website.avatar,website.cover))
-      AND NOT EXISTS (SELECT 1 FROM mini_website_locations place WHERE place.image=${alias}.public_url)
-      AND NOT EXISTS (SELECT 1 FROM mini_website_items item WHERE item.image=${alias}.public_url)
-      AND NOT EXISTS (SELECT 1 FROM mini_website_social_links link WHERE link.custom_icon LIKE '%'||${alias}.public_url||'%')
       AND NOT EXISTS (SELECT 1 FROM business_profile_change_requests request WHERE request.status='pending' AND request.changes::text LIKE '%'||${alias}.public_url||'%')
       AND NOT EXISTS (SELECT 1 FROM permission_approval_requests approval WHERE approval.status='pending' AND approval.requested_changes::text LIKE '%'||${alias}.public_url||'%')
       AND NOT EXISTS (SELECT 1 FROM api_assets api_asset WHERE api_asset.url=${alias}.public_url)`;

@@ -8,16 +8,16 @@ describe("public marketing primitives", () => {
   it("renders customized hero content through the shared business presentation", () => {
     render(
       <PublicMarketingHero
-        accentColor="#b6f20d"
-        title="MultiTree hero"
-        description="MultiTree description"
+        accentColor="#25F4EE"
+        title="SponsorKrd hero"
+        description="SponsorKrd description"
         primaryAction={{ label: "Create", href: "/signup" }}
         secondaryAction={{ label: "Preview", href: "#preview" }}
       />,
     );
 
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "MultiTree hero",
+      "SponsorKrd hero",
     );
     expect(screen.getByRole("link", { name: "Create" })).toHaveAttribute(
       "href",
@@ -54,7 +54,7 @@ describe("public marketing primitives", () => {
   it("supports customized internal and external CTA actions", () => {
     render(
       <PublicCallToActionSection
-        accentColor="#b6f20d"
+        accentColor="#25F4EE"
         accentInk="#111827"
         title="Ready"
         description="Start now"

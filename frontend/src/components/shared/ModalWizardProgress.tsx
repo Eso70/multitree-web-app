@@ -6,7 +6,7 @@ interface WizardStep {
 interface ModalWizardProgressProps {
   steps: WizardStep[];
   currentStep: string;
-  variant?: "themed" | "multitree";
+  variant?: "themed" | "sponsor-krd";
 }
 
 export function ModalWizardProgress({
@@ -29,7 +29,7 @@ export function ModalWizardProgress({
           const isCurrent = index === currentIndex;
           const isComplete = index < currentIndex;
           const textClass =
-            variant === "multitree"
+            variant === "sponsor-krd"
               ? isCurrent
                 ? "sa-text"
                 : isComplete
@@ -39,7 +39,7 @@ export function ModalWizardProgress({
                 ? ""
                 : "text-slate-500 dark:text-slate-400";
           const circleClass =
-            variant === "multitree"
+            variant === "sponsor-krd"
               ? isCurrent
                 ? "sa-gradient"
                 : isComplete
@@ -73,7 +73,7 @@ export function ModalWizardProgress({
             <div key={step.id} className="contents">
               {index > 0 && (
                 <div
-                  className={`h-0.5 flex-1 rounded-full transition-colors duration-300 ${index <= currentIndex ? (variant === "multitree" ? "sa-gradient" : "") : "bg-slate-200 dark:bg-slate-700"}`}
+                  className={`h-0.5 flex-1 rounded-full transition-colors duration-300 ${index <= currentIndex ? (variant === "sponsor-krd" ? "sa-gradient" : "") : "bg-slate-200 dark:bg-slate-700"}`}
                   style={
                     variant === "themed" && index <= currentIndex
                       ? { backgroundColor: "var(--theme-primary, #64748b)" }

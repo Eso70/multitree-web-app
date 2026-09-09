@@ -26,7 +26,7 @@ describe("client invitation modals", () => {
 
     const modal = document.querySelector<HTMLElement>(".modal-ltr");
     expect(modal?.style.getPropertyValue("--theme-primary")).toBe("#2563eb");
-    expect(modal?.dataset.multitreeTheme).toBeUndefined();
+    expect(modal?.dataset.sponsorKrdTheme).toBeUndefined();
 
     const input = screen.getByPlaceholderText("ناوی کڕیار بنووسە...");
     fireEvent.change(input, { target: { value: "Ismail" } });

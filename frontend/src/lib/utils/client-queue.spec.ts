@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * could never accept, and dropping a batch the server rejected permanently.
  */
 
-const QUEUE_KEY = "multitree_analytics_events_v2";
+const QUEUE_KEY = "sponsor_krd_analytics_events_v2";
 const UUID = "11111111-1111-4111-8111-111111111111";
 const PAGE_UUID = "22222222-2222-4222-8222-222222222222";
 

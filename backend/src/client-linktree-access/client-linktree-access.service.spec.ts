@@ -263,7 +263,7 @@ describe('ClientLinktreeAccessService invitation exchange', () => {
 
     expect(linktrees.createLinktree).toHaveBeenCalledWith(
       expect.objectContaining({
-        footer_text: 'MultiTree',
+        footer_text: 'Sponsor.krd',
         footer_phone: '7502485829',
         footer_hidden: true,
         is_default: false,

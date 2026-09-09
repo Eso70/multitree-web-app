@@ -1,4 +1,4 @@
-# Caddyfile for MultiTree Platform
+# Caddyfile for Sponsor.krd Platform
 # This reverse proxy handles:
 # - Wildcard TLS for *.sponsor.krd
 # - Subdomain routing to the Next.js frontend

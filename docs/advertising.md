@@ -20,7 +20,7 @@ rather than left to be rediscovered.
 Before this work the feature was entirely client-side. `AdvertisingServicePage` held one
 `AdvertisingServiceConfig` object in React state and saves it with
 `writeAdvertisingConfig`, which writes `localStorage` and dispatches
-`multitree:advertising-config-updated`. `PublicAdvertisingService` and
+`sponsor-krd:advertising-config-updated`. `PublicAdvertisingService` and
 `PublicVideoCodePage` read the same key back.
 
 Consequences today:
@@ -75,18 +75,18 @@ cannot constrain.
 
 `jsonb` is used in exactly one place: the immutable
 `advertising_page_versions.payload` snapshot, matching
-`mini_website_versions` and `public_page_versions`.
+`public_page_versions`.
 
 ### 3. Separate tables per list, not one shared `advertising_items`
 
-`mini_website_items` collapses ~22 section types into one table because they
+Some public-page models collapse many section types into one table because they
 genuinely share a shape — title, subtitle, image, action, order. Advertising's
 four lists do not. A shared `title` column would mean "FAQ question" on one
 row and "customer name" on the next, and roughly 60% of the columns would be
 unused per row. Separate small tables keep every column meaningful and let
 each list carry its own CHECK constraints. The shared-table principle is
 applied where it fits — `advertising_sections` mirrors
-`mini_website_sections` exactly.
+the public-page section model exactly.
 
 ### 4. Draft/publish with version snapshots
 
@@ -153,7 +153,7 @@ unpublished changes for a page no visitor could reach.
 ingest path in the platform, and adding one is a media-policy change
 (size ceiling, MIME allow-list, transcoding, storage cost), not part of this
 feature. So `advertising_pages.video_url` is a URL column, exactly like
-`mini_websites.hero_video_url`, and the editor's video **file picker** becomes
+the prior hero-video workflow, and the editor's video **file picker** becomes
 a browser-only preview or is removed.
 
 Images — result before/after, testimonial avatar, custom provider logo,
@@ -167,7 +167,7 @@ recorded in `uploaded_media_assets` with `scope = 'advertising'`.
 
 New tables, to be delivered as a new dated forward migration file in
 `backend/src/database/migrations/` with an `-- ADVERTISING SERVICE SCHEMA
-BEGIN/END` block placed after the mini website block and before the unified
+BEGIN/END` block placed before the unified
 public-page block (it must precede the `public_pages` changes that reference
 it). Never edit the `full_schema.sql` baseline.
 
@@ -196,7 +196,7 @@ CREATE TABLE IF NOT EXISTS public.advertising_pages (
   closing_cta_button_label varchar(40) NOT NULL DEFAULT '',
   -- One full international number, digits only — which is what the editor's
   -- single field collects ("9647500000000"). Deliberately not split into
-  -- number + dialling code like mini_website_social_links: that split exists
+  -- number + dialling code: that split exists
   -- because that editor has a separate country picker, and this one does not.
   -- The service strips everything that is not a digit before storing, so a
   -- pasted "+964 750 111 2222" is accepted and normalized rather than
@@ -210,7 +210,7 @@ CREATE TABLE IF NOT EXISTS public.advertising_pages (
   video_url varchar(2048) NOT NULL DEFAULT '',
   video_tutorial_title varchar(90) NOT NULL DEFAULT '',
   -- Ordered plain strings with no identity of their own — the same shape as
-  -- mini_website_items.options. A table of one text column would buy nothing.
+  -- page configuration. A table of one text column would buy nothing.
   tutorial_steps text[] NOT NULL DEFAULT '{}'::text[]
     CHECK (cardinality(tutorial_steps) <= 20),
 
@@ -232,7 +232,7 @@ answer for what that should render.
 
 ```sql
 -- Which sections the public page shows, and in what order. Mirrors
--- mini_website_sections; the editor's `sections` object maps onto these rows.
+-- The editor's `sections` object maps onto these rows.
 CREATE TABLE IF NOT EXISTS public.advertising_sections (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   advertising_page_id uuid NOT NULL REFERENCES public.advertising_pages(id) ON DELETE CASCADE,
@@ -262,7 +262,7 @@ CREATE TABLE IF NOT EXISTS public.advertising_package_categories (
   category_key varchar(120) NOT NULL,
   label varchar(30) NOT NULL DEFAULT '',
   -- A preset name or an explicit hex; the shared colour picker produces both.
-  -- Constrained the same way as mini_websites.accent_color.
+  -- Constrained as a canonical hex colour.
   color varchar(20) NOT NULL DEFAULT 'lime'
     CHECK (color ~ '^(#[0-9A-Fa-f]{6}|lime|violet|amber|cyan|rose|blue|fuchsia|emerald)$'),
   position integer NOT NULL DEFAULT 0 CHECK (position >= 0),
@@ -368,7 +368,7 @@ UI accepts can never be rejected by the database.
 ```sql
 -- An immutable snapshot of everything above, written on publish. The only
 -- jsonb in this feature: a version is read whole or not at all, so there is
--- nothing to query inside it. Matches mini_website_versions.
+-- nothing to query inside it. Matches other public-page version tables.
 CREATE TABLE IF NOT EXISTS public.advertising_page_versions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   advertising_page_id uuid NOT NULL REFERENCES public.advertising_pages(id) ON DELETE CASCADE,
@@ -400,7 +400,7 @@ CREATE INDEX IF NOT EXISTS idx_advertising_providers_page
 ```
 
 Every table gets the standard `fn_set_updated_at()` BEFORE UPDATE trigger,
-following the `trg_mini_website_*_updated_at` naming.
+following the shared updated-at trigger naming.
 
 ### `public_pages` integration
 
@@ -410,7 +410,7 @@ statements appended after them. Two reasons:
 - `public_pages` and `public_page_tombstones` are declared with plain
   `CREATE TABLE` (not `IF NOT EXISTS`), and `full_schema.sql` only ever applies
   to an empty database — `db:migrate` verifies an existing one rather than
-  replaying it. The `ALTER ... IF NOT EXISTS` blocks in the mini-website section
+  replaying it. The surrounding `ALTER ... IF NOT EXISTS` blocks
   are vestigial and should not be copied.
 - The source XOR at `full_schema.sql:3766` is an **unnamed** table-level CHECK.
   Postgres names it `public_pages_check`, not `public_pages_source_check`, so a
@@ -426,24 +426,19 @@ In `CREATE TABLE public.public_pages`, add the source column, widen the
 CREATE TABLE public.public_pages (
   ...
   page_type varchar(20) NOT NULL
-    CHECK (page_type IN ('linktree','mini_website','advertising')),
+    CHECK (page_type IN ('linktree','advertising')),
   source_linktree_id uuid UNIQUE REFERENCES public.linktrees(id) ON DELETE CASCADE,
-  source_mini_website_id uuid UNIQUE REFERENCES public.mini_websites(id) ON DELETE CASCADE,
   source_advertising_page_id uuid UNIQUE REFERENCES public.advertising_pages(id) ON DELETE CASCADE,
   ...
   -- Exactly one source id is set, and it is the one matching page_type.
   CHECK (
     (page_type = 'linktree'
        AND source_linktree_id IS NOT NULL
-       AND source_mini_website_id IS NULL AND source_advertising_page_id IS NULL)
-    OR
-    (page_type = 'mini_website'
-       AND source_mini_website_id IS NOT NULL
-       AND source_linktree_id IS NULL AND source_advertising_page_id IS NULL)
+       AND source_advertising_page_id IS NULL)
     OR
     (page_type = 'advertising'
        AND source_advertising_page_id IS NOT NULL
-       AND source_linktree_id IS NULL AND source_mini_website_id IS NULL)
+       AND source_linktree_id IS NULL)
   ),
   UNIQUE (business_id, page_type, slug)
 );
@@ -453,7 +448,7 @@ And in `CREATE TABLE public.public_page_tombstones`:
 
 ```sql
   page_type varchar(20) NOT NULL
-    CHECK (page_type IN ('linktree','mini_website','advertising')),
+    CHECK (page_type IN ('linktree','advertising')),
 ```
 
 Because `public_pages` references `advertising_pages`, the advertising block
@@ -523,7 +518,7 @@ and routing it through `createPageTracker`; direct Pixel calls remain forbidden.
 
 ## Backend
 
-New module `backend/src/advertising/`, shaped like `mini-websites/`:
+The module lives in `backend/src/advertising/`:
 
 ```
 advertising.module.ts
@@ -538,7 +533,7 @@ dto/advertising.dto.ts
 
 `advertising.projection.ts` is the one place that converts relational rows into
 the `AdvertisingServiceConfig` shape both the editor and the public page
-consume, so the two can never drift. `mini-website.projection.ts` is the
+consume, so the two can never drift. The shared projection pattern is the
 precedent.
 
 ### Dashboard endpoints
@@ -567,7 +562,7 @@ publishes, that endpoint requires the publish capability as well as update.
 `PATCH` takes a partial `SaveAdvertisingDto` so each editor tab saves only its
 own slice. Within a tab, a list is sent whole and reconciled by `item_key`:
 rows present are upserted, rows absent are deleted, `position` comes from array
-order. This is how `mini-websites.service.ts` already reconciles sections and
+order. This is how public-page services reconcile sections and
 items, and it is why the stable editor keys in decision 2 matter.
 
 `GET` returns the **draft**. The editor must show unpublished work.
@@ -577,7 +572,7 @@ per category, 30 results, 30 testimonials, 40 FAQs, 12 providers, 20 tutorial
 steps — matching the `cardinality` and boundary-validation rules in
 [docs/api-standards.md](api-standards.md#boundary-validation).
 
-`upload/image` copies `MiniWebsitesController.upload` verbatim in shape:
+`upload/image` uses the shared validated upload shape:
 `req.file()` → `validateImageUpload` → `storage.uploadImage` under
 `businesses/<id>/advertising/...` → `claimBusinessAssets`.
 
@@ -603,7 +598,7 @@ Behaviour:
 - Response carries only published content. Draft rows, version history, and
   `business_id` are never in the payload.
 
-There is no `410` here, unlike `/bio/:slug`. A mini website can be deleted, so
+There is no `410` here. A public page can be deleted, so
 its slug needs a tombstone saying it once existed; an advertising page is a
 singleton at a fixed route with no delete endpoint, so there is no prior page
 for a visitor to have bookmarked. `public_page_tombstones.page_type` accepts
@@ -625,8 +620,7 @@ So: the rows are the draft, the `published = true` payload is production, and
 
 > The rule below is not advertising-specific. Any public surface sold with a
 > plan must re-check its entitlement on every read, using
-> `entitledSql()` from `backend/src/billing/entitlement-sql.ts`. Mini websites
-> follow the same pattern via `feature.mini_websites`.
+> `entitledSql()` from `backend/src/billing/entitlement-sql.ts`.
 
 `/advertising` and `/advertising/video-code` are only served for a business
 whose plan currently carries `feature.advertising_page`. The entitlement is
@@ -725,7 +719,7 @@ subdomain resolution, the four public fetches (`cache: "no-store"`, the
 components share.
 
 Each fetch carries its own failure handling. The business record and the
-advertising config gate the page; the linktree and mini-website lists are footer
+advertising config gate the page; the Linktree list is footer
 navigation and degrade to empty. One shared `try` around all four meant a
 timeout on the footer's linktree list returned `null` and 404'd a published
 advertising page.
@@ -741,7 +735,7 @@ in the same change, per the shared-first workflow:
 
 - `readAdvertisingConfig` / `writeAdvertisingConfig` and
   `ADVERTISING_CONFIG_STORAGE_KEY` (`features/advertising/storage.ts`).
-- The `multitree:advertising-config-updated` event and both `storage` /
+- The `sponsor-krd:advertising-config-updated` event and both `storage` /
   custom-event listeners in `PublicAdvertisingService`.
 - Every back-compat shim in `storage.ts` — `withPackageCategoryColors`,
   `withPaymentProviderIds`, `withTextDefaults`, and the hardcoded legacy-title

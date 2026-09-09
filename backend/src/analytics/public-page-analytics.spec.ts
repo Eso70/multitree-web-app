@@ -88,7 +88,6 @@ describe('TikTok forwarding scope', () => {
     // event for it would have no browser counterpart to deduplicate against
     // and would inflate the counts ads optimise on.
     expect(declaration?.[1]).toContain("'linktree'");
-    expect(declaration?.[1]).toContain("'mini_website'");
     expect(declaration?.[1]).toContain("'advertising'");
     expect(declaration?.[1]).toContain("'route'");
   });

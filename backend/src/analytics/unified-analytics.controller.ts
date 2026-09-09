@@ -291,7 +291,7 @@ export class BusinessUnifiedAnalyticsController {
   async summary(
     @CurrentUser() business: SessionUser,
     @Query('pageId') pageId?: string,
-    @Query('pageType') pageType?: 'linktree' | 'mini_website',
+    @Query('pageType') pageType?: 'linktree',
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {

@@ -13,7 +13,6 @@ export interface BusinessPublicFooterProps {
   whatsappEnabled?: boolean | null;
   accentColor: string;
   linktrees?: BusinessPublicFooterPage[];
-  miniWebsites?: BusinessPublicFooterPage[];
   homeHref?: string;
   /**
    * Whether this business has a live advertising page. Plans below the top one
@@ -22,7 +21,7 @@ export interface BusinessPublicFooterProps {
    */
   advertisingEnabled?: boolean;
   /**
-   * Ultra pays to drop the "Powered by MultiTree" badge. Read from the live
+   * Ultra pays to drop the "Powered by Sponsor.krd" badge. Read from the live
    * entitlement, so a downgrade puts the badge back.
    */
   brandingRemoved?: boolean;
@@ -47,7 +46,6 @@ export function BusinessPublicFooter({
   whatsappEnabled,
   accentColor,
   linktrees = [],
-  miniWebsites = [],
   homeHref,
   advertisingEnabled = false,
   brandingRemoved = false,
@@ -73,15 +71,6 @@ export function BusinessPublicFooter({
     columns.push({
       title: "Public pages",
       links: linktrees.slice(0, 5).map((page) => ({
-        label: page.name,
-        href: page.href,
-      })),
-    });
-  }
-  if (miniWebsites.length > 0) {
-    columns.push({
-      title: "Websites",
-      links: miniWebsites.slice(0, 5).map((page) => ({
         label: page.name,
         href: page.href,
       })),

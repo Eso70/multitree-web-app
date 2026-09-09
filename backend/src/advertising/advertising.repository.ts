@@ -19,8 +19,7 @@ import {
 /**
  * Every list is replaced whole inside one transaction: rows whose editor key is
  * absent from the incoming list are deleted, the rest are upserted with their
- * array index as `position`. That is how `mini-websites.service` reconciles its
- * sections and items, and it is why the editor keys have to be stable — a
+ * array index as `position`. Editor keys have to be stable — a
  * regenerated id would read as "delete the old row, insert a new one" and take
  * anything attached to it along.
  *

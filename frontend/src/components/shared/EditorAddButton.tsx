@@ -3,8 +3,8 @@
 import { Plus } from "lucide-react";
 
 /**
- * Dashed full-width "add" button matching the linktree/mini-website editors'
- * repeatable-list affordance (e.g. MiniWebsiteFaqFields). Shared so new
+ * Dashed full-width "add" button matching public-page editors'
+ * repeatable-list affordance. Shared so new
  * editable lists reuse the same control instead of a new copy.
  */
 export function EditorAddButton({

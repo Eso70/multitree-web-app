@@ -24,7 +24,7 @@ export const BUSINESS_LANDING_DECORATION_LABELS = {
 } as const;
 
 export const BUSINESS_LANDING_DECORATION_COLORS = {
-  hero: ["var(--business-accent, var(--multitree-accent))", "#60a5fa"],
+  hero: ["var(--business-accent, var(--sponsor-krd-accent))", "#60a5fa"],
   workspace: ["#34d399", "#fbbf24"],
   trusted: ["#a78bfa", "#fb7185"],
   about: ["#22d3ee", "#f97316"],

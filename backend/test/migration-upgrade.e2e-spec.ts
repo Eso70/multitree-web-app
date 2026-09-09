@@ -7,7 +7,7 @@ import {
   readBaselineSql,
 } from '../src/database/baseline';
 
-const DATABASE_PREFIX = 'multitree_migration_e2e_';
+const DATABASE_PREFIX = 'sponsor_krd_migration_e2e_';
 const fixtureDatabase = `${DATABASE_PREFIX}${process.pid}`;
 const migrationsDirectory = join(__dirname, '../src/database/migrations');
 const DATED_MIGRATION = /^\d{4}-\d{2}-\d{2}_.+\.sql$/;
@@ -66,15 +66,22 @@ describe('consolidated database schema commands (e2e)', () => {
     );
     fixture = new Pool(connection(fixtureDatabase));
 
-    // A supported pre-ledger installation has the application structure but
-    // no schema_migrations history. Removing this optional session setting
-    // keeps the fixture usable with older disposable developer databases too.
-    // Built from every baseline part, the same way the migration scripts do.
+    // A supported pre-rebrand installation has the application structure but
+    // still carries the communication column/index names that the rebrand
+    // forward migration upgrades. Removing this optional session setting keeps
+    // the fixture usable with older disposable developer databases too. Built
+    // from every baseline part, the same way the migration scripts do.
     const baseline = readBaselineSql(migrationsDirectory)
       .split('\n')
       .filter((line) => line.trim() !== 'SET transaction_timeout = 0;')
       .join('\n');
     await fixture.query(baseline);
+    await fixture.query(`
+      ALTER TABLE communication_conversations
+        RENAME COLUMN sponsor_krd_key TO multitree_key;
+      ALTER INDEX idx_communication_conversations_sponsor_krd_key
+        RENAME TO idx_communication_conversations_multitree_key;
+    `);
     await fixture.query('TRUNCATE schema_migrations');
   });
 
@@ -93,7 +100,7 @@ describe('consolidated database schema commands (e2e)', () => {
     }
   });
 
-  it('baselines a complete unledgered schema without replaying it', async () => {
+  it('baselines and upgrades a complete pre-rebrand schema', async () => {
     const runner = join(__dirname, '../node_modules/ts-node/dist/bin.js');
     const result = spawnSync(
       process.execPath,
@@ -126,6 +133,25 @@ describe('consolidated database schema commands (e2e)', () => {
       `SELECT to_regclass('public.businesses') IS NOT NULL AS exists`,
     );
     expect(retainedBusinessTable.rows[0].exists).toBe(true);
+    const renamedCommunicationSchema = await fixture.query<{
+      column_exists: boolean;
+      index_exists: boolean;
+    }>(`
+      SELECT
+        EXISTS (
+          SELECT 1 FROM information_schema.columns
+           WHERE table_schema = 'public'
+             AND table_name = 'communication_conversations'
+             AND column_name = 'sponsor_krd_key'
+        ) AS column_exists,
+        to_regclass(
+          'public.idx_communication_conversations_sponsor_krd_key'
+        ) IS NOT NULL AS index_exists
+    `);
+    expect(renamedCommunicationSchema.rows[0]).toEqual({
+      column_exists: true,
+      index_exists: true,
+    });
   });
 
   it('drops the entire database and recreates only the consolidated schema', async () => {
@@ -162,7 +188,6 @@ describe('consolidated database schema commands (e2e)', () => {
       sentinel_exists: boolean;
       businesses_exists: boolean;
       obsolete_audit_column_exists: boolean;
-      mini_website_permission_exists: boolean;
     }>(`
       SELECT
         to_regclass('public.reset_sentinel') IS NOT NULL AS sentinel_exists,
@@ -172,17 +197,12 @@ describe('consolidated database schema commands (e2e)', () => {
            WHERE table_schema = 'public'
              AND table_name = 'platform_data_retention_settings'
              AND column_name = 'audit_log_days'
-        ) AS obsolete_audit_column_exists,
-        EXISTS (
-          SELECT 1 FROM auth_permissions
-           WHERE permission_key = 'business:mini-websites:create'
-        ) AS mini_website_permission_exists
+        ) AS obsolete_audit_column_exists
     `);
     expect(state.rows[0]).toEqual({
       sentinel_exists: false,
       businesses_exists: true,
       obsolete_audit_column_exists: false,
-      mini_website_permission_exists: true,
     });
 
     const ledger = await fixture.query<{ filename: string }>(

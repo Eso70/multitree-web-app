@@ -5,7 +5,7 @@ function clean(value: string): string {
 }
 
 export function shortTabTitle(value: string): string {
-  const normalized = clean(value) || "MultiTree";
+  const normalized = clean(value) || "Sponsor.krd";
   if (normalized.length <= MAX_TAB_TITLE_LENGTH) return normalized;
   return `${normalized.slice(0, MAX_TAB_TITLE_LENGTH - 1).trimEnd()}…`;
 }

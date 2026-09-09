@@ -132,7 +132,8 @@ export function RootLinktreesPage({
 
   const load = useCallback(
     async (refresh = false) => {
-      refresh ? setRefreshing(true) : setLoading(true);
+      if (refresh) setRefreshing(true);
+      else setLoading(true);
       try {
         const contextUrl =
           apiBase === "/api/creator/linktrees"
@@ -430,7 +431,7 @@ export function RootLinktreesPage({
               context?.branding.avatar ||
               null,
           }}
-          businessIdentity={{ name: context?.branding.name || "MultiTree" }}
+          businessIdentity={{ name: context?.branding.name || "Sponsor.krd" }}
           apiEndpoints={apiEndpoints}
         />
       ) : null}

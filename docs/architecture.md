@@ -2,7 +2,7 @@
 
 Self-service root-domain accounts are documented in
 [`creator-accounts.md`](creator-accounts.md). Creator workspaces reuse the
-Linktree and mini-website domain services but have a separate session guard,
+the Linktree domain services but have a separate session guard,
 one-page ownership record, trial lifecycle, and global root-slug registry.
 
 ## Invite-only business identity
@@ -20,56 +20,37 @@ remain in PostgreSQL. Platform-administrator authentication stays separate.
 Large feature entry points remain orchestration layers; cohesive behavior must
 live behind domain modules rather than expanding those entry points further.
 
-- Mini-website database row contracts and the complete child-table projection
-  are owned by `mini-website.projection.ts`. `MiniWebsitesService` owns workflow
-  orchestration and delegates projection shape to that module.
 - Repository classes provide the initial persistence seam for the high-change
-  mini-website, analytics-read, business-administration, and billing domains.
+  analytics-read, business-administration, and billing domains.
   They own reusable query projections and tenant-scoped lookup SQL; application
   services retain validation, authorization-aware workflows, cache/storage
   coordination, and transaction orchestration. Mutation SQL that participates
   in an existing service transaction remains with that transaction until it can
   be moved as one cohesive repository operation.
-- Creator and Platform mini-website dashboards use one workspace-configured
-  manager and editor. Endpoint selection, public path, template policy, and
-  analytics ownership are configuration; form steps, validation, payloads,
-  uploads, list UI, renderer, and tracking behavior are shared. The Business
-  dashboard exposes no Mini Website navigation item or route on any plan, while
-  stored public tenant pages remain renderable.
 - All presentation shared by business and platform surfaces has one
   implementation with thin surface adapters. Platform-admin-only actions are
   introduced through explicit permission or capability configuration; they do
   not justify forking the surrounding shared component, workflow, or state.
 - `PlatformContentWorkspaceService` is the single resolver for the internal
-  owner of all MultiTree root-domain content. Feature names must not create a
+  owner of all Sponsor.krd root-domain content. Feature names must not create a
   second platform workspace convention.
-- The liquid-glass template keeps page composition and section dispatch in its
-  entry component. Its structural frame, shared visual utilities, and
-  informational section renderers are separate modules that can be reviewed
-  and tested without loading the entire renderer implementation.
-- Liquid Glass is the only mini-website renderer. The catalog is deliberately
-  a single template, so `MiniWebsiteTemplateRenderer` accepts a `templateId`
-  and ignores it: a row saved before the catalog was reduced still names a
-  retired key and must keep rendering rather than failing its lookup. A
-  second renderer would reintroduce the split section registries that made
-  the two drift apart.
 - `BusinessDashboard` owns page composition. Analytics-summary retrieval,
   normalization, lifecycle, and reset behavior are owned by
   `useBusinessAnalyticsTotals`. Dashboard access/profile refresh calls are
   owned by the business feature API rather than embedded transport parsing.
 - Both public advertising routes read through
   `features/advertising/public-page-data.server.ts`. It owns subdomain
-  resolution, the four public fetches, and the branding/footer props the two
+  resolution, the public fetches, and the branding/footer props the two
   components share. Each fetch carries its own failure handling: the business
-  record and the advertising config gate the page, while the linktree and
-  mini-website lists are footer navigation that degrades to empty rather than
+  record and the advertising config gate the page, while the Linktree list is
+  footer navigation that degrades to empty rather than
   taking a published page down.
 - `lib/api/request.ts` is the neutral frontend JSON transport boundary.
   Feature API modules own endpoint paths and transport types; feature hooks own
   cancellation and local request state. Components do not define another
   response-envelope parser.
-- Root-domain Linktrees and mini websites reuse their existing domains rather
-  than introducing second page models. One non-customer
+- Root-domain Linktrees reuse their existing domain rather than introducing a
+  second page model. One non-customer
   `businesses.account_type='platform'` workspace owns their content,
   public-page, action, analytics, and media rows.
   `PlatformContentWorkspaceService` is the only resolver for that owner;
@@ -85,7 +66,7 @@ New persistence projections, renderer sections, and dashboard data lifecycles
 must extend these seams instead of adding another parallel implementation to
 the entry-point files.
 
-This document is the boundary contract for the MultiTree workspace. It
+This document is the boundary contract for the Sponsor.krd workspace. It
 describes where code belongs, which dependencies are allowed, and what must
 change before horizontal production scaling. The root [README.md](../README.md)
 is a short summary that links here; this is the full reference. For the
@@ -138,7 +119,6 @@ remaining horizontal-scaling requirements.
 |       |-- database/
 |       |-- links/
 |       |-- linktrees/
-|       |-- mini-websites/
 |       |-- platform-admin/
 |       |-- public/
 |       |-- redis/
@@ -194,8 +174,6 @@ Feature ownership (`frontend/src/features/`):
 - `business`: business-console composition, hooks, and types.
 - `link-editor`: reusable linktree editing fields, steps, validation, payload
   mapping, and editor UI.
-- `mini-website`: mini-website editing, section management, profession
-  templates, and the public mini-website renderer.
 - `templates`: template selection and management.
 - `analytics`: reusable analytics presentation.
 - `communications`: announcement banners, the shared notification inbox hook,
@@ -208,9 +186,7 @@ Component ownership (`frontend/src/components/`):
 
 - `business`: business-console-only presentation.
 - `public`: public linktree presentation.
-- `templates`: the selectable Linktree catalog and two persisted mini-website
-  visual templates. Both mini-website renderers use the canonical editor order
-  while keeping their page compositions and section designs independent.
+- `templates`: the selectable Linktree catalog.
 - `analytics`, `home`, `shared`, `ui`: neutral, reusable across both
   permission domains — `shared` is the largest of these and holds the bulk of
   cross-cutting UI primitives.
@@ -239,8 +215,6 @@ NestJS modules own their HTTP controllers and application services
 - `billing`: effective entitlements, quota checks, and template access.
 - `platform-admin`: platform business administration and platform settings.
 - `linktrees` and `links`: tenant-owned linktree behavior.
-- `mini-websites`: tenant-owned mini-website persistence, validation, and
-  public reads.
 - `analytics`: ingestion, rollups, reporting, and the TikTok delivery
   outbox.
 - `communications`: announcements, notifications, and conversations.
@@ -363,8 +337,8 @@ activity sources — `security_audit_events`, `http_request_events`,
 [docs/backend.md](backend.md#public-analytics-and-activity).
 
 The superseded `page_views`, `link_clicks`, `analytics_totals`,
-`integration_delivery_events`, `mini_website_events`, and
-`mini_website_analytics_daily` tables — along with four legacy analytics
+`integration_delivery_events` and other legacy analytics tables — along with
+four legacy analytics
 helper functions and the `links.click_count` column — are not created by the
 current consolidated schema. No application code reads or writes any of
 them. Databases that predate the unified pipeline are baselined rather than
@@ -390,7 +364,7 @@ An existing database is baselined only after its required tables, columns,
 indexes, removed columns, and catalog data pass compatibility checks. A
 partial, outdated, or unknown database, or one with ledger rows that do not
 include `full_schema.sql`, is rejected without a baseline row or automatic
-repair. The API, retention, media, mini-website, and
+repair. The API, retention, media, and
 communications helpers now perform data/seed work only; they do not execute
 DDL outside the migration ledger.
 For a changed schema, recreate disposable databases with `db:reset`. Valuable

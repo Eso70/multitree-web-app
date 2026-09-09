@@ -91,7 +91,7 @@ export function PlatformTikTokAdAccountTab() {
         if (stored) {
           const parsed = JSON.parse(stored);
           if (
-            parsed?.advertiserName?.includes("MultiTree") ||
+            parsed?.advertiserName?.includes("Sponsor.krd") ||
             parsed?.id === "tt-acc-10928"
           ) {
             localStorage.removeItem(localStorageKey);
@@ -191,9 +191,9 @@ export function PlatformTikTokAdAccountTab() {
             <span
               className="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-bold"
               style={{
-                borderColor: "color-mix(in srgb, var(--multitree-accent) 28%, transparent)",
-                background: "color-mix(in srgb, var(--multitree-accent) 10%, transparent)",
-                color: "var(--multitree-accent)",
+                borderColor: "color-mix(in srgb, var(--sponsor-krd-accent) 28%, transparent)",
+                background: "color-mix(in srgb, var(--sponsor-krd-accent) 10%, transparent)",
+                color: "var(--sponsor-krd-accent)",
               }}
             >
               ١ لە ١ هەژمار
@@ -252,8 +252,8 @@ export function PlatformTikTokAdAccountTab() {
                 <div
                   className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors"
                   style={{
-                    background: "color-mix(in srgb, var(--multitree-accent) 12%, transparent)",
-                    color: "var(--multitree-accent)",
+                    background: "color-mix(in srgb, var(--sponsor-krd-accent) 12%, transparent)",
+                    color: "var(--sponsor-krd-accent)",
                   }}
                 >
                   <Megaphone className="h-6 w-6" />
@@ -329,7 +329,7 @@ export function PlatformTikTokAdAccountTab() {
       <ConnectTikTokAdModal
         isOpen={isConnectModalOpen}
         onClose={() => setIsConnectModalOpen(false)}
-        multiTreeTheme
+        sponsorKrdTheme
         onConnect={(newAcc) => {
           saveAccount(newAcc);
           toast.success("هەژماری ڕیکلام بە سەرکەوتوویی بەسترایەوە");

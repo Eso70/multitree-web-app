@@ -11,7 +11,7 @@ import { baselineDir, baselineFiles } from './baseline';
  * `applyForwardMigrations` and asserts the ledger holds exactly one row — so
  * anything missing from this file is missing from every freshly reset
  * database. Before the rebaseline a reset still produced the password columns,
- * the pre-rename template keys and MultiTree's own logo as the business
+ * the pre-rename template keys and SponsorKrd's own logo as the business
  * default.
  *
  * The authoritative check is the differential one: apply the old baseline plus
@@ -23,6 +23,10 @@ import { baselineDir, baselineFiles } from './baseline';
 const MIGRATIONS_DIR = join(__dirname, 'migrations');
 const BASELINE_DIR = baselineDir(MIGRATIONS_DIR);
 const PARTS = baselineFiles(MIGRATIONS_DIR);
+const MINI_WEBSITE_REMOVAL = readFileSync(
+  join(MIGRATIONS_DIR, '2026-09-09_remove_mini_websites.sql'),
+  'utf8',
+);
 
 const readPart = (name: string) =>
   readFileSync(join(BASELINE_DIR, name), 'utf8');
@@ -144,39 +148,6 @@ describe('full_schema.sql baseline', () => {
     });
   });
 
-  describe('mini-website template retirement', () => {
-    it('does not seed Business mini-website creation access', () => {
-      expect(DATA).not.toContain("'business:mini-websites:create'");
-      expect(DATA).toContain("'platform:mini-websites:create'");
-    });
-
-    it('leaves liquid-glass as the only permitted template', () => {
-      expect(SCHEMA).toContain('mini_websites_template_key_check');
-      expect(SCHEMA).toContain("template_key IN ('liquid-glass')");
-    });
-
-    /**
-     * Forward migrations apply in filename order, and
-     * `2026-08-17_rename_studio_grid_...` sorts before
-     * `2026-08-17_replace_..._with_studio_grid`, so the replace re-inserted
-     * grants the rename had just cleared. Nothing later removed them until
-     * `2026-08-19_remove_orphaned_studio_grid_grants.sql`.
-     */
-    it('seeds none of the retired mini-website template keys', () => {
-      for (const retired of [
-        'studio-grid',
-        'soft-horizon',
-        'side-profile',
-        'editorial',
-        'business-pro',
-        'sidebar-canvas',
-      ]) {
-        expect(SCHEMA).not.toContain(`'${retired}'`);
-        expect(DATA).not.toContain(`'${retired}'`);
-      }
-    });
-  });
-
   describe('Branch Signal Linktree template', () => {
     it('grants the premium template only to the Ultra baseline configuration', () => {
       const grants = DATA.match(
@@ -188,10 +159,39 @@ describe('full_schema.sql baseline', () => {
     });
   });
 
-  describe('2026-08-24 CRM retirement', () => {
-    it('creates no CRM or mini-website lead-form tables', () => {
-      for (const retiredTable of [
+  describe('2026-09-09 Mini Website retirement', () => {
+    it('drops every legacy Mini Website table before the parent table', () => {
+      const retiredTables = [
         'mini_website_lead_forms',
+        'mini_website_versions',
+        'mini_website_items',
+        'mini_website_hours',
+        'mini_website_locations',
+        'mini_website_social_links',
+        'mini_website_sections',
+        'mini_websites',
+      ];
+
+      for (const retiredTable of retiredTables) {
+        expect(MINI_WEBSITE_REMOVAL).toContain(
+          `DROP TABLE IF EXISTS public.${retiredTable};`,
+        );
+        expect(SCHEMA).not.toContain(`CREATE TABLE public.${retiredTable}`);
+      }
+
+      expect(
+        MINI_WEBSITE_REMOVAL.indexOf('mini_website_lead_forms'),
+      ).toBeLessThan(
+        MINI_WEBSITE_REMOVAL.indexOf(
+          'DROP TABLE IF EXISTS public.mini_websites;',
+        ),
+      );
+    });
+  });
+
+  describe('2026-08-24 CRM retirement', () => {
+    it('creates no retired CRM tables', () => {
+      for (const retiredTable of [
         'crm_audience_export_members',
         'crm_audience_exports',
         'crm_lead_tags',
@@ -251,6 +251,8 @@ describe('full_schema.sql baseline', () => {
       '2026-09-05_add_linktree_is_campaign_active.sql',
       '2026-09-06_add_linktree_is_archived.sql',
       '2026-09-07_add_linktree_status_permission.sql',
+      '2026-09-08_rebrand_sponsor_krd.sql',
+      '2026-09-09_remove_mini_websites.sql',
       'baseline',
     ]);
   });

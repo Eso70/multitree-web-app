@@ -82,7 +82,7 @@ describe("TemplatesPage", () => {
   });
 
   /**
-   * The page catalogues Linktree templates only. Mini-website templates were
+   * The page catalogues Linktree templates only. Other product templates were
    * removed from it, and with one visual template left there is nothing to
    * browse there anyway.
    */
@@ -90,10 +90,6 @@ describe("TemplatesPage", () => {
     render(<TemplatesPage />);
 
     expect(screen.queryAllByRole("tab")).toHaveLength(0);
-    expect(
-      screen.queryByText("قالبەکانی مینی وێبسایت"),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByText("Liquid Glass")).not.toBeInTheDocument();
   });
 
   it("supports the shared Creator view-only catalogue without business entitlement loading", () => {
@@ -114,9 +110,9 @@ describe("TemplatesPage", () => {
     expect(screen.getByText("بەردەستەکان: 1")).toBeInTheDocument();
   });
 
-  it("keeps the template catalogue inside the MultiTree theme boundary", () => {
+  it("keeps the template catalogue inside the SponsorKrd theme boundary", () => {
     const { container } = render(<TemplatesPage />);
 
-    expect(container.querySelector("[data-multitree-theme]")).not.toBeNull();
+    expect(container.querySelector("[data-sponsor-krd-theme]")).not.toBeNull();
   });
 });

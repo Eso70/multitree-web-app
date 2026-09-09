@@ -437,7 +437,7 @@ export function BillingPage() {
           setTab(value);
           setSearchOpen(false);
         }}
-        accent="var(--multitree-accent)"
+        accent="var(--sponsor-krd-accent)"
       />
 
       <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#1c222b] sm:p-6">
@@ -714,7 +714,7 @@ function PlansTable({
     );
   }
   return (
-    <div className="overflow-x-auto custom-scrollbar lime-custom-scrollbar">
+    <div className="overflow-x-auto custom-scrollbar brand-custom-scrollbar">
       <table className="w-full min-w-[980px] text-left text-xs">
         <thead>
           <tr className="border-b border-slate-100 text-slate-400 dark:border-white/5">
@@ -832,7 +832,7 @@ function BusinessesSubscriptionsTable({
     );
   }
   return (
-    <div className="overflow-x-auto custom-scrollbar lime-custom-scrollbar">
+    <div className="overflow-x-auto custom-scrollbar brand-custom-scrollbar">
       <table className="w-full min-w-[980px] text-left text-xs">
         <thead>
           <tr className="border-b border-slate-100 text-slate-400 dark:border-white/5">
@@ -1041,19 +1041,19 @@ function ManagementModal({
   });
 
   useEffect(() => {
-    document.body.classList.add("multitree-theme-portals");
-    return () => document.body.classList.remove("multitree-theme-portals");
+    document.body.classList.add("sponsor-krd-theme-portals");
+    return () => document.body.classList.remove("sponsor-krd-theme-portals");
   }, []);
 
   return createPortal(
     <div
       className="modal-ltr fixed inset-0 z-[150] flex items-center justify-center p-2 sm:p-4"
       dir="ltr"
-      data-multitree-theme
+      data-sponsor-krd-theme
       style={
         {
-          "--theme-primary": "var(--multitree-accent)",
-          "--theme-css": "var(--multitree-accent)",
+          "--theme-primary": "var(--sponsor-krd-accent)",
+          "--theme-css": "var(--sponsor-krd-accent)",
         } as CSSProperties
       }
     >
@@ -1089,11 +1089,11 @@ function ManagementModal({
               <X className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto bg-linear-to-br from-white to-slate-50/20 p-4 sm:p-5 md:p-6 custom-scrollbar lime-custom-scrollbar">
+          <div className="flex-1 overflow-y-auto bg-linear-to-br from-white to-slate-50/20 p-4 sm:p-5 md:p-6 custom-scrollbar brand-custom-scrollbar">
             {children}
           </div>
           <ModalWizardActions
-            variant="multitree"
+            variant="sponsor-krd"
             isFirstStep
             isFinalStep
             isSubmitting={saving}
@@ -1132,10 +1132,10 @@ function FormField({
 
 const PLAN_DESCRIPTION_PRESETS: Record<string, string> = {
   basic:
-    "Essential business access\n\nUp to 5 link pages\n2 Linktree templates\nCore analytics\nPage defaults configuration\nMultiTree subdomain",
-  pro: "Advanced analytics management access\n\nUp to 20 link pages\n5 Linktree templates\nAdvanced analytics & reporting\nBusiness profile editing\nCustom branding (logo, favicon, colors)\nTikTok Pixel & Events API\n7-day free trial\nPage defaults configuration\nMultiTree subdomain",
+    "Essential business access\n\nUp to 5 link pages\n2 Linktree templates\nCore analytics\nPage defaults configuration\nSponsor.krd subdomain",
+  pro: "Advanced analytics management access\n\nUp to 20 link pages\n5 Linktree templates\nAdvanced analytics & reporting\nBusiness profile editing\nCustom branding (logo, favicon, colors)\nTikTok Pixel & Events API\n7-day free trial\nPage defaults configuration\nSponsor.krd subdomain",
   ultra:
-    "Complete business access\n\nUnlimited link pages\n6 Linktree templates\nAdvanced analytics & reporting\nBusiness profile editing\nCustom branding (logo, favicon, colors)\nTikTok Pixel & Events API\nRemove MultiTree branding\nPremium templates\nPage defaults configuration\nMultiTree subdomain",
+    "Complete business access\n\nUnlimited link pages\n6 Linktree templates\nAdvanced analytics & reporting\nBusiness profile editing\nCustom branding (logo, favicon, colors)\nTikTok Pixel & Events API\nRemove Sponsor.krd branding\nPremium templates\nPage defaults configuration\nSponsor.krd subdomain",
 };
 
 function getPlanDescriptionPreset(

@@ -278,7 +278,7 @@ function createId(prefix: string) {
  * URL dies with the tab, so anything "saved" with one pointed at nothing the
  * next morning. Uploading on pick means an abandoned modal can leave an
  * unreferenced asset behind; `platform_media_settings.auto_cleanup_unused`
- * already collects those, which is the same bargain the mini-website editor
+ * already collects those, which is the same bargain other public-page editors
  * makes.
  */
 async function uploadPickedImage(

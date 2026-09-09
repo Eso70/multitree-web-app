@@ -164,7 +164,7 @@ export function loadTikTokPixel(pixelId: string): void {
     if (!warnedPixelFailures.has(pixelId)) {
       warnedPixelFailures.add(pixelId);
       console.warn(
-        `[multitree] TikTok pixel ${pixelId} failed to load — blocked or unavailable`,
+        `[Sponsor.krd] TikTok pixel ${pixelId} failed to load — blocked or unavailable`,
       );
     }
     recordTikTokDebug({

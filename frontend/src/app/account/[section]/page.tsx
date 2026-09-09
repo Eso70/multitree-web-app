@@ -7,7 +7,7 @@ export default async function CreatorAccountSectionPage({
   params: Promise<{ section: string }>;
 }) {
   const { section } = await params;
-  if (!["linktree", "mini-website", "templates", "settings"].includes(section))
+  if (!["linktree", "templates", "settings"].includes(section))
     notFound();
   return <CreatorDashboard />;
 }

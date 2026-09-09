@@ -23,8 +23,8 @@ export async function seedDefaultCommunications(client: PoolClient) {
     FROM (
       VALUES
         ('7b100000-0000-4000-8000-000000000001'::uuid,
-         'بەخێربێیت بۆ MultiTree',
-         'بەخێربێیت بۆ MultiTree. هیوادارین ئەزموونێکی خۆشت هەبێت.',
+         'بەخێربێیت بۆ SponsorKrd',
+         'بەخێربێیت بۆ SponsorKrd. هیوادارین ئەزموونێکی خۆشت هەبێت.',
          'general', 'normal', ARRAY['business_bell']::text[],
          NULL, NULL)
     ) AS seed(id, title, message, announcement_type, priority, channels, cta_label, cta_url)
@@ -99,19 +99,19 @@ export async function seedDefaultCommunications(client: PoolClient) {
       FOR target IN SELECT id, name FROM businesses LOOP
         SELECT id INTO thread_id
         FROM communication_conversations
-        WHERE business_id=target.id AND multitree_key='business_welcome'
+        WHERE business_id=target.id AND sponsor_krd_key='business_welcome'
         ORDER BY created_at ASC LIMIT 1;
 
         IF thread_id IS NULL THEN
           INSERT INTO communication_conversations
-            (business_id, subject, category, priority, status, multitree_key, assigned_admin_id,
+            (business_id, subject, category, priority, status, sponsor_krd_key, assigned_admin_id,
              created_by_type, platform_last_read_at)
-          VALUES (target.id, 'بەخێربێیت بۆ MultiTree', 'account', 'normal',
+          VALUES (target.id, 'بەخێربێیت بۆ SponsorKrd', 'account', 'normal',
                   'waiting_business', 'business_welcome', seed_admin, 'platform-admin', NOW())
           RETURNING id INTO thread_id;
 
           welcome_body := 'سڵاو ' || target.name ||
-            '، بەخێربێیت بۆ MultiTree. هیوادارین ئەزموونێکی خۆشت هەبێت.';
+            '، بەخێربێیت بۆ SponsorKrd. هیوادارین ئەزموونێکی خۆشت هەبێت.';
 
           INSERT INTO communication_messages
             (conversation_id, sender_type, sender_admin_id, body)
@@ -121,18 +121,18 @@ export async function seedDefaultCommunications(client: PoolClient) {
             (recipient_type, business_id, kind, priority, title, body,
              source_type, source_id, action_url)
           VALUES ('business', target.id, 'platform_reply', 'important',
-                  'بەخێربێیت بۆ MultiTree', welcome_body, 'conversation', thread_id,
+                  'بەخێربێیت بۆ SponsorKrd', welcome_body, 'conversation', thread_id,
                   '/business?communication=' || thread_id::text);
         ELSE
           welcome_body := 'سڵاو ' || target.name ||
-            '، بەخێربێیت بۆ MultiTree. هیوادارین ئەزموونێکی خۆشت هەبێت.';
+            '، بەخێربێیت بۆ SponsorKrd. هیوادارین ئەزموونێکی خۆشت هەبێت.';
           UPDATE communication_messages
           SET body=welcome_body, encrypted_body=NULL
           WHERE id=(SELECT id FROM communication_messages
                     WHERE conversation_id=thread_id AND sender_type='platform-admin'
                     ORDER BY created_at ASC LIMIT 1);
           UPDATE communication_notifications
-          SET title='بەخێربێیت بۆ MultiTree', body=welcome_body,
+          SET title='بەخێربێیت بۆ SponsorKrd', body=welcome_body,
               encrypted_content=NULL
           WHERE recipient_type='business' AND business_id=target.id
             AND source_type='conversation' AND source_id=thread_id;

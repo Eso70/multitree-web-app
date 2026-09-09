@@ -59,7 +59,7 @@ export const TEMPLATE_OPTIONS = [
     description:
       "A premium dark signal tree that connects every link back to the profile through a tenant-colored branching network.",
     previewGradient: "from-[#111714] via-[#080b09] to-[#050706]",
-    accentHex: "#b6f20d",
+    accentHex: "#25F4EE",
   },
 ] as const satisfies readonly TemplateOption[];
 

@@ -180,17 +180,17 @@ export function BusinessTikTokConfigPage() {
       setConfiguredPixels(counts.configuredPixels);
       setApiConnections(counts.apiConnections);
     };
-    window.addEventListener("multitree:access-updated", syncAccess);
+    window.addEventListener("sponsor-krd:access-updated", syncAccess);
     window.addEventListener(
-      "multitree:business-settings-updated",
+      "sponsor-krd:business-settings-updated",
       syncSettings,
     );
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
-      window.removeEventListener("multitree:access-updated", syncAccess);
+      window.removeEventListener("sponsor-krd:access-updated", syncAccess);
       window.removeEventListener(
-        "multitree:business-settings-updated",
+        "sponsor-krd:business-settings-updated",
         syncSettings,
       );
     };

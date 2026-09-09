@@ -60,7 +60,7 @@ describe("ColorGradientModal hex entry", () => {
   });
 
   /**
-   * `#abc` is valid CSS but the mini-website and onboarding validators accept
+   * `#abc` is valid CSS but public-page and onboarding validators accept
    * `#rrggbb` only, so a shorthand colour used to save straight into a 400.
    */
   it("expands a shorthand colour to the six digits the API accepts", async () => {

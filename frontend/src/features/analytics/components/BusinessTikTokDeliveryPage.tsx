@@ -328,11 +328,11 @@ export function BusinessTikTokDeliveryPage() {
             </div>
 
             <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {/* MultiTree Internal Side */}
+              {/* SponsorKrd Internal Side */}
               <div className="relative rounded-xl border border-slate-200/70 bg-slate-50/50 p-4 transition hover:border-slate-300 dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    تۆمارکراو لە MultiTree
+                    تۆمارکراو لە Sponsor.krd
                   </span>
                   <span className="rounded-md bg-white px-2 py-0.5 text-[10px] font-bold text-slate-500 shadow-2xs dark:bg-white/10 dark:text-slate-400">
                     ناوخۆیی

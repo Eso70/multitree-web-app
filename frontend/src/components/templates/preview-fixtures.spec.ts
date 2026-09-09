@@ -9,7 +9,7 @@ describe("linktree template preview fixtures", () => {
         templateId: template.id as TemplateKey,
       });
 
-      expect(preview.name).toBe("MultiTree");
+      expect(preview.name).toBe("Sponsor.krd");
       expect(preview.subtitle).toBe("Digital Presence Platform");
     }
   });

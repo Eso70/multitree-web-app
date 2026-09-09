@@ -34,7 +34,7 @@ import { Tooltip } from "@/components/shared/Tooltip";
 
 type Effect = "deny" | "allow";
 type Scope =
-  | "multitree"
+  | "sponsor_krd"
   | "platform_admin"
   | "business"
   | "business_admin"
@@ -87,7 +87,7 @@ const tabs = [
 ];
 const scopeOptions: CustomSelectOption<string>[] = [
   { value: "", label: "هەموو ئاستەکان" },
-  { value: "multitree", label: "تەواوی MultiTree" },
+  { value: "sponsor_krd", label: "تەواوی Sponsor.krd" },
   { value: "platform_admin", label: "سەرپەرشتیکردنی پلاتفۆرم" },
   { value: "business", label: "بزنسی دیاریکراو" },
   { value: "business_admin", label: "سەرپەرشتیاری بزنس" },
@@ -113,7 +113,7 @@ const durationOptions: CustomSelectOption<string>[] = [
   { value: "30d", label: "٣٠ ڕۆژ" },
 ];
 const scopeLabel: Record<Scope, string> = {
-  multitree: "تەواوی MultiTree",
+  sponsor_krd: "تەواوی Sponsor.krd",
   platform_admin: "سەرپەرشتیکردنی پلاتفۆرم",
   business: "بزنس",
   business_admin: "سەرپەرشتیاری بزنس",
@@ -279,7 +279,7 @@ export function BlocklistsPage() {
           setPage(1);
           setEffect(value);
         }}
-        accent="var(--multitree-accent)"
+        accent="var(--sponsor-krd-accent)"
       />
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/5 dark:bg-[#161B22]">
         <PageHeader
@@ -288,7 +288,7 @@ export function BlocklistsPage() {
           }
           description={
             effect === "deny"
-              ? "لیستی تەواوی ئەو ناونیشانە IP یان مەودای CIDR یانەی کە ڕێگرییان لێکراوە لە دەستگەیشتن بە MultiTreeەکە یان لاپەڕە دیاریکراوەکان."
+              ? "لیستی تەواوی ئەو ناونیشانە IP یان مەودای CIDR یانەی کە ڕێگرییان لێکراوە لە دەستگەیشتن بە Sponsor.krd یان لاپەڕە دیاریکراوەکان."
               : "لیستی ئەو ناونیشانە IP یانەی کە ڕێگەیان پێدراوە بە دەستگەیشتن بێ گوێدانە بلۆککەرەکانی تر."
           }
           action={
@@ -299,7 +299,7 @@ export function BlocklistsPage() {
                 className="relative flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-xs font-semibold text-slate-500 hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5 cursor-pointer"
               >
                 {filterCount > 0 && (
-                  <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-lime-400 text-[9px] font-bold text-slate-900 ring-2 ring-white dark:ring-[#161B22]">
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--sponsor-krd-accent)] text-[9px] font-bold text-[var(--sponsor-krd-accent-ink)] ring-2 ring-white dark:ring-[#161B22]">
                     {filterCount}
                   </span>
                 )}
@@ -702,7 +702,7 @@ function CreateRuleModal({
   onCreated: () => void;
 }) {
   const [ip, setIp] = useState("");
-  const [scope, setScope] = useState<Scope>("multitree");
+  const [scope, setScope] = useState<Scope>("sponsor_krd");
   const [reason, setReason] = useState("");
   const [duration, setDuration] = useState("permanent");
   const [businessId, setBusinessId] = useState("");
@@ -722,7 +722,7 @@ function CreateRuleModal({
         setDuration(rule.expiresAt ? "custom" : "permanent");
       } else {
         setIp("");
-        setScope("multitree");
+        setScope("sponsor_krd");
         setReason("");
         setBusinessId("");
         setLinktreeId("");
@@ -880,11 +880,11 @@ function CreateRuleModal({
     <div
       className="modal-ltr fixed inset-0 z-[140] flex items-center justify-center p-2 sm:p-4"
       dir="ltr"
-      data-multitree-theme
+      data-sponsor-krd-theme
       style={
         {
-          "--theme-primary": "var(--multitree-accent)",
-          "--theme-css": "var(--multitree-accent)",
+          "--theme-primary": "var(--sponsor-krd-accent)",
+          "--theme-css": "var(--sponsor-krd-accent)",
         } as React.CSSProperties
       }
     >
@@ -894,7 +894,7 @@ function CreateRuleModal({
         onClick={onClose}
       />
 
-      <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-white dark:bg-[#1c222b] border border-slate-200 dark:border-white/10 shadow-2xl    duration-300 flex flex-col max-h-[95vh] sm:max-h-[90vh] selection:bg-lime-500/30 dark:selection:bg-lime-500/40">
+      <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-white dark:bg-[#1c222b] border border-slate-200 dark:border-white/10 shadow-2xl    duration-300 flex flex-col max-h-[95vh] sm:max-h-[90vh] selection:bg-brand-500/30 dark:selection:bg-brand-500/40">
         {/* Header */}
         <div
           className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 p-4 sm:p-5 md:p-6 bg-linear-to-r from-white to-slate-50/30 dark:from-[#1c222b] dark:to-slate-900/10"
@@ -924,7 +924,7 @@ function CreateRuleModal({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 md:p-6 bg-linear-to-br from-white to-slate-50/20 dark:from-[#1c222b] dark:to-slate-900/5 custom-scrollbar lime-custom-scrollbar space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 md:p-6 bg-linear-to-br from-white to-slate-50/20 dark:from-[#1c222b] dark:to-slate-900/5 custom-scrollbar brand-custom-scrollbar space-y-4">
           <Field label="ناونیشانی IP یان CIDR">
             <input
               value={ip}
@@ -1027,7 +1027,7 @@ function Field({
   );
 }
 const inputClass =
-  "h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-left text-xs font-semibold text-slate-700 outline-none transition focus:border-lime-400 focus:ring-2 focus:ring-lime-400/15 dark:border-white/10 dark:bg-white/5 dark:text-slate-200";
+  "h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-left text-xs font-semibold text-slate-700 outline-none transition focus:border-[var(--sponsor-krd-accent)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--sponsor-krd-accent)_15%,transparent)] dark:border-white/10 dark:bg-white/5 dark:text-slate-200";
 function TableSkeleton() {
   return (
     <div className="space-y-2">

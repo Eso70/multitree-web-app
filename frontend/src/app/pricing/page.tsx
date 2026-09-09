@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { MultiTreeMarketingShell } from "@/features/public-site/MultiTreeMarketingShell";
+import { SponsorKrdMarketingShell } from "@/features/public-site/SponsorKrdMarketingShell";
 import { MarketingPageHero } from "@/features/public-site/MarketingPageHero";
 import { PricingSection } from "@/features/public-site/PricingSection";
 import { FaqSection } from "@/features/public-site/FaqSection";
 
 export const metadata: Metadata = {
-  title: "نرخەکان | MultiTree",
-  description: "زانیاری تاقیکردنەوە و پلانی Creator لە MultiTree",
+  title: "نرخەکان | Sponsor.krd",
+  description: "زانیاری تاقیکردنەوە و پلانی Creator لە Sponsor.krd",
 };
 export default function PricingPage() {
   return (
-    <MultiTreeMarketingShell>
+    <SponsorKrdMarketingShell>
       <MarketingPageHero
         eyebrow="نرخەکان"
         title="ڕوون، بێ نرخ و بەڵێنی ساختە"
@@ -18,6 +18,6 @@ export default function PricingPage() {
       />
       <PricingSection />
       <FaqSection />
-    </MultiTreeMarketingShell>
+    </SponsorKrdMarketingShell>
   );
 }

@@ -31,9 +31,9 @@ async function encryptPrivateCommunicationsInTransaction(client: PoolClient) {
   // The action URL rewrite is a compatibility cleanup for notifications
   // persisted before the console became a concealed dynamic route.
   await client.query(`
-    UPDATE communication_conversations SET multitree_key='business_welcome'
-    WHERE multitree_key IS NULL AND created_by_type='platform-admin'
-      AND category='account' AND subject='بەخێربێیت بۆ MultiTree';
+    UPDATE communication_conversations SET sponsor_krd_key='business_welcome'
+    WHERE sponsor_krd_key IS NULL AND created_by_type='platform-admin'
+      AND category='account' AND subject='بەخێربێیت بۆ SponsorKrd';
     UPDATE communication_notifications
     SET action_url=regexp_replace(
       action_url,

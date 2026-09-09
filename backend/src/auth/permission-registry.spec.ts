@@ -43,31 +43,6 @@ describe('application permission registry', () => {
     },
   );
 
-  it('does not expose Business mini-website creation while keeping Creator and Platform creation', () => {
-    const businessSource = fs.readFileSync(
-      path.resolve(__dirname, '../mini-websites/mini-websites.controller.ts'),
-      'utf8',
-    );
-    const creatorSource = fs.readFileSync(
-      path.resolve(__dirname, '../creator/creator-content.controller.ts'),
-      'utf8',
-    );
-    const platformSource = fs.readFileSync(
-      path.resolve(
-        __dirname,
-        '../platform-admin/platform-mini-websites.controller.ts',
-      ),
-      'utf8',
-    );
-
-    expect(businessSource).not.toMatch(/@Post\(\)/);
-    expect(creatorSource).toMatch(/@Post\('mini-websites'\)/);
-    expect(platformSource).toMatch(/@Post\(\)[\s\S]*?async create/);
-    expect(PERMISSION_CATALOG.map(({ key }) => key)).not.toContain(
-      'business:mini-websites:create',
-    );
-  });
-
   it('keeps mixed public/auth controllers on an explicit authorization allowlist', () => {
     const allowlist = {
       'auth.controller.ts': [

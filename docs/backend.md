@@ -32,7 +32,7 @@ trial-claim HMACs, device/IP claims, and risk level remain server-only.
 `GET /api/creator/auth/sessions` and its delete variants reuse the hashed
 business-session store while filtering login activity to Creator audit events
 and deriving the owner exclusively from `creator_session`.
-Creator Linktree and mini-website controllers delegate CRUD, analytics, upload,
+Creator Linktree controllers delegate CRUD, analytics, upload,
 and validation behavior to the same domain services used by Business and
 Platform. Creator page DELETE routes fail with `403`; the only deletion path is
 the audited platform Creator-management endpoint protected by
@@ -201,7 +201,7 @@ editing a page does not collide with itself.
 
 ## Platform-owned root-domain content
 
-Platform administrators manage reusable MultiTree-owned pages through
+Platform administrators manage reusable Sponsor.krd-owned pages through
 `/api/platform/linktrees`. The controller has separate read, create, update,
 delete, and upload capabilities, uses the normal platform session and audit
 guards, and never accepts a business/workspace ID from the request.
@@ -239,18 +239,6 @@ workspace; no parallel platform page or analytics tables are used.
 `DELETE /api/platform/linktrees/analytics` clears analytics for every
 platform-owned Linktree and leaves other platform public routes untouched. It
 uses the same delete capability and records a dedicated clear-all audit event.
-
-Platform mini websites use the same internal workspace and the existing
-`MiniWebsitesService`; platform mode bypasses customer subscription checks but
-does not duplicate DTO validation, projection, versioning, child-row writes,
-asset cleanup, public-page synchronization, action registration, or rendering.
-The guarded `/api/platform/mini-websites` surface provides CRUD, slug checks,
-map resolution, validated image uploads, per-page analytics, summary analytics,
-and mini-website-only clear-all analytics.
-
-`GET /api/public/mini-websites/platform/:slug` is root-domain only and resolves
-only `businesses.account_type='platform'`. The same public renderer and tracker
-serve tenant and platform pages.
 
 ## Request validation boundaries
 
@@ -311,29 +299,16 @@ lateral join onto `users`, which is per-row work the list does not need. API rat
 limits and monthly usage are joined in batch; dashboard loading performs a
 fixed number of queries rather than entitlement and usage queries per tenant.
 
-Mini-website query projection SQL and its raw database row contract live in
-`mini-website.projection.ts`. The service imports this projection while
-retaining normalization, validation, transaction, and tenant-ownership
-orchestration. Projection changes require the focused projection and service
-characterization suites.
-
 ## Persistence repositories
 
-Persistence extraction is incremental. `MiniWebsitesRepository`,
-`AnalyticsReadRepository`, `BusinessAdministrationRepository`, and
+Persistence extraction is incremental. `AnalyticsReadRepository`,
+`BusinessAdministrationRepository`, and
 `BillingRepository` own the stable read projections currently shared by their
 application services. Services still own response shaping, business workflows,
 cache invalidation, storage coordination, and multi-statement transactions.
 New reusable reads in these domains should extend the existing repository.
 Do not split the SQL inside a service-owned transaction across layers unless
 the complete transaction can move behind one repository operation.
-
-The public business projection may include `trusted_partners`, but only from
-enabled `partners` sections and enabled partner items on published mini
-websites owned by that same business. The projection returns at most 24 unique,
-non-empty logo records and exposes only the already-derived safe public URL;
-draft, paused, archived, cross-tenant, disabled, or image-less records never
-reach the homepage.
 
 ## Public analytics and activity
 
@@ -391,12 +366,12 @@ to open WhatsApp. Analytics failures after destination resolution fail open so
 the visitor still reaches the business. Native application schemes retain the
 immediate-beacon and durable-queue path.
 
-TikTok Pixel IDs are exposed to two public surfaces only — the public linktree
-page and the public mini website page — resolved by
+TikTok Pixel IDs are exposed only to explicitly approved public marketing
+pages, resolved by
 `PublicPageAnalyticsService` and re-checked against `feature.tiktok` on every
 read. TikTok Events API secrets remain encrypted server-side (see
 [docs/security.md](security.md#secrets-and-encryption)). Eligible events from
-those same two page types are inserted into a durable marketing outbox; a
+those same approved page types are inserted into a durable marketing outbox; a
 background processor batches them per destination, records every delivery
 attempt, and retries failed work.
 
@@ -429,7 +404,7 @@ not globally injectable.
 authentication domain. Business and platform guards apply it after resolving
 their principals; the developer API guard applies it after resolving the API
 client; anonymous public controllers resolve the tenant or Linktree target
-before evaluating it. `main.ts` applies MultiTree-wide rules to endpoints without
+before evaluating it. `main.ts` applies Sponsor.krd-wide rules to endpoints without
 a more specific target.
 
 ## Upload storage

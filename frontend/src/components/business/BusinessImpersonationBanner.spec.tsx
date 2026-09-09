@@ -11,13 +11,13 @@ describe("BusinessImpersonationBanner", () => {
     render(
       <BusinessImpersonationBanner
         businessName="Ismail"
-        platformAdminName="MultiTree"
+        platformAdminName="Sponsor.krd"
       />,
     );
 
     const banner = screen.getByRole("status");
     expect(banner).toHaveTextContent("Signed in as Ismail");
-    expect(banner).toHaveTextContent("platform administrator MultiTree");
+    expect(banner).toHaveTextContent("platform administrator Sponsor.krd");
     expect(banner).toHaveClass("dark:bg-[#211b10]/95");
     expect(
       screen.getByRole("button", { name: "Exit impersonation" }),

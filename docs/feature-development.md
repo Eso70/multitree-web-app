@@ -1,6 +1,6 @@
 # Feature Development
 
-This document defines the standard workflow for implementing new features in MultiTree.
+This document defines the standard workflow for implementing new features in Sponsor.krd.
 
 For repository-wide engineering principles, see `AGENTS.md`.
 

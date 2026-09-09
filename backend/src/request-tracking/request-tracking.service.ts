@@ -34,7 +34,7 @@ interface RequestEventInput {
   statusCode?: number | null;
   durationMs?: number | null;
   actorType?:
-    'anonymous' | 'business' | 'creator' | 'platform-admin' | 'multitree';
+    'anonymous' | 'business' | 'creator' | 'platform-admin' | 'sponsor_krd';
   actorId?: string | null;
   actorLabel?: string | null;
   businessId?: string | null;

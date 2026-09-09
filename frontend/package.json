@@ -3,10 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "sync:maplibre": "node scripts/sync-maplibre-worker.mjs",
     "sync:env": "node scripts/sync-env.mjs",
-    "predev": "pnpm run sync:env && pnpm run sync:maplibre",
-    "prebuild": "pnpm run sync:env && pnpm run sync:maplibre",
+    "predev": "pnpm run sync:env",
+    "prebuild": "pnpm run sync:env",
     "prestart": "pnpm run sync:env",
     "prestart:prod": "pnpm run sync:env",
     "dev": "next dev --webpack -p 3011",
@@ -20,10 +19,8 @@
   },
   "dependencies": {
     "@linktree/types": "workspace:*",
-    "@mapbox/mapbox-gl-rtl-text": "^0.4.0",
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^0.562.0",
-    "maplibre-gl": "^5.24.0",
     "motion": "^12.42.2",
     "next": "^16.3.0",
     "qrcode": "^1.5.4",

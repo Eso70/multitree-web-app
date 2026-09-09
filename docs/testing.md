@@ -43,7 +43,7 @@ what the suite depends on:
   `lvh.me:3011` leaves no derivable subdomain and a valid session is rejected
   as `Invalid business session`. The `x-subdomain` header is not a way around
   that — `internal-proxy-trust.ts` ignores it without an internal proxy key.
-- It defaults `DB_NAME` to `multitree_e2e`, and never overrides a name that
+- It defaults `DB_NAME` to `sponsor_krd_e2e`, and never overrides a name that
   already looks disposable. Both suites truncate tables and drop databases,
   and both refuse to run against a name that does not look disposable; this
   only supplies a safe default.
@@ -124,21 +124,18 @@ Administration-query tests verify pagination transformation and maximum
 limits, secret-free business list projections, fixed-count API dashboard
 queries without per-business entitlement lookups, and bounded billing joins.
 
-H6 characterization coverage protects extracted hotspot seams: the
-mini-website projection must retain every hydration alias, informational
-liquid-glass sections preserve filtering and safe-link behavior, and the
-business analytics hook preserves summary normalization, initial loading, and
-reset behavior.
+H6 characterization coverage protects extracted hotspot seams: public-page
+projections retain every required alias, while the business analytics hook
+preserves summary normalization, initial loading, and reset behavior.
 
-Repository tests protect the initial persistence seams for mini-websites,
-analytics reads, business administration, and billing. They assert tenant and
+Repository tests protect the persistence seams for analytics reads, business
+administration, and billing. They assert tenant and
 publication constraints, bounded pagination inputs, and the identifiers used
 to target cache invalidation. Service characterization tests continue to
 protect response mapping and transaction orchestration.
 
-Authorization tests verify that Linktree and mini-website creation share the
-public-page quota, that the quota query counts both tenant-owned resource
-tables, and that mini-website creation declares its dedicated capability.
+Authorization tests verify that Linktree creation uses the public-page quota
+and that the quota query reads the tenant-owned Linktree table.
 
 Module-boundary tests keep the global-module allowlist limited to PostgreSQL
 and Redis and assert the explicit auth, billing, webhook, and observability
@@ -165,7 +162,7 @@ services after applying the real migration command. The compact matrix covers:
   authentication domain;
 - cookie-origin rejection, per-request subdomain binding, and cross-tenant
   resource denial;
-- tenant-owned linktree and mini-website creation;
+- tenant-owned Linktree creation;
 - platform API-client management, developer API scope denial, and idempotent
   write replay;
 - durable webhook delivery claiming with `SKIP LOCKED` semantics;
@@ -176,14 +173,14 @@ services after applying the real migration command. The compact matrix covers:
 
 The application fixture refuses to run unless `DB_NAME` contains an explicit
 `e2e` or `test` segment. The migration fixture uses a generated
-`multitree_migration_e2e_*` database and removes it after the suite. E2E tests
+`sponsor_krd_migration_e2e_*` database and removes it after the suite. E2E tests
 run in band so database setup, worker assertions, and cleanup remain
 deterministic.
 
 ### Running the e2e suite
 
 `pnpm test:e2e` on its own fails by design: the development `DB_NAME`
-(`multitree`) has no `e2e`/`test` segment, and the fixtures are destructive.
+(`sponsor_krd`) has no `e2e`/`test` segment, and the fixtures are destructive.
 It needs a disposable database, created once and provisioned with the same
 consolidated schema:
 

@@ -21,7 +21,7 @@ export function CreatorSidebarFooter({
       <div
         className={`flex items-center rounded-xl bg-slate-50 p-3 dark:bg-white/5 ${collapsed ? "md:justify-center" : "gap-3"}`}
       >
-        <ShieldCheck className="h-5 w-5 shrink-0 text-lime-600" />
+        <ShieldCheck className="h-5 w-5 shrink-0 text-[var(--sponsor-krd-accent)]" />
         <div
           className={
             collapsed

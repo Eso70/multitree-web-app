@@ -81,7 +81,7 @@ const tabs = [
 ];
 
 const inputClass =
-  "h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-700 outline-none transition focus:border-[var(--multitree-accent)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--multitree-accent)_20%,transparent)] dark:border-white/10 dark:bg-[#161B22] dark:text-slate-200";
+  "h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-700 outline-none transition focus:border-[var(--sponsor-krd-accent)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--sponsor-krd-accent)_20%,transparent)] dark:border-white/10 dark:bg-[#161B22] dark:text-slate-200";
 
 const initialForm = {
   title: "",
@@ -350,7 +350,7 @@ export function CommunicationCenterPage() {
         tabs={tabs}
         value={tab}
         onChange={setTab}
-        accent="var(--multitree-accent)"
+        accent="var(--sponsor-krd-accent)"
       />
 
       <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#1c222b] sm:p-6">
@@ -425,8 +425,8 @@ export function CommunicationCenterPage() {
                 }
                 className="flex h-10 items-center gap-2 rounded-xl px-4 text-xs font-black shadow-sm transition hover:brightness-95"
                 style={{
-                  background: "var(--multitree-accent-gradient)",
-                  color: "var(--multitree-accent-ink)",
+                  background: "var(--sponsor-krd-accent-gradient)",
+                  color: "var(--sponsor-krd-accent-ink)",
                 }}
               >
                 <Plus className="h-4 w-4" />
@@ -545,7 +545,7 @@ export function CommunicationCenterPage() {
                   className="group flex w-full items-center justify-between rounded-xl p-2.5 text-left transition-all hover:bg-slate-50 dark:hover:bg-white/5"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-[var(--multitree-accent)] dark:border-white/10 dark:bg-white/5">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-[var(--sponsor-krd-accent)] dark:border-white/10 dark:bg-white/5">
                       <Megaphone className="h-5 w-5" />
                     </div>
                     <div className="min-w-0 text-left">
@@ -672,7 +672,7 @@ function OverviewTab({
           action={
             <button
               onClick={onAnnouncement}
-              className="text-xs font-bold text-[var(--multitree-accent)]"
+              className="text-xs font-bold text-[var(--sponsor-krd-accent)]"
             >
               نوێ دروست بکە
             </button>
@@ -788,8 +788,8 @@ function AnnouncementsTab({
               onClick={() => onPublish(item)}
               className="rounded-lg px-3 py-2 text-[11px] font-black"
               style={{
-                background: "var(--multitree-accent-gradient)",
-                color: "var(--multitree-accent-ink)",
+                background: "var(--sponsor-krd-accent-gradient)",
+                color: "var(--sponsor-krd-accent-ink)",
               }}
             >
               بڵاوکردنەوە
@@ -831,7 +831,7 @@ function HomepageTab({ announcements }: { announcements: Announcement[] }) {
               </div>
               <div className="p-5">
                 <div className="flex items-start gap-3">
-                  <Megaphone className="mt-0.5 h-5 w-5 text-[var(--multitree-accent)]" />
+                  <Megaphone className="mt-0.5 h-5 w-5 text-[var(--sponsor-krd-accent)]" />
                   <div>
                     <p className="text-sm font-black text-slate-800 dark:text-slate-100">
                       {item.title}
@@ -1007,13 +1007,13 @@ function MessagesTab({
             {conversations.length} گفتوگۆ
           </p>
         </div>
-        <div className="custom-scrollbar lime-custom-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="custom-scrollbar brand-custom-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {conversations.length ? (
             conversations.map((item) => (
               <button
                 key={item.id}
                 onClick={() => onSelect(item)}
-                className={`w-full min-w-0 border-b border-slate-100 p-4 text-left transition dark:border-white/5 ${selected?.id === item.id ? "bg-[color-mix(in_srgb,var(--multitree-accent)_9%,transparent)]" : "hover:bg-slate-50 dark:hover:bg-white/[0.03]"}`}
+                className={`w-full min-w-0 border-b border-slate-100 p-4 text-left transition dark:border-white/5 ${selected?.id === item.id ? "bg-[color-mix(in_srgb,var(--sponsor-krd-accent)_9%,transparent)]" : "hover:bg-slate-50 dark:hover:bg-white/[0.03]"}`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="truncate text-xs font-black text-slate-700 dark:text-slate-200">
@@ -1076,14 +1076,14 @@ function MessagesTab({
                 triggerClassName="h-9 min-w-36 text-[10px]"
               />
             </div>
-            <div className="custom-scrollbar lime-custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain bg-slate-50/50 p-4 dark:bg-black/10 sm:p-5">
+            <div className="custom-scrollbar brand-custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain bg-slate-50/50 p-4 dark:bg-black/10 sm:p-5">
               {selected.messages?.map((message) => (
                 <div
                   key={message.id}
                   className={`flex ${message.senderType === "platform-admin" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[88%] overflow-hidden rounded-2xl px-4 py-3 shadow-sm sm:max-w-[76%] ${message.senderType === "platform-admin" ? "rounded-br-md bg-[var(--multitree-accent)] text-[var(--multitree-accent-ink)]" : "rounded-bl-md border border-slate-200 bg-white text-slate-700 dark:border-white/10 dark:bg-[#1c222b] dark:text-slate-200"}`}
+                    className={`max-w-[88%] overflow-hidden rounded-2xl px-4 py-3 shadow-sm sm:max-w-[76%] ${message.senderType === "platform-admin" ? "rounded-br-md bg-[var(--sponsor-krd-accent)] text-[var(--sponsor-krd-accent-ink)]" : "rounded-bl-md border border-slate-200 bg-white text-slate-700 dark:border-white/10 dark:bg-[#1c222b] dark:text-slate-200"}`}
                   >
                     <p className="text-[10px] font-black opacity-70">
                       {message.senderName}
@@ -1272,8 +1272,8 @@ function AnnouncementComposer({
             }
             className="flex h-11 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold shadow-lg transition hover:brightness-95 disabled:opacity-50 sm:flex-1"
             style={{
-              background: "var(--multitree-accent-gradient)",
-              color: "var(--multitree-accent-ink)",
+              background: "var(--sponsor-krd-accent-gradient)",
+              color: "var(--sponsor-krd-accent-ink)",
             }}
           >
             {saving ? (
@@ -1512,7 +1512,7 @@ function AnnouncementComposer({
 function AnnouncementRow({ item }: { item: Announcement }) {
   return (
     <div className="flex min-w-0 flex-1 items-start gap-3 py-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--multitree-accent)_10%,transparent)] text-[var(--multitree-accent)]">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--sponsor-krd-accent)_10%,transparent)] text-[var(--sponsor-krd-accent)]">
         <Megaphone className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">

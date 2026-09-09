@@ -5,7 +5,6 @@ import { TikTokPixelConfigService } from '../auth/tiktok-pixel-config.service';
 import { DatabaseService } from '../database/database.service';
 import { RedisService } from '../redis/redis.service';
 import { LinktreesService } from '../linktrees/linktrees.service';
-import { MiniWebsitesService } from '../mini-websites/mini-websites.service';
 import { CreatorAccountService } from './creator-account.service';
 import { CreatorContentService } from './creator-content.service';
 
@@ -24,7 +23,6 @@ describe('CreatorContentService', () => {
     database,
     {} as CreatorAccountService,
     {} as LinktreesService,
-    {} as MiniWebsitesService,
     {} as UnifiedAnalyticsService,
     analyticsReads,
     tiktokPixels,
@@ -81,7 +79,7 @@ describe('CreatorContentService', () => {
     });
 
     await expect(
-      service.pageActions('business-id', 'linktree', 'other-page-id'),
+      service.pageActions('business-id', 'other-page-id'),
     ).rejects.toThrow(NotFoundException);
     expect(analyticsReads.getActions).not.toHaveBeenCalled();
   });
@@ -95,7 +93,7 @@ describe('CreatorContentService', () => {
     ]);
 
     await expect(
-      service.pageActions('business-id', 'mini_website', 'page-id'),
+      service.pageActions('business-id', 'page-id'),
     ).resolves.toEqual([{ id: 'action-id' }]);
     expect(analyticsReads.getActions).toHaveBeenCalledWith('business-id', {
       pageId: 'page-id',
@@ -146,7 +144,6 @@ describe('CreatorContentService', () => {
       database,
       {} as CreatorAccountService,
       linktrees,
-      {} as MiniWebsitesService,
       {} as UnifiedAnalyticsService,
       {} as AnalyticsReadService,
       {} as TikTokPixelConfigService,
@@ -178,7 +175,6 @@ describe('CreatorContentService', () => {
       database,
       {} as CreatorAccountService,
       linktrees,
-      {} as MiniWebsitesService,
       {} as UnifiedAnalyticsService,
       {} as AnalyticsReadService,
       {} as TikTokPixelConfigService,

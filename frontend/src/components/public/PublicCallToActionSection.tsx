@@ -9,6 +9,7 @@ interface PublicCallToAction {
 
 export function PublicCallToActionSection({
   accentColor,
+  accentBackground,
   accentInk,
   eyebrow,
   title,
@@ -17,6 +18,7 @@ export function PublicCallToActionSection({
   secondaryAction,
 }: {
   accentColor: string;
+  accentBackground?: string;
   accentInk: string;
   eyebrow?: string;
   title: string;
@@ -60,6 +62,7 @@ export function PublicCallToActionSection({
               target={primaryAction.external ? "_blank" : undefined}
               rel={primaryAction.external ? "noopener noreferrer" : undefined}
               className="inline-flex min-h-12 w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-[var(--public-cta-accent)] px-7 py-3 text-sm font-black text-[var(--public-cta-ink)] shadow-[0_18px_45px_-28px_rgba(15,23,42,.6)] transition hover:opacity-90 active:scale-[0.98] sm:w-auto"
+              style={{ background: accentBackground || accentColor }}
             >
               {primaryAction.label}
               {primaryAction.icon}

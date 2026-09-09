@@ -137,7 +137,7 @@ export function SessionManagementPanel({
           <div className="flex items-center gap-3">
             <ShieldCheck
               className="h-5 w-5"
-              style={{ color: "var(--theme-primary, var(--multitree-accent))" }}
+              style={{ color: "var(--theme-primary, var(--sponsor-krd-accent))" }}
             />
             <div>
               <h3 className="text-sm font-bold text-slate-800 dark:text-white">

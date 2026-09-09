@@ -25,7 +25,6 @@ interface PublicAdvertisingServiceProps {
     phone?: string | null;
     whatsappEnabled?: boolean | null;
     linktrees?: Array<{ name: string; href: string }>;
-    miniWebsites?: Array<{ name: string; href: string }>;
   };
 }
 
@@ -100,7 +99,6 @@ export function PublicAdvertisingService({
         // footer can link to them.
         advertisingEnabled: true,
         linktrees: footer?.linktrees,
-        miniWebsites: footer?.miniWebsites,
       }}
     >
       <div className="overflow-hidden" style={pageStyle}>

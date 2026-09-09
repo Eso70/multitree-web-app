@@ -104,7 +104,7 @@ function ModalAvatar({ creator }: { creator: Creator }) {
 
 /**
  * Everything worth knowing about one Creator account, laid out the way the
- * business and mini-website modals are: a portrait header, then facts in a
+ * business and public-page modals are: a portrait header, then facts in a
  * responsive grid — rather than the single stacked column a flat field list
  * produces.
  *

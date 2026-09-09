@@ -31,8 +31,9 @@ export const BACKGROUND_GRADIENTS: Record<string, BackgroundGradient> = {
   // Old default (brand-aligned navy to warm amber)
   "#6366f1": { from: "#0b1224", via: "#1c2d52", to: "#b7791f" },
   
-  // Default MultiTree lime primary
-  "#b6f20d": { from: "#203000", via: "#b6f20d", to: "#ecffc2" }, // MultiTree lime
+  // Retained so existing pages using the former brand color render unchanged.
+  "#b6f20d": { from: "#203000", via: "#b6f20d", to: "#ecffc2" },
+  "#25F4EE": { from: "#25F4EE", via: "#111111", to: "#FE2C55" },
   "#dc2626": { from: "#713f12", via: "#eab308", to: "#854d0e" },
   
   // Standard color gradients

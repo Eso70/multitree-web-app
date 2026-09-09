@@ -3,7 +3,7 @@
 import { useEffect, type CSSProperties } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import type { LucideIcon } from "lucide-react";
-import { getMultiTreeAccentInk } from "@/lib/multitree-theme";
+import { getSponsorKrdAccentInk } from "@/lib/sponsor-krd-theme";
 
 export interface BusinessCardStackItem {
   title: string;
@@ -101,7 +101,7 @@ export function BusinessCardStack({
                   </span>
                   <span
                     className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/12 shadow-[inset_0_1px_0_rgba(255,255,255,.18)] backdrop-blur-md"
-                    style={{ color: getMultiTreeAccentInk(item.color), backgroundColor: item.color }}
+                    style={{ color: getSponsorKrdAccentInk(item.color), backgroundColor: item.color }}
                   >
                     <Icon className="h-5 w-5" strokeWidth={2.2} />
                   </span>

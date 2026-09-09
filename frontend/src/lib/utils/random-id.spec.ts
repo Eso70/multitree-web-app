@@ -4,7 +4,7 @@ import { createRuntimeId } from "./random-id";
 /**
  * Every id this produces becomes `analytics_events.event_id`, which is a `uuid`
  * column. A value that is merely unique is not enough — one that Postgres will
- * not parse takes the whole write down, and on the mini-website lead form that
+ * not parse takes the whole write down, and on a public lead form that
  * meant losing the lead.
  *
  * The fallbacks matter because they are not exotic: a page served over plain

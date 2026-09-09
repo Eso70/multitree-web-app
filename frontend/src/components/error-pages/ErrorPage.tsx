@@ -8,7 +8,7 @@ import { PublicHeroAccentBackdrop } from "@/components/public/PublicHeroAccentBa
 import { BusinessPublicFooter } from "@/components/business/BusinessPublicFooter";
 import { HomeFooter } from "@/components/home/HomeFooter";
 import { BUSINESS_LANDING_SECTION_HREFS } from "@/components/business/business-landing-sections";
-import { getMultiTreeAccentInk } from "@/lib/multitree-theme";
+import { getSponsorKrdAccentInk } from "@/lib/sponsor-krd-theme";
 import { applyBusinessTabBranding } from "@/lib/utils/business-error-theme";
 import { MARKETING_NAVIGATION } from "@/features/public-site/marketing-content";
 import type { ErrorPageTheme } from "./error-theme";
@@ -130,7 +130,7 @@ export function ErrorPagePanel(props: ErrorContentProps) {
 }
 
 /**
- * One shell for every error surface. MultiTree, platform-console, and business
+ * One shell for every error surface. SponsorKrd, platform-console, and business
  * errors differ only in branding, navigation, and footer content; the page
  * frame, grid backdrop, hero atmosphere, spacing, and light/dark behavior come
  * from the same `PublicMarketingSiteShell` the public sites use. Do not
@@ -140,21 +140,21 @@ export function ErrorPagePanel(props: ErrorContentProps) {
 export function ErrorPage(props: ErrorPageProps) {
   const { theme, homeHref } = props;
   const isBusiness = theme.scope === "business";
-  const isMultiTree = theme.scope === "multitree";
-  const brandName = theme.name || (isBusiness ? "Business" : "MultiTree");
+  const isSponsorKrd = theme.scope === "sponsor-krd";
+  const brandName = theme.name || (isBusiness ? "Business" : "Sponsor.krd");
   const footer = theme.footer;
 
   useEffect(() => {
     const root = document.documentElement;
-    root.style.setProperty("--multitree-accent", theme.accentColor);
+    root.style.setProperty("--sponsor-krd-accent", theme.accentColor);
     root.style.setProperty(
-      "--multitree-accent-gradient",
+      "--sponsor-krd-accent-gradient",
       theme.accentBackground ??
         `linear-gradient(to right, ${theme.accentColor}, ${theme.accentColor})`,
     );
     root.style.setProperty(
-      "--multitree-accent-ink",
-      theme.accentInk ?? getMultiTreeAccentInk(theme.accentColor),
+      "--sponsor-krd-accent-ink",
+      theme.accentInk ?? getSponsorKrdAccentInk(theme.accentColor),
     );
 
     if (isBusiness) {
@@ -197,7 +197,7 @@ export function ErrorPage(props: ErrorPageProps) {
     ? footer?.whatsappEnabled && whatsappHref
       ? { label: "پەیوەندی", href: whatsappHref, external: true }
       : null
-    : isMultiTree
+    : isSponsorKrd
       ? { label: "هەژمار دروست بکە", href: "/signup" }
       : null;
 
@@ -210,11 +210,11 @@ export function ErrorPage(props: ErrorPageProps) {
       navigationItems={navigationItems}
       primaryAction={primaryAction}
       secondaryAction={
-        isMultiTree ? { label: "چوونەژوورەوە", href: "/login" } : null
+        isSponsorKrd ? { label: "چوونەژوورەوە", href: "/login" } : null
       }
       emphasizeFirstNavItem={false}
       footer={
-        isMultiTree ? (
+        isSponsorKrd ? (
           <HomeFooter />
         ) : (
           <BusinessPublicFooter
@@ -229,7 +229,6 @@ export function ErrorPage(props: ErrorPageProps) {
             advertisingEnabled={footer?.advertisingEnabled ?? false}
             brandingRemoved={footer?.brandingRemoved ?? false}
             linktrees={footer?.linktrees ?? []}
-            miniWebsites={footer?.miniWebsites ?? []}
             homeHref={homeHref}
           />
         )

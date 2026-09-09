@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Check, Globe2, Mail, Phone, UserRound, X } from "lucide-react";
 import { CustomSelect } from "@/components/shared/CustomSelect";
 import { ManagementModal } from "@/components/shared/ManagementModal";
-import { MULTITREE_ACCENT_COLOR } from "@/lib/multitree-theme";
+import { SPONSOR_KRD_ACCENT_COLOR } from "@/lib/sponsor-krd-theme";
 
 export type SignupApplication = {
   id: string;
@@ -167,7 +167,7 @@ export function SignupApplicationCard({
           onChange={onPlanChange}
           disabled={busy || !plans.length}
           hideLabel
-          accent={MULTITREE_ACCENT_COLOR}
+          accent={SPONSOR_KRD_ACCENT_COLOR}
           triggerClassName="h-auto rounded-lg sm:rounded-xl border-gray-300 bg-white px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 dark:bg-[#161B22] dark:text-gray-100 dark:border-white/10 dark:hover:border-white/20"
         />
       </div>
@@ -201,7 +201,7 @@ export function SignupApplicationCard({
         description={item.businessName || item.ownerName}
         busy={busy}
         createBusinessStyle
-        multiTreeTheme
+        sponsorKrdTheme
         footer={
           <>
             <button
@@ -244,7 +244,7 @@ export function SignupApplicationCard({
                 : undefined
             }
             placeholder="هۆکاری بڕیارەکە بە ڕوونی بنووسە..."
-            className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 outline-none transition focus:border-[var(--multitree-accent)] dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+            className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 outline-none transition focus:border-[var(--sponsor-krd-accent)] dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
           />
           {reasonTouched && !reasonValid ? (
             <p

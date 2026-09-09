@@ -4,7 +4,7 @@ import { ManagementModal } from "@/components/shared/ManagementModal";
 
 /**
  * The modal renders through a portal on `document.body`, so it inherits
- * whatever accent the document carries — MultiTree's own, in every business
+ * whatever accent the document carries — SponsorKrd's own, in every business
  * dashboard. A modal that is editing something with a colour of its own has to
  * override that, or the business designs their page surrounded by our brand.
  */
@@ -28,11 +28,11 @@ describe("ManagementModal accent scoping", () => {
     const root = shell();
     // Every reusable control inside reads one of these, so setting them here is
     // what makes checkboxes, selects and wizard actions follow along.
-    expect(root?.style.getPropertyValue("--multitree-accent")).toBe("#2563eb");
+    expect(root?.style.getPropertyValue("--sponsor-krd-accent")).toBe("#2563eb");
     expect(root?.style.getPropertyValue("--theme-primary")).toBe("#2563eb");
     expect(root?.style.getPropertyValue("--theme-ink")).toBe("#ffffff");
     // Dark ink would vanish on a dark blue fill.
-    expect(root?.style.getPropertyValue("--multitree-accent-ink")).toBe(
+    expect(root?.style.getPropertyValue("--sponsor-krd-accent-ink")).toBe(
       "#ffffff",
     );
   });
@@ -49,7 +49,7 @@ describe("ManagementModal accent scoping", () => {
       </ManagementModal>,
     );
 
-    expect(shell()?.style.getPropertyValue("--multitree-accent-ink")).toBe(
+    expect(shell()?.style.getPropertyValue("--sponsor-krd-accent-ink")).toBe(
       "#111827",
     );
     expect(shell()?.style.getPropertyValue("--theme-ink")).toBe("#111827");
@@ -68,7 +68,7 @@ describe("ManagementModal accent scoping", () => {
     );
 
     const root = shell();
-    expect(root?.style.getPropertyValue("--multitree-accent")).toBe("#2563eb");
+    expect(root?.style.getPropertyValue("--sponsor-krd-accent")).toBe("#2563eb");
     expect(root?.style.getPropertyValue("--theme-css")).toContain(
       "linear-gradient",
     );
@@ -82,11 +82,11 @@ describe("ManagementModal accent scoping", () => {
     );
 
     const root = shell();
-    expect(root?.dataset.multitreeTheme).toBe("true");
+    expect(root?.dataset.sponsorKrdTheme).toBe("true");
     expect(root?.style.getPropertyValue("--theme-primary")).toBe(
-      "var(--multitree-accent)",
+      "var(--sponsor-krd-accent)",
     );
-    expect(root?.style.getPropertyValue("--multitree-accent")).toBe("");
+    expect(root?.style.getPropertyValue("--sponsor-krd-accent")).toBe("");
     expect(screen.getByText("Platform")).toBeInTheDocument();
   });
 });

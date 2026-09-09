@@ -13,7 +13,7 @@ Register exact production callback
 consumption of OAuth state and handoff codes. Verify wildcard TLS and DNS for
 tenant subdomains before enabling owner sign-in.
 
-This document describes the supported deployment workflow for MultiTree.
+This document describes the supported deployment workflow for Sponsor.krd.
 
 The current deployment model targets a single production host running clustered frontend and backend processes behind Caddy.
 
@@ -302,7 +302,7 @@ If deployment fails:
 2. Restore the database backup if required.
 3. Restore uploaded media if necessary.
 4. Restart the application.
-5. Verify MultiTree functionality.
+5. Verify Sponsor.krd functionality.
 
 ---
 

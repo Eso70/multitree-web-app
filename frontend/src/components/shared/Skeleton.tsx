@@ -315,34 +315,6 @@ export function SkeletonTemplatePage() {
   );
 }
 
-/** Public mini-website frame used while its lazily loaded template arrives. */
-export function SkeletonMiniWebsiteTemplate() {
-  return (
-    <div
-      className="min-h-dvh bg-slate-50 dark:bg-[#0f141b]"
-      role="status"
-      aria-label="Loading mini website"
-    >
-      <Skeleton className="h-52 w-full sm:h-72" rounded="rounded-none" />
-      <div className="relative mx-auto max-w-5xl space-y-6 px-4 pb-12 sm:px-6">
-        <Skeleton
-          className="-mt-16 h-28 w-28 border-4 border-white dark:border-[#0f141b]"
-          rounded="rounded-full"
-        />
-        <div>
-          <Skeleton className="mb-3 h-7 w-52 max-w-full" rounded="rounded-md" />
-          <SkeletonText className="max-w-xl" lines={2} />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <SkeletonCard key={index} />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /** Public Linktree frame: identity, copy, action links, and footer. */
 export function SkeletonPublicLinktreePage() {
   return (

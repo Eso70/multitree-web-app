@@ -26,18 +26,18 @@ describe("shared form controls", () => {
           { value: "ultra", label: "Ultra" },
         ]}
         onChange={vi.fn()}
-        accent="#b6f20d"
+        accent="#25F4EE"
       />,
     );
 
     const trigger = screen.getByRole("button", { name: "Basic" });
     expect(trigger.parentElement).toHaveStyle({
-      "--theme-primary": "#b6f20d",
+      "--theme-primary": "#25F4EE",
     });
 
     fireEvent.click(trigger);
     expect(screen.getByRole("listbox")).toHaveStyle({
-      "--theme-primary": "#b6f20d",
+      "--theme-primary": "#25F4EE",
     });
   });
 

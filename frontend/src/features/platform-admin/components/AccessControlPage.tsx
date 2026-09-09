@@ -142,7 +142,7 @@ export function AccessControlPage() {
           setPage(1);
           setSearch("");
         }}
-        accent="var(--multitree-accent)"
+        accent="var(--sponsor-krd-accent)"
       />
 
       <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#1c222b] sm:p-6">

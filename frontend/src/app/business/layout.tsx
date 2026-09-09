@@ -13,7 +13,7 @@ export const revalidate = 0;
  * and would train the ad algorithm on the wrong people.
  *
  * The pixel belongs to the public surfaces only: the business subdomain
- * homepage, its linktrees, and its mini websites.
+ * homepage and its Linktrees.
  */
 export default function BusinessLayout({ children }: { children: ReactNode }) {
   return <>{children}</>;

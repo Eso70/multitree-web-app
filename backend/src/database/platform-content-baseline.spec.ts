@@ -13,19 +13,15 @@ describe('platform content baseline', () => {
   });
 
   it('registers every guarded platform page operation', () => {
-    for (const domain of ['linktrees', 'mini-websites']) {
-      for (const action of ['read', 'create', 'update', 'delete', 'upload']) {
-        expect(sql).toContain(`'platform:${domain}:${action}'`);
-      }
+    for (const action of ['read', 'create', 'update', 'delete', 'upload']) {
+      expect(sql).toContain(`'platform:linktrees:${action}'`);
     }
   });
 
   it('adds platform TikTok permissions and fixed route identities', () => {
     expect(sql).toContain('platform:settings:tiktok-read');
     expect(sql).toContain('platform:settings:tiktok-update');
-    expect(sql).toContain(
-      "page_type IN ('linktree','mini_website','advertising','route')",
-    );
+    expect(sql).toContain("page_type IN ('linktree','advertising','route')");
     expect(sql).toContain("'advertising-video-code'");
     expect(sql).toContain("'join-application'");
     expect(sql).not.toMatch(/CREATE\s+TABLE\s+.*platform.*tiktok/i);

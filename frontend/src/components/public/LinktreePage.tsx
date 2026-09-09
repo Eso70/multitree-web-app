@@ -30,7 +30,7 @@ import {
 
 /**
  * How long a visitor stays before the visit counts as engaged rather than a
- * bounce. Matches the mini website's threshold so both pages report the same
+ * bounce. Uses the shared public-page threshold so reports use the same
  * fact on the same scale.
  */
 const ENGAGED_AFTER_MS = 15_000;
@@ -216,12 +216,12 @@ export const LinktreePage = memo(function LinktreePage({
    * Separates a visit from a bounce.
    *
    * A linktree is one screen, so there are no sections to measure the way a
-   * mini website has — but "arrived" and "stayed" are still different facts,
+   * richer public pages may have — but "arrived" and "stayed" remain different facts,
    * and a page whose only signal is `page_view` cannot tell an ad click that
    * bounced in two seconds from a visitor who read the whole thing and left.
    * Internal only: `engaged_view` is in the server's `ENGAGEMENT_ONLY_EVENTS`,
    * so it never reaches TikTok and cannot inflate what the ad algorithm
-   * optimises on. Same dwell threshold as the mini website, so the two pages
+   * optimises on. The shared dwell threshold keeps public-page reports
    * stay comparable in one report.
    */
   useEffect(() => {

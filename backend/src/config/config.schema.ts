@@ -49,7 +49,7 @@ export const configValidationSchema = Joi.object({
   SMTP_SECURE: Joi.boolean().default(true),
   SMTP_USER: Joi.string().email().allow('').optional(),
   SMTP_APP_PASSWORD: Joi.string().allow('').optional(),
-  EMAIL_FROM_NAME: Joi.string().max(100).default('MultiTree'),
+  EMAIL_FROM_NAME: Joi.string().max(100).default('Sponsor.krd'),
   CREATOR_TRIAL_DAYS: Joi.number().integer().valid(7, 30).default(7),
   REQUEST_TRACKING_SECRET: Joi.string().min(32).optional(),
   OPERATIONS_SECRET: Joi.string().min(32).optional(),

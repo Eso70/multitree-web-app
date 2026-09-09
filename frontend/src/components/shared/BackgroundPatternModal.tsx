@@ -95,7 +95,7 @@ const BackgroundPatternCard = memo(function BackgroundPatternCard({
 BackgroundPatternCard.displayName = "BackgroundPatternCard";
 
 /**
- * The background-pattern picker, shared by the mini-website editor and the
+ * The background-pattern picker, shared by public-page editors and the
  * linktree editor, presented with the same shell as the template selector.
  * Choosing an option reports it and closes.
  */

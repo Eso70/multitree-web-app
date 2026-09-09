@@ -21,7 +21,7 @@ const onboarding = {
   logo: "/images/Logo.jpg",
   favicon: "/favicon.ico",
   defaultAvatar: "/images/DefaultAvatar.png",
-  websiteColor: "#b6f20d",
+  websiteColor: "#25F4EE",
   footerText: null,
   footerPhone: null,
   tiktokConfigs: [],

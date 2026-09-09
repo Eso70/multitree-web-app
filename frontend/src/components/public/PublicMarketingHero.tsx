@@ -1,11 +1,12 @@
 import type { CSSProperties, ReactNode } from "react";
-import { getMultiTreeAccentInk } from "@/lib/multitree-theme";
+import { getSponsorKrdAccentInk } from "@/lib/sponsor-krd-theme";
 import { PublicHeroAccentBackdrop } from "./PublicHeroAccentBackdrop";
 
 export interface PublicHeroAction {
   href: string;
   label: string;
   color?: string;
+  background?: string;
   ink?: string;
 }
 
@@ -29,7 +30,7 @@ export function PublicMarketingHero({
   embedded?: boolean;
 }) {
   const actionColor = primaryAction?.color || accentColor;
-  const actionInk = primaryAction?.ink || getMultiTreeAccentInk(actionColor);
+  const actionInk = primaryAction?.ink || getSponsorKrdAccentInk(actionColor);
 
   return (
     <section
@@ -48,7 +49,7 @@ export function PublicMarketingHero({
         }`}
       >
         {eyebrow ? (
-          <p className="mb-5 text-xs font-black text-[var(--business-accent,var(--multitree-accent))]">
+          <p className="mb-5 text-xs font-black text-[var(--business-accent,var(--sponsor-krd-accent))]">
             {eyebrow}
           </p>
         ) : null}
@@ -69,7 +70,7 @@ export function PublicMarketingHero({
                 className="inline-flex min-h-12 items-center justify-center rounded-xl px-7 py-3 text-sm font-semibold shadow-[0_10px_30px_rgba(15,23,42,.16)] transition-opacity hover:opacity-88 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-4 focus-visible:ring-offset-[#f8f9fa] dark:shadow-[0_12px_32px_rgba(0,0,0,.3)] dark:focus-visible:ring-offset-[#0b0d0e]"
                 style={
                   {
-                    backgroundColor: actionColor,
+                    background: primaryAction.background || actionColor,
                     color: actionInk,
                     "--tw-ring-color": actionColor,
                   } as CSSProperties

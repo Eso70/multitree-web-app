@@ -126,7 +126,7 @@ type ExportedPage = ExportedLinktreeRow & {
 };
 
 /**
- * A MultiTree backup document as uploaded by an administrator. Everything is
+ * A Sponsor.krd backup document as uploaded by an administrator. Everything is
  * unvalidated, so the fields stay `unknown` until the import checks them.
  */
 export type LinktreeBackup = {
@@ -325,25 +325,25 @@ export class BusinessAdministrationService {
     if (!this.secretCrypto) {
       throw new Error('Communication encryption is unavailable');
     }
-    const welcomeMessage = `سڵاو ${business.name}، بەخێربێیت بۆ MultiTree. هیوادارین ئەزموونێکی خۆشت هەبێت.`;
+    const welcomeMessage = `سڵاو ${business.name}، بەخێربێیت بۆ Sponsor.krd. هیوادارین ئەزموونێکی خۆشت هەبێت.`;
     const encryptedSubject = this.secretCrypto.encryptText(
-      'بەخێربێیت بۆ MultiTree',
+      'بەخێربێیت بۆ Sponsor.krd',
     );
     const encryptedMessage = this.secretCrypto.encryptText(welcomeMessage);
     const encryptedNotification = this.secretCrypto.encryptJson({
-      title: 'بەخێربێیت بۆ MultiTree',
+      title: 'بەخێربێیت بۆ Sponsor.krd',
       body: welcomeMessage,
     });
 
     const conversation = await client.query<{ id: string }>(
       `INSERT INTO communication_conversations
-        (business_id, subject, encrypted_subject, category, priority, status, multitree_key,
+        (business_id, subject, encrypted_subject, category, priority, status, sponsor_krd_key,
          assigned_admin_id, created_by_type, platform_last_read_at)
        SELECT $1::uuid, '[encrypted]', $3, 'account', 'normal',
               'waiting_business', 'business_welcome', $2::uuid, 'platform-admin', NOW()
        WHERE NOT EXISTS (
          SELECT 1 FROM communication_conversations
-         WHERE business_id=$1::uuid AND multitree_key='business_welcome'
+         WHERE business_id=$1::uuid AND sponsor_krd_key='business_welcome'
        )
        RETURNING id::text`,
       [business.id, adminId, encryptedSubject],
@@ -1129,7 +1129,7 @@ export class BusinessAdministrationService {
       if (buffer) assets[url] = buffer.toString('base64');
     }
     return {
-      format: 'multitree-linktrees',
+      format: 'sponsor-krd-linktrees',
       version: 1,
       exported_at: new Date().toISOString(),
       business: businessRes.rows[0],
@@ -1141,11 +1141,15 @@ export class BusinessAdministrationService {
   async importBusinessLinktrees(id: string, backup: LinktreeBackup) {
     if (
       !backup ||
-      backup.format !== 'multitree-linktrees' ||
+      !['sponsor-krd-linktrees', 'multitree-linktrees'].includes(
+        String(backup.format),
+      ) ||
       backup.version !== 1 ||
       !Array.isArray(backup.linktrees)
     ) {
-      throw new BadRequestException('Invalid or unsupported MultiTree backup');
+      throw new BadRequestException(
+        'Invalid or unsupported Sponsor.krd backup',
+      );
     }
     const businessRes = await this.databaseService.query<{ id: string }>(
       `SELECT id FROM businesses

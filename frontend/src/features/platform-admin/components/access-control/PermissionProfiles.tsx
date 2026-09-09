@@ -151,7 +151,7 @@ export function PermissionProfiles({
 
   return (
     <div dir="ltr">
-      <div className="overflow-x-auto custom-scrollbar lime-custom-scrollbar">
+      <div className="overflow-x-auto custom-scrollbar brand-custom-scrollbar">
         <table className="w-full min-w-[680px] text-left text-xs">
           <thead>
             <tr className="border-b border-slate-100 text-slate-400 dark:border-white/5">
@@ -360,9 +360,9 @@ function ProfileEditorModal({
   });
 
   useEffect(() => {
-    document.body.classList.add("multitree-theme-portals");
+    document.body.classList.add("sponsor-krd-theme-portals");
     return () => {
-      document.body.classList.remove("multitree-theme-portals");
+      document.body.classList.remove("sponsor-krd-theme-portals");
     };
   }, []);
 
@@ -446,11 +446,11 @@ function ProfileEditorModal({
     <div
       className="modal-ltr fixed inset-0 z-[140] flex items-center justify-center p-2 sm:p-4"
       dir="ltr"
-      data-multitree-theme
+      data-sponsor-krd-theme
       style={
         {
-          "--theme-primary": "var(--multitree-accent)",
-          "--theme-css": "var(--multitree-accent)",
+          "--theme-primary": "var(--sponsor-krd-accent)",
+          "--theme-css": "var(--sponsor-krd-accent)",
         } as CSSProperties
       }
     >
@@ -505,7 +505,7 @@ function ProfileEditorModal({
           </div>
 
           <div
-            className="flex-1 overflow-y-auto bg-linear-to-br from-white to-slate-50/20 p-4 sm:p-5 md:p-6 custom-scrollbar lime-custom-scrollbar"
+            className="flex-1 overflow-y-auto bg-linear-to-br from-white to-slate-50/20 p-4 sm:p-5 md:p-6 custom-scrollbar brand-custom-scrollbar"
             style={{
               scrollbarWidth: "thin",
               scrollbarColor: "rgba(156,163,175,0.5) transparent",
@@ -592,14 +592,14 @@ function ProfileEditorModal({
                           key={permission.id}
                           className={`group flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-left shadow-sm transition-all duration-200 ${
                             selected
-                              ? "border-lime-300 bg-lime-50/70"
+                              ? "border-[color-mix(in_srgb,var(--sponsor-krd-accent)_45%,transparent)] bg-[color-mix(in_srgb,var(--sponsor-krd-accent)_10%,white)]"
                               : "border-gray-100 bg-white hover:border-gray-200 hover:bg-slate-50/70"
                           } ${required ? "cursor-default" : ""}`}
                         >
                           <span
                             className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
                               selected
-                                ? "border-lime-500 bg-lime-500 text-slate-900"
+                                ? "border-[var(--sponsor-krd-accent)] bg-[var(--sponsor-krd-accent)] text-[var(--sponsor-krd-accent-ink)]"
                                 : "border-slate-300 bg-white text-transparent"
                             }`}
                           >
@@ -626,7 +626,7 @@ function ProfileEditorModal({
                               {getKurdishPermissionDescription(permission.key)}
                             </span>
                             {required && (
-                              <span className="mt-2 inline-flex rounded-full border border-lime-300/70 bg-white/70 px-2 py-0.5 text-[9px] font-bold text-lime-700">
+                              <span className="mt-2 inline-flex rounded-full border border-[color-mix(in_srgb,var(--sponsor-krd-accent)_45%,transparent)] bg-white/70 px-2 py-0.5 text-[9px] font-bold text-[color-mix(in_srgb,var(--sponsor-krd-accent)_72%,black)]">
                                 بنەڕەتی
                               </span>
                             )}
@@ -641,7 +641,7 @@ function ProfileEditorModal({
           </div>
 
           <ModalWizardActions
-            variant="multitree"
+            variant="sponsor-krd"
             isFirstStep
             isFinalStep
             isSubmitting={saving}
@@ -687,7 +687,7 @@ function ProfileViewModal({
       title={profile.name}
       subtitle="وردەکاری پڕۆفایلی مۆڵەت"
       icon={Layers3}
-      iconClassName="border-lime-200 bg-lime-50 text-lime-600 dark:border-lime-900/40 dark:bg-lime-950/20 dark:text-lime-300"
+      iconClassName="sa-soft sa-soft-border sa-accent-text"
       fields={[
         {
           label: "ژمارەی مۆڵەتەکان",

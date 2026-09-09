@@ -46,10 +46,10 @@ export function ThemeProvider({
     ...(documentTheme === 'business' ? {
       '--business-website-color': color.primary,
       '--business-website-css': color.css,
-      '--multitree-accent': color.primary,
-      '--multitree-accent-gradient': color.css,
-      '--multitree-accent-ink': ink,
-      '--multitree-accent-hover': `color-mix(in srgb, ${color.primary} 88%, black)`,
+      '--sponsor-krd-accent': color.primary,
+      '--sponsor-krd-accent-gradient': color.css,
+      '--sponsor-krd-accent-ink': ink,
+      '--sponsor-krd-accent-hover': `color-mix(in srgb, ${color.primary} 88%, black)`,
     } : {}),
   }), [color, documentTheme, ink]);
 

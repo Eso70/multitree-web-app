@@ -255,7 +255,7 @@ export class PlatformLinktreesController {
       data,
       this.storage,
       ownerId,
-      'multitree',
+      'sponsor_krd',
     );
     return res.send({ url });
   }

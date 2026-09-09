@@ -10,7 +10,7 @@ import { AuthenticationMethods } from "@/components/shared/AuthenticationMethods
 import { LoadingState } from "@/components/shared/LoadingState";
 import { ErrorPagePanel } from "@/components/error-pages/ErrorPage";
 import { ERROR_PAGE_COPY } from "@/components/error-pages/copy";
-import { MULTITREE_ERROR_THEME } from "@/components/error-pages/error-theme";
+import { SPONSOR_KRD_ERROR_THEME } from "@/components/error-pages/error-theme";
 
 export function InvitationEntryPage() {
   const search = useSearchParams();
@@ -48,7 +48,7 @@ export function InvitationEntryPage() {
       <AuthenticationShell brandDescription="هەژماری بزنسەکەت دروست بکە">
         <ErrorPagePanel
           {...ERROR_PAGE_COPY.invitationExpired}
-          theme={MULTITREE_ERROR_THEME}
+          theme={SPONSOR_KRD_ERROR_THEME}
           homeHref="/"
         />
       </AuthenticationShell>

@@ -63,7 +63,7 @@ describe('AccessRuleEnforcementService', () => {
     expect(query).not.toHaveBeenCalled();
   });
 
-  it('resolves source Linktree and mini-website ids to their business rules', async () => {
+  it('resolves source Linktree ids to their business rules', async () => {
     const query = jest
       .fn()
       .mockResolvedValueOnce({ rows: [{ business_id: 'business-id' }] })
@@ -78,7 +78,6 @@ describe('AccessRuleEnforcementService', () => {
 
     const calls = query.mock.calls as unknown as Array<[string, unknown[]]>;
     expect(calls[0][0]).toContain('source_linktree_id=ANY');
-    expect(calls[0][0]).toContain('source_mini_website_id=ANY');
     expect(calls[1][1]).toEqual(
       expect.arrayContaining(['business', 'business-id']),
     );

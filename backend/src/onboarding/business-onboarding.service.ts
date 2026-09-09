@@ -64,7 +64,7 @@ export const TERMS_VERSION = '2026-08-09';
 export const PRIVACY_VERSION = '2026-08-19';
 const SIGNUP_SESSION_SECONDS = 2 * 60 * 60;
 const DEFAULT_INVITATION_TTL_HOURS = 24;
-const DEFAULT_MULTITREE_WEBSITE_COLOR = '#b6f20d';
+const DEFAULT_SPONSOR_KRD_WEBSITE_COLOR = 'gradient:to-r:#25F4EE:#FE2C55';
 
 interface OAuthState {
   mode: 'signup' | 'signin' | 'platform-admin';
@@ -1484,7 +1484,7 @@ export class BusinessOnboardingService {
           application.logo || BUSINESS_LOGO_PLACEHOLDER,
           application.favicon || BUSINESS_FAVICON_PLACEHOLDER,
           application.default_avatar || DEFAULT_AVATAR,
-          application.website_color || DEFAULT_MULTITREE_WEBSITE_COLOR,
+          application.website_color || DEFAULT_SPONSOR_KRD_WEBSITE_COLOR,
         ],
       );
       await client.query(

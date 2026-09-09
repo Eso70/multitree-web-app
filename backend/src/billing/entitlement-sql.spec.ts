@@ -17,7 +17,7 @@ describe('entitledSql', () => {
   });
 
   it('counts only a subscription that is currently paying', () => {
-    const sql = entitledSql(ENTITLEMENT.miniWebsites);
+    const sql = entitledSql(ENTITLEMENT.advertisingPage);
     expect(sql).toContain(
       "subscription.status IN ('trialing','active','grace_period')",
     );

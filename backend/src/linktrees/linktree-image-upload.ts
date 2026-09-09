@@ -24,7 +24,7 @@ export async function uploadLinktreeImage(
   data: MultipartFile,
   storage: StorageService,
   ownerId: string,
-  namespace: 'businesses' | 'multitree',
+  namespace: 'businesses' | 'sponsor_krd',
 ): Promise<string> {
   const fileBuffer = await data.toBuffer();
   const extension = validateImageUpload(fileBuffer, data.mimetype);

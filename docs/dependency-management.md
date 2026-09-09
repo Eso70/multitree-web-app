@@ -1,6 +1,6 @@
 # Dependency Management
 
-This document defines the dependency management standards for MultiTree.
+This document defines the dependency management standards for Sponsor.krd.
 
 Dependencies are part of the application's architecture and security. Every new dependency increases maintenance, security, and upgrade costs.
 

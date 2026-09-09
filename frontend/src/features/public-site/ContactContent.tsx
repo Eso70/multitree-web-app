@@ -22,7 +22,7 @@ export function ContactContent() {
       icon: Mail,
       title: "پەیوەندی گشتی",
       text: "زانیاری پەیوەندی لە Platform Settings ـەوە دینامیک دەکرێت",
-      label: "دەربارەی MultiTree",
+      label: "دەربارەی Sponsor.krd",
       href: "/about",
     },
   ];
@@ -34,14 +34,14 @@ export function ContactContent() {
             key={card.title}
             className="rounded-[2rem] border border-black/10 bg-white/55 p-7 dark:border-white/10 dark:bg-white/[0.03]"
           >
-            <card.icon className="h-6 w-6 text-[var(--multitree-accent)]" />
+            <card.icon className="h-6 w-6 text-[var(--sponsor-krd-accent)]" />
             <h2 className="mt-6 text-lg font-black">{card.title}</h2>
             <p className="mt-3 min-h-14 text-sm leading-7 text-black/48 dark:text-white/43">
               {card.text}
             </p>
             <Link
               href={card.href}
-              className="mt-6 inline-flex text-sm font-black underline decoration-[var(--multitree-accent)] decoration-2 underline-offset-4"
+              className="mt-6 inline-flex text-sm font-black underline decoration-[var(--sponsor-krd-accent)] decoration-2 underline-offset-4"
             >
               {card.label}
             </Link>

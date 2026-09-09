@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { MultiTreeMarketingShell } from "@/features/public-site/MultiTreeMarketingShell";
+import { SponsorKrdMarketingShell } from "@/features/public-site/SponsorKrdMarketingShell";
 import { MarketingPageHero } from "@/features/public-site/MarketingPageHero";
 import { TemplateShowcaseSection } from "@/features/public-site/TemplateShowcaseSection";
 import { FinalCtaSection } from "@/features/public-site/FinalCtaSection";
 
 export const metadata: Metadata = {
-  title: "قاڵبەکان | MultiTree",
-  description: "نموونەی قاڵبەکانی Linktree و Mini Website ببینە",
+  title: "قاڵبەکان | Sponsor.krd",
+  description: "نموونەی قاڵبەکانی Linktree ببینە",
 };
 export default function TemplatesMarketingPage() {
   return (
-    <MultiTreeMarketingShell>
+    <SponsorKrdMarketingShell>
       <MarketingPageHero
         eyebrow="قاڵبەکان"
         title="دیزاینێک بۆ هەر ناسنامەیەک"
@@ -19,6 +19,6 @@ export default function TemplatesMarketingPage() {
       />
       <TemplateShowcaseSection showAll />
       <FinalCtaSection />
-    </MultiTreeMarketingShell>
+    </SponsorKrdMarketingShell>
   );
 }

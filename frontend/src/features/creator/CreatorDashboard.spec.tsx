@@ -19,11 +19,6 @@ vi.mock("@/features/platform-admin/components/PlatformLinktreesPage", () => ({
     <div data-can-delete={String(canDelete)}>Shared Linktree workspace</div>
   ),
 }));
-vi.mock("@/features/mini-website/MiniWebsitesPage", () => ({
-  MiniWebsitesPage: ({ canDelete }: { canDelete?: boolean }) => (
-    <div data-can-delete={String(canDelete)}>Shared mini website workspace</div>
-  ),
-}));
 vi.mock("@/features/templates/components/TemplatesPage", () => ({
   TemplatesPage: ({ accessMode }: { accessMode?: string }) => (
     <div data-access-mode={accessMode}>Shared templates workspace</div>
@@ -66,9 +61,9 @@ describe("CreatorDashboard", () => {
         logo: null,
         avatar: null,
         favicon: null,
-        accentColor: "#b6f20d",
+        accentColor: "#25F4EE",
       },
-      publicPathPrefixes: { linktree: "/linktree", miniWebsite: "/bio" },
+      publicPathPrefixes: { linktree: "/linktree" },
     });
     vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
       callback(0);
@@ -92,19 +87,6 @@ describe("CreatorDashboard", () => {
       screen.getByRole("button", { name: "Account menu" }),
     ).toBeInTheDocument();
     expect(screen.getByText("ڕێکخستنەکان")).toBeInTheDocument();
-  });
-
-  it("locks the opposite shared workspace after a page type is committed", async () => {
-    navigation.pathname = "/account/mini-website";
-    render(<CreatorDashboard />);
-
-    expect(
-      await screen.findByText("ئەم جۆرە پەڕەیە قوفڵە"),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText("Shared mini website workspace"),
-    ).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "مینی وێبسایت" })).toBeDisabled();
   });
 
   it("uses the shared view-only templates workspace for Creator users", async () => {

@@ -11,6 +11,7 @@ import {
   PUBLIC_PLANS_CACHE_KEY,
   PUBLIC_PLANS_CACHE_TTL_SECONDS,
 } from '../common/public-catalog-cache';
+import { normalizeSponsorKrdAccent } from '../common/platform-brand';
 import { PublicPageAnalyticsService } from '../analytics/public-page-analytics.service';
 import { PlatformContentWorkspaceService } from '../platform-workspace/platform-content-workspace.service';
 import {
@@ -136,12 +137,6 @@ type PublicBusinessRow = {
   whatsapp_enabled: boolean | null;
   advertising_enabled: boolean;
   branding_removed: boolean;
-  trusted_partners: Array<{
-    id: string;
-    name: string;
-    image: string;
-    url: string | null;
-  }>;
 };
 
 type PlanSummary = {
@@ -452,7 +447,7 @@ export class PublicService {
     return payload;
   }
 
-  /** Resolve a MultiTree-owned page only on the root-domain public route. */
+  /** Resolve a SponsorKrd-owned page only on the root-domain public route. */
   async getPlatformPublicLinktree(
     identifier: string,
   ): Promise<PublicLinktreePayload> {
@@ -579,42 +574,6 @@ export class PublicService {
          b.logo, b.favicon, b.default_avatar, b.website_color,
          d.footer_text, d.footer_phone, d.template_key,
          d.background_color, d.whatsapp_enabled,
-         COALESCE((
-           SELECT jsonb_agg(
-             jsonb_build_object(
-               'id', partner.id,
-               'name', partner.title,
-               'image', partner.image,
-               'url', partner.url
-             )
-             ORDER BY partner.position, partner.title
-           )
-           FROM (
-             SELECT DISTINCT ON (lower(item.title), item.image)
-               item.id::text AS id,
-               item.title,
-               item.image,
-               CASE
-                 WHEN item.action_type = 'link' THEN NULLIF(item.url, '')
-                 ELSE NULL
-               END AS url,
-               item.position
-             FROM mini_website_items item
-             JOIN mini_websites website ON website.id = item.mini_website_id
-             JOIN mini_website_sections section
-               ON section.mini_website_id = website.id
-              AND section.section_key = 'partners'
-              AND section.enabled = true
-             WHERE website.business_id = a.id
-               AND website.status = 'published'
-               AND item.section_key = 'partners'
-               AND item.enabled = true
-               AND btrim(item.title) <> ''
-               AND btrim(item.image) <> ''
-             ORDER BY lower(item.title), item.image, item.position, item.id
-             LIMIT 24
-           ) partner
-         ), '[]'::jsonb) AS trusted_partners,
          -- No pixel ids here. The subdomain landing page is not one of the two
          -- surfaces allowed to load a business's pixel; see docs/tracking.md.
          -- Whether this business currently has a live advertising page, so the
@@ -632,7 +591,7 @@ export class PublicService {
                 AND advertising.status = 'published'
            )
          ) AS advertising_enabled,
-         -- Ultra pays to drop the "Powered by MultiTree" badge. Read live, so a
+         -- Ultra pays to drop the "Powered by Sponsor.krd" badge. Read live, so a
          -- downgrade puts it back rather than leaving the paid state stuck on.
          ${entitledSql(ENTITLEMENT.removeBranding, 'a')} AS branding_removed
        FROM businesses a
@@ -704,7 +663,11 @@ export class PublicService {
     const cached = await this.redisService.get<{ accent_color: string }>(
       cacheKey,
     );
-    if (cached) return cached;
+    if (cached) {
+      return {
+        accent_color: normalizeSponsorKrdAccent(cached.accent_color),
+      };
+    }
 
     const result = await this.databaseService.query<{ accent_color: string }>(
       `SELECT accent_color
@@ -713,7 +676,7 @@ export class PublicService {
        LIMIT 1`,
     );
     const theme = {
-      accent_color: result.rows[0]?.accent_color || '#b6f20d',
+      accent_color: normalizeSponsorKrdAccent(result.rows[0]?.accent_color),
     };
     await this.redisService.set(cacheKey, theme, 300);
     return theme;

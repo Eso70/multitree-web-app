@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the coding conventions for the MultiTree codebase.
+This document defines the coding conventions for the Sponsor.krd codebase.
 
 These standards exist to keep the project consistent, maintainable, and easy to extend. General engineering principles are defined in `AGENTS.md`; this document focuses on implementation standards specific to this repository.
 

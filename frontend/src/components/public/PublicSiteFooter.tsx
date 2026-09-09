@@ -3,7 +3,10 @@ import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { getAppBaseUrl } from "@/lib/utils/app-url";
-import { BUSINESS_LOGO_PLACEHOLDER } from "@/lib/brand/brand-assets";
+import {
+  BUSINESS_LOGO_PLACEHOLDER,
+  SPONSOR_KRD_LOGO,
+} from "@/lib/brand/brand-assets";
 
 export type PublicFooterLink = {
   label: string;
@@ -125,7 +128,7 @@ function BrandBlock({
 }
 
 /**
- * Shared public-site footer used by tenant homepages and mini websites.
+ * Shared public-site footer used by tenant public pages.
  * Callers own the content; the responsive layout and visual system stay here.
  */
 export function PublicSiteFooter({
@@ -133,7 +136,7 @@ export function PublicSiteFooter({
   logo,
   description,
   columns,
-  accentColor = "var(--business-website-color, var(--multitree-accent))",
+  accentColor = "var(--business-website-color, var(--sponsor-krd-accent))",
   copyrightText,
   bottomLinks = [],
   showPoweredBy = true,
@@ -255,15 +258,15 @@ export function PublicSiteFooter({
                 className="flex items-center gap-1.5 rounded-full border border-black/8 bg-black/[0.02] px-3 py-1.5 text-xs opacity-80 transition-all hover:border-[var(--public-footer-accent)]/40 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--public-footer-accent)]/30 dark:border-white/10 dark:bg-white/[0.04]"
               >
                 <Image
-                  src="/images/Logo.jpg"
-                  alt="MultiTree"
+                  src={SPONSOR_KRD_LOGO}
+                  alt="Sponsor.krd"
                   width={16}
                   height={16}
                   className="rounded-sm"
                   unoptimized
                 />
                 <span>
-                  {poweredByLabel} <strong>MultiTree</strong>
+                  {poweredByLabel} <strong>Sponsor.krd</strong>
                 </span>
               </a>
             )}

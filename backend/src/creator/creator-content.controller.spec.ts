@@ -63,19 +63,6 @@ describe('CreatorContentController analytics actions', () => {
 
     expect(content.pageActions).toHaveBeenCalledWith(
       'authenticated-business-id',
-      'linktree',
-      'page-id',
-    );
-  });
-
-  it('reads mini-website action rows for the authenticated workspace only', async () => {
-    (content.pageActions as jest.Mock).mockResolvedValue([]);
-
-    await controller.miniWebsiteAnalyticsActions(request, 'page-id');
-
-    expect(content.pageActions).toHaveBeenCalledWith(
-      'authenticated-business-id',
-      'mini_website',
       'page-id',
     );
   });

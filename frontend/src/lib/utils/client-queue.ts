@@ -19,7 +19,7 @@ type InternalEventName =
   | "checkout_started"
   | "order_completed"
   | "download"
-  // Richer interactions a mini website produces: opening a section, gallery or
+  // Richer interactions public pages produce: opening media, submitting forms, or
   // player; reaching the form; sharing the page.
   | "action_open"
   | "form_view"
@@ -50,7 +50,8 @@ interface QueuedAnalyticsEvent {
   properties: Record<string, unknown>;
 }
 
-const QUEUE_KEY = "multitree_analytics_events_v2";
+const QUEUE_KEY = "sponsor_krd_analytics_events_v2";
+const LEGACY_QUEUE_KEY = "multitree_analytics_events_v2";
 const MAX_QUEUE_SIZE = 500;
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const FLUSH_INTERVAL_MS = 15_000;
@@ -81,8 +82,8 @@ function normalizeEvent(event: QueuedAnalyticsEvent): QueuedAnalyticsEvent {
 
 function storageAvailable(): boolean {
   try {
-    localStorage.setItem("__mt_analytics_test", "1");
-    localStorage.removeItem("__mt_analytics_test");
+    localStorage.setItem("__sponsor_krd_analytics_test", "1");
+    localStorage.removeItem("__sponsor_krd_analytics_test");
     return true;
   } catch {
     return false;
@@ -132,8 +133,12 @@ function readQueue(): QueuedAnalyticsEvent[] {
   }
   try {
     const parsed = JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]");
+    const legacyParsed = JSON.parse(
+      localStorage.getItem(LEGACY_QUEUE_KEY) || "[]",
+    );
     const stored = Array.isArray(parsed) ? parsed : [];
-    const combined = [...stored];
+    const legacyStored = Array.isArray(legacyParsed) ? legacyParsed : [];
+    const combined = [...stored, ...legacyStored];
     for (const memoryEvent of memoryQueue) {
       if (
         !combined.some(
@@ -150,7 +155,10 @@ function readQueue(): QueuedAnalyticsEvent[] {
       )
       .map(normalizeEvent);
     memoryQueue = queue.slice(-MAX_QUEUE_SIZE);
-    if (queue.length !== stored.length) writeQueue(queue);
+    if (queue.length !== stored.length || legacyStored.length > 0) {
+      writeQueue(queue);
+      localStorage.removeItem(LEGACY_QUEUE_KEY);
+    }
     return queue;
   } catch {
     return [];

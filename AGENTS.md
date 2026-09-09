@@ -1,6 +1,6 @@
 # AGENTS.md
 
-# MultiTree AI Development Guide
+# Sponsor.krd AI Development Guide
 
 ## Purpose
 
@@ -12,7 +12,7 @@ Detailed implementation standards are documented in the `docs/` directory. This 
 
 # Project Mission
 
-MultiTree is a production-grade multi-tenant Linktree and mini-website platform.
+Sponsor.krd is a production-grade multi-tenant Linktree platform.
 
 Every change should improve the project's:
 
@@ -253,8 +253,8 @@ Never expose data across tenant boundaries.
 
 # Analytics and Advertising Tracking
 
-The TikTok pixel and the Events API apply to two surfaces only: the public
-linktree page and the public mini website page, per business. They must not be
+The TikTok pixel and the Events API apply to explicitly allowlisted public
+marketing pages only. They must not be
 added to the platform's own site, the admin console, the business dashboard,
 the business subdomain landing page, or the advertising page.
 

@@ -4,8 +4,6 @@ const KURDISH_PERMISSION_DESCRIPTIONS: Readonly<Record<string, string>> = {
   "business:pages:templates-access": "دەستگەیشتن بە پەڕەی قاڵبەکان",
   "business:pages:profile-access": "دەستگەیشتن بە پەڕەی پڕۆفایلی بزنس",
   "business:pages:settings-access": "دەستگەیشتن بە پەڕەی ڕێکخستنەکانی بزنس",
-  "business:pages:mini-websites-access":
-    "دەستگەیشتن بە پەڕەی مینی وێبسایت و بەڕێوەبردنی",
   "business:settings:profile-access":
     "کردنەوەی بەشی ڕێکخستنەکانی پڕۆفایل",
   "business:settings:defaults-access":

@@ -10,7 +10,7 @@ describe("cursor theme", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
-        text: async () => '<svg><path fill="#b6f20d" /></svg>',
+        text: async () => '<svg><path fill="#25F4EE" /></svg>',
       }),
     );
 

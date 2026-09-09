@@ -81,12 +81,12 @@ describe("BusinessWorkspaceEntryPage", () => {
     );
   });
 
-  it("renders business tenant style and never MultiTree platform branding during loading", () => {
+  it("renders business tenant style and never SponsorKrd platform branding during loading", () => {
     render(<BusinessWorkspaceEntryPage />);
 
     expect(screen.getByText("پانێڵی بزنس")).toBeInTheDocument();
     expect(screen.getByText("بزنس")).toBeInTheDocument();
-    expect(screen.queryByText("MultiTree")).not.toBeInTheDocument();
+    expect(screen.queryByText("Sponsor.krd")).not.toBeInTheDocument();
     expect(screen.queryByText("پانێڵی پلاتفۆڕم")).not.toBeInTheDocument();
   });
 
@@ -110,7 +110,7 @@ describe("BusinessWorkspaceEntryPage", () => {
       expect(screen.getByText("کۆمپانیای نموونە")).toBeInTheDocument();
     });
     expect(screen.getByText("پانێڵی بزنس")).toBeInTheDocument();
-    expect(screen.queryByText("MultiTree")).not.toBeInTheDocument();
+    expect(screen.queryByText("Sponsor.krd")).not.toBeInTheDocument();
     expect(screen.queryByText("پانێڵی پلاتفۆڕم")).not.toBeInTheDocument();
   });
 });

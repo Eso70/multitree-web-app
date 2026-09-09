@@ -1,16 +1,17 @@
 import type { MetadataRoute } from "next";
+import { SPONSOR_KRD_LOGO_MARK } from "@/lib/brand/brand-assets";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "MultiTree Mini Website",
-    short_name: "Mini Website",
-    description: "A business Mini Website powered by MultiTree",
+    name: "Sponsor.krd",
+    short_name: "Sponsor.krd",
+    description: "Create and share a branded Linktree with Sponsor.krd",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",
-    theme_color: "#b6f20d",
+    theme_color: "#25F4EE",
     icons: [
-      { src: "/images/Logo.jpg", sizes: "512x512", type: "image/jpeg" },
+      { src: SPONSOR_KRD_LOGO_MARK, sizes: "512x512", type: "image/png" },
     ],
   };
 }

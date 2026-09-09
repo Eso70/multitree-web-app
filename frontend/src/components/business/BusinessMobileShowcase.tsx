@@ -22,15 +22,6 @@ import {
   LINKTREE_TEMPLATE_PREVIEW_THEMES,
 } from "@/components/templates/preview-fixtures";
 import {
-  getMiniWebsiteTemplateComponent,
-  MINI_WEBSITE_TEMPLATE_OPTIONS,
-  type MiniWebsiteTemplateComponent,
-} from "@/components/templates/mini-website";
-import {
-  createMiniWebsiteDraft,
-  type MiniWebsiteDraft,
-} from "@/features/mini-website/types";
-import {
   BUSINESS_LANDING_DECORATION_COLORS,
   BUSINESS_LANDING_DECORATION_LABELS,
   BUSINESS_LANDING_SECTION_IDS,
@@ -40,40 +31,18 @@ import { PublicSectionHeading } from "@/components/public/PublicSectionHeading";
 import { PublicSection } from "@/components/public/PublicSection";
 
 
-interface MobileWebsitePreview {
-  name: string;
-  headline?: string | null;
-  bio?: string | null;
-  avatar?: string | null;
-  cover?: string | null;
-  accentColor?: string | null;
-}
-
 interface BusinessMobileShowcaseProps {
-  businessName: string;
-  businessLogo?: string | null;
-  phoneNumber?: string | null;
   accentColor: string;
-  miniWebsite?: MobileWebsitePreview | null;
   title?: string;
   description?: string;
 }
 
-type ShowcaseScreen =
-  | {
-      id: string;
-      label: string;
-      kind: "linktree";
-      templateId: TemplateKey;
-      linktree: Linktree;
-    }
-  | {
-      id: string;
-      label: string;
-      kind: "mini-website";
-      templateId: string;
-      component: MiniWebsiteTemplateComponent;
-    };
+type ShowcaseScreen = {
+  id: string;
+  label: string;
+  templateId: TemplateKey;
+  linktree: Linktree;
+};
 
 /** Which screens flank the active one: one either side, on every device. */
 const STACK_OFFSETS = [-1, 0, 1] as const;
@@ -105,18 +74,10 @@ const SHOWCASE_SCREENS: ShowcaseScreen[] = [
   ...TEMPLATE_OPTIONS.map((template) => ({
     id: `linktree-${template.id}`,
     label: `${template.name} Linktree`,
-    kind: "linktree" as const,
     templateId: template.id as TemplateKey,
     linktree: createLinktreeTemplatePreview({
       templateId: template.id as TemplateKey,
     }),
-  })),
-  ...MINI_WEBSITE_TEMPLATE_OPTIONS.map((template) => ({
-    id: `mini-website-${template.id}`,
-    label: `${template.name} Mini Website`,
-    kind: "mini-website" as const,
-    templateId: template.id,
-    component: getMiniWebsiteTemplateComponent(template.id),
   })),
 ];
 
@@ -145,14 +106,9 @@ const getPhoneScale = (distanceFromCenter: number) => {
 
 const ShowcasePhoneContent = memo(function ShowcasePhoneContent({
   screen,
-  miniWebsiteDraft,
 }: {
   screen: ShowcaseScreen;
-  miniWebsiteDraft: MiniWebsiteDraft;
 }) {
-  const MiniWebsiteTemplate =
-    screen.kind === "mini-website" ? screen.component : null;
-
   return (
     <PhoneMockup
       ariaLabel={`${screen.label} mobile preview`}
@@ -162,63 +118,25 @@ const ShowcasePhoneContent = memo(function ShowcasePhoneContent({
       {/* The frame's own viewport clips and scrolls now, so this wrapper must
           not crop the page a second time. */}
       <div className="pointer-events-none min-h-full">
-        {screen.kind === "linktree" ? (
-          <DynamicTemplate
-            linktree={screen.linktree}
-            links={TEMPLATE_PREVIEW_LINKS}
-            theme={LINKTREE_TEMPLATE_PREVIEW_THEMES[screen.templateId]}
-            onLinkClick={() => undefined}
-          />
-        ) : MiniWebsiteTemplate ? (
-          <MiniWebsiteTemplate
-            profile={miniWebsiteDraft}
-            compact
-            viewport="mobile"
-            interactive={false}
-            fullPage={false}
-            embeddedPreview
-          />
-        ) : null}
+        <DynamicTemplate
+          linktree={screen.linktree}
+          links={TEMPLATE_PREVIEW_LINKS}
+          theme={LINKTREE_TEMPLATE_PREVIEW_THEMES[screen.templateId]}
+          onLinkClick={() => undefined}
+        />
       </div>
     </PhoneMockup>
   );
 });
 
 export function BusinessMobileShowcase({
-  businessName,
-  businessLogo,
-  phoneNumber,
   accentColor,
-  miniWebsite,
   title = "هەموو دیزاینەکان، لەسەر مۆبایل.",
   description =
-    "قالبەکانی لینکتری و ماڵپەڕی بچووک بە شێوازی ڕاستەقینە و گونجاو بۆ شاشەی مۆبایل ببینە.",
+    "قالبەکانی لینکتری بە شێوازی ڕاستەقینە و گونجاو بۆ شاشەی مۆبایل ببینە.",
 }: BusinessMobileShowcaseProps) {
   const reduceMotion = useReducedMotion() ?? false;
   const [activeIndex, setActiveIndex] = useState(0);
-  const miniWebsiteDraft = useMemo<MiniWebsiteDraft>(() => {
-    const draft = createMiniWebsiteDraft({
-      businessLogo,
-      businessDefaultAvatar: miniWebsite?.avatar || businessLogo,
-      accentColor,
-    });
-    return {
-      ...draft,
-      name: miniWebsite?.name || businessName,
-      slug: "business-template-preview",
-      headline: miniWebsite?.headline || businessName,
-      bio:
-        miniWebsite?.bio ||
-        "زانیاری و خزمەتگوزارییەکانی کاروبار لە یەک شوێندا.",
-      avatar: miniWebsite?.avatar || businessLogo || draft.avatar,
-      cover: miniWebsite?.cover || null,
-      accentColor: miniWebsite?.accentColor || accentColor,
-      status: "published",
-      primaryAction: phoneNumber ? "whatsapp" : "none",
-      whatsappNumber: phoneNumber?.replace(/\D/g, "") || "",
-    };
-  }, [accentColor, businessLogo, businessName, miniWebsite, phoneNumber]);
-
   const screens = SHOWCASE_SCREENS;
   const stackOffsets = STACK_OFFSETS;
   const centerLayoutIndex = Math.floor(stackOffsets.length / 2);
@@ -298,10 +216,7 @@ export function BusinessMobileShowcase({
                     animate={{ scale: getPhoneScale(distanceFromCenter) }}
                     transition={reduceMotion ? { duration: 0 } : PHONE_SPRING}
                   >
-                    <ShowcasePhoneContent
-                      screen={screen}
-                      miniWebsiteDraft={miniWebsiteDraft}
-                    />
+                    <ShowcasePhoneContent screen={screen} />
                   </motion.div>
               </motion.div>
             );

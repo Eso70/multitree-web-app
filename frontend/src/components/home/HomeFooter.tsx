@@ -1,5 +1,5 @@
-import { MultiTreeMarketingFooter } from "@/features/public-site/MultiTreeMarketingFooter";
+import { SponsorKrdMarketingFooter } from "@/features/public-site/SponsorKrdMarketingFooter";
 
 export function HomeFooter() {
-  return <MultiTreeMarketingFooter accentColor="var(--multitree-accent)" />;
+  return <SponsorKrdMarketingFooter accentColor="var(--sponsor-krd-accent)" />;
 }

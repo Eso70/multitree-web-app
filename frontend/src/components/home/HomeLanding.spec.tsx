@@ -20,9 +20,37 @@ vi.mock("@/features/communications/HomepageCommunications", () => ({
 
 describe("HomeLanding platform theme", () => {
   afterEach(() => {
-    document.documentElement.style.removeProperty("--multitree-accent");
+    document.documentElement.style.removeProperty("--sponsor-krd-accent");
+    document.documentElement.style.removeProperty("--sponsor-krd-accent-gradient");
     vi.unstubAllGlobals();
     vi.clearAllMocks();
+  });
+
+  it("upgrades the retired MultiTree lime returned by the public API", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              accent_color: "#b6f20d",
+            },
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+
+    render(<HomeLanding />);
+
+    await waitFor(() => {
+      expect(
+        document.documentElement.style.getPropertyValue(
+          "--sponsor-krd-accent-gradient",
+        ),
+      ).toBe("linear-gradient(to right, #25F4EE 0%, #FE2C55 100%)");
+    });
   });
 
   it("applies the platform accent returned by the public API", async () => {
@@ -43,7 +71,7 @@ describe("HomeLanding platform theme", () => {
 
     await waitFor(() => {
       expect(
-        document.documentElement.style.getPropertyValue("--multitree-accent"),
+        document.documentElement.style.getPropertyValue("--sponsor-krd-accent"),
       ).toBe("#123456");
       expect(applyCursorColor).toHaveBeenCalledWith(
         "#123456",
@@ -59,7 +87,6 @@ describe("HomeLanding platform theme", () => {
     render(<HomeLanding />);
 
     expect(screen.getAllByText("Linktree").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Mini Website").length).toBeGreaterThan(0);
     expect(screen.getByText("لە سێ هەنگاودا بڵاوی بکەرەوە")).toBeInTheDocument();
     expect(screen.queryByText(/10,000|1,000,000|revenue/i)).not.toBeInTheDocument();
   });

@@ -311,7 +311,7 @@ export class PlatformSettingsController {
     const filename = `${assetType}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${extension}`;
     const url = await this.storageService.uploadImage(
       fileBuffer,
-      `multitree/branding/${user.id}/${assetType}/${filename}`,
+      `sponsor-krd/branding/${user.id}/${assetType}/${filename}`,
     );
 
     return response.send({ success: true, data: { url } });
@@ -319,7 +319,7 @@ export class PlatformSettingsController {
 
   @Get('stats')
   @RequireCapabilities(Capability.PlatformSettingsStatsRead)
-  async getMultiTreeStats() {
+  async getSponsorKrdStats() {
     const data = await this.platformSettingsService.getStats();
     return { success: true, data };
   }

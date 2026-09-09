@@ -27,6 +27,7 @@ import {
 } from "@/lib/templates/config";
 import { toast } from "sonner";
 import { ThemeProvider } from "@/lib/contexts/ThemeProvider";
+import { SPONSOR_KRD_LOGO } from "@/lib/brand/brand-assets";
 import { useLinktrees } from "@/features/business/hooks/useLinktrees";
 import type { BusinessLinktreeSummary as Linktree, LinktreeListItem } from "@linktree/types";
 import { BusinessLinktreesPage } from "@/features/business/components/BusinessLinktreesPage";
@@ -384,7 +385,7 @@ export const BusinessDashboard = memo(function BusinessDashboard({
           lastAccessRef.current = serializedAccess;
           setRefreshedEffectiveAccess(result.effectiveAccess);
           window.dispatchEvent(
-            new CustomEvent("multitree:access-updated", {
+            new CustomEvent("sponsor-krd:access-updated", {
               detail: result.effectiveAccess,
             }),
           );
@@ -395,7 +396,7 @@ export const BusinessDashboard = memo(function BusinessDashboard({
           if (serializedProfile !== lastProfileRef.current) {
             lastProfileRef.current = serializedProfile;
             window.dispatchEvent(
-              new CustomEvent("multitree:business-settings-updated", {
+              new CustomEvent("sponsor-krd:business-settings-updated", {
                 detail: result.profile,
               }),
             );
@@ -502,12 +503,12 @@ export const BusinessDashboard = memo(function BusinessDashboard({
       }));
     };
     window.addEventListener(
-      "multitree:business-settings-updated",
+      "sponsor-krd:business-settings-updated",
       syncSettings,
     );
     return () =>
       window.removeEventListener(
-        "multitree:business-settings-updated",
+        "sponsor-krd:business-settings-updated",
         syncSettings,
       );
   }, []);
@@ -1530,10 +1531,10 @@ export const BusinessDashboard = memo(function BusinessDashboard({
           aria-hidden={onboardingRequired ? true : undefined}
         >
           <DashboardSidebar
-            brandName="MultiTree"
+            brandName="Sponsor.krd"
             brandSubtitle="داشبۆردی بزنس"
-            brandImage="/images/Logo.jpg"
-            brandImageAlt="MultiTree"
+            brandImage={SPONSOR_KRD_LOGO}
+            brandImageAlt="Sponsor.krd"
             items={sidebarItems}
             collapsed={isSidebarCollapsed}
             mobileOpen={isMobileSidebarOpen}
@@ -1731,10 +1732,7 @@ export const BusinessDashboard = memo(function BusinessDashboard({
             cancelLabel="هەڵوەشاندنەوە"
             isDeleting={isClearingAnalytics}
             message={
-              <p>
-                دڵنیایت لە پاککردنەوەی تەنها ئامارەکانی پەڕەکانی لینکتری؟ ئاماری
-                مینی وێبسایتەکان دەستکاری ناکرێت.
-              </p>
+              <p>دڵنیایت لە پاککردنەوەی هەموو ئامارەکانی پەڕەکانی لینکتری؟</p>
             }
           />
 

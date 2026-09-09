@@ -9,7 +9,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { persistAppTheme, readAppTheme } from "@/lib/app-theme";
 import {
   BUSINESS_LOGO_PLACEHOLDER,
-  MULTITREE_LOGO,
+  SPONSOR_KRD_LOGO,
 } from "@/lib/brand/brand-assets";
 
 interface PublicNavbarBranding {
@@ -19,7 +19,7 @@ interface PublicNavbarBranding {
 }
 
 interface PublicSiteNavbarProps {
-  appearance?: "multitree" | "business";
+  appearance?: "sponsor-krd" | "business";
   branding?: PublicNavbarBranding;
   homeHref?: string;
   sectionBaseHref?: string;
@@ -37,7 +37,7 @@ interface PublicSiteNavbarProps {
 }
 
 export function PublicSiteNavbar({
-  appearance = "multitree",
+  appearance = "sponsor-krd",
   branding,
   homeHref = "/",
   sectionBaseHref = "",
@@ -48,9 +48,9 @@ export function PublicSiteNavbar({
   actionInk,
   emphasizeFirstNavItem = true,
 }: PublicSiteNavbarProps = {}) {
-  const primaryColor = branding?.accentColor || "var(--multitree-accent)";
+  const primaryColor = branding?.accentColor || "var(--sponsor-krd-accent)";
   const primaryActionColor = actionColor || primaryColor;
-  const primaryActionInk = actionInk || "var(--multitree-accent-ink)";
+  const primaryActionInk = actionInk || "var(--sponsor-krd-accent-ink)";
   const primaryActionStyle = {
     "--public-navbar-action-color": primaryActionColor,
     "--public-navbar-action-ink": primaryActionInk,
@@ -121,20 +121,20 @@ export function PublicSiteNavbar({
   const brandingContent = (
     <>
       <Image
-        /* No `branding` means this is MultiTree's own chrome, which wears
-           MultiTree's mark. The neutral placeholder belongs to a business that
+        /* No `branding` means this is SponsorKrd's own chrome, which wears
+           SponsorKrd's mark. The neutral placeholder belongs to a business that
            has not uploaded a logo yet, and must not stand in for the platform
            — see `brand-assets.ts`. */
         src={
-          branding ? branding.logo || BUSINESS_LOGO_PLACEHOLDER : MULTITREE_LOGO
+          branding ? branding.logo || BUSINESS_LOGO_PLACEHOLDER : SPONSOR_KRD_LOGO
         }
-        alt={branding ? `${branding.name} logo` : "MultiTree logo"}
+        alt={branding ? `${branding.name} logo` : "Sponsor.krd logo"}
         width={30}
         height={30}
         className="rounded-lg object-cover shadow-sm"
       />
       <span className="text-base font-bold tracking-tight text-slate-950 dark:text-white sm:text-lg">
-        {branding?.name || "MultiTree"}
+        {branding?.name || "Sponsor.krd"}
       </span>
     </>
   );

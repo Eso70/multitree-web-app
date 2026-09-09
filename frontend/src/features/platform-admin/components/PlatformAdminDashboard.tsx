@@ -16,7 +16,6 @@ import {
   CreditCard,
   UserCog,
   Link2,
-  IdCard,
   Megaphone,
 } from "lucide-react";
 import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
@@ -52,9 +51,10 @@ import { BusinessSessionsModal } from "@/features/platform-admin/components/Busi
 import { CommunicationCenterPage } from "@/features/platform-admin/components/CommunicationCenterPage";
 import { parseWebsiteColor } from "@/lib/utils/parse-website-color";
 import {
-  getMultiTreeAccentInk,
-  MULTITREE_ACCENT_COLOR,
-} from "@/lib/multitree-theme";
+  getSponsorKrdAccentInk,
+  SPONSOR_KRD_ACCENT_COLOR,
+  SPONSOR_KRD_ACCENT_GRADIENT,
+} from "@/lib/sponsor-krd-theme";
 import { applyCursorColor } from "@/lib/utils/cursor-theme";
 import { persistAppTheme } from "@/lib/app-theme";
 import { PlatformAdminErrorPage } from "@/features/platform-admin/components/PlatformAdminErrorPage";
@@ -66,7 +66,6 @@ import { DashboardHeader } from "@/components/shared/DashboardHeader";
 import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
 import { apiRequest } from "@/lib/api/request";
 import { PlatformLinktreesPage } from "@/features/platform-admin/components/PlatformLinktreesPage";
-import { PlatformMiniWebsitesPage } from "@/features/platform-admin/components/PlatformMiniWebsitesPage";
 import { CreatorUsersPage } from "@/features/platform-admin/components/CreatorUsersPage";
 import {
   getPlatformPage,
@@ -89,12 +88,12 @@ type PlatformTheme = "light" | "dark";
 export function PlatformAdminDashboard() {
   const notificationsRef = useRef<ApprovalNotificationsHandle>(null);
   const [platformBranding, setPlatformBranding] = useState({
-    name: "MultiTree",
+    name: "Sponsor.krd",
     logo: null as string | null,
     avatar: null as string | null,
-    accentColor: MULTITREE_ACCENT_COLOR,
-    accentBackground: MULTITREE_ACCENT_COLOR,
-    accentInk: getMultiTreeAccentInk(MULTITREE_ACCENT_COLOR),
+    accentColor: SPONSOR_KRD_ACCENT_COLOR,
+    accentBackground: SPONSOR_KRD_ACCENT_GRADIENT,
+    accentInk: getSponsorKrdAccentInk(SPONSOR_KRD_ACCENT_COLOR),
   });
   const [administrator, setAdministrator] = useState({
     name: "Platform Admin",
@@ -167,28 +166,28 @@ export function PlatformAdminDashboard() {
       const accent = parseWebsiteColor(
         typeof settings.accent_color === "string"
           ? settings.accent_color
-          : MULTITREE_ACCENT_COLOR,
+          : SPONSOR_KRD_ACCENT_COLOR,
       );
       document.documentElement.style.setProperty(
-        "--multitree-accent",
+        "--sponsor-krd-accent",
         accent.primary,
       );
       document.documentElement.style.setProperty(
-        "--multitree-accent-gradient",
+        "--sponsor-krd-accent-gradient",
         accent.css,
       );
       void applyCursorColor(accent.primary).catch(() => undefined);
       document.documentElement.style.setProperty(
-        "--multitree-accent-ink",
-        getMultiTreeAccentInk(accent.primary),
+        "--sponsor-krd-accent-ink",
+        getSponsorKrdAccentInk(accent.primary),
       );
       setPlatformBranding({
-        name: typeof settings.name === "string" ? settings.name : "MultiTree",
+        name: typeof settings.name === "string" ? settings.name : "Sponsor.krd",
         logo: typeof settings.logo === "string" ? settings.logo : null,
         avatar: typeof settings.avatar === "string" ? settings.avatar : null,
         accentColor: accent.primary,
         accentBackground: accent.css,
-        accentInk: getMultiTreeAccentInk(accent.primary),
+        accentInk: getSponsorKrdAccentInk(accent.primary),
       });
 
       if (typeof settings.favicon === "string" && settings.favicon) {
@@ -315,14 +314,6 @@ export function PlatformAdminDashboard() {
         onClick: () => router.push(`${consoleBasePath}/linktrees`),
       },
       {
-        id: "mini-websites",
-        label: "مینی وێبسایتەکان",
-        icon: <IdCard className="h-4 w-4" />,
-        active: activePage === "mini-websites",
-        hidden: permissionsLoaded && !canPage("mini-websites"),
-        onClick: () => router.push(`${consoleBasePath}/mini-websites`),
-      },
-      {
         id: "templates",
         label: DASHBOARD_PAGE_LABELS.templates,
         icon: <LayoutTemplate className="h-4 w-4" />,
@@ -399,7 +390,6 @@ export function PlatformAdminDashboard() {
   const pageTitle: Record<PlatformPage, string> = {
     businesses: "بەڕێوەبردنی بزنسەکان",
     linktrees: DASHBOARD_PAGE_LABELS.linktrees,
-    "mini-websites": "مینی وێبسایتەکان",
     users: "بەکارهێنەرەکان",
     templates: DASHBOARD_PAGE_LABELS.templates,
     campaigns: DASHBOARD_PAGE_LABELS.campaigns,
@@ -533,7 +523,7 @@ export function PlatformAdminDashboard() {
     <div
       className="h-screen bg-slate-50 dark:bg-[#161B22] text-slate-800 dark:text-gray-100 flex flex-col md:flex-row relative overflow-hidden"
       dir="ltr"
-      data-multitree-theme
+      data-sponsor-krd-theme
     >
       <DashboardSidebar
         brandName={platformBranding.name}
@@ -547,7 +537,7 @@ export function PlatformAdminDashboard() {
         collapsed={isSidebarCollapsed}
         mobileOpen={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
-        accent="var(--multitree-accent)"
+        accent="var(--sponsor-krd-accent)"
         footer={
           <div className="shrink-0 border-t border-slate-200 p-4 dark:border-white/10">
             <Tooltip content="ڕێکخستنەکانی بەڕێوەبەر" side="right" disabled={!isSidebarCollapsed}>
@@ -684,8 +674,6 @@ export function PlatformAdminDashboard() {
               <PlatformLinktreesPage />
             ) : activePage === "users" ? (
               <CreatorUsersPage />
-            ) : activePage === "mini-websites" ? (
-              <PlatformMiniWebsitesPage />
             ) : activePage === "templates" ? (
               <TemplatesPage />
             ) : activePage === "campaigns" ? (
@@ -818,7 +806,7 @@ export function PlatformAdminDashboard() {
             <MotionPulseIcon>
               <Search
                 className="h-5 w-5 opacity-40"
-                style={{ color: "var(--multitree-accent)" }}
+                style={{ color: "var(--sponsor-krd-accent)" }}
               />
             </MotionPulseIcon>
             <span>گەڕان بۆ بزنسەکان بکە.....</span>
@@ -854,7 +842,7 @@ export function PlatformAdminDashboard() {
                 </div>
                 <div
                   className="text-xs font-semibold opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-1 group-hover:translate-x-0 pl-2"
-                  style={{ color: "var(--multitree-accent)" }}
+                  style={{ color: "var(--sponsor-krd-accent)" }}
                 >
                   دەستکاریکردن ←
                 </div>

@@ -5,7 +5,7 @@ import { CLICK_EVENTS } from './unified-analytics.service';
 export type AnalyticsPageRow = {
   id: string;
   source_id: string;
-  type: 'linktree' | 'mini_website';
+  type: 'linktree';
   name: string;
   slug: string;
   status: string;
@@ -134,8 +134,7 @@ export class AnalyticsReadRepository {
          GROUP BY event.public_page_id
        )
        SELECT page.id,
-         CASE WHEN page.page_type = 'linktree' THEN page.source_linktree_id
-              ELSE page.source_mini_website_id END AS source_id,
+         page.source_linktree_id AS source_id,
          page.page_type AS type, page.name, page.slug, page.status,
          COALESCE(SUM(daily.total_views), 0)::bigint AS views,
          COALESCE(uv.unique_visitors, 0)::bigint AS unique_visitors,

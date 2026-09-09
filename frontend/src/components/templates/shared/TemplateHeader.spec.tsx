@@ -7,7 +7,7 @@ describe("TemplateHeader", () => {
     render(
       <TemplateHeader
         name="Ahmed Bakr"
-        subtitle="CEO of MultiTree"
+        subtitle="CEO of SponsorKrd"
         description="Contact me through the links below"
         textColor="#111111"
         textSecondaryColor="#64748b"
@@ -15,7 +15,7 @@ describe("TemplateHeader", () => {
     );
 
     const name = screen.getByRole("heading", { name: "Ahmed Bakr" });
-    const subtitle = screen.getByText("CEO of MultiTree");
+    const subtitle = screen.getByText("CEO of SponsorKrd");
 
     expect(
       name.compareDocumentPosition(subtitle) & Node.DOCUMENT_POSITION_FOLLOWING,

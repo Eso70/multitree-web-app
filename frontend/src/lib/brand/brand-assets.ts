@@ -2,7 +2,7 @@
  * Single source of truth for branding asset fallbacks.
  *
  * The distinction this module exists to enforce: `/images/Logo.jpg` is
- * MultiTree's own mark. It belongs to platform chrome — the home page, the
+ * SponsorKrd's own mark. It belongs to platform chrome — the home page, the
  * dashboard sidebar, the "powered by" footer, the platform manifest — and must
  * never stand in for a business that has not uploaded its own logo or favicon.
  * Painting the platform's logo onto a tenant surface misrepresents that
@@ -16,21 +16,24 @@
  */
 
 /**
- * MultiTree's own logo, on its background. Platform chrome only.
+ * SponsorKrd's own logo, on its background. Platform chrome only.
  * Mirrors `PLATFORM_ADMIN_LOGO_WITH_BACKGROUND`.
  */
-export const MULTITREE_LOGO = "/images/Logo.jpg";
+export const SPONSOR_KRD_LOGO = "/images/Logo.jpg";
 
 /**
- * The bare MultiTree mark, for surfaces that supply their own background.
+ * The bare SponsorKrd mark, for surfaces that supply their own background.
  * Mirrors `PLATFORM_ADMIN_LOGO_WITHOUT_BACKGROUND`.
  *
  * Kept separate from `DEFAULT_AVATAR` on purpose: the two were the same file
  * until the default avatar became the neutral person placeholder, at which
- * point MultiTree's logo silently became a person icon. Platform branding and
+ * point SponsorKrd's logo silently became a person icon. Platform branding and
  * the business fallback must never share a path again.
  */
-export const MULTITREE_LOGO_MARK = "/images/multitree-logo-mark.png";
+export const SPONSOR_KRD_LOGO_MARK = "/images/sponsor-krd-logo-mark.png";
+
+/** SponsorKrd's browser-tab icon. Mirrors `PLATFORM_ADMIN_FAVICON`. */
+export const SPONSOR_KRD_FAVICON = "/favicon.ico";
 
 /** Neutral person mark used wherever a profile image is unset. */
 export const DEFAULT_AVATAR = "/images/DefaultAvatar.png";

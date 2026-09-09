@@ -10,7 +10,7 @@ import {
 export class CreateAccessRuleDto {
   @IsIn(['deny', 'allow']) effect: 'deny' | 'allow';
   @IsIn([
-    'multitree',
+    'sponsor_krd',
     'platform_admin',
     'business',
     'business_admin',

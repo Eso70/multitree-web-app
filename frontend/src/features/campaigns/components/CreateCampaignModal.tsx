@@ -11,14 +11,14 @@ interface CreateCampaignModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreate: (campaign: TikTokCampaign) => void;
-  multiTreeTheme?: boolean;
+  sponsorKrdTheme?: boolean;
 }
 
 export function CreateCampaignModal({
   isOpen,
   onClose,
   onCreate,
-  multiTreeTheme = false,
+  sponsorKrdTheme = false,
 }: CreateCampaignModalProps) {
   const [name, setName] = useState("");
   const [objective, setObjective] = useState<CampaignObjective>("TRAFFIC");
@@ -73,7 +73,7 @@ export function CreateCampaignModal({
     <ManagementModal
       isOpen={isOpen}
       onClose={onClose}
-      multiTreeTheme={multiTreeTheme}
+      sponsorKrdTheme={sponsorKrdTheme}
       title="دروستکردنی کەمپەینی نوێ لە TikTok"
       description="ڕیکلامی نوێ دابنێ و بینەرانی تیکتۆک ڕاستەوخۆ ڕەوانەی لاپەڕەی دیاریکراوی خۆت بکە"
       wide

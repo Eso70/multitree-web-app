@@ -6,9 +6,9 @@ import {
 } from "./signup-application";
 
 const validForm: SignupApplicationForm = {
-  businessName: "Multi Tree",
+  businessName: "Acme Studio",
   phone: "7501234567",
-  requestedSubdomain: "multi-tree",
+  requestedSubdomain: "acme-studio",
 };
 
 describe("signup application", () => {
@@ -20,12 +20,12 @@ describe("signup application", () => {
     expect(
       buildSignupApplicationPayload({
         ...validForm,
-        businessName: "  Multi Tree  ",
+        businessName: "  Acme Studio  ",
       }),
     ).toEqual({
-      businessName: "Multi Tree",
+      businessName: "Acme Studio",
       phone: "7501234567",
-      requestedSubdomain: "multi-tree",
+      requestedSubdomain: "acme-studio",
     });
   });
 

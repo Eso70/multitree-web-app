@@ -93,8 +93,8 @@ describe('SessionService business session management', () => {
 
     const result = await service.createPlatformAdminSession({
       platformAdminId: 'admin-id',
-      username: 'multitree-admin',
-      name: 'MultiTree',
+      username: 'sponsor-krd-admin',
+      name: 'Sponsor.krd',
       ipAddress: '127.0.0.1',
       userAgent: 'test-agent',
     });
@@ -190,8 +190,8 @@ describe('SessionService business session management', () => {
 
     const result = await service.createPlatformAdminSession({
       platformAdminId: 'admin-id',
-      username: 'multitree-admin',
-      name: 'MultiTree',
+      username: 'sponsor-krd-admin',
+      name: 'Sponsor.krd',
       ipAddress: '127.0.0.1',
       userAgent: 'test-agent',
       rememberDevice: true,

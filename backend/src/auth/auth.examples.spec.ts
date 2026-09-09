@@ -1,4 +1,4 @@
-﻿import {
+import {
   HttpException,
   NotFoundException,
   UnauthorizedException,
@@ -23,9 +23,9 @@ describe('Auth Examples - Subdomain Business Routing', () => {
     assertForPublicLinktree: jest.fn(async () => undefined),
   } as unknown as AccessRuleEnforcementService;
   // ======================================================================
-  // Scenario 1: MultiTree routes accessible on root domain (Req 4.1)
+  // Scenario 1: SponsorKrd routes accessible on root domain (Req 4.1)
   // ======================================================================
-  describe('Scenario 1: MultiTree routes accessible on root domain (Req 4.1)', () => {
+  describe('Scenario 1: SponsorKrd routes accessible on root domain (Req 4.1)', () => {
     let platformAdminGuard: PlatformAdminGuard;
     let mockSessionService: jest.Mocked<SessionService>;
 
@@ -41,11 +41,11 @@ describe('Auth Examples - Subdomain Business Routing', () => {
       );
     });
 
-    it('should allow MultiTree access on root domain with valid session', async () => {
+    it('should allow SponsorKrd access on root domain with valid session', async () => {
       const platformAdminUser: SessionUser = {
         id: 'sa-001',
         username: 'platform-admin',
-        name: 'MultiTree',
+        name: 'Sponsor.krd',
         role: 'platform-admin',
       };
       mockSessionService.getSessionUser.mockResolvedValue(platformAdminUser);
@@ -74,7 +74,7 @@ describe('Auth Examples - Subdomain Business Routing', () => {
       expect(request.sessionToken).toBe('valid-platform-token-123');
     });
 
-    it('should reject access when no MultiTree session cookie is present', async () => {
+    it('should reject access when no SponsorKrd session cookie is present', async () => {
       const request = {
         cookies: {},
         headers: { host: 'sponsor.krd' },
@@ -120,7 +120,7 @@ describe('Auth Examples - Subdomain Business Routing', () => {
       const platformAdminUser: SessionUser = {
         id: 'sa-002',
         username: 'root',
-        name: 'MultiTree',
+        name: 'Sponsor.krd',
         role: 'platform-admin',
       };
       mockSessionService.getSessionUser.mockResolvedValue(platformAdminUser);

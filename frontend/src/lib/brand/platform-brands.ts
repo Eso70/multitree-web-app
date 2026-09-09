@@ -23,7 +23,7 @@ import { TikTokMark, YouTubeMark } from "./marks";
  * Single source of truth for platform branding.
  *
  * Every surface that paints a platform — public linktree buttons, all templates,
- * the link editor, the mini website and its editor — resolves colors and glyphs
+ * the public page and link editor — resolves colors and glyphs
  * from here, so a brand only ever has to be corrected in one place.
  *
  * Glyphs come from Simple Icons (`react-icons/si`), which ships the official

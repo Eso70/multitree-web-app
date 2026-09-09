@@ -49,7 +49,6 @@ describe('website colour validation', () => {
       'linktrees/dto/create-linktree.dto.ts',
       'linktrees/dto/update-linktree.dto.ts',
       'auth/dto/business-onboarding.dto.ts',
-      'mini-websites/dto/mini-website.dto.ts',
       'platform-admin/dto/platform-settings.dto.ts',
     ];
 

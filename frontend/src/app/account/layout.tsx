@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "User Dashboard | MultiTree",
+  title: "User Dashboard | Sponsor.krd",
   robots: "noindex, nofollow, noarchive",
 };
 

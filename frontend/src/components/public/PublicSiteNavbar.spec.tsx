@@ -6,10 +6,10 @@ describe("PublicSiteNavbar", () => {
     render(
       <PublicSiteNavbar
         appearance="business"
-        branding={{ name: "MultiTree", accentColor: "#84cc16" }}
+        branding={{ name: "Sponsor.krd", accentColor: "#84cc16" }}
         navigationItems={[{ label: "تایبەتمەندییەکان", href: "/features" }]}
         action={{ label: "هەژمار دروست بکە", href: "/signup" }}
-        actionColor="#b6f20d"
+        actionColor="#25F4EE"
         actionInk="#111827"
         secondaryAction={{ label: "چوونەژوورەوە", href: "/login" }}
         emphasizeFirstNavItem={false}
@@ -22,7 +22,7 @@ describe("PublicSiteNavbar", () => {
     expect(
       screen.getByRole("link", { name: "هەژمار دروست بکە" }),
     ).toHaveStyle({
-      "--public-navbar-action-color": "#b6f20d",
+      "--public-navbar-action-color": "#25F4EE",
       "--public-navbar-action-ink": "#111827",
     });
     expect(

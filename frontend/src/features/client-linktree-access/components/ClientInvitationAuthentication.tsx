@@ -57,7 +57,7 @@ export function ClientInvitationAuthentication({
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-3" dir="ltr">
-            <div className="mb-4 flex justify-center text-[var(--multitree-accent)]">
+            <div className="mb-4 flex justify-center text-[var(--sponsor-krd-accent)]">
               <KeyRound className="h-9 w-9" />
             </div>
             <input
@@ -75,7 +75,7 @@ export function ClientInvitationAuthentication({
                 setError(null);
               }}
               placeholder="000000"
-              className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-center text-lg font-black tracking-[0.45em] text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-[var(--multitree-accent)] focus:ring-2 focus:ring-[var(--multitree-accent)]/20 disabled:opacity-60 dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:placeholder:text-slate-600"
+              className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-center text-lg font-black tracking-[0.45em] text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-[var(--sponsor-krd-accent)] focus:ring-2 focus:ring-[var(--sponsor-krd-accent)]/20 disabled:opacity-60 dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:placeholder:text-slate-600"
             />
             {error ? (
               <p
@@ -89,7 +89,7 @@ export function ClientInvitationAuthentication({
             <button
               type="submit"
               disabled={busy || pin.length !== 6}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--multitree-accent)] px-4 text-sm font-bold text-[var(--multitree-accent-ink)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--sponsor-krd-accent)] px-4 text-sm font-bold text-[var(--sponsor-krd-accent-ink)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {busy ? (
                 <>

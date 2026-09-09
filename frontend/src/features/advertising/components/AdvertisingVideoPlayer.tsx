@@ -3,7 +3,13 @@
 import { useRef, useState } from "react";
 import { Play, VideoOff } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { youtubeVideoId } from "@/features/mini-website/BannerVideo";
+
+function youtubeVideoId(value = ""): string | null {
+  const match = value.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/))([A-Za-z0-9_-]{6,})/,
+  );
+  return match?.[1] ?? null;
+}
 
 interface AdvertisingVideoPlayerProps {
   /** "full" is used on the dedicated video page; "compact" fits inside the phone mockup in the guide. */
@@ -97,7 +103,7 @@ export function AdvertisingVideoPlayer({ size = "compact", className, src }: Adv
             <Play
               className={cn("ms-0.5", iconSizeClass)}
               fill="currentColor"
-              style={{ color: "var(--business-website-color, var(--theme-primary, var(--multitree-accent)))" }}
+              style={{ color: "var(--business-website-color, var(--theme-primary, var(--sponsor-krd-accent)))" }}
             />
           </span>
         </button>

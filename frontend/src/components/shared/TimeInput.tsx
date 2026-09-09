@@ -22,7 +22,7 @@ const MINUTE_STEP = 5;
 
 /**
  * The business's own website colour, falling back to the dashboard theme and
- * then to a neutral slate. Mirrors what the mini website's own surfaces use, so
+ * then to a neutral slate. Mirrors what other public-page surfaces use, so
  * the picker belongs to the page it is editing rather than to the admin chrome.
  */
 const BUSINESS_ACCENT =

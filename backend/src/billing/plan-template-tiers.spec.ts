@@ -8,11 +8,7 @@ import {
 
 describe('plan template tiers', () => {
   it('assigns the requested cumulative template catalogs', () => {
-    expect(BASIC_TEMPLATE_KEYS).toEqual([
-      'spectrum',
-      'spotlight',
-      'liquid-glass',
-    ]);
+    expect(BASIC_TEMPLATE_KEYS).toEqual(['spectrum', 'spotlight']);
     expect(PRO_TEMPLATE_KEYS).toEqual([
       ...BASIC_TEMPLATE_KEYS,
       'frost',

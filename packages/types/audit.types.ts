@@ -1,5 +1,5 @@
 export type AuditActorType =
-  "anonymous" | "business" | "platform-admin" | "multitree";
+  "anonymous" | "business" | "platform-admin" | "sponsor_krd";
 
 export type AuditOutcome = "success" | "failure" | "denied";
 

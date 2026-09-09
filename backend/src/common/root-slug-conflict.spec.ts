@@ -22,7 +22,7 @@ describe('rethrowRootSlugConflict', () => {
     // slug collision that never happened.
     const error = {
       code: '23505',
-      constraint: 'mini_websites_business_id_slug_key',
+      constraint: 'linktrees_business_id_uid_key',
     };
     expect(() => rethrowRootSlugConflict(error)).toThrow();
     try {

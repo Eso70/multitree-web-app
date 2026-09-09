@@ -79,7 +79,7 @@ export interface BusinessDashboardAnalyticsSummary {
 export interface BusinessDashboardPageAsset {
   id: string;
   sourceId: string;
-  type: "linktree" | "mini_website";
+  type: "linktree";
   name: string;
   slug: string;
   status: string;
@@ -133,4 +133,3 @@ export interface TikTokEventsApiTestResult {
   eventName: string;
   sentAt: string;
 }
-

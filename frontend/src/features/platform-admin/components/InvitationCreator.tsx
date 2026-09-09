@@ -87,7 +87,7 @@ export function InvitationCreator({
           onClick={() => setOpen(true)}
           aria-label="Invite"
           title="بانگهێشتنامەی نوێ"
-          className={`group flex h-10 items-center justify-center gap-2 rounded-xl border border-transparent bg-[var(--multitree-accent)] text-[var(--multitree-accent-ink)] shadow-sm transition-all hover:brightness-95 hover:shadow cursor-pointer ${showLabel ? "w-10 px-0 sm:w-auto sm:px-3.5" : "w-10"}`}
+          className={`group flex h-10 items-center justify-center gap-2 rounded-xl border border-transparent bg-[var(--sponsor-krd-accent)] text-[var(--sponsor-krd-accent-ink)] shadow-sm transition-all hover:brightness-95 hover:shadow cursor-pointer ${showLabel ? "w-10 px-0 sm:w-auto sm:px-3.5" : "w-10"}`}
         >
           <Link2 className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
           {showLabel ? (
@@ -105,18 +105,18 @@ export function InvitationCreator({
         description="تۆمارکردن تەنها بە بەستەرێکی یەکجارەی ٧ ڕۆژە دەکرێت."
         busy={busy}
         createBusinessStyle
-        multiTreeTheme
+        sponsorKrdTheme
         flushFooter
         progress={
           <ModalWizardProgress
             steps={INVITATION_STEPS}
             currentStep={step}
-            variant="multitree"
+            variant="sponsor-krd"
           />
         }
         footer={
           <ModalWizardActions
-            variant="multitree"
+            variant="sponsor-krd"
             isFirstStep={step === "details"}
             isFinalStep={step === "result"}
             isSubmitting={busy}
@@ -160,7 +160,7 @@ export function InvitationCreator({
                 type="email"
                 autoComplete="email"
                 maxLength={254}
-                className="mt-4 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-[var(--multitree-accent)] dark:border-white/10 dark:bg-[#161b22] dark:text-slate-200"
+                className="mt-4 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-[var(--sponsor-krd-accent)] dark:border-white/10 dark:bg-[#161b22] dark:text-slate-200"
                 placeholder="name@example.com"
                 value={email}
                 aria-invalid={emailTouched && !emailValid}

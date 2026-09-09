@@ -84,7 +84,7 @@ describe('forwardsToTikTok', () => {
   it('forwards a conversion that resolved to a registered action', () => {
     expect(
       forwardsToTikTok({
-        pageType: 'mini_website',
+        pageType: 'linktree',
         eventName: 'whatsapp_click',
         hasAction: true,
       }),
@@ -99,7 +99,7 @@ describe('forwardsToTikTok', () => {
     ] as const) {
       expect(
         forwardsToTikTok({
-          pageType: 'mini_website',
+          pageType: 'linktree',
           eventName,
           hasAction: false,
         }),
@@ -112,7 +112,7 @@ describe('forwardsToTikTok', () => {
     // action, so dropping the server half here would break the pair.
     expect(
       forwardsToTikTok({
-        pageType: 'mini_website',
+        pageType: 'linktree',
         eventName: 'action_open',
         hasAction: true,
       }),
@@ -120,11 +120,10 @@ describe('forwardsToTikTok', () => {
   });
 
   it('keeps forwarding a share, which is also what a vcard download infers', () => {
-    // `mini:share` and `mini:vcard` both infer `share`, and saving a contact
-    // card is a conversion — so `share` must stay out of the engagement set.
+    // Sharing is a conversion, so `share` must stay out of the engagement set.
     expect(
       forwardsToTikTok({
-        pageType: 'mini_website',
+        pageType: 'linktree',
         eventName: 'share',
         hasAction: false,
       }),
@@ -132,11 +131,11 @@ describe('forwardsToTikTok', () => {
   });
 
   it('forwards a server-recorded lead that has no action row', () => {
-    // The mini-website lead form ingests `form_submit` with no `actionId`. It
-    // is the conversion the page exists for, so it must not be filtered out.
+    // A lead form can ingest `form_submit` with no `actionId`; it remains a
+    // conversion and must not be filtered out.
     expect(
       forwardsToTikTok({
-        pageType: 'mini_website',
+        pageType: 'linktree',
         eventName: 'form_submit',
         hasAction: false,
       }),
@@ -238,7 +237,6 @@ describe('tracked redirect destinations', () => {
     const query = mockArg<string>(database.query, 0, 0);
     expect(query).toContain('action.id = $2::uuid');
     expect(query).toContain('page.source_linktree_id = $1::uuid');
-    expect(query).toContain('page.source_mini_website_id = $1::uuid');
     expect(query).not.toContain('destination = $');
   });
 
@@ -290,7 +288,7 @@ describe('analytics rollups', () => {
             page: {
               id: string;
               business_id: string;
-              page_type: 'linktree' | 'mini_website';
+              page_type: 'linktree';
               timezone: string;
               name: string;
               slug: string;

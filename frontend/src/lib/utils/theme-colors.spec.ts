@@ -3,7 +3,7 @@ import { deriveSubtitleColor } from "./theme-colors";
 
 describe("deriveSubtitleColor", () => {
   it("uses the tenant color on every background", () => {
-    expect(deriveSubtitleColor("#b6f20d")).toBe("#b6f20d");
+    expect(deriveSubtitleColor("#25F4EE")).toBe("#25f4ee");
     expect(deriveSubtitleColor("#111111")).toBe("#111111");
   });
 
@@ -13,7 +13,7 @@ describe("deriveSubtitleColor", () => {
     );
   });
 
-  it("falls back to the MultiTree accent without a valid tenant color", () => {
-    expect(deriveSubtitleColor(null)).toBe("#b6f20d");
+  it("falls back to the Sponsor.krd accent without a valid tenant color", () => {
+    expect(deriveSubtitleColor(null)).toBe("#25F4EE");
   });
 });

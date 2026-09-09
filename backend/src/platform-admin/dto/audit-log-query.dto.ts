@@ -16,7 +16,7 @@ const ACTOR_TYPES = [
   'business',
   'creator',
   'platform-admin',
-  'multitree',
+  'sponsor_krd',
 ];
 const OUTCOMES = ['success', 'failure', 'denied'];
 const SORT_OPTIONS = [

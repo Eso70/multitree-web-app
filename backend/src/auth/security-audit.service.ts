@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 
 export type SecurityActorType =
-  'anonymous' | 'business' | 'creator' | 'platform-admin' | 'multitree';
+  'anonymous' | 'business' | 'creator' | 'platform-admin' | 'sponsor_krd';
 export type SecurityOutcome = 'success' | 'failure' | 'denied';
 
 export interface SecurityAuditEvent {

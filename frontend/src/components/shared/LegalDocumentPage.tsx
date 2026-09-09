@@ -22,7 +22,7 @@ type Section = { title: string; paragraphs: string[] };
  * The document body is Kurdish and renders `dir="rtl"`; the root layout sets
  * `dir="ltr"` on `<html>`, so the direction has to be declared on the element
  * that actually wraps the prose. The brand + revision line stays LTR because
- * an RTL context reorders `MultiTree · Version 2026-08-19`.
+ * an RTL context reorders `SponsorKrd · Version 2026-08-19`.
  */
 export function LegalDocumentPage({
   title,
@@ -35,8 +35,8 @@ export function LegalDocumentPage({
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-white text-[#111827] dark:bg-[#0f172a] dark:text-white">
-      {/* These are the only MultiTree pages long enough to scroll that did not
-          carry the floating lime thumb; the landing page, the error pages, and
+      {/* These are the only SponsorKrd pages long enough to scroll that did not
+          carry the floating brand thumb; the landing page, the error pages, and
           the tenant public pages already mount it, and the authentication
           surfaces are `h-screen overflow-hidden` with no page scroll at all. */}
       <CustomScrollbar />
@@ -55,7 +55,7 @@ export function LegalDocumentPage({
             className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-slate-500"
             dir="ltr"
           >
-            MultiTree · Version {version}
+            Sponsor.krd · Version {version}
           </p>
           <h1
             className="mt-3 text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl"
@@ -70,7 +70,7 @@ export function LegalDocumentPage({
               <h2 className="flex items-center gap-3 text-lg font-bold text-gray-900 dark:text-slate-100">
                 <span
                   aria-hidden="true"
-                  className="h-5 w-1 shrink-0 rounded-full bg-[var(--multitree-accent)]"
+                  className="h-5 w-1 shrink-0 rounded-full bg-[var(--sponsor-krd-accent)]"
                 />
                 {section.title}
               </h2>

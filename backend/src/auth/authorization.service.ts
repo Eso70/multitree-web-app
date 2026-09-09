@@ -546,13 +546,8 @@ export class AuthorizationService implements OnModuleInit {
   ): Promise<number> {
     if (entitlementKey === 'limit.linktrees') {
       const result = await this.database.query<{ used: number }>(
-        `SELECT (
-           (SELECT COUNT(*) FROM linktrees
-            WHERE business_id = $1::uuid AND status <> 'deleted')
-           +
-           (SELECT COUNT(*) FROM mini_websites
-            WHERE business_id = $1::uuid AND status <> 'archived')
-         )::int AS used`,
+        `SELECT COUNT(*)::int AS used FROM linktrees
+          WHERE business_id = $1::uuid AND status <> 'deleted'`,
         [businessId],
       );
       return Number(result.rows[0]?.used || 0);

@@ -6,7 +6,7 @@ import { Tooltip } from "@/components/shared/Tooltip";
 /**
  * The small icon control used for row actions — reorder, remove, add.
  *
- * Shared so the mini website's branch cards and the link editor's platform rows
+ * Shared so public-page cards and the link editor's platform rows
  * cannot drift apart: they had grown two near-identical sets of classes with
  * different padding, radius, hover colours and dark-mode behaviour.
  */

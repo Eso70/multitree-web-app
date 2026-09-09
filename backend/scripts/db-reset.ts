@@ -30,7 +30,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 async function reset() {
-  const dbName = process.env.DB_NAME || 'multitree';
+  const dbName = process.env.DB_NAME || 'sponsor_krd';
   if (
     !/^[A-Za-z_][A-Za-z0-9_-]{0,62}$/.test(dbName) ||
     ['postgres', 'template0', 'template1'].includes(dbName.toLowerCase())
@@ -67,7 +67,7 @@ async function reset() {
         `SELECT COUNT(*)::text AS count
          FROM pg_stat_activity
          WHERE datname = $1
-           AND application_name = 'multitree-backend'
+           AND application_name = 'sponsor-krd-backend'
            AND pid <> pg_backend_pid()`,
         [dbName],
       );
@@ -130,7 +130,7 @@ async function reset() {
     }
     console.log('  OK Consolidated schema verified');
 
-    console.log('\nSeeding MultiTree...');
+    console.log('\nSeeding SponsorKrd...');
     await seedPlatformAdmin(client);
     await ensureApiPlatform(client);
     await ensurePlatformRetention(client);
@@ -150,7 +150,7 @@ async function reset() {
     console.log('  OK Redis cache flushed');
 
     console.log(
-      '\nDatabase reset complete. Fresh schema with MultiTree seed ready.',
+      '\nDatabase reset complete. Fresh schema with Sponsor.krd seed ready.',
     );
   } catch (error) {
     if (client) {

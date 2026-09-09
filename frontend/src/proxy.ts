@@ -17,7 +17,6 @@ const LEGACY_PLATFORM_ADMIN_PATH = "/system";
 const ROOT_MARKETING_PATHS = new Set([
   "/features",
   "/link-in-bio",
-  "/mini-website",
   "/templates",
   "/pricing",
   "/about",

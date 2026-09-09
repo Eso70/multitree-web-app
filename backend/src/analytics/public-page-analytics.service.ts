@@ -11,7 +11,7 @@ import { TIKTOK_OWNER_ELIGIBLE_SQL } from './tiktok-owner-eligibility';
  *
  * All approved public marketing surfaces resolve through this service. Pixel
  * ownership follows the page owner: customer pages use that customer's group,
- * while MultiTree-owned pages use the internal platform workspace group.
+ * while SponsorKrd-owned pages use the internal platform workspace group.
  *
  * Two facts are resolved together because they are useless apart. A pixel id
  * with no registered actions can only report a page view, and an action with no
@@ -89,12 +89,11 @@ export class PublicPageAnalyticsService {
 
   /** Resolves by source record for a specialized public content model. */
   async forSource(
-    source: 'linktree' | 'mini_website' | 'advertising',
+    source: 'linktree' | 'advertising',
     sourceId: string,
   ): Promise<PublicPageAnalytics> {
     const column = {
       linktree: 'source_linktree_id',
-      mini_website: 'source_mini_website_id',
       advertising: 'source_advertising_page_id',
     }[source];
     const page = await this.database.query<{
