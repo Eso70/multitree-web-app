@@ -590,5 +590,4 @@ manual expiry, and session revocation share an advisory lock; the database
 uniqueness constraint provides the final exactly-once boundary. Guest uploads
 reuse the shared media policy and require database-confirmed tenant ownership;
 guest analytics resolve the only permitted page from the invitation rather
-than a request parameter. See
-`docs/new-feature-client-linktree-access.md`.
+than a request parameter.

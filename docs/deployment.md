@@ -2,9 +2,8 @@
 
 Root-domain Creator signup uses the same Google OAuth configuration as the
 other authentication surfaces and requires an explicit `CREATOR_TRIAL_DAYS`
-value. See the operational checklist in
-[`creator-accounts.md`](creator-accounts.md). Missing Google or Redis settings
-fail closed rather than bypassing verification.
+value. Missing Google or Redis settings fail closed rather than bypassing
+verification.
 
 Register exact production callback
 `https://<root-domain>/api/auth/google/callback` in Google Cloud and configure
@@ -195,11 +194,51 @@ The bundled configuration is currently specific to the production domain and sho
 
 # Deployment Procedure
 
-First compare the deployed numbered baseline with the new release. If it
-changed, prepare and review a backup, data-transfer, and database-replacement
-procedure before deploying. Never run `db:reset` against production or any
-valuable environment. The steps below apply when the schema is unchanged or
-after the replacement database has already been prepared and verified.
+First compare the deployed numbered baseline with the new release. If it is
+unchanged, use the normal migration procedure below. If it changed and the
+release intentionally has no in-place upgrade path, use the reset-only
+procedure only after complete PostgreSQL and Redis data loss has been
+explicitly approved.
+
+## Reset-only release
+
+This procedure permanently deletes the configured PostgreSQL database and
+flushes the configured Redis instance. Stop both applications first so no old
+process can query a partially replaced schema or serve files while the Next.js
+build directory is changing.
+
+1. Deploy the new project files and install dependencies.
+2. Stop the applications:
+
+```bash
+pm2 stop ecosystem.config.json
+```
+
+3. Build the complete release:
+
+```bash
+pnpm build
+```
+
+4. Recreate PostgreSQL and Redis from the consolidated baseline:
+
+```bash
+DB_RESET_REQUIRE_STOPPED_BACKEND=true pnpm db:reset
+```
+
+5. Start the applications with the current environment:
+
+```bash
+pm2 restart ecosystem.config.json --update-env
+```
+
+6. Purge any CDN cache, then verify every item in the deployment checklist.
+   This prevents cached HTML from referencing JavaScript chunks from the
+   previous build.
+
+## Normal release
+
+The steps below apply only when the numbered baseline is unchanged.
 
 Before deploying:
 
@@ -223,13 +262,13 @@ pnpm db:migrate
 pnpm build
 ```
 
-7. Reload PM2:
+8. Reload PM2:
 
 ```bash
 pm2 reload ecosystem.config.json
 ```
 
-8. Verify:
+9. Verify:
 
 - root domain
 - business subdomains

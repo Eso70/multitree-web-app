@@ -16,12 +16,15 @@ function clientWithSchema(
     'uq_businesses_one_platform_workspace',
     'creator_trial_claims_google_subject_hmac_idx',
     'creator_trial_claims_device_hmac_idx',
+    'idx_linktrees_business_campaign_active',
+    'idx_linktrees_business_default_campaign',
+    'idx_linktrees_business_archived',
   ],
   catalog = {
     public_page_entitlement: true,
     advertising_permissions: true,
     advertising_entitlement: true,
-    retired_mini_website_catalog: true,
+    linktree_update_fields: true,
     platform_content_permissions: true,
     creator_permissions: true,
     platform_workspace: true,
@@ -65,38 +68,6 @@ describe('migration compatibility checks', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('accepts the exact pre-rebrand communication names only before forward migrations', async () => {
-    const legacyColumns = requiredColumns
-      .filter(
-        (column) => column !== 'communication_conversations.sponsor_krd_key',
-      )
-      .concat('communication_conversations.multitree_key');
-    const legacyIndexes = [
-      'idx_communication_conversations_multitree_key',
-      'uq_api_versions_current',
-      'uq_platform_retention_running',
-      'idx_uploaded_media_assets_created',
-      'idx_public_page_tombstones_slug',
-      'uq_businesses_one_platform_workspace',
-      'creator_trial_claims_google_subject_hmac_idx',
-      'creator_trial_claims_device_hmac_idx',
-    ];
-
-    const legacyClient = clientWithSchema(
-      [...REQUIRED_TABLES],
-      legacyColumns,
-      legacyIndexes,
-    );
-    await expect(assertSupportedSchema(legacyClient)).rejects.toThrow(
-      /sponsor_krd_key/,
-    );
-    await expect(
-      assertSupportedSchema(legacyClient, {
-        allowPendingSponsorKrdRebrand: true,
-      }),
-    ).resolves.toBeUndefined();
-  });
-
   it('rejects partial schemas without mutating them', async () => {
     await expect(
       assertSupportedSchema(clientWithSchema(['businesses'], [])),
@@ -132,51 +103,12 @@ describe('migration compatibility checks', () => {
           public_page_entitlement: false,
           advertising_permissions: true,
           advertising_entitlement: true,
-          retired_mini_website_catalog: true,
+          linktree_update_fields: true,
           platform_content_permissions: true,
           creator_permissions: true,
           platform_workspace: true,
         }),
       ),
     ).rejects.toThrow(/missing catalog entries/);
-  });
-
-  it('allows the retired feature schema only before its forward removal', async () => {
-    const retiredTables = [
-      'mini_websites',
-      'mini_website_sections',
-      'mini_website_social_links',
-      'mini_website_locations',
-      'mini_website_hours',
-      'mini_website_items',
-      'mini_website_versions',
-    ];
-    const retiredColumns = [
-      'public_pages.source_mini_website_id',
-      'creator_accounts.mini_website_id',
-      'root_public_slugs.mini_website_id',
-    ];
-    const catalog = {
-      public_page_entitlement: true,
-      advertising_permissions: true,
-      advertising_entitlement: true,
-      retired_mini_website_catalog: false,
-      platform_content_permissions: true,
-      creator_permissions: true,
-      platform_workspace: true,
-    };
-    const client = clientWithSchema(
-      [...REQUIRED_TABLES, ...retiredTables],
-      [...requiredColumns, ...retiredColumns],
-      undefined,
-      catalog,
-    );
-
-    await expect(assertSupportedSchema(client)).rejects.toThrow(
-      /obsolete tables/,
-    );
-    await expect(
-      assertSupportedSchema(client, { allowPendingMiniWebsiteRemoval: true }),
-    ).resolves.toBeUndefined();
   });
 });

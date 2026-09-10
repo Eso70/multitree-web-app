@@ -38,7 +38,7 @@ describe('PublicPageAnalyticsService', () => {
       [
         {
           id: 'action-1',
-          action_key: 'mini:whatsapp',
+          action_key: 'page:whatsapp',
           tiktok_event: 'Contact',
         },
         { id: 'action-2', action_key: 'link:abc', tiktok_event: 'ClickButton' },
@@ -50,7 +50,7 @@ describe('PublicPageAnalyticsService', () => {
     expect(analytics.pixelIds).toEqual(['PIXEL123']);
     // Keyed by `action_key`, because that is what the renderer holds; the id
     // and the event name travel together so neither side invents one.
-    expect(analytics.actions['mini:whatsapp']).toEqual({
+    expect(analytics.actions['page:whatsapp']).toEqual({
       id: 'action-1',
       pixelEvent: 'Contact',
     });
@@ -72,12 +72,16 @@ describe('TikTok forwarding scope', () => {
     join(__dirname, 'unified-analytics.service.ts'),
     'utf8',
   );
+  const publicSource = readFileSync(
+    join(__dirname, '../public/public.service.ts'),
+    'utf8',
+  );
   const eligibility = readFileSync(
     join(__dirname, 'tiktok-owner-eligibility.ts'),
     'utf8',
   );
 
-  it('forwards every registered public marketing page type', () => {
+  it('forwards only public Linktree pages to TikTok', () => {
     const declaration = source.match(
       /TIKTOK_FORWARDED_PAGE_TYPES[\s\S]*?new Set\(\[([^\]]*)\]\)/,
     );
@@ -88,8 +92,12 @@ describe('TikTok forwarding scope', () => {
     // event for it would have no browser counterpart to deduplicate against
     // and would inflate the counts ads optimise on.
     expect(declaration?.[1]).toContain("'linktree'");
-    expect(declaration?.[1]).toContain("'advertising'");
-    expect(declaration?.[1]).toContain("'route'");
+    expect(declaration?.[1]).not.toContain("'advertising'");
+    expect(declaration?.[1]).not.toContain("'route'");
+  });
+
+  it('removes Pixel destinations from fixed-route responses', () => {
+    expect(publicSource).toContain('analytics: { ...analytics, pixelIds: [] }');
   });
 
   it('gates the outbox insert on the same entitlement as the public read', () => {

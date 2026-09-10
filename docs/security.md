@@ -1,8 +1,8 @@
 # Security
 
-Creator signup security, identity claims, rate limits, and session isolation
-are defined in [`creator-accounts.md`](creator-accounts.md). A verified Google
-identity proves control of that Google account; it is not legal identity proof.
+Creator signup uses verified Google identity, rate limits, isolated sessions,
+and durable trial-claim records. A verified Google identity proves control of
+that Google account; it is not legal identity proof.
 Creator dashboards receive only an allowlisted identity projection. Platform
 Creator management may use verified email, display name, avatar, authentication
 timestamps, account timestamps, and active-session counts for support and

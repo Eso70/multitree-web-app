@@ -13,10 +13,7 @@ import { STORAGE_DRIVER, type StorageDriver } from './storage.driver';
 
 const UPLOAD_URL_PREFIX = '/images/upload/';
 const MEDIA_FORMATS = ['jpeg', 'png', 'ico'] as const;
-// Existing deployments may still contain either pre-rebrand namespace.
-// New writes always use `sponsor-krd/`.
 const LEGACY_SYSTEM_STORAGE_PREFIX = 'system/';
-const LEGACY_MULTITREE_STORAGE_PREFIX = 'multitree/';
 const SPONSOR_KRD_STORAGE_PREFIX = 'sponsor-krd/';
 type MediaFormat = (typeof MEDIA_FORMATS)[number];
 
@@ -151,7 +148,6 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
               public_url: `${UPLOAD_URL_PREFIX}${file.key}`,
               scope:
                 file.key.startsWith(SPONSOR_KRD_STORAGE_PREFIX) ||
-                file.key.startsWith(LEGACY_MULTITREE_STORAGE_PREFIX) ||
                 file.key.startsWith(LEGACY_SYSTEM_STORAGE_PREFIX)
                   ? 'sponsor_krd'
                   : file.key.startsWith('businesses/')
@@ -484,7 +480,6 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
     const ownerMatch = input.key.match(/^businesses\/([0-9a-f-]{36})\//i);
     const scope =
       input.key.startsWith(SPONSOR_KRD_STORAGE_PREFIX) ||
-      input.key.startsWith(LEGACY_MULTITREE_STORAGE_PREFIX) ||
       input.key.startsWith(LEGACY_SYSTEM_STORAGE_PREFIX)
         ? 'sponsor_krd'
         : input.key.startsWith('businesses/')

@@ -1,5 +1,4 @@
 import { spawnSync } from 'child_process';
-import { readdirSync } from 'fs';
 import { join } from 'path';
 import { Pool } from 'pg';
 import {
@@ -10,22 +9,6 @@ import {
 const DATABASE_PREFIX = 'sponsor_krd_migration_e2e_';
 const fixtureDatabase = `${DATABASE_PREFIX}${process.pid}`;
 const migrationsDirectory = join(__dirname, '../src/database/migrations');
-const DATED_MIGRATION = /^\d{4}-\d{2}-\d{2}_.+\.sql$/;
-
-/**
- * What the ledger should hold after upgrading a pre-ledger installation: the
- * baseline, plus any dated forward migration shipped since.
- *
- * The baseline is recorded under one name however many parts carry it, so it
- * is named here rather than derived from the directory listing.
- */
-function expectedUpgradeLedger(): string[] {
-  const forward = readdirSync(migrationsDirectory)
-    .filter((filename) => DATED_MIGRATION.test(filename))
-    .sort();
-  return [BASELINE_LEDGER_NAME, ...forward].sort();
-}
-
 function connection(database: string) {
   return {
     host: process.env.DB_HOST,
@@ -66,22 +49,14 @@ describe('consolidated database schema commands (e2e)', () => {
     );
     fixture = new Pool(connection(fixtureDatabase));
 
-    // A supported pre-rebrand installation has the application structure but
-    // still carries the communication column/index names that the rebrand
-    // forward migration upgrades. Removing this optional session setting keeps
-    // the fixture usable with older disposable developer databases too. Built
-    // from every baseline part, the same way the migration scripts do.
+    // Build a complete unledgered schema from every baseline part, the same way
+    // the migration scripts do. Removing this optional setting keeps the
+    // fixture usable with older disposable developer databases too.
     const baseline = readBaselineSql(migrationsDirectory)
       .split('\n')
       .filter((line) => line.trim() !== 'SET transaction_timeout = 0;')
       .join('\n');
     await fixture.query(baseline);
-    await fixture.query(`
-      ALTER TABLE communication_conversations
-        RENAME COLUMN sponsor_krd_key TO multitree_key;
-      ALTER INDEX idx_communication_conversations_sponsor_krd_key
-        RENAME TO idx_communication_conversations_multitree_key;
-    `);
     await fixture.query('TRUNCATE schema_migrations');
   });
 
@@ -100,7 +75,7 @@ describe('consolidated database schema commands (e2e)', () => {
     }
   });
 
-  it('baselines and upgrades a complete pre-rebrand schema', async () => {
+  it('records a complete unledgered schema without replaying it', async () => {
     const runner = join(__dirname, '../node_modules/ts-node/dist/bin.js');
     const result = spawnSync(
       process.execPath,
@@ -126,14 +101,14 @@ describe('consolidated database schema commands (e2e)', () => {
     const ledger = await fixture.query<{ filename: string }>(
       'SELECT filename FROM schema_migrations ORDER BY filename',
     );
-    expect(ledger.rows.map((row) => row.filename)).toEqual(
-      expectedUpgradeLedger(),
-    );
+    expect(ledger.rows.map((row) => row.filename)).toEqual([
+      BASELINE_LEDGER_NAME,
+    ]);
     const retainedBusinessTable = await fixture.query<{ exists: boolean }>(
       `SELECT to_regclass('public.businesses') IS NOT NULL AS exists`,
     );
     expect(retainedBusinessTable.rows[0].exists).toBe(true);
-    const renamedCommunicationSchema = await fixture.query<{
+    const currentLinktreeSchema = await fixture.query<{
       column_exists: boolean;
       index_exists: boolean;
     }>(`
@@ -141,14 +116,14 @@ describe('consolidated database schema commands (e2e)', () => {
         EXISTS (
           SELECT 1 FROM information_schema.columns
            WHERE table_schema = 'public'
-             AND table_name = 'communication_conversations'
-             AND column_name = 'sponsor_krd_key'
+             AND table_name = 'linktrees'
+             AND column_name = 'is_archived'
         ) AS column_exists,
         to_regclass(
-          'public.idx_communication_conversations_sponsor_krd_key'
+          'public.idx_linktrees_business_archived'
         ) IS NOT NULL AS index_exists
     `);
-    expect(renamedCommunicationSchema.rows[0]).toEqual({
+    expect(currentLinktreeSchema.rows[0]).toEqual({
       column_exists: true,
       index_exists: true,
     });

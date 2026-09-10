@@ -51,7 +51,6 @@ interface QueuedAnalyticsEvent {
 }
 
 const QUEUE_KEY = "sponsor_krd_analytics_events_v2";
-const LEGACY_QUEUE_KEY = "multitree_analytics_events_v2";
 const MAX_QUEUE_SIZE = 500;
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const FLUSH_INTERVAL_MS = 15_000;
@@ -72,10 +71,7 @@ function normalizeEvent(event: QueuedAnalyticsEvent): QueuedAnalyticsEvent {
     ...event,
     pageUrl: boundedAnalyticsValue(event.pageUrl, MAX_ANALYTICS_URL_LENGTH),
     referrer: boundedAnalyticsValue(event.referrer, MAX_ANALYTICS_URL_LENGTH),
-    ttclid: boundedAnalyticsValue(
-      event.ttclid,
-      MAX_TIKTOK_ATTRIBUTION_LENGTH,
-    ),
+    ttclid: boundedAnalyticsValue(event.ttclid, MAX_TIKTOK_ATTRIBUTION_LENGTH),
     ttp: boundedAnalyticsValue(event.ttp, MAX_TIKTOK_ATTRIBUTION_LENGTH),
   };
 }
@@ -133,12 +129,8 @@ function readQueue(): QueuedAnalyticsEvent[] {
   }
   try {
     const parsed = JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]");
-    const legacyParsed = JSON.parse(
-      localStorage.getItem(LEGACY_QUEUE_KEY) || "[]",
-    );
     const stored = Array.isArray(parsed) ? parsed : [];
-    const legacyStored = Array.isArray(legacyParsed) ? legacyParsed : [];
-    const combined = [...stored, ...legacyStored];
+    const combined = [...stored];
     for (const memoryEvent of memoryQueue) {
       if (
         !combined.some(
@@ -155,9 +147,8 @@ function readQueue(): QueuedAnalyticsEvent[] {
       )
       .map(normalizeEvent);
     memoryQueue = queue.slice(-MAX_QUEUE_SIZE);
-    if (queue.length !== stored.length || legacyStored.length > 0) {
+    if (queue.length !== stored.length) {
       writeQueue(queue);
-      localStorage.removeItem(LEGACY_QUEUE_KEY);
     }
     return queue;
   } catch {

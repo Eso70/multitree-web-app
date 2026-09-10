@@ -3,16 +3,12 @@ import { join } from 'path';
 import { baselineDir, baselineFiles } from './baseline';
 
 /**
- * The numbered baseline was rebaselined on 2026-08-24 to include every dated
- * forward migration then present. Those files were deleted because this
- * project explicitly recreates its disposable database from the baseline.
+ * The numbered baseline is the complete schema for every new installation.
+ * Dated migrations are periodically folded into their owning baseline parts
+ * and removed once deployments intentionally recreate their databases.
  *
- * `db:reset` applies the baseline and nothing else — `db-reset.ts` never calls
- * `applyForwardMigrations` and asserts the ledger holds exactly one row — so
- * anything missing from this file is missing from every freshly reset
- * database. Before the rebaseline a reset still produced the password columns,
- * the pre-rename template keys and SponsorKrd's own logo as the business
- * default.
+ * `db:reset` applies the baseline and nothing else and asserts the ledger holds
+ * exactly one row, so anything missing here is missing from a fresh database.
  *
  * The authoritative check is the differential one: apply the old baseline plus
  * every migration to one scratch database, the new baseline alone to another,
@@ -23,11 +19,6 @@ import { baselineDir, baselineFiles } from './baseline';
 const MIGRATIONS_DIR = join(__dirname, 'migrations');
 const BASELINE_DIR = baselineDir(MIGRATIONS_DIR);
 const PARTS = baselineFiles(MIGRATIONS_DIR);
-const MINI_WEBSITE_REMOVAL = readFileSync(
-  join(MIGRATIONS_DIR, '2026-09-09_remove_mini_websites.sql'),
-  'utf8',
-);
-
 const readPart = (name: string) =>
   readFileSync(join(BASELINE_DIR, name), 'utf8');
 
@@ -159,33 +150,29 @@ describe('full_schema.sql baseline', () => {
     });
   });
 
-  describe('2026-09-09 Mini Website retirement', () => {
-    it('drops every legacy Mini Website table before the parent table', () => {
-      const retiredTables = [
-        'mini_website_lead_forms',
-        'mini_website_versions',
-        'mini_website_items',
-        'mini_website_hours',
-        'mini_website_locations',
-        'mini_website_social_links',
-        'mini_website_sections',
-        'mini_websites',
-      ];
-
-      for (const retiredTable of retiredTables) {
-        expect(MINI_WEBSITE_REMOVAL).toContain(
-          `DROP TABLE IF EXISTS public.${retiredTable};`,
-        );
-        expect(SCHEMA).not.toContain(`CREATE TABLE public.${retiredTable}`);
-      }
-
-      expect(
-        MINI_WEBSITE_REMOVAL.indexOf('mini_website_lead_forms'),
-      ).toBeLessThan(
-        MINI_WEBSITE_REMOVAL.indexOf(
-          'DROP TABLE IF EXISTS public.mini_websites;',
-        ),
+  describe('current Linktree schema', () => {
+    it('declares dashboard state and subtitle styling directly', () => {
+      const block = tableBlock('linktrees');
+      expect(block).toContain('subtitle_color character varying(50)');
+      expect(block).toContain(
+        'is_campaign_active boolean DEFAULT false NOT NULL',
       );
+      expect(block).toContain('is_archived boolean DEFAULT false NOT NULL');
+      expect(block).toContain('archived_at timestamp with time zone');
+    });
+
+    it('includes the matching indexes and permission fields', () => {
+      expect(SCHEMA).toContain('idx_linktrees_business_campaign_active');
+      expect(SCHEMA).toContain('idx_linktrees_business_default_campaign');
+      expect(SCHEMA).toContain('idx_linktrees_business_archived');
+      for (const field of [
+        'status',
+        'subtitle_color',
+        'is_campaign_active',
+        'is_archived',
+      ]) {
+        expect(DATA).toContain(`"${field}"`);
+      }
     });
   });
 
@@ -239,22 +226,11 @@ describe('full_schema.sql baseline', () => {
   });
 
   /**
-   * Folded migrations were deleted with the rebaseline. New changes remain as
-   * dated forward migrations until the next deliberate rebaseline. Listing
-   * them explicitly prevents an accidental SQL file from silently entering
-   * the production upgrade sequence.
+   * The reset-only release has no dated upgrade scripts. Listing the directory
+   * prevents an obsolete migration from silently re-entering deployment.
    */
-  it('has only deliberate dated forward migrations after the current rebaseline', () => {
-    expect(readdirSync(MIGRATIONS_DIR).sort()).toEqual([
-      '2026-09-02_add_linktree_subtitle_color.sql',
-      '2026-09-03_add_linktree_subtitle_color_permission.sql',
-      '2026-09-05_add_linktree_is_campaign_active.sql',
-      '2026-09-06_add_linktree_is_archived.sql',
-      '2026-09-07_add_linktree_status_permission.sql',
-      '2026-09-08_rebrand_sponsor_krd.sql',
-      '2026-09-09_remove_mini_websites.sql',
-      'baseline',
-    ]);
+  it('contains only the consolidated baseline', () => {
+    expect(readdirSync(MIGRATIONS_DIR).sort()).toEqual(['baseline']);
   });
 
   /**

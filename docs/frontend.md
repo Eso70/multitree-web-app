@@ -963,5 +963,4 @@ a responsive client dashboard. Before creation it launches
 `ReusableLinktreeEditorModal` with the inviting business's current templates
 and a restricted validated image-upload endpoint; business-only fields remain
 disabled. After submission the dashboard exposes read-only totals and link
-clicks only for the resulting page. See
-`docs/new-feature-client-linktree-access.md` for the complete contract.
+clicks only for the resulting page.

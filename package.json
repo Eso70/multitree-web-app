@@ -49,14 +49,5 @@
     "pm2:delete": "pm2 delete ecosystem.config.json",
     "pm2:logs": "pm2 logs",
     "pm2:monit": "pm2 monit"
-  },
-  "pnpm": {
-    "overrides": {
-      "fastify": "5.11.3",
-      "find-my-way": "9.7.0",
-      "fast-uri": "^3.1.5",
-      "postcss": "^8.5.18",
-      "nanoid": "^3.3.17"
-    }
   }
 }

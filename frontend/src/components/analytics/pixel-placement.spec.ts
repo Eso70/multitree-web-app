@@ -23,12 +23,7 @@ import { describe, expect, it } from "vitest";
 const SOURCE_ROOT = join(process.cwd(), "src");
 
 /** The only files permitted to mount the pixel, relative to `src`. */
-const ALLOWED = new Set([
-  // Public linktree pages.
-  "components/public/LinktreePage.tsx",
-  // Central fixed-route allowlist (home, join and advertising routes).
-  "components/analytics/PublicRouteTracking.tsx",
-]);
+const ALLOWED = new Set(["components/public/LinktreePage.tsx"]);
 
 function sourceFiles(directory: string, found: string[] = []): string[] {
   for (const entry of readdirSync(directory)) {
@@ -79,8 +74,8 @@ describe("TikTok pixel placement", () => {
   it("is absent from the platform admin console", () => {
     const mounts = filesMounting(/<TikTokPixel/);
 
-    // Platform-owned public routes are handled only by PublicRouteTracking;
-    // the authenticated console must never mount a Pixel directly.
+    // Neither public platform routes nor the authenticated console may mount
+    // a business Pixel.
     expect(mounts.some((file) => file.includes("platform-admin"))).toBe(false);
   });
 

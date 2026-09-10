@@ -30,12 +30,10 @@ export interface BackgroundGradient {
 export const BACKGROUND_GRADIENTS: Record<string, BackgroundGradient> = {
   // Old default (brand-aligned navy to warm amber)
   "#6366f1": { from: "#0b1224", via: "#1c2d52", to: "#b7791f" },
-  
-  // Retained so existing pages using the former brand color render unchanged.
-  "#b6f20d": { from: "#203000", via: "#b6f20d", to: "#ecffc2" },
+
   "#25F4EE": { from: "#25F4EE", via: "#111111", to: "#FE2C55" },
   "#dc2626": { from: "#713f12", via: "#eab308", to: "#854d0e" },
-  
+
   // Standard color gradients
   "#1e40af": { from: "#1e3a8a", via: "#1e40af", to: "#1e3a8a" }, // blue
   "#7c3aed": { from: "#581c87", via: "#6b21a8", to: "#581c87" }, // purple
@@ -50,21 +48,21 @@ export const BACKGROUND_GRADIENTS: Record<string, BackgroundGradient> = {
   "#064e3b": { from: "#022c22", via: "#064e3b", to: "#022c22" }, // emerald
   "#4c1d95": { from: "#3b0764", via: "#4c1d95", to: "#3b0764" }, // violet
   "#701a75": { from: "#581c87", via: "#701a75", to: "#581c87" }, // fuchsia
-  
+
   // Solid colors
   "#ffffff": { from: "#ffffff", via: "#ffffff", to: "#ffffff", isSolid: true }, // pure-white
   "#000000": { from: "#000000", via: "#000000", to: "#000000", isSolid: true }, // pure-black
-  
+
   // White and light gradients
   "#f3f4f6": { from: "#f3f4f6", via: "#ffffff", to: "#f3f4f6" }, // white (gray-100, white, gray-100)
   "#e5e7eb": { from: "#e5e7eb", via: "#f3f4f6", to: "#e5e7eb" }, // light-gray (gray-200, gray-100, gray-200)
   "#d1d5db": { from: "#d1d5db", via: "#e5e7eb", to: "#d1d5db" }, // silver (gray-300, gray-200, gray-300)
-  
+
   // Grey gradients
   "#4b5563": { from: "#4b5563", via: "#6b7280", to: "#4b5563" }, // gray (gray-600, gray-500, gray-600)
   "#1f2937": { from: "#1f2937", via: "#374151", to: "#1f2937" }, // dark-gray (gray-800, gray-700, gray-800)
   "#111827": { from: "#111827", via: "#1f2937", to: "#111827" }, // charcoal (gray-900, gray-800, gray-900)
-  
+
   // Additional color variations
   "#0284c7": { from: "#0284c7", via: "#0ea5e9", to: "#0284c7" }, // sky-blue (sky-600, sky-500, sky-600)
   "#65a30d": { from: "#65a30d", via: "#84cc16", to: "#65a30d" }, // lime (lime-600, lime-500, lime-600)
@@ -73,7 +71,7 @@ export const BACKGROUND_GRADIENTS: Record<string, BackgroundGradient> = {
   "#52525b": { from: "#52525b", via: "#71717a", to: "#52525b" }, // zinc (zinc-700, zinc-600, zinc-700)
   "#57534e": { from: "#57534e", via: "#78716c", to: "#57534e" }, // stone (stone-700, stone-600, stone-700)
   "#525252": { from: "#525252", via: "#737373", to: "#525252" }, // neutral (neutral-700, neutral-600, neutral-700)
-  
+
   // More gradient variations
   "#0891b2": { from: "#0284c7", via: "#06b6d4", to: "#14b8a6" }, // ocean (blue-600, cyan-500, teal-600)
   "#f97316": { from: "#f97316", via: "#ec4899", to: "#f43f5e" }, // sunset (orange-500, pink-500, rose-500)
@@ -86,7 +84,7 @@ export const BACKGROUND_GRADIENTS: Record<string, BackgroundGradient> = {
   "#9333ea": { from: "#1e1b4b", via: "#9333ea", to: "#f472b6" }, // royal bloom
   "#f472b6": { from: "#2f1553", via: "#f472b6", to: "#facc15" }, // blush gold
   "#38bdf8": { from: "#0f172a", via: "#38bdf8", to: "#7c3aed" }, // ice drift
-  
+
   // Black gradients
   "#0a0a0a": { from: "#000000", via: "#111827", to: "#000000" }, // black-gray
   "#0d0d0d": { from: "#000000", via: "#1f2937", to: "#111827" }, // black-charcoal
@@ -107,7 +105,6 @@ export const BACKGROUND_GRADIENTS: Record<string, BackgroundGradient> = {
   "#0f0a0a": { from: "#000000", via: "#7c2d12", to: "#000000" }, // black-amber
   "#0f0a1a": { from: "#000000", via: "#881337", to: "#000000" }, // black-rose
   "#0a0f0a": { from: "#000000", via: "#022c22", to: "#000000" }, // black-emerald
-  
 };
 
 /**
@@ -119,7 +116,9 @@ export const DEFAULT_BACKGROUND_COLOR = "#000000";
  * Get background gradient for a given hex color
  * Returns default gradient if color not found
  */
-export function getBackgroundGradient(hexColor?: string | null): BackgroundGradient {
+export function getBackgroundGradient(
+  hexColor?: string | null,
+): BackgroundGradient {
   const color = hexColor || DEFAULT_BACKGROUND_COLOR;
 
   // `parseWebsiteGradient` owns the format, including the direction table and
@@ -134,17 +133,17 @@ export function getBackgroundGradient(hexColor?: string | null): BackgroundGradi
       backgroundCss: customGradient.css,
     };
   }
-  
+
   // Return predefined gradient if it exists
   if (BACKGROUND_GRADIENTS[color]) {
     return BACKGROUND_GRADIENTS[color];
   }
-  
+
   // Support valid custom hex colors as a solid background instead of falling back to default
   if (/^#([0-9A-F]{3}){1,2}$/i.test(color)) {
     return { from: color, via: color, to: color, isSolid: true };
   }
-  
+
   // Fallback to default
   return BACKGROUND_GRADIENTS[DEFAULT_BACKGROUND_COLOR];
 }

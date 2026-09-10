@@ -33,11 +33,12 @@ interface PublicPageRow {
 }
 
 /**
- * Approved public-page identities whose events may be forwarded to TikTok.
- * Route identities are created only for the explicit marketing allowlist.
+ * Only public Linktree identities may be forwarded to TikTok. Fixed platform
+ * routes, business landing pages, and advertising pages remain first-party
+ * analytics only.
  */
 const TIKTOK_FORWARDED_PAGE_TYPES: ReadonlySet<PublicPageRow['page_type']> =
-  new Set(['linktree', 'advertising', 'route']);
+  new Set(['linktree']);
 
 /**
  * Internal events that describe engagement rather than a conversion.
@@ -56,7 +57,7 @@ const TIKTOK_FORWARDED_PAGE_TYPES: ReadonlySet<PublicPageRow['page_type']> =
  * browser fired the pixel and the pair has to stay complete.
  *
  * Deliberately limited to the names `trackEngagement` actually reports. `share`
- * is not among them: it is also what `mini:vcard` infers, and a contact
+ * is not among them: it is also what `page:vcard` infers, and a contact
  * download is a conversion, so adding it here would silently stop forwarding a
  * real one.
  */

@@ -224,12 +224,15 @@ export class PublicService {
     );
     const row = page.rows[0];
     if (!row) throw new NotFoundException('Not Found');
+    const analytics = await this.pageAnalytics.forPublicPage(ownerId, row.id);
     return {
       pageId: row.id,
       pageName: row.name,
       contentType:
         row.page_type === 'route' ? `route:${routeKey}` : row.page_type,
-      analytics: await this.pageAnalytics.forPublicPage(ownerId, row.id),
+      // Fixed and advertising routes collect first-party analytics only.
+      // Never expose business Pixel destinations to these surfaces.
+      analytics: { ...analytics, pixelIds: [] },
     };
   }
 

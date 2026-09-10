@@ -5,10 +5,10 @@ import { PublicPageAnalyticsService } from '../analytics/public-page-analytics.s
 import { PlatformContentWorkspaceService } from '../platform-workspace/platform-content-workspace.service';
 
 describe('PublicService platform theme', () => {
-  it('upgrades and caches the retired MultiTree platform accent', async () => {
+  it('caches the configured platform accent', async () => {
     const database = {
       query: jest.fn().mockResolvedValue({
-        rows: [{ accent_color: '#b6f20d' }],
+        rows: [{ accent_color: '#123456' }],
       }),
     } as unknown as DatabaseService;
     const redis = {
@@ -28,21 +28,21 @@ describe('PublicService platform theme', () => {
     );
 
     await expect(service.getPlatformTheme()).resolves.toEqual({
-      accent_color: 'gradient:to-r:#25F4EE:#FE2C55',
+      accent_color: '#123456',
     });
     expect(redis.set).toHaveBeenCalledWith(
       'cache:public:platform-theme',
-      { accent_color: 'gradient:to-r:#25F4EE:#FE2C55' },
+      { accent_color: '#123456' },
       300,
     );
   });
 
-  it('upgrades a retired accent already held in Redis', async () => {
+  it('uses the configured accent already held in Redis', async () => {
     const database = {
       query: jest.fn(),
     } as unknown as DatabaseService;
     const redis = {
-      get: jest.fn().mockResolvedValue({ accent_color: '#b6f20d' }),
+      get: jest.fn().mockResolvedValue({ accent_color: '#123456' }),
       set: jest.fn(),
     } as unknown as RedisService;
     const service = new PublicService(
@@ -58,7 +58,7 @@ describe('PublicService platform theme', () => {
     );
 
     await expect(service.getPlatformTheme()).resolves.toEqual({
-      accent_color: 'gradient:to-r:#25F4EE:#FE2C55',
+      accent_color: '#123456',
     });
     expect(database.query).not.toHaveBeenCalled();
     expect(redis.set).not.toHaveBeenCalled();

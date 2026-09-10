@@ -55,7 +55,7 @@ export type PageEventName =
 const REPEAT_WINDOW_MS = 1_500;
 
 /** Where an unregistered outbound link is attributed, when the page has one. */
-const FALLBACK_ACTION_KEY = "mini:external";
+const FALLBACK_ACTION_KEY = "page:external";
 
 export interface PageTrackerOptions {
   /** The page's own id; the server resolves it to a public page. */
@@ -99,7 +99,7 @@ export interface PageTracker {
     eventName: PageEventName,
     options?: TrackActionOptions,
   ) => TrackedActionResult | undefined;
-  /** Reports a click on an anchor, using its `data-mini-action` hint when present. */
+  /** Reports a click on an anchor, using its `data-page-action` hint when present. */
   trackAnchor: (anchor: HTMLAnchorElement) => TrackedActionResult | undefined;
   /**
    * Reports engagement that is real but is not a conversion — a section
@@ -135,24 +135,24 @@ function absoluteUrl(value: string): string {
 /** The internal event a bare action key implies, when none is given. */
 function inferEventName(actionKey: string): PageEventName {
   if (
-    actionKey === "mini:whatsapp" ||
-    actionKey.startsWith("mini:social:whats")
+    actionKey === "page:whatsapp" ||
+    actionKey.startsWith("page:social:whats")
   )
     return "whatsapp_click";
-  if (actionKey === "mini:phone") return "call_click";
-  if (actionKey === "mini:email") return "email_click";
-  if (actionKey === "mini:share" || actionKey === "mini:vcard") return "share";
-  if (actionKey.startsWith("mini:social:")) return "social_click";
-  if (actionKey.startsWith("mini:service:")) return "service_click";
-  if (actionKey.startsWith("mini:plan:") || actionKey.startsWith("mini:offer:"))
+  if (actionKey === "page:phone") return "call_click";
+  if (actionKey === "page:email") return "email_click";
+  if (actionKey === "page:share" || actionKey === "page:vcard") return "share";
+  if (actionKey.startsWith("page:social:")) return "social_click";
+  if (actionKey.startsWith("page:service:")) return "service_click";
+  if (actionKey.startsWith("page:plan:") || actionKey.startsWith("page:offer:"))
     return "checkout_started";
   if (
-    actionKey === "mini:booking" ||
-    actionKey.startsWith("mini:booking:") ||
-    actionKey.startsWith("mini:event:")
+    actionKey === "page:booking" ||
+    actionKey.startsWith("page:booking:") ||
+    actionKey.startsWith("page:event:")
   )
     return "booking_started";
-  if (actionKey.startsWith("mini:document:")) return "download";
+  if (actionKey.startsWith("page:document:")) return "download";
   return "button_click";
 }
 
@@ -384,16 +384,16 @@ export function createPageTracker(options: PageTrackerOptions): PageTracker {
     trackAnchor(anchor) {
       const href = anchor.getAttribute("href");
       if (!href) return;
-      const declaredKey = anchor.dataset.miniAction?.trim().slice(0, 120);
+      const declaredKey = anchor.dataset.pageAction?.trim().slice(0, 120);
       const actionKey = declaredKey || FALLBACK_ACTION_KEY;
       if (isRepeat(actionKey)) return;
 
-      // `data-mini-track="internal"` is a deliberate "count this, do not
+      // `data-page-track="internal"` is a deliberate "count this, do not
       // report it" — an affordance that shares another action's key but is not
       // the conversion that key stands for. Saving a QR image is not the same
       // intent as saving a contact card, and reporting it as one would teach
       // the ad algorithm the wrong thing.
-      const reportable = anchor.dataset.miniTrack !== "internal";
+      const reportable = anchor.dataset.pageTrack !== "internal";
 
       return send({
         eventName: declaredKey

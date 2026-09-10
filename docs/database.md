@@ -4,7 +4,7 @@ The Creator account schema lives in the consolidated baseline part
 `92_creator_accounts.sql`. It adds isolated Creator ownership, permanent
 Google-subject, verified-email and remembered-device trial claims,
 pseudonymous registration audit rows, and the concurrency-safe root public
-slug registry. See [`creator-accounts.md`](creator-accounts.md).
+slug registry.
 
 ## Fixed public marketing routes
 
@@ -177,7 +177,7 @@ single transaction by both `db:migrate` and `db:reset`:
 | `80_performance.sql`             | FK-column indexes and per-table storage tuning          |
 | `90_onboarding_identity.sql`     | invite-only Google onboarding                           |
 | `92_creator_accounts.sql`        | Creator ownership, trial claims, global root slugs      |
-| `95_folded_migrations.sql`       | statements kept in migration form for their names       |
+| `95_late_schema.sql`             | late objects that depend on earlier schema domains      |
 | `99_data.sql`                    | catalog rows the application cannot boot without        |
 
 `src/database/baseline.ts` owns the loading: `baselineFiles` reads the parts
@@ -238,89 +238,23 @@ platform write policy is enforced by the guarded platform service instead.
 `99_data.sql` registers the platform Linktree, TikTok, and
 Creator-administration capabilities with that workspace.
 
-## Baseline rebaseline, 2026-08-24
+## Baseline consolidation, 2026-09-10
 
-The numbered baseline now contains every forward migration that existed through
-the 2026-08-24 CRM and Advanced Analytics retirements. The dated migration
-files were removed after their final schema and required catalog data were
-folded into the appropriate baseline domains.
+The numbered baseline contains the complete current Sponsor.krd schema and
+required catalog data. Linktree subtitle styling, campaign state, archive
+state, current branding, platform ownership, and all active permissions are
+declared directly in their owning baseline parts. There are no dated upgrade
+files in this reset-only release.
 
-This was needed because `db:reset` applies the baseline and nothing else —
-`db-reset.ts` never calls `applyForwardMigrations`, and it asserts the ledger
-holds exactly one row. A reset therefore produced a schema that still had the
-password columns, the pre-rename linktree template keys, Sponsor.krd's own logo
-as the business default, and no impersonation columns. `db:migrate` did not
-have this problem, because it runs the forward migrations after the baseline.
+`db:reset` recreates the configured database from this baseline and records
+only `full_schema.sql`. `db:migrate` applies the same baseline to an empty
+database or strictly verifies an already-current schema. An outdated database
+must be replaced with an intentional reset; it is not upgraded implicitly.
 
-This is the "separate, periodic maintenance step" that `forward-migrations.ts`
-describes. Ordinary schema changes still ship as dated forward migrations so
-existing databases have an upgrade path until an explicitly reviewed
-rebaseline retires those files.
-
-**The folded migration files were then deleted**, along with the
-`*-migration.spec.ts` suites that read them. Every database is recreated from
-this baseline, so they had no upgrade path left to serve. The runner itself
-stays: `applyForwardMigrations` finds nothing until the next dated migration is
-added, and `db:migrate` still calls it.
-
-Three of them left nothing in the baseline because they only repaired or
-backfilled rows that already existed, and an empty database has none: the
-orphaned click-history recovery, the `website` link-platform retirement, and
-the default-page copy backfill. Their effects are described under _Schema
-decisions carried in the baseline_.
-
-How it was verified, and how to verify the next one:
-
-Run it _before_ deleting the migration files, while all three paths can still
-be built:
-
-1. **Path A** — original baseline + every forward migration, in filename order.
-2. **Path B** — new baseline alone.
-3. **Path C** — new baseline + every forward migration replayed.
-
-Each path is applied to its own throwaway database, then `information_schema`,
-`pg_constraint`, `pg_indexes`, column comments and the seeded catalog tables
-(`auth_permissions`, `billing_plan_templates`, `billing_plan_permissions`,
-`billing_entitlements`, `billing_plans`, `template_global_settings`) are
-compared. A == B proves the baseline reaches the migrated state; C == B proves
-replaying the migrations on a fresh database is a no-op, which is what
-`db:migrate` does. `schema_migrations` and every `created_at`/`updated_at` are
-projected out: the ledger legitimately differs, and a migration that rewrites a
-row sets `updated_at = now()`.
-
-Do not verify by running `db:reset` or `db:migrate` against a renamed database.
-`db-reset.ts` drops whatever `DB_NAME` resolves to and flushes Redis.
-
-The same differential is what makes restructuring the baseline safe, and it was
-used again on 2026-08-19 to split the catalog data out of `full_schema.sql` and
-strip the migration residue: snapshot the file first, restructure, then apply
-snapshot and result to two scratch databases and diff. Restructuring must
-change nothing, so a non-empty diff is a defect, never noise.
-
-`assertSupportedSchema` is also run against the new baseline, because
-`db:reset` gates on it.
-
-`migration-compatibility.ts` was deliberately left unchanged. The password
-columns look newly eligible for `OBSOLETE_COLUMNS` now that the baseline stops
-creating them, but that check runs against an existing database _before_ the
-forward migrations, so an entry there would make `db:migrate` reject any live
-database that has not yet applied
-`2026-08-13_remove_password_authentication.sql` — blocking the upgrade that
-would drop them.
-
-Neither dropped column is listed in `OBSOLETE_COLUMNS`
-(`migration-compatibility.ts`). That check runs against a fresh database after
-`full_schema.sql` is applied but before the forward migrations, and the frozen
-baseline still creates the columns, so an entry there would reject every fresh
-install. Fresh and existing databases both converge on the columns being absent
-once the forward migrations run.
-
-The migration compatibility check likewise accepts the exact pre-rebrand
-`communication_conversations.multitree_key` column and matching index only in
-the check immediately before forward migrations. The strict check after those
-migrations still requires `sponsor_krd_key` and its renamed index. This lets a
-valuable existing database reach the rebrand migration without weakening the
-final schema guarantee.
+The reset E2E test proves that an unrelated sentinel table is removed, the
+complete schema is recreated, and the ledger contains only the baseline row.
+The unledgered-schema test proves that a complete current schema can be
+recognized without replaying schema SQL.
 
 `trg_business_default_subscription` creates a default subscription immediately
 after a business row is inserted. Any workflow that creates a business with an
@@ -370,16 +304,16 @@ Application startup does not run migrations.
 The repository uses one consolidated schema baseline split across
 `backend/src/database/migrations/baseline/` for fresh installs and `db:reset`.
 Never edit that baseline for an ordinary schema change. Every schema change
-must first be delivered as a new dated forward migration file in
+should normally be delivered as a new dated forward migration file in
 `backend/src/database/migrations/` (for example
 `2026-08-10_add_tiktok_consent.sql`) so existing databases can be upgraded
 in place. Apply forward migrations with the same migration command, and
 verify existing databases after applying them.
 
-Disposable environments may be reset from the baseline, while valuable
-environments require an explicitly reviewed backup, data-transfer, and
-database-replacement procedure that includes the forward migrations. Never
-use `db:reset` as a production upgrade command.
+Environments may be reset from the baseline only when complete PostgreSQL and
+Redis data loss is explicitly approved. A production reset is a deliberate
+replacement, not an in-place upgrade: stop the applications first and follow
+the reset-only procedure in `docs/deployment.md`.
 
 The post-migration helpers perform only idempotent seed/data work. They do not
 create tables, alter columns, create indexes, or modify constraints.

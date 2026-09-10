@@ -261,6 +261,12 @@ CREATE INDEX idx_links_linktree_order ON public.links USING btree (linktree_id, 
 
 CREATE INDEX idx_linktrees_business_id ON public.linktrees USING btree (business_id);
 
+CREATE INDEX idx_linktrees_business_campaign_active ON public.linktrees USING btree (business_id, is_campaign_active DESC, created_at DESC);
+
+CREATE INDEX idx_linktrees_business_default_campaign ON public.linktrees USING btree (business_id, is_default DESC, is_campaign_active DESC, created_at DESC);
+
+CREATE INDEX idx_linktrees_business_archived ON public.linktrees USING btree (business_id, is_archived, is_default DESC, is_campaign_active DESC, created_at DESC);
+
 
 --
 -- Name: idx_linktrees_business_status; Type: INDEX; Schema: public; Owner: -
@@ -456,4 +462,3 @@ CREATE UNIQUE INDEX uq_business_subscription_provider ON public.business_subscri
 --
 
 CREATE UNIQUE INDEX uq_linktrees_one_default ON public.linktrees USING btree (business_id) WHERE (is_default = true);
-

@@ -180,8 +180,8 @@ Keep application startup schema-neutral.
 
 Run migrations explicitly.
 
-Apply every schema change as a new dated forward migration file; never edit the
-`full_schema.sql` baseline.
+Deliver ordinary live-compatible schema changes as dated forward migrations.
+Change the numbered baseline only during an explicit, reviewed rebaseline.
 
 Never modify production schemas manually.
 

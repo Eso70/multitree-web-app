@@ -4,7 +4,6 @@ import { useEffect, useState, type ReactNode } from "react";
 import { PublicMarketingSiteShell } from "@/components/public/PublicMarketingSiteShell";
 import { SPONSOR_KRD_LOGO } from "@/lib/brand/brand-assets";
 import {
-  normalizeSponsorKrdAccentValue,
   SPONSOR_KRD_ACCENT_GRADIENT,
   SPONSOR_KRD_ACCENT_VALUE,
 } from "@/lib/sponsor-krd-theme";
@@ -12,7 +11,11 @@ import { parseWebsiteColor } from "@/lib/utils/parse-website-color";
 import { MARKETING_NAVIGATION } from "./marketing-content";
 import { SponsorKrdMarketingFooter } from "./SponsorKrdMarketingFooter";
 
-export function SponsorKrdMarketingShell({ children }: { children: ReactNode }) {
+export function SponsorKrdMarketingShell({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const [accent, setAccent] = useState(() =>
     parseWebsiteColor(SPONSOR_KRD_ACCENT_VALUE),
   );
@@ -24,11 +27,7 @@ export function SponsorKrdMarketingShell({ children }: { children: ReactNode }) 
       .then((payload) => {
         if (cancelled || typeof payload?.data?.accent_color !== "string")
           return;
-        setAccent(
-          parseWebsiteColor(
-            normalizeSponsorKrdAccentValue(payload.data.accent_color),
-          ),
-        );
+        setAccent(parseWebsiteColor(payload.data.accent_color));
       })
       .catch(() => undefined);
     return () => {

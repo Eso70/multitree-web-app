@@ -1,8 +1,7 @@
 # Architecture
 
-Self-service root-domain accounts are documented in
-[`creator-accounts.md`](creator-accounts.md). Creator workspaces reuse the
-the Linktree domain services but have a separate session guard,
+Self-service root-domain Creator workspaces reuse the Linktree domain services
+but have a separate session guard,
 one-page ownership record, trial lifecycle, and global root-slug registry.
 
 ## Invite-only business identity
@@ -353,12 +352,10 @@ owned key patterns and must never flush unrelated Redis data.
 The complete PostgreSQL definition is maintained in the numbered files under
 `backend/src/database/migrations/baseline/`. `pnpm db:migrate` applies those
 parts transactionally to a fresh database and records the compatibility ledger
-name `full_schema.sql`. That baseline is never edited for an ordinary schema
-change: every schema change is first delivered as a new dated forward migration
-file in `backend/src/database/migrations/` so existing databases can be upgraded
-in place. Periodic rebaselines fold the accumulated final state into the
-numbered parts and remove the absorbed files. Production startup never applies
-schema changes.
+name `full_schema.sql`. Ordinary live-compatible changes are delivered as dated
+forward migrations in `backend/src/database/migrations/`; periodic deliberate
+rebaselines fold their final state into the numbered baseline and remove the
+absorbed files. Production startup never applies schema changes.
 
 An existing database is baselined only after its required tables, columns,
 indexes, removed columns, and catalog data pass compatibility checks. A

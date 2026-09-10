@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import type { PublicRouteTracking as PublicRouteTrackingData } from "@linktree/types";
-import { TikTokPixel } from "./TikTokPixel";
 import { createPageTracker } from "@/features/analytics/page-tracking";
 
 function routeKey(pathname: string): string | null {
@@ -15,7 +14,7 @@ function routeKey(pathname: string): string | null {
   return null;
 }
 
-/** Automatic tracking for the explicit fixed-route marketing allowlist. */
+/** First-party analytics for the explicit fixed-route allowlist. */
 export function PublicRouteTracking(): React.ReactElement | null {
   const pathname = usePathname();
   const key = routeKey(pathname);
@@ -57,10 +56,5 @@ export function PublicRouteTracking(): React.ReactElement | null {
     tracker.trackView();
   }, [tracking]);
 
-  return tracking ? (
-    <TikTokPixel
-      pixelIds={tracking.analytics.pixelIds}
-      pageKey={`${tracking.pageId}:${pathname}`}
-    />
-  ) : null;
+  return null;
 }

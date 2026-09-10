@@ -14,7 +14,7 @@ import { tiktokBaseCodeSnippet } from "./tiktok-base-code-snippet";
 const properties = {
   content_id: "action-1",
   content_ids: ["action-1"],
-  content_type: "mini:whatsapp",
+  content_type: "page:whatsapp",
   content_name: "WhatsApp",
   description: "",
 };

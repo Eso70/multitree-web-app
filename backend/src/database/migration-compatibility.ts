@@ -50,16 +50,6 @@ export const REQUIRED_TABLES = [
   'root_public_slugs',
 ] as const;
 
-const RETIRED_MINI_WEBSITE_TABLES = [
-  'mini_websites',
-  'mini_website_sections',
-  'mini_website_social_links',
-  'mini_website_locations',
-  'mini_website_hours',
-  'mini_website_items',
-  'mini_website_versions',
-] as const;
-
 export const REQUIRED_COLUMNS = [
   ['businesses', 'onboarding_step'],
   ['businesses', 'onboarding_version'],
@@ -76,6 +66,10 @@ export const REQUIRED_COLUMNS = [
   ['communication_messages', 'encrypted_body'],
   ['api_versions', 'last_notified_at'],
   ['api_versions', 'notification_count'],
+  ['linktrees', 'subtitle_color'],
+  ['linktrees', 'is_campaign_active'],
+  ['linktrees', 'is_archived'],
+  ['linktrees', 'archived_at'],
 ] as const;
 
 const OBSOLETE_COLUMNS = [
@@ -83,12 +77,6 @@ const OBSOLETE_COLUMNS = [
   // Compatibility check for databases created before the SponsorKrd
   // communication-key terminology was consolidated.
   ['communication_conversations', 'system_key'],
-] as const;
-
-const RETIRED_MINI_WEBSITE_COLUMNS = [
-  ['public_pages', 'source_mini_website_id'],
-  ['creator_accounts', 'mini_website_id'],
-  ['root_public_slugs', 'mini_website_id'],
 ] as const;
 
 const REQUIRED_INDEXES = [
@@ -100,45 +88,23 @@ const REQUIRED_INDEXES = [
   'uq_businesses_one_platform_workspace',
   'creator_trial_claims_google_subject_hmac_idx',
   'creator_trial_claims_device_hmac_idx',
+  'idx_linktrees_business_campaign_active',
+  'idx_linktrees_business_default_campaign',
+  'idx_linktrees_business_archived',
 ] as const;
 
-type SchemaCompatibilityOptions = {
-  /**
-   * Accept the exact column/index names used immediately before the
-   * Sponsor.krd rebrand migration. This is only for the safety check that runs
-   * before pending forward migrations; the post-migration check stays strict.
-   */
-  allowPendingSponsorKrdRebrand?: boolean;
-  /** Accept the feature schema only while its forward removal is pending. */
-  allowPendingMiniWebsiteRemoval?: boolean;
-};
-
-const LEGACY_SPONSOR_KRD_COLUMN = [
-  'communication_conversations',
-  'multitree_key',
-] as const;
-const LEGACY_SPONSOR_KRD_INDEX =
-  'idx_communication_conversations_multitree_key';
-
-export async function assertSupportedSchema(
-  client: PoolClient,
-  options: SchemaCompatibilityOptions = {},
-): Promise<void> {
+export async function assertSupportedSchema(client: PoolClient): Promise<void> {
   const tables = await client.query<{ table_name: string }>(
     `SELECT table_name
        FROM information_schema.tables
       WHERE table_schema = 'public'
         AND table_name = ANY($1::text[])`,
-    [[...REQUIRED_TABLES, ...RETIRED_MINI_WEBSITE_TABLES]],
+    [[...REQUIRED_TABLES]],
   );
   const foundTables = new Set(tables.rows.map((row) => row.table_name));
   const missingTables = REQUIRED_TABLES.filter(
     (table) => !foundTables.has(table),
   );
-  const foundRetiredTables = options.allowPendingMiniWebsiteRemoval
-    ? []
-    : RETIRED_MINI_WEBSITE_TABLES.filter((table) => foundTables.has(table));
-
   const columns = await client.query<{
     table_name: string;
     column_name: string;
@@ -150,86 +116,36 @@ export async function assertSupportedSchema(
           SELECT * FROM unnest($1::text[], $2::text[])
         )`,
     [
-      [
-        ...REQUIRED_COLUMNS,
-        ...OBSOLETE_COLUMNS,
-        ...RETIRED_MINI_WEBSITE_COLUMNS,
-        LEGACY_SPONSOR_KRD_COLUMN,
-      ].map(([table]) => table),
-      [
-        ...REQUIRED_COLUMNS,
-        ...OBSOLETE_COLUMNS,
-        ...RETIRED_MINI_WEBSITE_COLUMNS,
-        LEGACY_SPONSOR_KRD_COLUMN,
-      ].map(([, column]) => column),
+      [...REQUIRED_COLUMNS, ...OBSOLETE_COLUMNS].map(([table]) => table),
+      [...REQUIRED_COLUMNS, ...OBSOLETE_COLUMNS].map(([, column]) => column),
     ],
   );
   const foundColumns = new Set(
     columns.rows.map((row) => `${row.table_name}.${row.column_name}`),
   );
-  const hasLegacySponsorKrdColumn = foundColumns.has(
-    LEGACY_SPONSOR_KRD_COLUMN.join('.'),
-  );
-  const hasSponsorKrdColumn = foundColumns.has(
-    'communication_conversations.sponsor_krd_key',
-  );
-  const missingColumns = REQUIRED_COLUMNS.filter(([table, column]) => {
-    if (foundColumns.has(`${table}.${column}`)) return false;
-    return !(
-      options.allowPendingSponsorKrdRebrand &&
-      table === 'communication_conversations' &&
-      column === 'sponsor_krd_key' &&
-      hasLegacySponsorKrdColumn
-    );
-  }).map(([table, column]) => `${table}.${column}`);
+  const missingColumns = REQUIRED_COLUMNS.filter(
+    ([table, column]) => !foundColumns.has(`${table}.${column}`),
+  ).map(([table, column]) => `${table}.${column}`);
   const foundObsoleteColumns = OBSOLETE_COLUMNS.filter(([table, column]) =>
     foundColumns.has(`${table}.${column}`),
   ).map(([table, column]) => `${table}.${column}`);
-  if (!options.allowPendingMiniWebsiteRemoval) {
-    foundObsoleteColumns.push(
-      ...RETIRED_MINI_WEBSITE_COLUMNS.filter(([table, column]) =>
-        foundColumns.has(`${table}.${column}`),
-      ).map(([table, column]) => `${table}.${column}`),
-    );
-  }
-  if (
-    hasLegacySponsorKrdColumn &&
-    (!options.allowPendingSponsorKrdRebrand || hasSponsorKrdColumn)
-  ) {
-    foundObsoleteColumns.push(LEGACY_SPONSOR_KRD_COLUMN.join('.'));
-  }
-
   const indexes = await client.query<{ indexname: string }>(
     `SELECT indexname
        FROM pg_indexes
       WHERE schemaname = 'public'
         AND indexname = ANY($1::text[])`,
-    [[...REQUIRED_INDEXES, LEGACY_SPONSOR_KRD_INDEX]],
+    [[...REQUIRED_INDEXES]],
   );
   const foundIndexes = new Set(indexes.rows.map((row) => row.indexname));
-  const hasLegacySponsorKrdIndex = foundIndexes.has(LEGACY_SPONSOR_KRD_INDEX);
-  const hasSponsorKrdIndex = foundIndexes.has(
-    'idx_communication_conversations_sponsor_krd_key',
+  const missingIndexes = REQUIRED_INDEXES.filter(
+    (index) => !foundIndexes.has(index),
   );
-  const missingIndexes = REQUIRED_INDEXES.filter((index) => {
-    if (foundIndexes.has(index)) return false;
-    return !(
-      options.allowPendingSponsorKrdRebrand &&
-      index === 'idx_communication_conversations_sponsor_krd_key' &&
-      hasLegacySponsorKrdIndex
-    );
-  });
-  const foundObsoleteIndexes =
-    hasLegacySponsorKrdIndex &&
-    (!options.allowPendingSponsorKrdRebrand || hasSponsorKrdIndex)
-      ? [LEGACY_SPONSOR_KRD_INDEX]
-      : [];
 
   const catalog = await client.query<{
     public_page_entitlement: boolean;
     advertising_permissions: boolean;
     advertising_entitlement: boolean;
-    retired_mini_website_catalog: boolean;
+    linktree_update_fields: boolean;
     platform_content_permissions: boolean;
     creator_permissions: boolean;
     platform_workspace: boolean;
@@ -258,13 +174,14 @@ export async function assertSupportedSchema(
           FROM billing_entitlements
          WHERE entitlement_key = 'feature.advertising_page'
       ) AS advertising_entitlement,
-      NOT EXISTS (
-        SELECT 1 FROM billing_entitlements
-         WHERE entitlement_key = 'feature.mini_websites'
-      ) AND NOT EXISTS (
-        SELECT 1 FROM auth_permissions
-         WHERE permission_key LIKE '%mini-websites%'
-      ) AS retired_mini_website_catalog,
+      EXISTS (
+        SELECT 1
+          FROM auth_permissions
+         WHERE permission_key = 'business:linktrees:update'
+           AND field_schema ?& ARRAY[
+             'status', 'subtitle_color', 'is_campaign_active', 'is_archived'
+           ]
+      ) AS linktree_update_fields,
       (
         SELECT count(*) = 7
           FROM auth_permissions
@@ -302,9 +219,8 @@ export async function assertSupportedSchema(
     !catalogState?.advertising_entitlement
       ? 'feature.advertising_page entitlement'
       : null,
-    !catalogState?.retired_mini_website_catalog &&
-    !options.allowPendingMiniWebsiteRemoval
-      ? 'retired mini-website catalog entries'
+    !catalogState?.linktree_update_fields
+      ? 'business:linktrees:update field catalog'
       : null,
     !catalogState?.platform_content_permissions
       ? 'platform content permission set'
@@ -317,15 +233,13 @@ export async function assertSupportedSchema(
 
   if (
     missingTables.length ||
-    foundRetiredTables.length ||
     missingColumns.length ||
     foundObsoleteColumns.length ||
     missingIndexes.length ||
-    foundObsoleteIndexes.length ||
     missingCatalogEntries.length
   ) {
     throw new Error(
-      `Unsupported or partial database schema. Missing tables: ${missingTables.join(', ') || 'none'}; obsolete tables: ${foundRetiredTables.join(', ') || 'none'}; missing columns: ${missingColumns.join(', ') || 'none'}; obsolete columns: ${foundObsoleteColumns.join(', ') || 'none'}; missing indexes: ${missingIndexes.join(', ') || 'none'}; obsolete indexes: ${foundObsoleteIndexes.join(', ') || 'none'}; missing catalog entries: ${missingCatalogEntries.join(', ') || 'none'}. Restore a database that matches full_schema.sql or recreate an intentionally disposable database with db:reset. No baseline was recorded.`,
+      `Unsupported or partial database schema. Missing tables: ${missingTables.join(', ') || 'none'}; missing columns: ${missingColumns.join(', ') || 'none'}; obsolete columns: ${foundObsoleteColumns.join(', ') || 'none'}; missing indexes: ${missingIndexes.join(', ') || 'none'}; missing catalog entries: ${missingCatalogEntries.join(', ') || 'none'}. Restore a database that matches full_schema.sql or recreate an intentionally disposable database with db:reset. No baseline was recorded.`,
     );
   }
 }

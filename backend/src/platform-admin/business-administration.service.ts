@@ -1141,9 +1141,7 @@ export class BusinessAdministrationService {
   async importBusinessLinktrees(id: string, backup: LinktreeBackup) {
     if (
       !backup ||
-      !['sponsor-krd-linktrees', 'multitree-linktrees'].includes(
-        String(backup.format),
-      ) ||
+      backup.format !== 'sponsor-krd-linktrees' ||
       backup.version !== 1 ||
       !Array.isArray(backup.linktrees)
     ) {

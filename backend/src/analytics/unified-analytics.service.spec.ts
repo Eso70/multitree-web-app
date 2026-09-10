@@ -61,24 +61,24 @@ describe('deduplication pairing', () => {
  * page's own. See docs/tracking.md.
  */
 describe('forwardsToTikTok', () => {
-  it('forwards an approved advertising public page', () => {
+  it('does not forward an advertising public page', () => {
     expect(
       forwardsToTikTok({
         pageType: 'advertising',
         eventName: 'whatsapp_click',
         hasAction: true,
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
-  it('forwards an explicitly registered fixed public route', () => {
+  it('does not forward a fixed public route', () => {
     expect(
       forwardsToTikTok({
         pageType: 'route',
         eventName: 'page_view',
         hasAction: false,
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('forwards a conversion that resolved to a registered action', () => {

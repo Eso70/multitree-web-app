@@ -32,14 +32,5 @@ logs/
 # Local overrides
 *.local
 
-# Agent/IDE tooling (not product code)
-.agents/
-.continue/
-.crush/
-.kilo/
-.kilocode/
-.kiro/
-skills-lock.json
-
 # Generated repository dumps
 repomix-output.xml

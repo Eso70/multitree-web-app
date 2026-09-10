@@ -111,11 +111,10 @@ The detailed project documentation lives in the `docs/` directory.
 | `docs/api-standards.md`                   | REST conventions, API design, scopes, webhooks, versioning                                 |
 | `docs/testing.md`                         | Testing workflow, verification commands, testing strategy                                  |
 | `docs/deployment.md`                      | Local development, production deployment, PM2, Caddy, scaling                              |
-| `docs/observability.md`                   | Health checks, operational metrics, logging, and alerting guidance                         |
+| `docs/observability.md`                   | Health checks, operational metrics, logging, and incident guidance                         |
 | `docs/coding-standards.md`                | Repository-specific coding conventions                                                     |
 | `docs/ui-guidelines.md`                   | Design system, reusable components, UI consistency rules                                   |
 | `docs/tracking.md`                        | TikTok pixel and Events API scope, the shared page tracker, event deduplication            |
-| `docs/production-domain-architecture.md` | Canonical Sponsor.krd production and tenant-domain architecture                            |
 
 ---
 

@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 const SQL = readFileSync(
-  join(__dirname, 'migrations', 'baseline', '95_folded_migrations.sql'),
+  join(__dirname, 'migrations', 'baseline', '95_late_schema.sql'),
   'utf8',
 );
 

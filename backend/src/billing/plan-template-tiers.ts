@@ -1,7 +1,4 @@
-export const BASIC_TEMPLATE_KEYS = [
-  'spectrum',
-  'spotlight',
-] as const;
+export const BASIC_TEMPLATE_KEYS = ['spectrum', 'spotlight'] as const;
 
 export const PRO_TEMPLATE_KEYS = [
   ...BASIC_TEMPLATE_KEYS,

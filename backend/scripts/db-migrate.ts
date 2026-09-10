@@ -123,10 +123,7 @@ async function migrate() {
         [schemaFile],
       );
       if (check.rows.length > 0) {
-        await assertSupportedSchema(client, {
-          allowPendingSponsorKrdRebrand: true,
-          allowPendingMiniWebsiteRemoval: true,
-        });
+        await assertSupportedSchema(client);
         console.log(`  OK ${schemaFile} already applied`);
       } else {
         const legacyCheck = await client.query(
@@ -147,10 +144,7 @@ async function migrate() {
         }
 
         if (Number(existingTables.rows[0]?.count || 0) > 0) {
-          await assertSupportedSchema(client, {
-            allowPendingSponsorKrdRebrand: true,
-            allowPendingMiniWebsiteRemoval: true,
-          });
+          await assertSupportedSchema(client);
           await client.query(
             'INSERT INTO schema_migrations (filename) VALUES ($1) ON CONFLICT DO NOTHING',
             [schemaFile],
@@ -168,10 +162,7 @@ async function migrate() {
           appliedCount += 1;
           console.log(`  OK ${schemaFile} applied`);
         }
-        await assertSupportedSchema(client, {
-          allowPendingSponsorKrdRebrand: true,
-          allowPendingMiniWebsiteRemoval: true,
-        });
+        await assertSupportedSchema(client);
       }
     }
 

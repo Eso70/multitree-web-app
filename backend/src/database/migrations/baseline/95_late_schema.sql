@@ -1,7 +1,7 @@
 --
--- 95_folded_migrations.sql
+-- 95_late_schema.sql
 --
--- Statements that must keep migration form so their generated names match.
+-- Late schema objects whose dependencies are created by earlier baseline parts.
 --
 -- Part of the Sponsor.krd baseline. `src/database/baseline.ts` lists the parts
 -- and the order they are applied in; they are one schema split for reading,
@@ -9,35 +9,11 @@
 --
 
 --
--- FORWARD MIGRATIONS FOLDED INTO THIS BASELINE
+-- LATE BASELINE OBJECTS
 --
--- `pnpm db:reset` applies this file and nothing else -- it never runs the
--- forward migrations -- so a reset used to produce a schema that still had the
--- password columns, the pre-rename template keys and Sponsor.krd's own logo as
--- the business default. Everything through the 2026-08-20 Creator Google
--- authentication change is now folded in, so a fresh database carries the
--- complete current schema.
---
--- This is the "separate, periodic maintenance step" described in
--- `forward-migrations.ts`, not a schema change shipped against the baseline.
--- AGENTS.md's "never edit the baseline" rule is about the latter.
---
--- The absorbed migration files are deliberately removed. This repository now
--- recreates disposable databases from the baseline; valuable databases need
--- an explicit backup-and-replacement procedure before adopting this baseline.
---
--- Most of the folding is done in place above: dropped columns are simply
--- absent, added columns and changed defaults are declared in their own
--- `CREATE TABLE`, and the seeded catalog rows are written in their post-
--- migration form. Only the statements below have to stay in migration form,
--- because they must reproduce constraint and index names exactly as the
--- migrations produced them.
---
--- Three migrations are NOT represented here because they have nothing to act
--- on in an empty database, which the rebaseline differential check confirms:
---   * 2026-08-18_recover_orphaned_link_click_history.sql (repairs existing rollups)
---   * 2026-08-18_retire_website_link_platform.sql        (rewrites existing links)
---   * 2026-08-18_fill_default_linktree_page_copy.sql     (backfills existing pages)
+-- Columns and ordinary indexes are declared directly with their owning tables
+-- and index sections. This part is reserved for objects that must be created
+-- after those domains, while catalog rows remain in 99_data.sql.
 --
 
 -- From 2026-08-12_add_business_session_impersonation.sql. The columns are
@@ -118,3 +94,15 @@ ALTER TABLE public.linktrees
 
 COMMENT ON COLUMN public.linktrees.client_invitation_id IS
     'Invitation that created this page. Unique for exactly-once client submission; access revocation never deletes the page.';
+
+COMMENT ON COLUMN public.linktrees.subtitle_color IS
+    'Optional CSS colour value for the subtitle shown on the public Linktree page. NULL inherits the template text colour.';
+
+COMMENT ON COLUMN public.linktrees.is_campaign_active IS
+    'Indicates whether this Linktree is actively used in an advertising campaign.';
+
+COMMENT ON COLUMN public.linktrees.is_archived IS
+    'Indicates whether this Linktree is hidden from the active dashboard view.';
+
+COMMENT ON COLUMN public.linktrees.archived_at IS
+    'Timestamp when the Linktree was archived, or NULL while active.';

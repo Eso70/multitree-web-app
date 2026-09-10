@@ -8,20 +8,6 @@ export const SPONSOR_KRD_ACCENT_GRADIENT =
 /** Persisted website-color representation understood by parseWebsiteColor. */
 export const SPONSOR_KRD_ACCENT_VALUE = "gradient:to-r:#25F4EE:#FE2C55";
 
-/** MultiTree's former platform accent, accepted only for upgrade compatibility. */
-export const LEGACY_MULTITREE_ACCENT_COLOR = "#b6f20d";
-
-/**
- * Prevent a not-yet-migrated platform profile from repainting Sponsor.krd's
- * own surfaces with the retired MultiTree lime. Custom administrator colours
- * remain configurable and pass through unchanged.
- */
-export function normalizeSponsorKrdAccentValue(value: string): string {
-  return value.trim().toLowerCase() === LEGACY_MULTITREE_ACCENT_COLOR
-    ? SPONSOR_KRD_ACCENT_VALUE
-    : value;
-}
-
 export function getSponsorKrdAccentInk(hex: string): "#111827" | "#ffffff" {
   const normalized = hex.replace("#", "");
   const expanded =
