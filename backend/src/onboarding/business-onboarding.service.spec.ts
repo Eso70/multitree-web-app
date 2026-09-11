@@ -57,7 +57,6 @@ describe('BusinessOnboardingService invitations', () => {
         ttlSeconds: 7200,
       }),
     };
-    const audit = { record: jest.fn().mockResolvedValue(undefined) };
     let sentCode = '';
     const mail = {
       sendBusinessLoginCode: jest.fn((_email: string, code: string) => {
@@ -76,7 +75,6 @@ describe('BusinessOnboardingService invitations', () => {
       sessions as never,
       {} as never,
       config as never,
-      audit as never,
       mail as never,
     );
 
@@ -145,7 +143,6 @@ describe('BusinessOnboardingService invitations', () => {
         ttlSeconds: 1800,
       }),
     };
-    const audit = { record: jest.fn().mockResolvedValue(undefined) };
     const config = {
       get: jest.fn((key: string, fallback?: unknown) => {
         if (key === 'PLATFORM_ADMIN_EMAIL') {
@@ -165,7 +162,6 @@ describe('BusinessOnboardingService invitations', () => {
       sessions as never,
       {} as never,
       config as never,
-      audit as never,
     );
 
     await expect(
@@ -501,7 +497,6 @@ describe('BusinessOnboardingService invitations', () => {
         emailVerified: true,
       }),
     };
-    const audit = { record: jest.fn().mockResolvedValue(undefined) };
     const service = new BusinessOnboardingService(
       database as never,
       redis as never,
@@ -513,7 +508,6 @@ describe('BusinessOnboardingService invitations', () => {
           key === 'APP_BASE_URL' ? 'http://lvh.me:3011' : fallback,
         ),
       } as never,
-      audit as never,
     );
 
     const callback = await service.finishGoogleCallback('code', 'state', {
@@ -535,12 +529,6 @@ describe('BusinessOnboardingService invitations', () => {
         subdomain: 'tenant',
       }),
       60,
-    );
-    expect(audit.record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        eventType: 'business.identity.link',
-        outcome: 'success',
-      }),
     );
   });
 
@@ -640,7 +628,6 @@ describe('BusinessOnboardingService invitations', () => {
         ttlSeconds: 1800,
       }),
     };
-    const audit = { record: jest.fn().mockResolvedValue(undefined) };
     let sentCode = '';
     const mail = {
       sendAdminLoginCode: jest.fn((_email: string, code: string) => {
@@ -669,7 +656,6 @@ describe('BusinessOnboardingService invitations', () => {
       sessions as never,
       {} as never,
       config as never,
-      audit as never,
       mail as never,
     );
 
@@ -758,7 +744,6 @@ describe('BusinessOnboardingService invitations', () => {
         get: jest.fn((_key: string, fallback?: unknown) => fallback),
         getOrThrow: jest.fn().mockReturnValue('test-session-secret'),
       } as never,
-      undefined,
       mail as never,
     );
 
@@ -827,7 +812,6 @@ describe('BusinessOnboardingService invitations', () => {
         get: jest.fn((_key: string, fallback?: unknown) => fallback),
         getOrThrow: jest.fn().mockReturnValue('test-session-secret'),
       } as never,
-      undefined,
       mail as never,
     );
 

@@ -26,7 +26,6 @@ describe('application permission registry', () => {
     '../linktrees/linktrees.controller.ts',
     '../platform-admin/access-rules.controller.ts',
     '../platform-admin/access-control.controller.ts',
-    '../platform-admin/audit-log.controller.ts',
     '../platform-admin/billing-management.controller.ts',
     '../platform-admin/business-administration.controller.ts',
     '../platform-admin/platform-settings.controller.ts',
@@ -63,11 +62,8 @@ describe('application permission registry', () => {
         'logout',
       ],
       '../public/public.controller.ts': ['public'],
-      '../request-tracking/internal-request-tracking.controller.ts': [
-        'internal telemetry',
-      ],
     };
-    expect(Object.keys(allowlist)).toHaveLength(4);
+    expect(Object.keys(allowlist)).toHaveLength(3);
   });
 
   it('keeps only the per-page analytics and TikTok diagnostic routes', () => {

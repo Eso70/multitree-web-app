@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   SkeletonAdvertisingEditor,
   SkeletonBusinessDirectoryPage,
-  SkeletonClientAccessPage,
   SkeletonLinktreeGrid,
   SkeletonPageManagement,
   SkeletonSettingsPage,
@@ -17,14 +16,12 @@ import {
   SkeletonPageAnalyticsContent,
 } from "@/components/shared/SkeletonModalLayouts";
 import {
-  SkeletonActivityList,
   SkeletonChatThread,
   SkeletonConversationList,
   SkeletonNotificationList,
   SkeletonSearchResultList,
   SkeletonSessionList,
 } from "@/components/shared/SkeletonCommunicationLayouts";
-import { ClientInvitationSkeleton } from "@/features/client-linktree-access/components/ClientInvitationSkeleton";
 
 describe("layout-matched skeletons", () => {
   it.each([
@@ -44,10 +41,6 @@ describe("layout-matched skeletons", () => {
     [<SkeletonTikTokPage key="tiktok" />, "Loading TikTok settings"],
     [<SkeletonTikTokDelivery key="delivery" />, "Loading TikTok delivery"],
     [
-      <SkeletonClientAccessPage key="client-access" />,
-      "Loading client invitations",
-    ],
-    [
       <SkeletonBusinessInfoForm key="business-form" />,
       "Loading business information",
     ],
@@ -65,14 +58,9 @@ describe("layout-matched skeletons", () => {
     ],
     [<SkeletonNotificationList key="notifications" />, "Loading notifications"],
     [<SkeletonSessionList key="sessions" />, "Loading sessions"],
-    [<SkeletonActivityList key="activity" />, "Loading login activity"],
     [<SkeletonConversationList key="conversations" />, "Loading conversations"],
     [<SkeletonChatThread key="chat" />, "Loading messages"],
     [<SkeletonSearchResultList key="search" />, "Loading search results"],
-    [
-      <ClientInvitationSkeleton key="invitation" />,
-      "Loading client invitation",
-    ],
   ])("provides one accessible status for %s", (element, label) => {
     const view = render(element);
     expect(screen.getByRole("status", { name: label })).toBeInTheDocument();
@@ -83,10 +71,5 @@ describe("layout-matched skeletons", () => {
   it("matches the six-card management grid used after loading", () => {
     const { container } = render(<SkeletonLinktreeGrid count={6} />);
     expect(container.querySelectorAll("article")).toHaveLength(6);
-  });
-
-  it("matches the invitation list row structure", () => {
-    const { container } = render(<SkeletonClientAccessPage />);
-    expect(container.querySelectorAll("article")).toHaveLength(3);
   });
 });

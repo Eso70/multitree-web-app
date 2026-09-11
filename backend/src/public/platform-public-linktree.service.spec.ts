@@ -69,7 +69,7 @@ describe('PublicService platform Linktree', () => {
     );
     expect(database.query).toHaveBeenNthCalledWith(
       2,
-      expect.stringContaining("a.account_type IN ('platform', 'creator')"),
+      expect.stringContaining("a.account_type = 'platform'"),
       ['campaign'],
     );
     expect(result.analytics.pixelIds).toEqual(['PLATFORM_PIXEL']);

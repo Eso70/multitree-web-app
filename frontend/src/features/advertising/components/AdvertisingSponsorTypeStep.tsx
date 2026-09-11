@@ -47,7 +47,7 @@ export function AdvertisingSponsorTypeStep({ selected, onChange }: AdvertisingSp
               isSelected
                 ? cn(theme.ring, theme.soft, "shadow-sm")
                 : "border-black/8 hover:bg-black/[0.02] dark:border-white/10 dark:hover:bg-white/[0.04]",
-              item.id === "personal" ? "focus-visible:ring-lime-500" : "focus-visible:ring-violet-500",
+              item.id === "personal" ? "focus-visible:ring-cyan-500" : "focus-visible:ring-violet-500",
             )}
           >
             <div className="flex items-start justify-between gap-4">

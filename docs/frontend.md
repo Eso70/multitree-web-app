@@ -5,30 +5,12 @@ summary in the Platform dashboard while the management body remains empty.
 The cards derive campaign count, active campaigns, impressions, clicks, spend,
 and conversions from the current campaign collection. TikTok Ads account
 configuration remains available in Platform
-Settings. Business and Creator dashboards expose neither
+Settings. Business dashboards expose neither
 feature; `/business/campaigns` and the former `/business/campains` alias are
 removed. Business TikTok Pixel, Events API, and delivery settings remain in
 place. The shared TikTok Pixel editor disables group deletion when only one
 group remains. The Ads OAuth callback requires a verified platform-admin session and
 returns to the configured platform console's Settings > TikTok Ads tab.
-
-## Creator content workspaces
-
-Creator Linktree routes render the same shared page lists, grid/table views,
-editors, analytics modal, statistics, loading skeletons, and empty states as
-Platform. Workspace differences are supplied only through typed endpoints and
-capability props. A Creator configuration limits the workspace to one page and
-hides page deletion; it must never fork or copy the shared presentation.
-Shared Business, Platform, and Creator navigation names come from
-`components/shared/dashboard-page-labels.ts`; do not introduce surface-local
-copies for names that describe the same workspace.
-`/account/templates` renders the same `TemplatesPage` used by Business and
-Platform. Creator users receive its view-only configuration with the full
-template catalogue; template creation controls remain platform-only.
-Creator `/account/settings` follows the Business settings composition and
-keeps account information first. Its TikTok tab renders the same
-`BusinessTikTokPixelConfigPage` used by Business and Platform through the typed
-`creator` workspace configuration; it does not duplicate the Pixel form.
 
 ## Public marketing tracking
 
@@ -142,22 +124,6 @@ endpoint and safe action-route resolver. Platform pending-approval cards are a
 permission-specific extension inside the same dropdown and are never exposed
 to business users.
 
-The Creator `/account` workspace is a third thin configuration of the same
-dashboard chrome. It supplies only Creator navigation, billing badge, account
-identity, logout action, and page-workspace configuration; the shared sidebar,
-header, profile menu, theme controls, refresh behavior, loading shell, content
-container and Linktree UI remain the same implementations.
-Every `/account` route uses the shared dashboard route skeleton. Heavy Creator
-Linktree, template, and settings bundles use the same management,
-template, and form skeletons as their Business equivalents, including the
-shared editor and analytics modal fallbacks.
-Dialog bundles are mounted only while their dialog is open. Their full-screen
-skeletons must never be mounted behind a closed dialog because that would cover
-the dashboard during a direct-page refresh.
-Its `/account/settings` route uses shared dashboard surfaces, statistic cards,
-tabs, and session management to show the allowlisted Google account view and
-security activity. It does not render or receive provider subjects, OAuth
-tokens, HMAC claims, internal owner ids, or risk data.
 Google profile images continue through `next/image`; the optimizer allowlist is
 restricted to HTTPS `lh3.googleusercontent.com` OpenID avatar paths (`/a/**`
 and `/a-/**`) rather than permitting arbitrary remote Google content.
@@ -729,7 +695,7 @@ The business Templates route uses a catalog-specific skeleton while template
 permissions load, including its metrics, header actions, catalog cards, and
 phone preview footprints. The shared skeleton contract covers responsive
 management tables and cards, page management, settings, advertising, TikTok,
-business directories, client invitations/results, analytics modals, editor
+business directories, analytics modals, editor
 forms, and communication lists. A route shell and an embedded content fallback
 are kept distinct when the surrounding header or dashboard chrome is already
 mounted. Linktree previews render lazily.
@@ -815,25 +781,16 @@ The console provides:
   and linktree import/export;
 - global linktree template availability and configuration;
 - IP/CIDR allow and deny rules scoped to Sponsor.krd, platform administrators,
-  businesses, business administrators, public linktrees, or the business API
-  (see [docs/security.md](security.md#ip-allowdeny-rules) — this feature is
-  currently unenforced);
+  businesses, business administrators, or public linktrees (see
+  [docs/security.md](security.md#ip-allowdeny-rules));
 - a permission catalog, permission profiles, field-level rules, approval
   rules, explicit denies, and access simulation;
 - typed entitlements, subscription products, plan configuration, template
   access, permission assignment, business subscriptions, usage counters, and
   approval review;
-- a combined activity view over immutable security audit events, HTTP
-  request telemetry, public analytics events, and marketing-delivery
-  attempts, with filters, detail views, summaries, pagination, and bounded
-  CSV export;
 - announcements for all businesses, selected plans, or selected businesses,
   with business-bell, dashboard-banner, and public-homepage channels;
 - encrypted administrator/business support conversations and notifications;
-- developer API clients, key rotation and suspension, scopes, IP allowlists,
-  per-business rate policies, API catalog groups, version notices, webhook
-  endpoints, webhook-secret rotation, webhook tests, and generated API
-  documentation — see [docs/api-standards.md](api-standards.md);
 - administrator profile, branding, sessions, platform statistics,
   Redis cache clearing, upload policy, unused-media cleanup, data-retention
   policy, and manual retention runs.
@@ -872,29 +829,26 @@ rewritten to the tenant 404 page.
 
 The root-domain marketing website uses the same public design system as the
 business website through `PublicMarketingSiteShell`, `PublicSiteNavbar`, and
-`PublicSiteFooter`. Sponsor.krd provides only branding, navigation, authentication
-actions, and marketing content; it must not fork those shared primitives.
+the shared marketing primitives. Sponsor.krd provides only branding,
+navigation, authentication actions, and marketing content; it must not fork
+those shared primitives.
 
-Public marketing routes are `/`, `/features`, `/link-in-bio`, `/templates`,
-`/pricing`, `/about`, and `/contact`. They are
-root-domain routes and are rejected on business subdomains. The navbar always
-offers Creator sign-up and sign-in. Business authentication remains a tenant
-subdomain concern and must not be linked from the root-domain website.
-Creator sign-up and sign-in compose the shared `AuthenticationShell` and
-`AuthenticationCard` used by the other authentication surfaces. Their
-feature-specific panel configures the shared Google authentication button and
-account-mode switch with Creator-facing Kurdish copy. Creator authentication
-does not expose email or phone inputs.
+The `/` homepage is deliberately limited to the shared Sponsor.krd navbar, one
+viewport-height hero, and the shared Sponsor.krd footer. The hero positions
+Sponsor.krd as the secure SaaS
+connection layer for TikTok advertising accounts, states that the platform
+administrator connection is isolated, and describes direct business-account
+connections as a future capability. The homepage renders no communications,
+product preview, or secondary content sections.
 
-Marketing copy, feature definitions, use cases, FAQs, and temporary template
-examples are centralized in `features/public-site/marketing-content.ts`.
-Until platform-managed website content is implemented, these values are
-presentation-only mock content: do not invent prices, customer counts,
-testimonials, endorsements, or other claims. A future dashboard-backed content
-service should replace that module behind a typed server-side adapter while the
-sections and shared shell remain unchanged. Published content requires draft,
-preview, publish, rollback, validation, sanitization, and explicit fallbacks;
-it must never read partially edited dashboard state directly.
+The root homepage is the only public marketing route. Its shared navbar is
+brand-only; Business authentication remains a tenant subdomain concern and is
+not linked from the root-domain website. The terms and privacy routes remain
+as compliance documents required by active onboarding flows; they are not
+marketing pages.
+
+Homepage content is authored in the dedicated root hero. Do not invent prices,
+customer counts, testimonials, endorsements, or other claims.
 
 The frontend proxy:
 
@@ -902,10 +856,7 @@ The frontend proxy:
 - checks business subdomains against the backend;
 - attaches `x-subdomain` to internal requests;
 - blocks `/business` on the root domain;
-- blocks root marketing and Creator-account routes on business subdomains;
 - blocks the private platform path on business subdomains;
-- keeps the retired physical console path concealed as a compatibility and
-  security tombstone;
 - checks the platform-administrator session before serving the configured
   private console path;
 - submits non-API page telemetry in the background;
@@ -918,16 +869,6 @@ The frontend proxy:
 
 Caddy removes inbound client `x-subdomain` headers before proxying. Business
 services still scope owned records by the authenticated business ID.
-
-### Retained compatibility aliases
-
-The retired `/system` path remains a deny-only proxy tombstone so old links
-cannot expose the platform-administrator console. Persisted administrator
-notifications that still begin with `/system/` are normalized to the active
-configured console path when opened. Likewise, legacy
-`/images/upload/system/` URLs are read through the new `sponsor-krd` media
-namespace. These aliases are read-only compatibility behavior: no route,
-notification, or upload is newly created with the retired term.
 
 ## Commands
 
@@ -947,20 +888,3 @@ Default local address: `http://localhost:3011`. For subdomain routing in
 development, use a wildcard localhost domain such as `http://acme.lvh.me:3011`
 and include every browser origin, including its port, in `CORS_ORIGIN`. Add
 local hostnames used for device testing to `ALLOWED_DEV_ORIGINS`.
-
-## Client Linktree creation access
-
-The **Client invitations** tab on `/business/pages` uses the production
-`/api/client-linktree-invitations` endpoints. Its creation modal asks only for
-the client name and shows the generated link and mandatory PIN once. The list
-shows server state, the resulting page, active-session revocation, and manual
-invitation expiry; no secret is persisted in browser storage.
-
-The client route is `/client-linktree#TOKEN`. It removes the fragment before
-exchanging the token and PIN, resumes only through an HttpOnly cookie, and uses
-the shared tenant-branded authentication shell. Successful verification opens
-a responsive client dashboard. Before creation it launches
-`ReusableLinktreeEditorModal` with the inviting business's current templates
-and a restricted validated image-upload endpoint; business-only fields remain
-disabled. After submission the dashboard exposes read-only totals and link
-clicks only for the resulting page.

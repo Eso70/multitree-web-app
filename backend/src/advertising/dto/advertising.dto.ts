@@ -46,7 +46,7 @@ const TESTIMONIAL_COLORS = [
 
 /** A preset colour name or an explicit hex, matching the column's CHECK. */
 const CATEGORY_COLOR =
-  /^(#[0-9A-Fa-f]{6}|lime|violet|amber|cyan|rose|blue|fuchsia|emerald)$/;
+  /^(#[0-9A-Fa-f]{6}|violet|amber|cyan|rose|blue|fuchsia|emerald)$/;
 
 /**
  * The editor's own key for a row. Generated client-side as

@@ -25,7 +25,7 @@ function isValidOptionalEmail(value: string): boolean {
   );
 }
 
-export function InvitationCreator({
+export function BusinessInvitationButton({
   showLabel = false,
 }: {
   showLabel?: boolean;

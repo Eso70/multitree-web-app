@@ -61,7 +61,7 @@ describe('PlatformLinktreesService', () => {
   beforeEach(() => jest.clearAllMocks());
 
   /**
-   * The root Linktree namespace is shared with every Creator, so the console's
+   * The root Linktree namespace is shared across platform pages, so the console's
    * availability check can go stale between the answer and the save.
    * `root_public_slugs_pkey` is the arbiter, and a lost race is a conflict.
    */

@@ -65,7 +65,6 @@ export const BACKGROUND_GRADIENTS: Record<string, BackgroundGradient> = {
 
   // Additional color variations
   "#0284c7": { from: "#0284c7", via: "#0ea5e9", to: "#0284c7" }, // sky-blue (sky-600, sky-500, sky-600)
-  "#65a30d": { from: "#65a30d", via: "#84cc16", to: "#65a30d" }, // lime (lime-600, lime-500, lime-600)
   "#d97706": { from: "#d97706", via: "#f59e0b", to: "#d97706" }, // amber (amber-600, amber-500, amber-600)
   "#475569": { from: "#475569", via: "#64748b", to: "#475569" }, // slate (slate-700, slate-600, slate-700)
   "#52525b": { from: "#52525b", via: "#71717a", to: "#52525b" }, // zinc (zinc-700, zinc-600, zinc-700)
@@ -80,7 +79,7 @@ export const BACKGROUND_GRADIENTS: Record<string, BackgroundGradient> = {
   "#1e293b": { from: "#0f172a", via: "#312e81", to: "#581c87" }, // midnight (slate-900, indigo-900, purple-900)
   "#ff6f61": { from: "#2b1055", via: "#ff6f61", to: "#ffd166" }, // coral sunset
   "#0ea5e9": { from: "#0b1224", via: "#0ea5e9", to: "#9333ea" }, // aurora
-  "#14b8a6": { from: "#0f172a", via: "#14b8a6", to: "#a3e635" }, // mint glow
+  "#14b8a6": { from: "#0f172a", via: "#14b8a6", to: "#25F4EE" }, // mint glow
   "#9333ea": { from: "#1e1b4b", via: "#9333ea", to: "#f472b6" }, // royal bloom
   "#f472b6": { from: "#2f1553", via: "#f472b6", to: "#facc15" }, // blush gold
   "#38bdf8": { from: "#0f172a", via: "#38bdf8", to: "#7c3aed" }, // ice drift

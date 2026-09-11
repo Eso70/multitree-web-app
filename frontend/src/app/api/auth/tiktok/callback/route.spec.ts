@@ -21,7 +21,6 @@ describe("Platform TikTok Ads callback access", () => {
   it.each([
     ["localhost", undefined],
     ["localhost", "business_session=business"],
-    ["localhost", "creator_session=creator"],
     ["tenant.localhost", "platform_admin_session=admin"],
   ])("rejects non-platform access on %s", async (host, cookie) => {
     const fetchMock = vi.fn();

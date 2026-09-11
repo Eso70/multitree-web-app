@@ -41,7 +41,6 @@ import type {
   ReviewSignupApplicationDto,
   UpdateSignupApplicationDto,
 } from './dto/onboarding.dto';
-import { SecurityAuditService } from '../auth/security-audit.service';
 import { MailService } from '../mail/mail.service';
 import { buildTenantUrl } from '../common/root-domain';
 import {
@@ -119,7 +118,6 @@ export class BusinessOnboardingService {
     private readonly sessions: SessionService,
     private readonly storage: StorageService,
     private readonly config: ConfigService,
-    private readonly securityAudit?: SecurityAuditService,
     private readonly mail?: MailService,
   ) {}
 
@@ -383,24 +381,10 @@ export class BusinessOnboardingService {
             }
           : undefined,
     });
-    await Promise.all([
-      this.database.query(
-        'UPDATE users SET last_login_at = NOW() WHERE id = $1',
-        [challenge.userId],
-      ),
-      this.securityAudit?.record({
-        actorType: 'business',
-        actorId: challenge.businessId,
-        eventType: 'business.login',
-        outcome: 'success',
-        ipAddress: input.ipAddress,
-        userAgent: input.userAgent,
-        metadata: {
-          provider: 'email',
-          rememberDevice: Boolean(input.rememberDevice),
-        },
-      }),
-    ]);
+    await this.database.query(
+      'UPDATE users SET last_login_at = NOW() WHERE id = $1',
+      [challenge.userId],
+    );
     return session;
   }
 
@@ -500,19 +484,6 @@ export class BusinessOnboardingService {
       ipAddress: input.ipAddress,
       userAgent: input.userAgent,
       rememberDevice: Boolean(input.rememberDevice),
-    });
-    await this.securityAudit?.record({
-      actorType: 'platform-admin',
-      actorId: admin.id,
-      actorLabel: admin.name,
-      eventType: 'platform_admin.login',
-      outcome: 'success',
-      ipAddress: input.ipAddress,
-      userAgent: input.userAgent,
-      metadata: {
-        provider: 'email',
-        rememberDevice: Boolean(input.rememberDevice),
-      },
     });
     const consolePath = this.config.get<string>('PLATFORM_ADMIN_PATH')?.trim();
     return {
@@ -777,14 +748,6 @@ export class BusinessOnboardingService {
       );
     }
     if (!identity.emailVerified || identity.email !== allowedEmail) {
-      await this.securityAudit?.record({
-        actorType: 'anonymous',
-        eventType: 'platform_admin.login',
-        outcome: 'denied',
-        ipAddress: requestContext.ipAddress,
-        userAgent: requestContext.userAgent,
-        metadata: { provider: 'google', reason: 'email_not_allowed' },
-      });
       throw new UnauthorizedException('Google account is not authorized');
     }
 
@@ -835,16 +798,6 @@ export class BusinessOnboardingService {
       ipAddress: requestContext.ipAddress,
       userAgent: requestContext.userAgent,
       rememberDevice,
-    });
-    await this.securityAudit?.record({
-      actorType: 'platform-admin',
-      actorId: admin.id,
-      actorLabel: admin.name,
-      eventType: 'platform_admin.login',
-      outcome: 'success',
-      ipAddress: requestContext.ipAddress,
-      userAgent: requestContext.userAgent,
-      metadata: { provider: 'google', rememberDevice },
     });
     return {
       mode: 'platform-admin' as const,
@@ -998,7 +951,7 @@ export class BusinessOnboardingService {
   private async finishSigninIdentity(
     oauth: OAuthState,
     identity: VerifiedGoogleIdentity,
-    requestContext: { ipAddress: string; userAgent: string },
+    _requestContext: { ipAddress: string; userAgent: string },
   ) {
     if (!oauth.subdomain) throw new UnauthorizedException('Invalid sign-in');
     const result = await this.database.query<{
@@ -1028,7 +981,6 @@ export class BusinessOnboardingService {
           business_name: string;
         }
       | undefined = result.rows[0];
-    let accountLinked = false;
 
     if (!membership && identity.emailVerified) {
       membership =
@@ -1128,25 +1080,12 @@ export class BusinessOnboardingService {
           }
           return candidate;
         })) || undefined;
-      accountLinked = Boolean(membership);
     }
 
     if (!membership)
       throw new UnauthorizedException(
         'Google account has no access to this business',
       );
-    if (accountLinked) {
-      await this.securityAudit?.record({
-        actorType: 'business',
-        actorId: membership.business_id,
-        businessId: membership.business_id,
-        eventType: 'business.identity.link',
-        outcome: 'success',
-        ipAddress: requestContext.ipAddress,
-        userAgent: requestContext.userAgent,
-        metadata: { provider: 'google', method: 'verified_signup_email' },
-      });
-    }
     const handoff = createAuthHandoffCode();
     const payload: AuthHandoffPayload = {
       ...membership,

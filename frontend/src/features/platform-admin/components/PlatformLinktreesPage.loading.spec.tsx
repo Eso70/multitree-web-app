@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { RootLinktreesPage } from "./PlatformLinktreesPage";
+import { PlatformLinktreesPage } from "./PlatformLinktreesPage";
 
 const apiRequestMock = vi.hoisted(() => vi.fn());
 
@@ -8,12 +8,12 @@ vi.mock("@/lib/api/request", () => ({
   apiRequest: apiRequestMock,
 }));
 
-describe("RootLinktreesPage loading", () => {
+describe("PlatformLinktreesPage loading", () => {
   afterEach(() => apiRequestMock.mockReset());
 
   it("does not mount a modal skeleton until a modal is opened", () => {
     apiRequestMock.mockImplementation(() => new Promise(() => undefined));
-    render(<RootLinktreesPage />);
+    render(<PlatformLinktreesPage />);
 
     expect(screen.queryByLabelText("Loading dialog")).not.toBeInTheDocument();
   });
@@ -45,7 +45,7 @@ describe("RootLinktreesPage loading", () => {
       return Promise.resolve([]);
     });
 
-    render(<RootLinktreesPage />);
+    render(<PlatformLinktreesPage />);
 
     await waitFor(() =>
       expect(apiRequestMock).toHaveBeenCalledWith(

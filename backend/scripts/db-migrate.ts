@@ -11,7 +11,6 @@ import * as path from 'path';
 import * as dotenv from 'dotenv';
 import { seedDefaultCommunications } from './seed-communications';
 import { encryptPrivateCommunications } from './encrypt-communications';
-import { ensureApiPlatform } from './ensure-api-platform';
 import { ensurePlatformRetention } from './ensure-platform-retention';
 import { ensurePlatformMedia } from './ensure-platform-media';
 import { ensureAdvertisingPages } from './ensure-advertising-pages';
@@ -174,7 +173,6 @@ async function migrate() {
     await assertSupportedSchema(client);
 
     await seedPlatformAdmin(client);
-    await ensureApiPlatform(client);
     await ensurePlatformRetention(client);
     await ensurePlatformMedia(client);
     await ensureAdvertisingPages(client);

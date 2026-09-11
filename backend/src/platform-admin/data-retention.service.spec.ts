@@ -4,8 +4,6 @@ import { DataRetentionService } from './data-retention.service';
 
 describe('DataRetentionService', () => {
   const policy = {
-    request_log_days: 30,
-    api_history_days: 90,
     communication_history_days: 365,
     automatic_cleanup: false,
     cleanup_hour_utc: 2,
@@ -18,13 +16,7 @@ describe('DataRetentionService', () => {
       .fn()
       .mockResolvedValueOnce({ rows: [policy] })
       .mockResolvedValueOnce({
-        rows: [
-          {
-            request_logs: '3',
-            api_history: '4',
-            communications: '5',
-          },
-        ],
+        rows: [{ communications: '5' }],
       })
       .mockResolvedValueOnce({ rows: [] });
     const service = new DataRetentionService({
@@ -34,8 +26,6 @@ describe('DataRetentionService', () => {
     await expect(service.getStatus()).resolves.toMatchObject({
       policy,
       eligible: {
-        request_logs: 3,
-        api_history: 4,
         communications: 5,
       },
       last_run: null,

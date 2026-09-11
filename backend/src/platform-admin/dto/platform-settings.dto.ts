@@ -48,16 +48,6 @@ export class UpdatePlatformProfileDto {
 
 export class UpdateDataRetentionDto {
   @IsInt()
-  @Min(7)
-  @Max(365)
-  request_log_days: number;
-
-  @IsInt()
-  @Min(30)
-  @Max(730)
-  api_history_days: number;
-
-  @IsInt()
   @Min(30)
   @Max(3650)
   communication_history_days: number;

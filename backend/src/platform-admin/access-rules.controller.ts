@@ -9,10 +9,7 @@ import {
   Put,
   Query,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
-import { AuditEvent } from '../auth/audit-event.decorator';
-import { AuditInterceptor } from '../auth/audit.interceptor';
 import { AuthorizationGuard } from '../auth/authorization.guard';
 import { Capability } from '../auth/capabilities';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -26,7 +23,6 @@ import { AccessRuleStatusDto } from './dto/access-rule-status.dto';
 
 @Controller('api/platform/access-rules')
 @UseGuards(PlatformAdminGuard, AuthorizationGuard)
-@UseInterceptors(AuditInterceptor)
 export class AccessRulesController {
   constructor(private readonly service: AccessRulesService) {}
   @Get()
@@ -36,7 +32,6 @@ export class AccessRulesController {
   }
   @Post()
   @RequireCapabilities(Capability.PlatformAccessRulesCreate)
-  @AuditEvent('platform.access_rule.create', { resourceType: 'access-rule' })
   async create(
     @Body() body: CreateAccessRuleDto,
     @CurrentUser() user?: SessionUser,
@@ -45,19 +40,11 @@ export class AccessRulesController {
   }
   @Put(':id')
   @RequireCapabilities(Capability.PlatformAccessRulesUpdate)
-  @AuditEvent('platform.access_rule.update', {
-    resourceType: 'access-rule',
-    resourceIdParam: 'id',
-  })
   async update(@Param('id') id: string, @Body() body: CreateAccessRuleDto) {
     return { success: true, data: await this.service.update(id, body) };
   }
   @Patch(':id/status')
   @RequireCapabilities(Capability.PlatformAccessRulesStatusUpdate)
-  @AuditEvent('platform.access_rule.status', {
-    resourceType: 'access-rule',
-    resourceIdParam: 'id',
-  })
   async status(@Param('id') id: string, @Body() body: AccessRuleStatusDto) {
     return {
       success: true,
@@ -66,10 +53,6 @@ export class AccessRulesController {
   }
   @Delete(':id')
   @RequireCapabilities(Capability.PlatformAccessRulesDelete)
-  @AuditEvent('platform.access_rule.delete', {
-    resourceType: 'access-rule',
-    resourceIdParam: 'id',
-  })
   async remove(@Param('id') id: string) {
     await this.service.remove(id);
     return { success: true };

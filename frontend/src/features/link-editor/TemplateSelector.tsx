@@ -16,7 +16,7 @@ export const TemplateSelector = memo(function TemplateSelector({
   onClose: () => void;
   selectedTemplate: string;
   onSelectTemplate: (template: string) => void;
-  /** Explicit access snapshot for non-account workflows such as a client invitation. */
+  /** Explicit access snapshot for workflows without a signed-in business. */
   allowedTemplateKeys?: readonly string[];
 }) {
   const { isTemplateAllowed } = useTemplateAccess(

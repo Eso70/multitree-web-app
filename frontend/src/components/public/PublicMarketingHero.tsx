@@ -19,6 +19,7 @@ export function PublicMarketingHero({
   secondaryAction,
   decorations,
   embedded = false,
+  fillViewport = false,
 }: {
   accentColor: string;
   eyebrow?: ReactNode;
@@ -28,6 +29,7 @@ export function PublicMarketingHero({
   secondaryAction?: PublicHeroAction;
   decorations?: ReactNode;
   embedded?: boolean;
+  fillViewport?: boolean;
 }) {
   const actionColor = primaryAction?.color || accentColor;
   const actionInk = primaryAction?.ink || getSponsorKrdAccentInk(actionColor);
@@ -35,7 +37,9 @@ export function PublicMarketingHero({
   return (
     <section
       aria-labelledby="public-marketing-hero-title"
-      className="relative overflow-hidden text-[#111827] dark:text-white"
+      className={`relative overflow-hidden text-[#111827] dark:text-white ${
+        fillViewport ? "min-h-svh" : ""
+      }`}
       dir="rtl"
     >
       <PublicHeroAccentBackdrop accentColor={accentColor} />
@@ -43,7 +47,9 @@ export function PublicMarketingHero({
 
       <div
         className={`relative mx-auto flex max-w-5xl flex-col items-center px-5 text-center sm:px-8 ${
-          embedded
+          fillViewport
+            ? "min-h-svh justify-center pb-20 pt-28 sm:pb-24 sm:pt-32"
+            : embedded
             ? "pb-20 pt-20 sm:pb-24"
             : "pb-4 pt-40 sm:pb-8 sm:pt-48 lg:pb-8 lg:pt-56"
         }`}

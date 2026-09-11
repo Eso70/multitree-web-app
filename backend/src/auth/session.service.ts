@@ -7,8 +7,8 @@ import { isIP } from 'net';
 
 /**
  * A business session created by a platform administrator rather than by the
- * owner. Carried on the session itself so every consumer — guards, the audit
- * interceptor, and the dashboard banner — sees the same fact, including after
+ * owner. Carried on the session itself so every consumer — guards and the
+ * dashboard banner — sees the same fact, including after
  * a Redis eviction rebuilds the session from PostgreSQL.
  */
 export interface SessionImpersonation {
@@ -22,7 +22,7 @@ export interface SessionUser {
   username: string;
   name: string;
   email?: string;
-  role: 'business' | 'creator' | 'platform-admin';
+  role: 'business' | 'platform-admin';
   subdomain?: string;
   userId?: string;
   impersonation?: SessionImpersonation;
@@ -39,14 +39,6 @@ export interface ManagedSession {
   is_current: boolean;
   /** Set when a platform administrator opened this session, not the owner. */
   impersonated_by: string | null;
-}
-
-export interface LoginActivity {
-  id: string;
-  outcome: 'success' | 'failure' | 'denied';
-  ip_address: string | null;
-  user_agent: string | null;
-  created_at: Date;
 }
 
 @Injectable()
@@ -69,7 +61,6 @@ export class SessionService {
     userAgent: string;
     ttlSeconds?: number;
     rememberDevice?: boolean;
-    sessionRole?: 'business' | 'creator';
     impersonation?: {
       platformAdminId: string;
       platformAdminName: string;
@@ -146,7 +137,7 @@ export class SessionService {
         username: input.sessionUser.username,
         name: input.sessionUser.name,
         subdomain: input.sessionUser.subdomain,
-        role: input.sessionRole ?? 'business',
+        role: 'business',
         ...(input.impersonation
           ? {
               impersonation: {
@@ -259,7 +250,7 @@ export class SessionService {
       username: string;
       name: string;
       subdomain: string | null;
-      account_type: 'business' | 'platform' | 'creator';
+      account_type: 'business' | 'platform';
       session_expires_at: string;
       impersonated_by_platform_admin_id: string | null;
       impersonated_by_name: string | null;
@@ -285,7 +276,7 @@ export class SessionService {
         id: business.business_id,
         username: business.username,
         name: business.name,
-        role: business.account_type === 'creator' ? 'creator' : 'business',
+        role: 'business',
         ...(business.subdomain ? { subdomain: business.subdomain } : {}),
         ...(business.user_id ? { userId: business.user_id } : {}),
         ...(business.impersonated_by_platform_admin_id
@@ -311,7 +302,6 @@ export class SessionService {
       return user;
     }
 
-    // The database table keeps its legacy name for a non-destructive upgrade.
     const platformAdminResult = await this.databaseService.query<{
       platform_admin_id: string;
       username: string;
@@ -376,7 +366,7 @@ export class SessionService {
   async destroySession(sessionToken: string, user: SessionUser): Promise<void> {
     // 1. Delete from Redis
     const sessionKey =
-      user.role === 'business' || user.role === 'creator'
+      user.role === 'business'
         ? this.businessTokenHash(sessionToken)
         : sessionToken;
     await this.redisService.del(`session:${sessionKey}`);
@@ -397,32 +387,17 @@ export class SessionService {
   }
 
   async getBusinessLoginSecurity(businessId: string, currentToken = '') {
-    return this.getLoginSecurity(businessId, currentToken, 'business', [
-      'business.login',
-    ]);
+    return this.getLoginSecurity(businessId, currentToken);
   }
 
-  async getCreatorLoginSecurity(businessId: string, currentToken = '') {
-    return this.getLoginSecurity(businessId, currentToken, 'creator', [
-      'creator.login',
-      'creator.account.create',
-    ]);
-  }
-
-  private async getLoginSecurity(
-    businessId: string,
-    currentToken: string,
-    actorType: 'business' | 'creator',
-    eventTypes: string[],
-  ) {
+  private async getLoginSecurity(businessId: string, currentToken: string) {
     const currentHash = currentToken
       ? this.businessTokenHash(currentToken)
       : '';
-    const [sessions, activity] = await Promise.all([
-      this.databaseService.query<ManagedSession>(
-        // Administrator access is disclosed to the owner rather than hidden:
-        // an impersonated session appears in the owner's own device list.
-        `SELECT s.id, host(s.ip_address) AS ip_address, s.user_agent, s.last_used_at,
+    const sessions = await this.databaseService.query<ManagedSession>(
+      // Administrator access is disclosed to the owner rather than hidden:
+      // an impersonated session appears in the owner's own device list.
+      `SELECT s.id, host(s.ip_address) AS ip_address, s.user_agent, s.last_used_at,
                 s.created_at, s.session_expires_at, s.remembered,
                 ($2 != '' AND s.session_token_hash = $2) AS is_current,
                 admin.name AS impersonated_by
@@ -430,21 +405,9 @@ export class SessionService {
          LEFT JOIN platform_admins admin ON admin.id = s.impersonated_by_platform_admin_id
          WHERE s.business_id = $1 AND s.session_expires_at > NOW()
          ORDER BY is_current DESC, s.last_used_at DESC`,
-        [businessId, currentHash],
-      ),
-      this.databaseService.query<LoginActivity>(
-        `SELECT id::text, outcome, host(ip_address) AS ip_address,
-                user_agent, created_at
-         FROM security_audit_events
-         WHERE actor_type = $2
-           AND actor_id = $1
-           AND event_type = ANY($3::text[])
-         ORDER BY created_at DESC
-         LIMIT 10`,
-        [businessId, actorType, eventTypes],
-      ),
-    ]);
-    return { sessions: sessions.rows, recent_activity: activity.rows };
+      [businessId, currentHash],
+    );
+    return { sessions: sessions.rows };
   }
 
   async revokeBusinessSession(

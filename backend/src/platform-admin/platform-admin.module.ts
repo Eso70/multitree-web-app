@@ -6,8 +6,6 @@ import { AdvertisingModule } from '../advertising/advertising.module';
 import { AuthModule } from '../auth/auth.module';
 import { StorageModule } from '../storage/storage.module';
 import { PlatformSettingsService } from './platform-settings.service';
-import { AuditLogController } from './audit-log.controller';
-import { AuditLogService } from './audit-log.service';
 import { AccessRulesController } from './access-rules.controller';
 import { AccessRulesService } from './access-rules.service';
 import { AccessControlController } from './access-control.controller';
@@ -28,8 +26,6 @@ import { PlatformLinktreesController } from './platform-linktrees.controller';
 import { PlatformLinktreesService } from './platform-linktrees.service';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { PlatformContentWorkspaceModule } from '../platform-workspace/platform-content-workspace.module';
-import { CreatorAdministrationController } from './creator-administration.controller';
-import { CreatorAdministrationService } from './creator-administration.service';
 
 @Module({
   // AdvertisingModule so a plan or subscription change can drop the published
@@ -45,7 +41,6 @@ import { CreatorAdministrationService } from './creator-administration.service';
   controllers: [
     BusinessAdministrationController,
     PlatformSettingsController,
-    AuditLogController,
     AccessRulesController,
     AccessControlController,
     BillingManagementController,
@@ -53,7 +48,6 @@ import { CreatorAdministrationService } from './creator-administration.service';
     BusinessAccessController,
     ApprovalManagementController,
     PlatformLinktreesController,
-    CreatorAdministrationController,
   ],
   providers: [
     BusinessAdministrationService,
@@ -65,18 +59,12 @@ import { CreatorAdministrationService } from './creator-administration.service';
     // DatabaseService, which is global.
     AnalyticsReadRepository,
     PlatformSettingsService,
-    AuditLogService,
     AccessRulesService,
     AccessControlService,
     BillingManagementService,
     DataRetentionService,
     PlatformLinktreesService,
-    CreatorAdministrationService,
   ],
-  exports: [
-    BusinessAdministrationService,
-    PlatformSettingsService,
-    AuditLogService,
-  ],
+  exports: [BusinessAdministrationService, PlatformSettingsService],
 })
 export class PlatformAdminModule {}

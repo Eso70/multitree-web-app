@@ -126,7 +126,7 @@ async function writeCategoriesAndTiers(
       pageId,
       keys,
       config.packageCategories.map((category) => category.label),
-      config.packageCategories.map((category) => category.color ?? 'lime'),
+      config.packageCategories.map((category) => category.color ?? 'cyan'),
       config.packageCategories.map((_, index) => index),
     ],
   );

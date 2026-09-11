@@ -38,8 +38,7 @@ type Scope =
   | "platform_admin"
   | "business"
   | "business_admin"
-  | "public_linktree"
-  | "business_api";
+  | "public_linktree";
 type RuleStatus = "all" | "active" | "inactive" | "expired";
 type Sort = "newest" | "oldest" | "mostMatched" | "recentlyMatched";
 interface Rule {
@@ -92,7 +91,6 @@ const scopeOptions: CustomSelectOption<string>[] = [
   { value: "business", label: "بزنسی دیاریکراو" },
   { value: "business_admin", label: "سەرپەرشتیاری بزنس" },
   { value: "public_linktree", label: "لاپەڕەی گشتی بزنس" },
-  { value: "business_api", label: "API ی بزنس" },
 ];
 const statusOptions: CustomSelectOption<RuleStatus>[] = [
   { value: "all", label: "هەموو دۆخەکان" },
@@ -118,7 +116,6 @@ const scopeLabel: Record<Scope, string> = {
   business: "بزنس",
   business_admin: "سەرپەرشتیاری بزنس",
   public_linktree: "لاپەڕەی گشتی",
-  business_api: "API ی بزنس",
 };
 
 export function BlocklistsPage() {
@@ -819,7 +816,6 @@ function CreateRuleModal({
     "business",
     "business_admin",
     "public_linktree",
-    "business_api",
   ].includes(scope);
   const save = async () => {
     setSaving(true);

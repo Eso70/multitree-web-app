@@ -10,7 +10,7 @@ describe('advertising defaults', () => {
       description: '',
       whatsappNumber: '9647501234567',
       packageCategories: [
-        { id: 'personal', label: 'کەسی', color: 'lime' },
+        { id: 'personal', label: 'کەسی', color: 'cyan' },
         { id: 'business', label: 'بازرگانی', color: 'violet' },
       ],
       packageTiers: { personal: [], business: [] },

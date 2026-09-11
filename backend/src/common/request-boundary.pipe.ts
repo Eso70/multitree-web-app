@@ -38,14 +38,6 @@ export class RequestBoundaryPipe implements PipeTransform<unknown> {
 
     if (
       metadata.type === 'param' &&
-      metadata.data === 'auditId' &&
-      (typeof value !== 'string' || !/^[1-9]\d{0,18}$/.test(value))
-    ) {
-      throw new BadRequestException('Invalid auditId parameter');
-    }
-
-    if (
-      metadata.type === 'param' &&
       metadata.data === 'catalogId' &&
       (typeof value !== 'string' || !/^[a-z][a-z0-9_-]{0,79}$/.test(value))
     ) {

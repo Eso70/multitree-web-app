@@ -10,7 +10,6 @@ import { HomeFooter } from "@/components/home/HomeFooter";
 import { BUSINESS_LANDING_SECTION_HREFS } from "@/components/business/business-landing-sections";
 import { getSponsorKrdAccentInk } from "@/lib/sponsor-krd-theme";
 import { applyBusinessTabBranding } from "@/lib/utils/business-error-theme";
-import { MARKETING_NAVIGATION } from "@/features/public-site/marketing-content";
 import type { ErrorPageTheme } from "./error-theme";
 
 interface ErrorContentProps {
@@ -140,7 +139,6 @@ export function ErrorPagePanel(props: ErrorContentProps) {
 export function ErrorPage(props: ErrorPageProps) {
   const { theme, homeHref } = props;
   const isBusiness = theme.scope === "business";
-  const isSponsorKrd = theme.scope === "sponsor-krd";
   const brandName = theme.name || (isBusiness ? "Business" : "Sponsor.krd");
   const footer = theme.footer;
 
@@ -189,17 +187,15 @@ export function ErrorPage(props: ErrorPageProps) {
           ? [{ label: "ڕیکلام", href: "/advertising" }]
           : []),
       ]
-    : MARKETING_NAVIGATION;
+    : [];
 
-  // Only the root domain offers account actions. A business subdomain shows its
-  // own contact action, and the platform console must not advertise signup.
+  // A business subdomain may show its own contact action. Internal and root
+  // surfaces do not advertise an account workflow.
   const primaryAction = isBusiness
     ? footer?.whatsappEnabled && whatsappHref
       ? { label: "پەیوەندی", href: whatsappHref, external: true }
       : null
-    : isSponsorKrd
-      ? { label: "هەژمار دروست بکە", href: "/signup" }
-      : null;
+    : null;
 
   return (
     <PublicMarketingSiteShell
@@ -209,12 +205,9 @@ export function ErrorPage(props: ErrorPageProps) {
       homeHref={homeHref}
       navigationItems={navigationItems}
       primaryAction={primaryAction}
-      secondaryAction={
-        isSponsorKrd ? { label: "چوونەژوورەوە", href: "/login" } : null
-      }
       emphasizeFirstNavItem={false}
       footer={
-        isSponsorKrd ? (
+        theme.scope === "sponsor-krd" ? (
           <HomeFooter />
         ) : (
           <BusinessPublicFooter

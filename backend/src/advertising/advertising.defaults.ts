@@ -24,7 +24,7 @@ export function createDefaultAdvertisingConfig(
     whatsappNumber: businessPhone.replace(/\D/g, ''),
     // These are editor structure, not demo packages. They start with no tiers.
     packageCategories: [
-      { id: 'personal', label: 'کەسی', color: 'lime' },
+      { id: 'personal', label: 'کەسی', color: 'cyan' },
       { id: 'business', label: 'بازرگانی', color: 'violet' },
     ],
     packageTiers: { personal: [], business: [] },

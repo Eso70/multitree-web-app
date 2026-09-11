@@ -1,10 +1,5 @@
 # Deployment
 
-Root-domain Creator signup uses the same Google OAuth configuration as the
-other authentication surfaces and requires an explicit `CREATOR_TRIAL_DAYS`
-value. Missing Google or Redis settings fail closed rather than bypassing
-verification.
-
 Register exact production callback
 `https://<root-domain>/api/auth/google/callback` in Google Cloud and configure
 `APP_BASE_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and
@@ -245,9 +240,7 @@ Before deploying:
 1. Use Node.js 24 (the version pinned in `.nvmrc`); Node.js 22 is the minimum
    supported runtime because current workspace dependencies require it.
 2. Back up PostgreSQL.
-3. Back up `UPLOAD_DIR` (default: `<repository>/.runtime/uploads`) and, during
-   the compatibility period, the former `frontend/public/images/upload`
-   directory if it still contains files.
+3. Back up `UPLOAD_DIR` (default: `<repository>/.runtime/uploads`).
 4. Deploy the new application version.
 5. Install dependencies.
 6. Run:

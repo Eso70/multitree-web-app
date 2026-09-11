@@ -45,7 +45,7 @@ export function AccessTable({
                     permission.profiles.map((profile) => (
                       <span
                         key={profile}
-                        className="rounded-full bg-lime-50 px-2 py-1 text-[9px] font-bold text-lime-700 dark:bg-lime-500/10 dark:text-lime-300"
+                        className="rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
                       >
                         {profile}
                       </span>

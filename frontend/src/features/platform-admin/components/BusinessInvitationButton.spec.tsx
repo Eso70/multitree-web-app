@@ -1,20 +1,20 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { InvitationCreator } from "@/features/platform-admin/components/InvitationCreator";
+import { BusinessInvitationButton } from "@/features/platform-admin/components/BusinessInvitationButton";
 import { apiRequest } from "@/lib/api/request";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 
 vi.mock("@/lib/api/request", () => ({ apiRequest: vi.fn() }));
 vi.mock("@/lib/utils/clipboard", () => ({ copyToClipboard: vi.fn() }));
 
-describe("InvitationCreator", () => {
+describe("BusinessInvitationButton", () => {
   beforeEach(() => {
     vi.mocked(apiRequest).mockReset();
     vi.mocked(copyToClipboard).mockReset();
   });
 
   it("uses the shared wizard and reports an invalid optional email inline", () => {
-    render(<InvitationCreator showLabel />);
+    render(<BusinessInvitationButton showLabel />);
 
     fireEvent.click(screen.getByRole("button", { name: "Invite" }));
 
@@ -40,7 +40,7 @@ describe("InvitationCreator", () => {
       expiresAt: "2026-08-20T10:00:00.000Z",
     });
     vi.mocked(copyToClipboard).mockResolvedValue(true);
-    render(<InvitationCreator />);
+    render(<BusinessInvitationButton />);
 
     fireEvent.click(screen.getByRole("button", { name: "Invite" }));
     fireEvent.change(screen.getByLabelText(/ئیمەیڵی دیاریکراو/), {

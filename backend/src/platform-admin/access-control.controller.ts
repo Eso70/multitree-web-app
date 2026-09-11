@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
-import { AuditEvent } from '../auth/audit-event.decorator';
-import { AuditInterceptor } from '../auth/audit.interceptor';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { AuthorizationGuard } from '../auth/authorization.guard';
 import { Capability } from '../auth/capabilities';
 import { PlatformAdminGuard } from '../auth/platform-admin.guard';
@@ -17,7 +8,6 @@ import { SimulateAuthorizationDto } from './dto/access-control.dto';
 
 @Controller('api/platform/access-control')
 @UseGuards(PlatformAdminGuard, AuthorizationGuard)
-@UseInterceptors(AuditInterceptor)
 export class AccessControlController {
   constructor(private readonly service: AccessControlService) {}
 
@@ -29,9 +19,6 @@ export class AccessControlController {
 
   @Post('simulate')
   @RequireCapabilities(Capability.PlatformAccessControlSimulate)
-  @AuditEvent('platform.access_control.simulate', {
-    resourceType: 'authorization-policy',
-  })
   async simulate(@Body() dto: SimulateAuthorizationDto) {
     return { success: true, data: await this.service.simulate(dto) };
   }

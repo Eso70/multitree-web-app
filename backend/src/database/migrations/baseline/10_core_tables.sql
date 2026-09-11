@@ -27,11 +27,11 @@ CREATE TABLE public.access_rules (
     created_by uuid,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT access_rules_check CHECK ((((scope)::text <> ALL (ARRAY[('business'::character varying)::text, ('business_admin'::character varying)::text, ('public_linktree'::character varying)::text, ('business_api'::character varying)::text])) OR (business_id IS NOT NULL))),
+    CONSTRAINT access_rules_check CHECK ((((scope)::text <> ALL (ARRAY[('business'::character varying)::text, ('business_admin'::character varying)::text, ('public_linktree'::character varying)::text])) OR (business_id IS NOT NULL))),
     CONSTRAINT access_rules_check1 CHECK ((((scope)::text <> 'public_linktree'::text) OR (linktree_id IS NOT NULL))),
     CONSTRAINT access_rules_effect_check CHECK (((effect)::text = ANY (ARRAY[('deny'::character varying)::text, ('allow'::character varying)::text]))),
     CONSTRAINT access_rules_match_count_check CHECK ((match_count >= 0)),
-    CONSTRAINT access_rules_scope_check CHECK (((scope)::text = ANY (ARRAY[('sponsor_krd'::character varying)::text, ('platform_admin'::character varying)::text, ('business'::character varying)::text, ('business_admin'::character varying)::text, ('public_linktree'::character varying)::text, ('business_api'::character varying)::text]))),
+    CONSTRAINT access_rules_scope_check CHECK (((scope)::text = ANY (ARRAY[('sponsor_krd'::character varying)::text, ('platform_admin'::character varying)::text, ('business'::character varying)::text, ('business_admin'::character varying)::text, ('public_linktree'::character varying)::text]))),
     CONSTRAINT access_rules_status_check CHECK (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('inactive'::character varying)::text])))
 );
 
@@ -385,76 +385,12 @@ CREATE TABLE public.businesses (
     CONSTRAINT businesses_max_linktrees_check CHECK ((max_linktrees > 0)),
     CONSTRAINT businesses_onboarding_step_check CHECK (((onboarding_step >= 1) AND (onboarding_step <= 3))),
     CONSTRAINT businesses_phone_check CHECK ((btrim((phone)::text) <> ''::text)),
-    CONSTRAINT businesses_account_type_check CHECK (((account_type)::text = ANY (ARRAY[('business'::character varying)::text, ('platform'::character varying)::text, ('creator'::character varying)::text]))),
+    CONSTRAINT businesses_account_type_check CHECK (((account_type)::text = ANY (ARRAY[('business'::character varying)::text, ('platform'::character varying)::text]))),
     CONSTRAINT businesses_plan_check CHECK (((plan)::text = ANY (ARRAY[('trial'::character varying)::text, ('premium'::character varying)::text, ('enterprise'::character varying)::text]))),
     CONSTRAINT businesses_status_check CHECK (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('suspended'::character varying)::text]))),
     CONSTRAINT businesses_subdomain_check CHECK ((((subdomain)::text = lower((subdomain)::text)) AND ((subdomain)::text ~ '^[a-z0-9][a-z0-9-]*[a-z0-9]$'::text))),
     CONSTRAINT businesses_username_check CHECK ((((username)::text = lower((username)::text)) AND ((username)::text ~ '^[a-z0-9][a-z0-9._-]*$'::text)))
 );
-
-
---
--- Name: http_request_event_daily_stats; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.http_request_event_daily_stats (
-    event_day date NOT NULL,
-    source character varying(20) NOT NULL,
-    method character varying(10) NOT NULL,
-    actor_type character varying(30) NOT NULL,
-    outcome character varying(20) NOT NULL,
-    total bigint DEFAULT 0 NOT NULL,
-    CONSTRAINT http_request_event_daily_stats_total_check CHECK ((total >= 0))
-);
-
-
---
--- Name: http_request_events; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.http_request_events (
-    id bigint NOT NULL,
-    request_id character varying(100),
-    source character varying(20) NOT NULL,
-    method character varying(10) NOT NULL,
-    request_path character varying(500) NOT NULL,
-    route_pattern character varying(500),
-    status_code smallint,
-    duration_ms integer,
-    actor_type character varying(30) DEFAULT 'anonymous'::character varying NOT NULL,
-    actor_id uuid,
-    actor_label character varying(200),
-    business_id uuid,
-    subdomain character varying(100),
-    ip_address inet,
-    user_agent text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    ingestion_key uuid,
-    CONSTRAINT chk_http_request_actor CHECK (((actor_type)::text = ANY (ARRAY[('anonymous'::character varying)::text, ('business'::character varying)::text, ('creator'::character varying)::text, ('platform-admin'::character varying)::text, ('sponsor_krd'::character varying)::text]))),
-    CONSTRAINT chk_http_request_duration CHECK (((duration_ms IS NULL) OR (duration_ms >= 0))),
-    CONSTRAINT chk_http_request_method CHECK (((method)::text ~ '^[A-Z]{1,10}$'::text)),
-    CONSTRAINT chk_http_request_source CHECK (((source)::text = ANY (ARRAY[('frontend'::character varying)::text, ('backend'::character varying)::text]))),
-    CONSTRAINT chk_http_request_status CHECK (((status_code IS NULL) OR ((status_code >= 100) AND (status_code <= 599))))
-);
-
-
---
--- Name: http_request_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.http_request_events_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: http_request_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.http_request_events_id_seq OWNED BY public.http_request_events.id;
 
 
 --
@@ -580,50 +516,6 @@ CREATE TABLE public.schema_migrations (
 
 
 --
--- Name: security_audit_events; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.security_audit_events (
-    id bigint NOT NULL,
-    actor_type character varying(30) NOT NULL,
-    actor_id uuid,
-    actor_label character varying(200),
-    business_id uuid,
-    event_type character varying(100) NOT NULL,
-    outcome character varying(20) NOT NULL,
-    resource_type character varying(60),
-    resource_id character varying(100),
-    resource_label character varying(200),
-    request_id character varying(100),
-    ip_address inet,
-    user_agent text,
-    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT chk_security_actor_type CHECK (((actor_type)::text = ANY (ARRAY[('anonymous'::character varying)::text, ('business'::character varying)::text, ('creator'::character varying)::text, ('platform-admin'::character varying)::text, ('sponsor_krd'::character varying)::text]))),
-    CONSTRAINT chk_security_outcome CHECK (((outcome)::text = ANY (ARRAY[('success'::character varying)::text, ('failure'::character varying)::text, ('denied'::character varying)::text])))
-);
-
-
---
--- Name: security_audit_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.security_audit_events_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: security_audit_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.security_audit_events_id_seq OWNED BY public.security_audit_events.id;
-
-
---
 -- Name: platform_admin_sessions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -686,16 +578,3 @@ CREATE TABLE public.whatsapp_questions (
     CONSTRAINT whatsapp_questions_display_order_check CHECK ((display_order >= 0))
 );
 
-
---
--- Name: http_request_events id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.http_request_events ALTER COLUMN id SET DEFAULT nextval('public.http_request_events_id_seq'::regclass);
-
-
---
--- Name: security_audit_events id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.security_audit_events ALTER COLUMN id SET DEFAULT nextval('public.security_audit_events_id_seq'::regclass);

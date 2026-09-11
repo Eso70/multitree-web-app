@@ -11,14 +11,11 @@ import {
   Put,
   Query,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { PlatformAdminGuard } from '../auth/platform-admin.guard';
 import { BusinessGuard } from '../auth/business.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { SessionUser } from '../auth/session.service';
-import { AuditInterceptor } from '../auth/audit.interceptor';
-import { AuditEvent } from '../auth/audit-event.decorator';
 import { AuthorizationGuard } from '../auth/authorization.guard';
 import { Capability } from '../auth/capabilities';
 import { RequireCapabilities } from '../auth/require-capabilities.decorator';
@@ -33,7 +30,6 @@ import {
 
 @Controller('api/platform/communications')
 @UseGuards(PlatformAdminGuard, AuthorizationGuard)
-@UseInterceptors(AuditInterceptor)
 export class PlatformCommunicationController {
   constructor(private readonly communications: CommunicationService) {}
 
@@ -71,9 +67,6 @@ export class PlatformCommunicationController {
 
   @Post('announcements')
   @RequireCapabilities(Capability.PlatformCommunicationsAnnouncementCreate)
-  @AuditEvent('platform.communication.announcement.create', {
-    resourceType: 'announcement',
-  })
   async createAnnouncement(
     @Body() body: CreateAnnouncementDto,
     @CurrentUser() user: SessionUser,
@@ -86,10 +79,6 @@ export class PlatformCommunicationController {
 
   @Put('announcements/:id')
   @RequireCapabilities(Capability.PlatformCommunicationsAnnouncementCreate)
-  @AuditEvent('platform.communication.announcement.update', {
-    resourceType: 'announcement',
-    resourceIdParam: 'id',
-  })
   async updateAnnouncement(
     @Param('id') id: string,
     @Body() body: UpdateAnnouncementDto,
@@ -103,10 +92,6 @@ export class PlatformCommunicationController {
   @Post('announcements/:id/publish')
   @RequireCapabilities(Capability.PlatformCommunicationsAnnouncementPublish)
   @HttpCode(HttpStatus.OK)
-  @AuditEvent('platform.communication.announcement.publish', {
-    resourceType: 'announcement',
-    resourceIdParam: 'id',
-  })
   async publishAnnouncement(
     @Param('id') id: string,
     @CurrentUser() user: SessionUser,
@@ -119,10 +104,6 @@ export class PlatformCommunicationController {
 
   @Delete('announcements/:id')
   @RequireCapabilities(Capability.PlatformCommunicationsAnnouncementArchive)
-  @AuditEvent('platform.communication.announcement.archive', {
-    resourceType: 'announcement',
-    resourceIdParam: 'id',
-  })
   async archiveAnnouncement(@Param('id') id: string) {
     return {
       success: true,
@@ -201,9 +182,6 @@ export class PlatformCommunicationController {
 
   @Post('conversations')
   @RequireCapabilities(Capability.PlatformCommunicationsConversationReply)
-  @AuditEvent('platform.communication.conversation.create', {
-    resourceType: 'conversation',
-  })
   async createConversation(
     @CurrentUser() user: SessionUser,
     @Body() body: CreateConversationDto,
@@ -228,10 +206,6 @@ export class PlatformCommunicationController {
 
   @Post('conversations/:id/messages')
   @RequireCapabilities(Capability.PlatformCommunicationsConversationReply)
-  @AuditEvent('platform.communication.message.create', {
-    resourceType: 'conversation',
-    resourceIdParam: 'id',
-  })
   async reply(
     @CurrentUser() user: SessionUser,
     @Param('id') id: string,
@@ -245,10 +219,6 @@ export class PlatformCommunicationController {
 
   @Patch('conversations/:id')
   @RequireCapabilities(Capability.PlatformCommunicationsConversationReply)
-  @AuditEvent('platform.communication.conversation.update', {
-    resourceType: 'conversation',
-    resourceIdParam: 'id',
-  })
   async updateConversation(
     @Param('id') id: string,
     @Body() body: UpdateConversationDto,
@@ -262,7 +232,6 @@ export class PlatformCommunicationController {
 
 @Controller('api/auth/communications')
 @UseGuards(BusinessGuard)
-@UseInterceptors(AuditInterceptor)
 export class BusinessCommunicationController {
   constructor(private readonly communications: CommunicationService) {}
 
@@ -335,9 +304,6 @@ export class BusinessCommunicationController {
   }
 
   @Post('conversations')
-  @AuditEvent('business.communication.conversation.create', {
-    resourceType: 'conversation',
-  })
   async createConversation(
     @CurrentUser() user: SessionUser,
     @Body() body: CreateConversationDto,
@@ -360,10 +326,6 @@ export class BusinessCommunicationController {
   }
 
   @Post('conversations/:id/messages')
-  @AuditEvent('business.communication.message.create', {
-    resourceType: 'conversation',
-    resourceIdParam: 'id',
-  })
   async reply(
     @CurrentUser() user: SessionUser,
     @Param('id') id: string,

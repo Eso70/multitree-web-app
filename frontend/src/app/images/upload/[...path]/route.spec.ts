@@ -2,45 +2,23 @@ import { join, resolve } from "path";
 import { getUploadDirectories, resolveUploadPath } from "./upload-path";
 import { getUploadContentType } from "./content-type";
 
-describe("uploaded image compatibility route", () => {
+describe("uploaded image route", () => {
   const runtimeDirectory = resolve("C:/sponsor-krd/.runtime/uploads");
-  const legacyDirectory = resolve(
-    "C:/sponsor-krd/frontend/public/images/upload",
-  );
 
-  it("uses the unwatched runtime directory before the legacy public directory", () => {
+  it("uses only the configured runtime directory", () => {
     expect(getUploadDirectories("C:/sponsor-krd/frontend", undefined)).toEqual([
       runtimeDirectory,
-      legacyDirectory,
     ]);
 
     const runtimeImage = join(runtimeDirectory, "businesses", "logo.png");
-    const legacyImage = join(legacyDirectory, "businesses", "logo.png");
 
     expect(
       resolveUploadPath(
         ["businesses", "logo.png"],
-        (path) => path === runtimeImage || path === legacyImage,
-        [runtimeDirectory, legacyDirectory],
+        (path) => path === runtimeImage,
+        [runtimeDirectory],
       ),
     ).toBe(runtimeImage);
-  });
-
-  it("resolves a persisted legacy SponsorKrd URL from the renamed namespace", () => {
-    const expectedPath = join(
-      legacyDirectory,
-      "sponsor-krd",
-      "branding",
-      "logo.png",
-    );
-
-    expect(
-      resolveUploadPath(
-        ["system", "branding", "logo.png"],
-        (path) => path === expectedPath,
-        [runtimeDirectory, legacyDirectory],
-      ),
-    ).toBe(expectedPath);
   });
 
   it("rejects path traversal before checking the filesystem", () => {

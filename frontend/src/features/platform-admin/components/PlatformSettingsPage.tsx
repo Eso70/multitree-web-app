@@ -6,7 +6,6 @@ import { useCallback, useEffect, useState, type ChangeEvent } from "react";
 import Image from "next/image";
 import {
   Archive,
-  Clock3,
   Database,
   Globe,
   HardDrive,
@@ -52,10 +51,14 @@ import { PlatformTikTokAdAccountTab } from "@/features/campaigns/components/Plat
 import { TbBrandTiktok } from "react-icons/tb";
 import { ThemeProvider } from "@/lib/contexts/ThemeProvider";
 import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
-import { SkeletonActivityList, SkeletonSessionList } from "@/components/shared/SkeletonCommunicationLayouts";
-import { SkeletonMediaSettings, SkeletonRetentionSettings } from "./PlatformSettingsSkeletons";
+import { SkeletonSessionList } from "@/components/shared/SkeletonCommunicationLayouts";
+import {
+  SkeletonMediaSettings,
+  SkeletonRetentionSettings,
+} from "./PlatformSettingsSkeletons";
 
-type Tab = "general" | "security" | "retention" | "media" | "tiktok" | "tiktok-ads";
+type Tab =
+  "general" | "security" | "retention" | "media" | "tiktok" | "tiktok-ads";
 
 type PlatformSettings = {
   id: string;
@@ -83,17 +86,7 @@ type AdminSession = {
   is_current: boolean;
 };
 
-type LoginActivity = {
-  id: string;
-  outcome: "success" | "failure" | "denied";
-  ip_address: string | null;
-  user_agent: string | null;
-  created_at: string;
-};
-
 type RetentionPolicy = {
-  request_log_days: number;
-  api_history_days: number;
   communication_history_days: number;
   automatic_cleanup: boolean;
   cleanup_hour_utc: number;
@@ -103,7 +96,7 @@ type RetentionPolicy = {
 
 type RetentionStatus = {
   policy: RetentionPolicy;
-  eligible: Record<"request_logs" | "api_history" | "communications", number>;
+  eligible: Record<"communications", number>;
   last_run: null | {
     status: "running" | "completed" | "failed";
     trigger_type: "manual" | "scheduled";
@@ -172,7 +165,6 @@ export function PlatformSettingsPage() {
   const [assetUploadError, setAssetUploadError] =
     useState<InlineRequestErrorData | null>(null);
   const [sessions, setSessions] = useState<AdminSession[]>([]);
-  const [loginActivity, setLoginActivity] = useState<LoginActivity[]>([]);
   const [isSecurityLoading, setIsSecurityLoading] = useState(false);
   const [revokingSession, setRevokingSession] = useState<string | null>(null);
   const [retention, setRetention] = useState<RetentionStatus | null>(null);
@@ -265,7 +257,6 @@ export function PlatformSettingsPage() {
         method: "GET",
       });
       setSessions(payload.data?.sessions || []);
-      setLoginActivity(payload.data?.recent_activity || []);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Unable to load sessions",
@@ -334,8 +325,6 @@ export function PlatformSettingsPage() {
     setIsRetentionSaving(true);
     try {
       const {
-        request_log_days,
-        api_history_days,
         communication_history_days,
         automatic_cleanup,
         cleanup_hour_utc,
@@ -343,8 +332,6 @@ export function PlatformSettingsPage() {
       await request("/api/platform/settings/data-retention", {
         method: "PUT",
         body: JSON.stringify({
-          request_log_days,
-          api_history_days,
           communication_history_days,
           automatic_cleanup,
           cleanup_hour_utc,
@@ -986,43 +973,6 @@ export function PlatformSettingsPage() {
               )}
             </div>
           </div>
-
-          <div className="mt-5 rounded-2xl border border-slate-200 p-4 dark:border-white/10 sm:p-5">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-white">
-              مێژووی چوونەژوورەوە
-            </h3>
-            <div className="mt-4 divide-y divide-slate-100 dark:divide-white/5">
-              {isSecurityLoading && loginActivity.length === 0 ? (
-                <SkeletonActivityList rows={4} />
-              ) : loginActivity.length === 0 ? (
-                <p className="py-6 text-center text-xs text-slate-400">
-                  No recent login activity.
-                </p>
-              ) : (
-                loginActivity.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="flex items-center justify-between gap-3 py-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold text-slate-700 dark:text-slate-200">
-                        {describeUserAgent(activity.user_agent)}
-                      </p>
-                      <p className="mt-1 text-[11px] text-slate-400">
-                        {activity.ip_address || "Unknown IP"} ·{" "}
-                        {formatSecurityDate(activity.created_at)}
-                      </p>
-                    </div>
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${activity.outcome === "success" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400"}`}
-                    >
-                      {activity.outcome === "success" ? "Successful" : "Failed"}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
         </section>
       )}
 
@@ -1039,17 +989,7 @@ export function PlatformSettingsPage() {
               <SkeletonRetentionSettings />
             ) : retention ? (
               <div className="space-y-6">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <RetentionCount
-                    icon={Clock3}
-                    label="داواکارییە کۆنەکان"
-                    value={retention.eligible.request_logs}
-                  />
-                  <RetentionCount
-                    icon={Database}
-                    label="مێژووی API"
-                    value={retention.eligible.api_history}
-                  />
+                <div className="grid gap-3">
                   <RetentionCount
                     icon={Archive}
                     label="پەیوەندییە ئەرشیڤکراوەکان"
@@ -1057,32 +997,7 @@ export function PlatformSettingsPage() {
                   />
                 </div>
 
-                <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300">
-                  تۆمارەکانی چاودێریی ئاسایش هەمیشەییین و لە پاککردنەوەی داتا
-                  ناگرێنەوە.
-                </p>
-
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <RetentionDaysField
-                    label="تۆماری داواکارییەکانی سیستەم"
-                    hint="7–365 ڕۆژ"
-                    value={retention.policy.request_log_days}
-                    min={7}
-                    max={365}
-                    onChange={(value) =>
-                      updateRetentionField("request_log_days", value)
-                    }
-                  />
-                  <RetentionDaysField
-                    label="مێژووی API و Webhook"
-                    hint="30–730 ڕۆژ"
-                    value={retention.policy.api_history_days}
-                    min={30}
-                    max={730}
-                    onChange={(value) =>
-                      updateRetentionField("api_history_days", value)
-                    }
-                  />
+                <div className="grid gap-5">
                   <RetentionDaysField
                     label="پەیام و ڕاگەیاندنی ئەرشیڤکراو"
                     hint="30–3650 ڕۆژ"
@@ -1309,8 +1224,8 @@ export function PlatformSettingsPage() {
                       label="پاککردنەوەی خۆکاری فایلی بەکارنەهاتوو"
                     />
                     <p className="mt-1 text-[11px] leading-5 text-slate-400">
-                      تەنها فایلێک پاک دەکرێتەوە کە لە هیچ بزنس، پەڕە یان API
-                      ـێک بەکارنەهاتووە.
+                      تەنها فایلێک پاک دەکرێتەوە کە لە هیچ بزنس یان پەڕەیەکدا
+                      بەکارنەهاتووە.
                     </p>
                   </div>
                 </div>
@@ -1380,7 +1295,7 @@ export function PlatformSettingsPage() {
         onClose={() => setShowMediaCleanupConfirm(false)}
         onConfirm={cleanupMedia}
         title="پاککردنەوەی فایلی بەکارنەهاتوو"
-        message="تەنها فایلە کۆنە تۆمارکراوەکان پاک دەکرێنەوە کە لە هیچ ناسنامەی بزنس، پەڕەی لینک، داواکاری گۆڕانکاری یان API ـێک بەکارنەهاتوون."
+        message="تەنها فایلە کۆنە تۆمارکراوەکان پاک دەکرێنەوە کە لە هیچ ناسنامەی بزنس، پەڕەی لینک یان داواکاری گۆڕانکارییەکدا بەکارنەهاتوون."
         confirmLabel="پاککردنەوە"
         loadingLabel="پاک دەکرێتەوە…"
         isDeleting={isMediaCleanupRunning}

@@ -32,7 +32,6 @@ import { DuplicateLinktreeDto } from './dto/duplicate-linktree.dto';
 import * as crypto from 'crypto';
 import { EntitlementService } from '../billing/entitlement.service';
 import { TemplateAccessService } from '../billing/template-access.service';
-import { WebhookDeliveryService } from '../api-platform/webhook-delivery.service';
 import { StorageService } from '../storage/storage.service';
 import { LinksService } from '../links/links.service';
 import {
@@ -215,7 +214,6 @@ export class LinktreesService {
     private readonly redisService: RedisService,
     private readonly entitlementService: EntitlementService,
     private readonly templateAccessService: TemplateAccessService,
-    private readonly webhooks: WebhookDeliveryService,
     private readonly storage: StorageService,
     private readonly linksService: LinksService,
     private readonly analyticsRead: AnalyticsReadRepository,
@@ -538,7 +536,6 @@ export class LinktreesService {
     data: CreateLinktreeDto,
     businessId: string,
     scope: LinktreeWriteScope = 'business',
-    sourceClientInvitationId?: string,
   ) {
     const isPlatform = scope === 'platform';
     const linktreeLimit = isPlatform
@@ -685,14 +682,6 @@ export class LinktreesService {
               ],
             );
           }
-          await this.webhooks.emitWithClient(
-            client,
-            businessId,
-            'linktree.updated',
-            'linktree',
-            defaultId,
-            { id: defaultId, uid: updated.uid, slug: updated.seo_name },
-          );
           return { ...updated, template_config: config };
         }
       }
@@ -718,9 +707,8 @@ export class LinktreesService {
         `INSERT INTO linktrees (
           name, subtitle, subtitle_color, description, seo_name, uid, image, background_color,
           template_key, template_config, whatsapp_modal_enabled,
-          footer_text, footer_phone, footer_hidden, status, business_id, is_default,
-          client_invitation_id
-        ) VALUES ($1, $2, $17, $15, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, 'active', $13, $14, $16::uuid)
+          footer_text, footer_phone, footer_hidden, status, business_id, is_default
+        ) VALUES ($1, $2, $16, $15, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, 'active', $13, $14)
         RETURNING id, name, subtitle, subtitle_color, description, seo_name, uid, image, background_color,
                   template_key, template_config, whatsapp_modal_enabled,
                   footer_text, footer_phone, footer_hidden, status, is_campaign_active, is_archived, archived_at, is_default, created_at, updated_at`,
@@ -748,7 +736,6 @@ export class LinktreesService {
           businessId,
           isDefaultFlag,
           data.description || null,
-          sourceClientInvitationId || null,
           data.subtitle_color || null,
         ],
       );
@@ -788,20 +775,6 @@ export class LinktreesService {
             link.custom_color,
             link.custom_icon,
           ],
-        );
-      }
-      if (!isPlatform) {
-        await this.webhooks.emitWithClient(
-          client,
-          businessId,
-          'linktree.created',
-          'linktree',
-          createdLinktree.id,
-          {
-            id: createdLinktree.id,
-            uid: createdLinktree.uid,
-            slug: createdLinktree.seo_name,
-          },
         );
       }
       return createdLinktree;
@@ -1145,21 +1118,6 @@ export class LinktreesService {
         );
       }
 
-      if (!isPlatform) {
-        await this.webhooks.emitWithClient(
-          client,
-          businessId,
-          'linktree.created',
-          'linktree',
-          created.id,
-          {
-            id: created.id,
-            uid: created.uid,
-            slug: created.seo_name,
-          },
-        );
-      }
-
       return created;
     });
 
@@ -1351,21 +1309,6 @@ export class LinktreesService {
             footer_hidden,
             whatsappEnabled,
           ],
-        );
-      }
-
-      if (!isPlatform) {
-        await this.webhooks.emitWithClient(
-          client,
-          businessId,
-          'linktree.updated',
-          'linktree',
-          updatedLinktree.id,
-          {
-            id: updatedLinktree.id,
-            uid: updatedLinktree.uid,
-            slug: updatedLinktree.seo_name,
-          },
         );
       }
 
@@ -1620,9 +1563,8 @@ export class LinktreesService {
   async deleteLinktree(
     id: string,
     businessId: string,
-    scope: LinktreeWriteScope = 'business',
+    _scope: LinktreeWriteScope = 'business',
   ) {
-    const isPlatform = scope === 'platform';
     const current = await this.getLinktreeById(id, businessId);
 
     if (current.is_default) {
@@ -1630,16 +1572,6 @@ export class LinktreesService {
     }
 
     await this.databaseService.transaction(async (client) => {
-      if (!isPlatform) {
-        await this.webhooks.emitWithClient(
-          client,
-          businessId,
-          'linktree.deleted',
-          'linktree',
-          id,
-          { id, uid: current.uid, slug: current.seo_name },
-        );
-      }
       await client.query(
         `INSERT INTO public_page_tombstones
            (business_id, page_type, public_identifier, slug, deleted_at)

@@ -10,11 +10,8 @@ import {
   Req,
   Res,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { AuditEvent } from '../auth/audit-event.decorator';
-import { AuditInterceptor } from '../auth/audit.interceptor';
 import { AuthorizationGuard } from '../auth/authorization.guard';
 import { BusinessGuard } from '../auth/business.guard';
 import { Capability } from '../auth/capabilities';
@@ -35,7 +32,6 @@ import { SaveAdvertisingDto } from './dto/advertising.dto';
  */
 @Controller('api/advertising')
 @UseGuards(BusinessGuard, AuthorizationGuard)
-@UseInterceptors(AuditInterceptor)
 export class AdvertisingController {
   constructor(
     private readonly service: AdvertisingService,
@@ -56,7 +52,6 @@ export class AdvertisingController {
     Capability.BusinessPagesAdvertisingAccess,
     Capability.BusinessAdvertisingUpdate,
   )
-  @AuditEvent('business.advertising.update', { resourceType: 'advertising' })
   async save(
     @Body() patch: SaveAdvertisingDto,
     @CurrentUser() business: SessionUser,
@@ -80,7 +75,6 @@ export class AdvertisingController {
     Capability.BusinessAdvertisingUpdate,
     Capability.BusinessAdvertisingPublish,
   )
-  @AuditEvent('business.advertising.publish', { resourceType: 'advertising' })
   async saveAndPublish(
     @Body() patch: SaveAdvertisingDto,
     @CurrentUser() business: SessionUser,
@@ -96,7 +90,6 @@ export class AdvertisingController {
     Capability.BusinessPagesAdvertisingAccess,
     Capability.BusinessAdvertisingPublish,
   )
-  @AuditEvent('business.advertising.publish', { resourceType: 'advertising' })
   async publish(@CurrentUser() business: SessionUser) {
     return { success: true, data: await this.service.publish(business.id) };
   }
@@ -106,7 +99,6 @@ export class AdvertisingController {
     Capability.BusinessPagesAdvertisingAccess,
     Capability.BusinessAdvertisingPublish,
   )
-  @AuditEvent('business.advertising.unpublish', { resourceType: 'advertising' })
   async unpublish(@CurrentUser() business: SessionUser) {
     return { success: true, data: await this.service.unpublish(business.id) };
   }
@@ -128,7 +120,6 @@ export class AdvertisingController {
     Capability.BusinessPagesAdvertisingAccess,
     Capability.BusinessAdvertisingPublish,
   )
-  @AuditEvent('business.advertising.restore', { resourceType: 'advertising' })
   async restore(
     @Param('version', ParseIntPipe) version: number,
     @CurrentUser() business: SessionUser,
@@ -149,7 +140,6 @@ export class AdvertisingController {
     Capability.BusinessPagesAdvertisingAccess,
     Capability.BusinessAdvertisingUpdate,
   )
-  @AuditEvent('business.advertising.asset.upload', { resourceType: 'asset' })
   async upload(
     @Req() req: FastifyRequest,
     @Res() res: FastifyReply,

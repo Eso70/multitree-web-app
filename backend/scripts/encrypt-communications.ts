@@ -28,22 +28,6 @@ async function encryptPrivateCommunicationsInTransaction(client: PoolClient) {
   );
   if (!tables.rows[0]?.ready) return;
 
-  // The action URL rewrite is a compatibility cleanup for notifications
-  // persisted before the console became a concealed dynamic route.
-  await client.query(`
-    UPDATE communication_conversations SET sponsor_krd_key='business_welcome'
-    WHERE sponsor_krd_key IS NULL AND created_by_type='platform-admin'
-      AND category='account' AND subject='بەخێربێیت بۆ SponsorKrd';
-    UPDATE communication_notifications
-    SET action_url=regexp_replace(
-      action_url,
-      '^/system/communication-center',
-      '/communication-center'
-    )
-    WHERE recipient_type='platform-admin'
-      AND action_url LIKE '/system/communication-center%';
-  `);
-
   const announcements = await client.query<{
     id: string;
     title: string;

@@ -12,8 +12,6 @@
 -- analytics are intentionally outside this policy.
 CREATE TABLE public.platform_data_retention_settings (
   id smallint PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-  request_log_days integer NOT NULL DEFAULT 30 CHECK (request_log_days BETWEEN 7 AND 365),
-  api_history_days integer NOT NULL DEFAULT 90 CHECK (api_history_days BETWEEN 30 AND 730),
   communication_history_days integer NOT NULL DEFAULT 365 CHECK (communication_history_days BETWEEN 30 AND 3650),
   automatic_cleanup boolean NOT NULL DEFAULT false,
   cleanup_hour_utc smallint NOT NULL DEFAULT 2 CHECK (cleanup_hour_utc BETWEEN 0 AND 23),
@@ -73,4 +71,3 @@ CREATE TABLE public.uploaded_media_assets (
 );
 CREATE INDEX idx_uploaded_media_assets_created ON public.uploaded_media_assets(created_at);
 CREATE INDEX idx_uploaded_media_assets_owner ON public.uploaded_media_assets(owner_business_id, created_at DESC);
-

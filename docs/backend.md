@@ -20,28 +20,6 @@ exact root-domain `/api/auth/google/callback` URL registered in Google Cloud.
 Integration requests only `openid email profile` and retains no Google access
 or refresh token. Missing configuration disables Google signup/sign-in with a
 safe service-unavailable response.
-Creator signup and login use the same root callback and shared verified Google
-identity service through `/api/creator/auth/google/start?intent=signup|login`.
-The callback dispatches Creator-prefixed single-use OAuth state back to the
-Creator domain, creates its isolated session cookie, and never stores a Google
-access or refresh token.
-Creator context and session responses use an explicit account projection:
-verified email, Google display name/avatar, verification state, relevant
-account/trial timestamps, and page state only. Internal ids, provider subject,
-trial-claim HMACs, device/IP claims, and risk level remain server-only.
-`GET /api/creator/auth/sessions` and its delete variants reuse the hashed
-business-session store while filtering login activity to Creator audit events
-and deriving the owner exclusively from `creator_session`.
-Creator Linktree controllers delegate CRUD, analytics, upload,
-and validation behavior to the same domain services used by Business and
-Platform. Creator page DELETE routes fail with `403`; the only deletion path is
-the audited platform Creator-management endpoint protected by
-`platform:creators:manage`.
-Creator TikTok settings use `/api/creator/settings/tiktok` and its health/error
-subroutes. `CreatorGuard` derives the owner from the isolated session, the
-shared TikTok configuration service validates the Creator-specific one-group limit and
-encrypts Events API tokens, and expired/read-only accounts cannot mutate the
-configuration. Successful updates are recorded in the security audit log.
 Tenant OAuth handoff redirects must be built with `buildTenantUrl`; never assign
 a path containing `?` directly to `URL.pathname`, because that percent-encodes
 the query marker and routes the callback to a nonexistent page.
@@ -60,8 +38,7 @@ An owner who originally verified an invitation by email may later choose
 Google on the same business login page. On the first successful attempt, the
 backend links Google's stable subject only after Google verifies the exact
 email and PostgreSQL confirms an approved signup application plus active owner
-membership for that exact subdomain. Conflicts are rejected and the link is
-recorded in the security audit log.
+membership for that exact subdomain. Conflicts are rejected.
 
 ## Platform-admin and signup email login
 
@@ -209,8 +186,8 @@ guards, and never accepts a business/workspace ID from the request.
 The implementation delegates page validation, template normalization, link
 mapping, image rules, public-page synchronization, tombstones, and analytics
 registration to the existing Linktree services. A write scope only suppresses
-business subscription/template checks and business webhooks for the internal
-workspace; it does not create a parallel Linktree implementation. Public reads
+business subscription/template checks for the internal workspace; it does not
+create a parallel Linktree implementation. Public reads
 use `/api/public/platform/linktree/:identifier`, require a root-domain request,
 apply the global IP rule and public rate limit, and use a separate cache key.
 
@@ -259,9 +236,7 @@ filter. Successful JSON responses expose `{ success: true, data }`; legacy raw
 object fields remain mirrored temporarily for internal browser compatibility.
 Failures expose a stable nested error with a machine-readable code, message,
 optional validation details, and request ID. Unexpected exceptions are logged
-server-side and return only `INTERNAL_SERVER_ERROR`. `/api/v1` errors include
-version metadata while retaining their established top-level compatibility
-fields.
+server-side and return only `INTERNAL_SERVER_ERROR`.
 
 ## Business impersonation
 
@@ -281,8 +256,8 @@ and that section is mandatory reading before changing it.
 
 ## Administration list queries
 
-Platform business, billing-subscription, API-client, webhook, and rate-policy
-tables use server-side pagination and filtering. The shared list contract
+Platform business and billing-subscription tables use server-side pagination
+and filtering. The shared list contract
 defaults to 20 rows and rejects limits above 100. Responses include stable
 `page`, `limit`, `total`, and `totalPages` metadata plus aggregate summaries
 computed independently of the current page.
@@ -294,10 +269,8 @@ detail endpoint when an administrator opens the edit flow.
 
 The registered `phone` and `email` are part of that summary: they sit on
 `businesses` and need no join, and the directory shows them on every row.
-`ownerName` and `ownerEmail` deliberately stay detail-only — they need a
-lateral join onto `users`, which is per-row work the list does not need. API rate-policy
-limits and monthly usage are joined in batch; dashboard loading performs a
-fixed number of queries rather than entitlement and usage queries per tenant.
+Business details that are not part of the directory projection stay
+detail-only, avoiding per-row joins and keeping dashboard loading bounded.
 
 ## Persistence repositories
 
@@ -387,24 +360,16 @@ throttled `tiktok_delivery_failure` notification for platform administrators;
 report, how a browser event and a server event deduplicate, the procedure
 for adding tracking to a new feature, and what happens when delivery breaks.
 
-The platform Activity page combines `security_audit_events`,
-`http_request_events`, `analytics_events`, and `marketing_delivery_attempts`
-— see [docs/architecture.md](architecture.md#audit-trail) for the full data
-flow and retention behavior of that union.
-
 ## Module dependencies
 
 PostgreSQL and Redis are the only global Nest modules. Domain modules declare
-authentication, billing, webhook, observability, and storage imports wherever
-their controllers or providers consume those services. Request tracking is
-imported by the application root for its controller and bootstrap hook but is
-not globally injectable.
+authentication, billing, observability, and storage imports wherever
+their controllers or providers consume those services.
 
 `AccessRuleEnforcementService` belongs to `auth` because it protects every
 authentication domain. Business and platform guards apply it after resolving
-their principals; the developer API guard applies it after resolving the API
-client; anonymous public controllers resolve the tenant or Linktree target
-before evaluating it. `main.ts` applies Sponsor.krd-wide rules to endpoints without
+their principals; anonymous public controllers resolve the tenant or Linktree
+target before evaluating it. `main.ts` applies Sponsor.krd-wide rules to endpoints without
 a more specific target.
 
 ## Upload storage
@@ -418,11 +383,9 @@ Backend application code writes through `StorageService` and the injected
 
 Keeping mutable uploads outside `frontend/public` prevents the Next.js
 development watcher from rebuilding and resetting in-progress forms whenever
-an image is uploaded. The frontend serves `/images/upload/*` from the runtime
-directory. It also reads the former `frontend/public/images/upload` location as
-a compatibility fallback, including `_legacy/flat` one-segment image names.
-When `UPLOAD_DIR` is overridden, use an absolute path and provide the same value
-to both backend and frontend processes.
+an image is uploaded. The frontend serves `/images/upload/*` exclusively from
+the runtime directory. When `UPLOAD_DIR` is overridden, use an absolute path
+and provide the same value to both backend and frontend processes.
 
 Upload validation and optimization use the configured platform media policy.
 The backend multipart hard limit is `MAX_FILE_SIZE_MB`. The current storage
@@ -469,21 +432,14 @@ loads afterwards and which would silently override the generated values.
 See [docs/database.md](database.md) for how these are used by `db:migrate`
 and `db:reset`.
 
-### Secrets and telemetry
+### Secrets
 
-| Variable                          | Current use                                                                                             |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `SESSION_SECRET`                  | Required 32+ character cookie/session secret and fallback cryptographic key                             |
-| `API_KEY_PEPPER`                  | Optional dedicated HMAC pepper for developer API keys; falls back to `SESSION_SECRET`                   |
-| `APP_ENCRYPTION_KEY`              | Optional dedicated key for encrypted secrets and private communications; falls back to `SESSION_SECRET` |
-| `ANALYTICS_HASH_SECRET`           | Optional visitor/contact hashing secret; falls back to `APP_ENCRYPTION_KEY`, then `SESSION_SECRET`      |
-| `REQUEST_TRACKING_SECRET`         | Optional frontend-to-backend telemetry key; falls back to `SESSION_SECRET`                              |
-| `REQUEST_LOG_RETENTION_DAYS`      | Request telemetry retention; default `30`, allowed `1`–`365`                                            |
-| `REQUEST_LOG_BATCH_SIZE`          | Telemetry insert batch size; default `250`                                                              |
-| `REQUEST_LOG_FLUSH_INTERVAL_MS`   | Telemetry flush interval; default `250`                                                                 |
-| `REQUEST_LOG_MAX_QUEUE_SIZE`      | Maximum in-memory telemetry queue; default `50000`                                                      |
-| `REQUEST_LOG_CLEANUP_BATCH_SIZE`  | Rows targeted per retention batch; default `10000`                                                      |
-| `REQUEST_LOG_CLEANUP_MAX_BATCHES` | Maximum batches per retention pass; default `100`                                                       |
+| Variable                    | Current use                                                                                             |
+| --------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `SESSION_SECRET`            | Required 32+ character cookie/session secret and fallback cryptographic key                             |
+| `APP_ENCRYPTION_KEY`        | Optional dedicated key for encrypted secrets and private communications; falls back to `SESSION_SECRET` |
+| `ANALYTICS_HASH_SECRET`     | Optional visitor/contact hashing secret; falls back to `APP_ENCRYPTION_KEY`, then `SESSION_SECRET`      |
+| `INTERNAL_PROXY_SECRET`     | Optional key for trusted frontend proxy metadata; falls back to `SESSION_SECRET`                         |
 
 Use distinct generated values for all production secrets even where a
 fallback exists. See [docs/security.md](security.md#secrets-and-encryption)
@@ -538,11 +494,8 @@ initial/fallback profile and branding values. Platform administrators
 authenticate with Google or a root-domain email code; the seed stores no
 credential of its own.
 
-These settings were previously named `SA_*`. Those names are still read as a
-fallback so an already-deployed `.env` keeps working, but they are
-deprecated — set the `PLATFORM_ADMIN_*` name and drop the `SA_*` one when
-convenient. When both are present the `PLATFORM_ADMIN_*` value wins. The
-resolution order lives in `backend/src/common/platform-admin-env.ts`.
+Only the current `PLATFORM_ADMIN_*` names are supported. Their typed key list
+and shared reader live in `backend/src/common/platform-admin-env.ts`.
 
 ## Operational endpoints
 
@@ -551,7 +504,7 @@ no dependency work. `GET /health/ready` checks PostgreSQL, Redis, the active
 storage driver, and registered background-worker heartbeats. Readiness and
 `GET /internal/metrics` require the `x-operations-key` header. Configure a
 distinct 32-character-or-longer `OPERATIONS_SECRET` in production; the
-request-tracking secret and then the session secret are rollout fallbacks.
+internal-proxy secret and then the session secret are rollout fallbacks.
 
 The metrics response is a bounded in-process snapshot of request count,
 server-error count, status classes, latency buckets, and worker runs. Values

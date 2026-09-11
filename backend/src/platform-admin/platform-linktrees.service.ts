@@ -122,10 +122,8 @@ export class PlatformLinktreesService {
     );
   }
 
-  // Root-domain slugs are shared with every Creator, so the availability check
-  // the console runs can be true when it is asked and false by the time the
-  // save arrives. `root_public_slugs_pkey` settles it, and the collision is
-  // reported as the conflict it is rather than as a server error.
+  // The route registry is the final authority if concurrent saves request the
+  // same root-domain slug.
   async create(data: CreateLinktreeDto) {
     const businessId = await this.workspaceId();
     let created;

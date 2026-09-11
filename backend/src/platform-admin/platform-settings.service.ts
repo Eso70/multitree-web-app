@@ -47,14 +47,6 @@ export interface PlatformAdminSession {
   remembered: boolean;
 }
 
-export interface PlatformLoginActivity {
-  id: string;
-  outcome: 'success' | 'failure' | 'denied';
-  ip_address: string | null;
-  user_agent: string | null;
-  created_at: Date;
-}
-
 @Injectable()
 export class PlatformSettingsService {
   constructor(
@@ -136,10 +128,7 @@ export class PlatformSettingsService {
     return (this.lookupEnv(key) || fallback).trim();
   }
 
-  /**
-   * Reads an initial-administrator setting, preferring the current
-   * `PLATFORM_ADMIN_*` name and falling back to its deprecated `SA_*` alias.
-   */
+  /** Reads an initial platform-administrator setting. */
   private adminEnv(key: PlatformAdminEnvKey, fallback = ''): string {
     const resolved = readPlatformAdminEnv(key, (name) => this.lookupEnv(name));
     return (resolved || fallback).trim();
@@ -160,11 +149,8 @@ export class PlatformSettingsService {
         ),
       avatar:
         profile.avatar ||
-        // The bare SponsorKrd mark. This used to point at
-        // `/images/DefaultAvatar.png`, which happened to hold the same artwork
-        // until that file became the neutral person placeholder every business
-        // falls back to. Platform branding now owns its own file so a change to
-        // the business default can never repaint SponsorKrd's logo.
+        // Platform branding owns its bare mark independently from tenant
+        // placeholders.
         this.adminEnv(
           'PLATFORM_ADMIN_LOGO_WITHOUT_BACKGROUND',
           '/images/sponsor-krd-logo-mark.png',
@@ -256,30 +242,17 @@ export class PlatformSettingsService {
   }
 
   async getLoginSecurity(adminId: string, currentToken: string) {
-    const [sessions, activity] = await Promise.all([
-      this.databaseService.query<PlatformAdminSession>(
-        `SELECT id, host(ip_address) AS ip_address, user_agent, last_used_at,
+    const sessions = await this.databaseService.query<PlatformAdminSession>(
+      `SELECT id, host(ip_address) AS ip_address, user_agent, last_used_at,
                 created_at, session_expires_at, remembered,
                 (session_token = $2) AS is_current
          FROM platform_admin_sessions
          WHERE platform_admin_id = $1 AND session_expires_at > NOW()
          ORDER BY is_current DESC, last_used_at DESC`,
-        [adminId, currentToken],
-      ),
-      this.databaseService.query<PlatformLoginActivity>(
-        `SELECT id::text, outcome, host(ip_address) AS ip_address,
-                user_agent, created_at
-         FROM security_audit_events
-         WHERE actor_type = 'platform-admin'
-           AND actor_id = $1
-           AND event_type = 'platform_admin.login'
-         ORDER BY created_at DESC
-         LIMIT 10`,
-        [adminId],
-      ),
-    ]);
+      [adminId, currentToken],
+    );
 
-    return { sessions: sessions.rows, recent_activity: activity.rows };
+    return { sessions: sessions.rows };
   }
 
   async revokeSession(

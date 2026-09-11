@@ -56,30 +56,6 @@ export function SkeletonSessionList({ rows = 3 }: { rows?: number }) {
   );
 }
 
-export function SkeletonActivityList({ rows = 4 }: { rows?: number }) {
-  return (
-    <div
-      role="status"
-      aria-busy="true"
-      aria-label="Loading login activity"
-      className="divide-y divide-slate-200 dark:divide-white/5"
-    >
-      {Array.from({ length: rows }).map((_, index) => (
-        <div
-          key={index}
-          className="flex items-center justify-between gap-3 py-3"
-        >
-          <div className="min-w-0 flex-1">
-            <Skeleton className="mb-2 h-3.5 w-2/5" rounded="rounded-md" />
-            <Skeleton className="h-2.5 w-3/5" rounded="rounded-md" />
-          </div>
-          <Skeleton className="h-6 w-20" rounded="rounded-full" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function SkeletonSearchResultList({ rows = 4 }: { rows?: number }) {
   return (
     <div

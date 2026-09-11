@@ -13,7 +13,6 @@ import { STORAGE_DRIVER, type StorageDriver } from './storage.driver';
 
 const UPLOAD_URL_PREFIX = '/images/upload/';
 const MEDIA_FORMATS = ['jpeg', 'png', 'ico'] as const;
-const LEGACY_SYSTEM_STORAGE_PREFIX = 'system/';
 const SPONSOR_KRD_STORAGE_PREFIX = 'sponsor-krd/';
 type MediaFormat = (typeof MEDIA_FORMATS)[number];
 
@@ -146,13 +145,11 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
             {
               storage_key: file.key,
               public_url: `${UPLOAD_URL_PREFIX}${file.key}`,
-              scope:
-                file.key.startsWith(SPONSOR_KRD_STORAGE_PREFIX) ||
-                file.key.startsWith(LEGACY_SYSTEM_STORAGE_PREFIX)
-                  ? 'sponsor_krd'
-                  : file.key.startsWith('businesses/')
-                    ? 'business'
-                    : 'other',
+              scope: file.key.startsWith(SPONSOR_KRD_STORAGE_PREFIX)
+                ? 'sponsor_krd'
+                : file.key.startsWith('businesses/')
+                  ? 'business'
+                  : 'other',
               owner_business_id: ownerMatch?.[1] || null,
               format,
               byte_size: file.size,
@@ -280,10 +277,7 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
     try {
       const key = this.keyFromUrl(url);
       if (!key) return;
-      const deleted = await this.storageDriver.delete(key);
-      if (!deleted && !key.includes('/')) {
-        await this.storageDriver.delete(`_legacy/flat/${key}`);
-      }
+      await this.storageDriver.delete(key);
       await this.database?.query(
         'DELETE FROM uploaded_media_assets WHERE storage_key=$1',
         [key],
@@ -357,7 +351,6 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
          UNION ALL SELECT 1 FROM linktrees tree WHERE tree.image=$1 OR tree.template_config::text LIKE '%'||$1||'%'
          UNION ALL SELECT 1 FROM business_profile_change_requests request WHERE request.status='pending' AND request.changes::text LIKE '%'||$1||'%'
          UNION ALL SELECT 1 FROM permission_approval_requests approval WHERE approval.status='pending' AND approval.requested_changes::text LIKE '%'||$1||'%'
-         UNION ALL SELECT 1 FROM api_assets api_asset WHERE api_asset.url=$1
        ) referenced`,
       [url],
     );
@@ -478,13 +471,11 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
   }): Promise<void> {
     if (!this.database) return;
     const ownerMatch = input.key.match(/^businesses\/([0-9a-f-]{36})\//i);
-    const scope =
-      input.key.startsWith(SPONSOR_KRD_STORAGE_PREFIX) ||
-      input.key.startsWith(LEGACY_SYSTEM_STORAGE_PREFIX)
-        ? 'sponsor_krd'
-        : input.key.startsWith('businesses/')
-          ? 'business'
-          : 'other';
+    const scope = input.key.startsWith(SPONSOR_KRD_STORAGE_PREFIX)
+      ? 'sponsor_krd'
+      : input.key.startsWith('businesses/')
+        ? 'business'
+        : 'other';
     try {
       await this.database.query(
         `INSERT INTO uploaded_media_assets
@@ -517,8 +508,7 @@ export class StorageService implements OnModuleInit, OnModuleDestroy {
       AND NOT EXISTS (SELECT 1 FROM business_branding branding WHERE ${alias}.public_url IN (branding.logo,branding.favicon,branding.default_avatar))
       AND NOT EXISTS (SELECT 1 FROM linktrees tree WHERE tree.image=${alias}.public_url OR tree.template_config::text LIKE '%'||${alias}.public_url||'%')
       AND NOT EXISTS (SELECT 1 FROM business_profile_change_requests request WHERE request.status='pending' AND request.changes::text LIKE '%'||${alias}.public_url||'%')
-      AND NOT EXISTS (SELECT 1 FROM permission_approval_requests approval WHERE approval.status='pending' AND approval.requested_changes::text LIKE '%'||${alias}.public_url||'%')
-      AND NOT EXISTS (SELECT 1 FROM api_assets api_asset WHERE api_asset.url=${alias}.public_url)`;
+      AND NOT EXISTS (SELECT 1 FROM permission_approval_requests approval WHERE approval.status='pending' AND approval.requested_changes::text LIKE '%'||${alias}.public_url||'%')`;
   }
 
   private formatFromKey(key: string): MediaFormat {

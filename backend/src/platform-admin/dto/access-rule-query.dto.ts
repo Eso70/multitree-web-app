@@ -12,7 +12,6 @@ export class AccessRuleQueryDto {
     'business',
     'business_admin',
     'public_linktree',
-    'business_api',
   ])
   scope?: string;
   @IsOptional() @IsIn(['all', 'active', 'inactive', 'expired']) status = 'all';

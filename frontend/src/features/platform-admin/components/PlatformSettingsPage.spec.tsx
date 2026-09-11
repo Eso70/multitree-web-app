@@ -87,7 +87,7 @@ describe("PlatformSettingsPage General tab", () => {
       if (String(input) === "/api/platform/settings/sessions") {
         return jsonResponse({
           success: true,
-          data: { sessions: [], recent_activity: [] },
+          data: { sessions: [] },
         });
       }
       return jsonResponse({ success: true, data: savedSettings });
@@ -116,15 +116,13 @@ describe("PlatformSettingsPage General tab", () => {
   it("loads the database-backed data retention tab", async () => {
     const retention = {
       policy: {
-        request_log_days: 30,
-        api_history_days: 90,
         communication_history_days: 365,
         automatic_cleanup: false,
         cleanup_hour_utc: 2,
         batch_size: 1000,
         updated_at: new Date().toISOString(),
       },
-      eligible: { request_logs: 3, api_history: 4, communications: 5 },
+      eligible: { communications: 5 },
       last_run: null,
     };
     const fetchMock = vi.fn<typeof fetch>(async (input) =>
@@ -138,7 +136,7 @@ describe("PlatformSettingsPage General tab", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "داتا و ماوەی هەڵگرتن" }));
 
-    await screen.findByText("تۆماری داواکارییەکانی سیستەم");
+    await screen.findByText("پەیام و ڕاگەیاندنی ئەرشیڤکراو");
     expect(screen.getAllByDisplayValue("365")).toHaveLength(1);
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(

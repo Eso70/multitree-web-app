@@ -36,7 +36,7 @@ export class SecretCryptoService {
 
   decryptJson(payload: Buffer): Record<string, unknown> {
     if (payload[0] !== 1 || payload.length < 30) {
-      return { legacyValue: payload.toString('utf8') };
+      throw new Error('Unsupported encrypted secret payload');
     }
     const iv = payload.subarray(1, 13);
     const tag = payload.subarray(13, 29);
@@ -60,7 +60,7 @@ export class SecretCryptoService {
   decryptText(payload: Buffer | null | undefined, fallback = ''): string {
     if (!payload) return fallback;
     const decrypted = this.decryptJson(payload);
-    const value = decrypted.value ?? decrypted.legacyValue;
+    const value = decrypted.value;
     return typeof value === 'string' ? value : fallback;
   }
 }

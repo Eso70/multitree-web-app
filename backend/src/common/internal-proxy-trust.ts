@@ -21,13 +21,11 @@ import { timingSafeEqual } from 'crypto';
  * `Host` header directly, which cannot be forged into a different tenant
  * without also forging DNS/TLS for that tenant's subdomain.
  *
- * Reuses `REQUEST_TRACKING_SECRET` (falling back to `SESSION_SECRET`) rather
- * than adding another secret to configure and rotate; both protect the same
- * "is this call actually from our proxy" trust boundary.
+ * Uses `INTERNAL_PROXY_SECRET` with `SESSION_SECRET` as the rollout fallback.
  */
 export function isTrustedInternalProxy(receivedKey: unknown): boolean {
   const expected =
-    process.env.REQUEST_TRACKING_SECRET || process.env.SESSION_SECRET || '';
+    process.env.INTERNAL_PROXY_SECRET || process.env.SESSION_SECRET || '';
   const received = typeof receivedKey === 'string' ? receivedKey : '';
   if (!expected || !received) return false;
 

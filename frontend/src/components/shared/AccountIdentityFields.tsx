@@ -13,8 +13,8 @@ interface AccountIdentityFieldsProps {
 
 /**
  * Read-only identity returned by a verified authentication provider.
- * Business and Creator settings share this presentation so identity fields
- * cannot accidentally look editable on one dashboard but not another.
+ * Shared settings surfaces use this presentation so identity fields cannot
+ * accidentally look editable.
  */
 export function AccountIdentityFields({
   name,

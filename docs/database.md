@@ -1,10 +1,7 @@
 # Database
 
-The Creator account schema lives in the consolidated baseline part
-`92_creator_accounts.sql`. It adds isolated Creator ownership, permanent
-Google-subject, verified-email and remembered-device trial claims,
-pseudonymous registration audit rows, and the concurrency-safe root public
-slug registry.
+The consolidated baseline part `92_root_public_slugs.sql` provides the
+concurrency-safe root public slug registry for platform-owned Linktrees.
 
 ## Fixed public marketing routes
 
@@ -59,15 +56,14 @@ The active schema is grouped as follows:
 
 | Area                             | Tables                                                                                                                                                                                                                                                                                                                                     |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Platform identity and access     | `platform_admins`, `platform_admin_sessions`, `access_rules`, `platform_permission_denies`, `auth_permissions`, `permission_approval_requests`, `security_audit_events`                                                                                                                                                                    |
+| Platform identity and access     | `platform_admins`, `platform_admin_sessions`, `access_rules`, `platform_permission_denies`, `auth_permissions`, `permission_approval_requests`                                                                                                                                                                                              |
 | Businesses and sessions          | `businesses`, `business_branding`, `business_defaults`, `business_profile_change_requests`, `business_sessions`, `business_tiktok_pixels`                                                                                                                                                                                                  |
 | Linktrees and public content     | `linktrees`, `links`, `whatsapp_questions`, `template_global_settings`, `public_pages`, `public_page_versions`, `public_page_actions`, `public_page_tombstones`                                                                                                                                                                            |
 | Advertising service              | `advertising_pages`, `advertising_sections`, `advertising_package_categories`, `advertising_package_tiers`, `advertising_results`, `advertising_testimonials`, `advertising_faqs`, `advertising_payment_providers`, `advertising_page_versions`                                                                                            |
 | Billing and access configuration | `billing_entitlements`, `billing_plans`, `billing_plan_configurations`, `billing_plan_entitlements`, `billing_plan_permissions`, `billing_plan_templates`, `billing_subscription_plans`, `business_subscriptions`, `billing_usage_counters`, `billing_policy_audit_events`                                                                 |
 | Analytics and marketing delivery | `analytics_visitors`, `analytics_sessions`, `analytics_events`, `analytics_page_daily`, `analytics_action_daily`, `marketing_event_outbox`, `marketing_delivery_attempts`                                                                                                                                                                  |
 | Communications                   | `communication_announcements`, `communication_announcement_deliveries`, `communication_notifications`, `communication_conversations`, `communication_messages`, `communication_homepage_placements`                                                                                                                                        |
-| Developer API                    | `api_clients`, `api_rate_limit_policies`, `api_usage_daily`, `api_idempotency_keys`, `api_external_resource_mappings`, `api_assets`, `api_webhook_endpoints`, `api_webhook_subscriptions`, `api_webhook_events`, `api_webhook_deliveries`, `api_webhook_delivery_attempts`, `api_versions`, `api_catalog_groups`, `api_linktree_schedules` |
-| Operations and media             | `http_request_events`, `http_request_event_daily_stats`, `platform_data_retention_settings`, `platform_data_retention_runs`, `platform_media_settings`, `uploaded_media_assets`, `schema_migrations`                                                                                                                                       |
+| Operations and media             | `platform_data_retention_settings`, `platform_data_retention_runs`, `platform_media_settings`, `uploaded_media_assets`, `schema_migrations`                                                                                                                                                                                                 |
 
 ## Schema decisions carried in the baseline
 
@@ -170,13 +166,12 @@ single transaction by both `db:migrate` and `db:reset`:
 | `13_core_triggers.sql`           | triggers for the core tables                            |
 | `14_core_foreign_keys.sql`       | foreign keys, after every table they reference          |
 | `20_communications.sql`          | Communication Center                                    |
-| `30_api_platform.sql`            | Developer API, usage governance, webhooks               |
 | `40_operations_and_media.sql`    | data retention and media policy                         |
 | `60_advertising.sql`             | advertising pages, packages, versions                   |
 | `70_public_pages_analytics.sql`  | unified public page model and analytics                 |
 | `80_performance.sql`             | FK-column indexes and per-table storage tuning          |
 | `90_onboarding_identity.sql`     | invite-only Google onboarding                           |
-| `92_creator_accounts.sql`        | Creator ownership, trial claims, global root slugs      |
+| `92_root_public_slugs.sql`       | platform root-domain Linktree slug registry             |
 | `95_late_schema.sql`             | late objects that depend on earlier schema domains      |
 | `99_data.sql`                    | catalog rows the application cannot boot without        |
 
@@ -201,7 +196,7 @@ Three rules follow, all enforced by `schema-baseline.spec.ts`:
   foreign keys, unlike a `pg_dump`, which writes data first and constraints
   after — so alphabetical order is not enough (`billing_plan_configurations`
   sorts before `billing_plans` but references it). Anything derived from other
-  seeded rows, such as the API entitlements computed per plan code, goes last.
+  seeded rows goes last.
   Two singleton bootstraps stay with their own sections because they mean
   "ensure one row exists", not "seed the catalogue".
 - **No `IF NOT EXISTS` on tables or indexes, and no post-table `ADD COLUMN` /
@@ -235,8 +230,8 @@ The workspace deliberately owns ordinary `linktrees`, `links`, `public_pages`,
 tables keep their non-null foreign keys and existing triggers. The normal
 post-insert subscription is removed because this is not a billable customer;
 platform write policy is enforced by the guarded platform service instead.
-`99_data.sql` registers the platform Linktree, TikTok, and
-Creator-administration capabilities with that workspace.
+`99_data.sql` registers the platform Linktree and TikTok capabilities with
+that workspace.
 
 ## Baseline consolidation, 2026-09-10
 
@@ -318,17 +313,7 @@ the reset-only procedure in `docs/deployment.md`.
 The post-migration helpers perform only idempotent seed/data work. They do not
 create tables, alter columns, create indexes, or modify constraints.
 
-The dated `2026-08-29_client_linktree_access.sql` migration adds hashed client
-invitation/session storage and the unique nullable
-`linktrees.client_invitation_id` origin reference. The foreign key uses
-`ON DELETE SET NULL`: access cleanup and business-owned content have separate
-lifecycles, so revoking or removing invitation data must never remove a
-Linktree.
-
-The baseline excludes the obsolete
-`platform_data_retention_settings.audit_log_days` column. Security audit
-events are permanent application evidence; only request logs, API history,
-and archived communication history have administrator-configurable retention.
+Archived communication history has administrator-configurable retention.
 
 ```bash
 pnpm db:reset
@@ -354,8 +339,8 @@ created by environment seed helpers is an explicitly configured local
 development record, not part of public or administrator-manual onboarding.
 
 The baseline seeds only what the application cannot run without: the platform
-administrator, the API platform catalogue, retention and media policy, and the
-permission and billing catalogues. Businesses entitled to the advertising
+administrator, retention and media policy, and the permission and billing
+catalogues. Businesses entitled to the advertising
 feature also get a **draft** advertising page so the editor opens on real rows;
 nothing is published until the owner publishes it.
 

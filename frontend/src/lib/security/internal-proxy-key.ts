@@ -8,10 +8,9 @@ export const INTERNAL_PROXY_KEY_HEADER = "x-tenant-proxy-key";
 
 /**
  * The value to send with `INTERNAL_PROXY_KEY_HEADER`, or `undefined` when
- * unconfigured. Reuses `REQUEST_TRACKING_SECRET` (falling back to
- * `SESSION_SECRET`) rather than adding another secret, mirroring the backend
- * comparison in `internal-proxy-trust.ts`.
+ * unconfigured. Uses `INTERNAL_PROXY_SECRET` with `SESSION_SECRET` as the
+ * rollout fallback.
  */
 export function internalProxyKey(): string | undefined {
-  return process.env.REQUEST_TRACKING_SECRET || process.env.SESSION_SECRET;
+  return process.env.INTERNAL_PROXY_SECRET || process.env.SESSION_SECRET;
 }

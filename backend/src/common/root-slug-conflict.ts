@@ -15,12 +15,8 @@ const ROOT_SLUG_CONSTRAINT = 'root_public_slugs_pkey';
 /**
  * Turns a lost race for a root-domain slug into the 409 it is.
  *
- * Every writer of a root-domain page needs this, and each surface having its
- * own copy is how the platform surfaces ended up without one: a Creator taking
- * a slug already claimed got a clear "already in use", while a platform
- * administrator doing exactly the same thing got a 500, because
- * `ApiExceptionFilter` has no mapping for a raw SQLSTATE and falls back to
- * `INTERNAL_SERVER_ERROR`.
+ * Every writer of a root-domain page needs this so a concurrent claim returns
+ * a clear conflict instead of reaching the generic SQL error boundary.
  *
  * Only this one constraint is translated. Any other failure — including a
  * unique violation from a different constraint — is rethrown untouched rather

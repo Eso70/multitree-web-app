@@ -13,7 +13,6 @@ import {
   Res,
   UnauthorizedException,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { BusinessOnboardingService } from './business-onboarding.service';
@@ -33,10 +32,7 @@ import { RequireCapabilities } from '../auth/require-capabilities.decorator';
 import { Capability } from '../auth/capabilities';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { SessionUser } from '../auth/session.service';
-import { AuditEvent } from '../auth/audit-event.decorator';
-import { AuditInterceptor } from '../auth/audit.interceptor';
 import { AccessRuleEnforcementService } from '../auth/access-rule-enforcement.service';
-import { CreatorAuthService } from '../creator/creator-auth.service';
 
 function secureRequest(request: FastifyRequest): boolean {
   return (
@@ -47,10 +43,7 @@ function secureRequest(request: FastifyRequest): boolean {
 
 @Controller('api/auth')
 export class GoogleBusinessAuthController {
-  constructor(
-    private readonly onboarding: BusinessOnboardingService,
-    private readonly creatorAuth: CreatorAuthService,
-  ) {}
+  constructor(private readonly onboarding: BusinessOnboardingService) {}
 
   @Get('google/start')
   @HttpCode(HttpStatus.FOUND)
@@ -127,20 +120,6 @@ export class GoogleBusinessAuthController {
   ) {
     if (subdomain)
       throw new UnauthorizedException('Invalid OAuth callback host');
-    if (this.creatorAuth.isCreatorOAuthState(state)) {
-      const creator = await this.creatorAuth.finishGoogleCallback(code, state, {
-        ipAddress: requestIp(request),
-        userAgent: request.headers['user-agent'] || '',
-      });
-      response.setCookie('creator_session', creator.sessionToken, {
-        httpOnly: true,
-        secure: secureRequest(request),
-        sameSite: 'lax',
-        path: '/',
-        maxAge: creator.ttlSeconds,
-      });
-      return response.redirect(creator.redirectUrl, HttpStatus.FOUND);
-    }
     const result = await this.onboarding.finishGoogleCallback(code, state, {
       ipAddress: requestIp(request),
       userAgent: request.headers['user-agent'] || '',
@@ -412,15 +391,11 @@ export class BusinessSignupController {
 
 @Controller('api/platform/signup')
 @UseGuards(PlatformAdminGuard, AuthorizationGuard)
-@UseInterceptors(AuditInterceptor)
 export class PlatformSignupController {
   constructor(private readonly onboarding: BusinessOnboardingService) {}
 
   @Post('invitations')
   @RequireCapabilities(Capability.PlatformBusinessesCreate)
-  @AuditEvent('platform.signup.invitation.create', {
-    resourceType: 'signup-invitation',
-  })
   async createInvitation(
     @CurrentUser() admin: SessionUser,
     @Body() body: CreateSignupInvitationDto,
@@ -436,10 +411,6 @@ export class PlatformSignupController {
 
   @Patch('applications/:id')
   @RequireCapabilities(Capability.PlatformBusinessesCreate)
-  @AuditEvent('platform.signup.application.review', {
-    resourceType: 'signup-application',
-    resourceIdParam: 'id',
-  })
   async review(
     @Param('id') id: string,
     @CurrentUser() admin: SessionUser,

@@ -12,8 +12,7 @@ It must not be mounted or forwarded from:
 - platform administration or authentication;
 - business dashboards or authentication;
 - a business subdomain landing page;
-- the public advertising page or video-code guide; or
-- Creator and client workspaces.
+- the public advertising page or video-code guide.
 
 Fixed public routes may collect first-party analytics through
 `PublicRouteTracking`, but that component must never mount `TikTokPixel` and

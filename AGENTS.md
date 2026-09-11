@@ -57,7 +57,6 @@ Before making changes, review the documentation relevant to the task.
 * `docs/frontend.md`
 * `docs/backend.md`
 * `docs/database.md`
-* `docs/api-standards.md`
 * `docs/security.md`
 * `docs/testing.md`
 * `docs/deployment.md`

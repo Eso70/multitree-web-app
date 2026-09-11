@@ -225,22 +225,6 @@ ALTER TABLE ONLY public.businesses
 
 
 --
--- Name: http_request_event_daily_stats http_request_event_daily_stats_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.http_request_event_daily_stats
-    ADD CONSTRAINT http_request_event_daily_stats_pkey PRIMARY KEY (event_day, source, method, actor_type, outcome);
-
-
---
--- Name: http_request_events http_request_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.http_request_events
-    ADD CONSTRAINT http_request_events_pkey PRIMARY KEY (id);
-
-
---
 -- Name: links links_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -289,14 +273,6 @@ BEGIN
     END IF;
 END
 $$;
-
-
---
--- Name: security_audit_events security_audit_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.security_audit_events
-    ADD CONSTRAINT security_audit_events_pkey PRIMARY KEY (id);
 
 
 --
@@ -377,5 +353,4 @@ ALTER TABLE ONLY public.linktrees
 
 ALTER TABLE ONLY public.whatsapp_questions
     ADD CONSTRAINT whatsapp_questions_pkey PRIMARY KEY (id);
-
 

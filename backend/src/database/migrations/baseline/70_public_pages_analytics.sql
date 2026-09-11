@@ -473,8 +473,7 @@ CREATE TRIGGER trg_marketing_outbox_updated_at
 BEFORE UPDATE ON public.marketing_event_outbox
 FOR EACH ROW EXECUTE FUNCTION public.fn_set_updated_at();
 
--- Fixed root and business marketing routes share the public-page identity,
--- while Creator workspaces intentionally receive no fixed route rows.
+-- Fixed root and business marketing routes share the public-page identity.
 CREATE OR REPLACE FUNCTION public.fn_seed_public_marketing_routes()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN

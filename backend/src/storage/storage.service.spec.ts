@@ -61,10 +61,10 @@ describe('StorageService', () => {
     expect(driver.objects.has('outside/logo.png')).toBe(true);
   });
 
-  it('supports the temporary flat legacy fallback during deletion', async () => {
-    driver.objects.set('_legacy/flat/logo.png', Buffer.from('legacy'));
-    await service.deleteImage('/images/upload/logo.png');
-    expect(driver.objects.has('_legacy/flat/logo.png')).toBe(false);
+  it('deletes the exact storage key referenced by a public URL', async () => {
+    driver.objects.set('businesses/acme/logo.png', Buffer.from('image'));
+    await service.deleteImage('/images/upload/businesses/acme/logo.png');
+    expect(driver.objects.has('businesses/acme/logo.png')).toBe(false);
   });
 
   it('verifies submitted upload ownership without trusting the URL path', async () => {

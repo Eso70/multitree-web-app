@@ -245,7 +245,7 @@ describe('full_schema.sql baseline', () => {
     expect(PARTS.indexOf('14_core_foreign_keys.sql')).toBeGreaterThan(
       PARTS.indexOf('10_core_tables.sql'),
     );
-    expect(PARTS).toContain('92_creator_accounts.sql');
+    expect(PARTS).toContain('92_root_public_slugs.sql');
     expect(PARTS[PARTS.length - 1]).toBe('99_data.sql');
   });
 

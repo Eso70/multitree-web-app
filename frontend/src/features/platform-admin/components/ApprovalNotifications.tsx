@@ -30,13 +30,9 @@ function canOpenPlatformNotification(notification: CommunicationNotification) {
 function platformNotificationDestination(actionUrl: string) {
   if (actionUrl.startsWith("https://")) return actionUrl;
   const consoleBasePath = `/${window.location.pathname.split("/").filter(Boolean)[0]}`;
-  const legacyConsolePrefix = "/system";
-  const normalized = actionUrl.startsWith(`${legacyConsolePrefix}/`)
-    ? actionUrl.slice(legacyConsolePrefix.length)
-    : actionUrl;
-  return normalized.startsWith(consoleBasePath)
-    ? normalized
-    : `${consoleBasePath}${normalized}`;
+  return actionUrl.startsWith(consoleBasePath)
+    ? actionUrl
+    : `${consoleBasePath}${actionUrl}`;
 }
 
 export interface ApprovalNotificationsHandle {

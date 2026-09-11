@@ -1,9 +1,5 @@
 # Architecture
 
-Self-service root-domain Creator workspaces reuse the Linktree domain services
-but have a separate session guard,
-one-page ownership record, trial lifecycle, and global root-slug registry.
-
 ## Invite-only business identity
 
 Business identity uses invite-only Google OAuth authorization-code flow. One
@@ -109,7 +105,6 @@ remaining horizontal-scaling requirements.
 |   |-- scripts/                         # migration, seeding, and maintenance helpers
 |   `-- src/
 |       |-- analytics/
-|       |-- api-platform/
 |       |-- auth/
 |       |-- billing/
 |       |-- common/                       # dependency-free shared helpers
@@ -121,7 +116,6 @@ remaining horizontal-scaling requirements.
 |       |-- platform-admin/
 |       |-- public/
 |       |-- redis/
-|       |-- request-tracking/
 |       `-- storage/
 |-- frontend/
 |   |-- public/                          # static assets and default local uploads
@@ -217,15 +211,11 @@ NestJS modules own their HTTP controllers and application services
 - `analytics`: ingestion, rollups, reporting, and the TikTok delivery
   outbox.
 - `communications`: announcements, notifications, and conversations.
-- `api-platform`: developer API clients, scopes, idempotency, schedules, and
-  webhooks.
 - `public`: anonymous read APIs.
 - `database`: PostgreSQL access and migration infrastructure.
 - `redis`: cache, sessions, and bounded key deletion.
 - `storage`: a stable storage facade (`StorageService`) backed by an injected
   `STORAGE_DRIVER` provider token.
-- `request-tracking`: application-wide, fail-safe HTTP telemetry and the authenticated
-  internal frontend-ingestion endpoint.
 - `observability`: public process liveness, protected dependency readiness,
   bounded in-process HTTP/worker metrics, and worker heartbeat registration.
 - `config`: global environment-variable validation (Joi schema, loaded once
@@ -233,9 +223,8 @@ NestJS modules own their HTTP controllers and application services
 - `common`: dependency-free helpers shared across modules.
 
 There is no generic `queue` module. Background processors stay with the
-feature that owns their work: `analytics` runs the TikTok delivery outbox,
-`api-platform` runs webhook delivery and scheduled Linktree publication, and
-`request-tracking` owns its bounded telemetry buffer and database flush.
+feature that owns their work: `analytics` runs the TikTok delivery outbox and
+`analytics` owns its TikTok delivery outbox and database flush.
 
 Controllers translate HTTP requests and enforce guards/capabilities. Business
 rules and transactional workflows live in services. Repositories own reusable
@@ -246,12 +235,11 @@ contracts.
 Global HTTP response handling lives in `common/api-response*`. Controllers and
 guards throw framework exceptions or return success values; the boundary owns
 JSON envelopes, validation-detail normalization, request correlation, and safe
-unexpected-error handling. The `/api/v1` envelope remains explicitly versioned
-and backward compatible.
+unexpected-error handling.
 
 Only `DatabaseModule` and `RedisModule` are global because they are universal
-infrastructure. Authentication, billing, webhook delivery, observability, and
-request tracking are ordinary modules. A domain that injects one of their
+infrastructure. Authentication, billing, and observability
+are ordinary modules. A domain that injects one of their
 exported providers must list that module in its `imports`; `AppModule` imports
 controller-owning modules but does not act as a service locator for domain
 providers.
@@ -266,74 +254,17 @@ Authentication establishes either a `business` or `platform-admin` principal.
 Authorization then checks explicit capabilities such as
 `business:linktrees:manage` or `platform:businesses:manage`. The full
 authorization chain, session/cookie configuration, and encryption details are
-documented in [docs/security.md](security.md); this section covers only the
-audit trail's data-flow shape.
+documented in [docs/security.md](security.md).
 
 The configured browser path for the platform console reduces automated
 discovery but is not a security boundary. Cookies, server-side sessions,
 origin validation, tenant binding, guards, capabilities, and rate limiting
 remain the actual controls.
 
-### Audit trail
-
-`SecurityAuditService` is the single append-only writer for security and
-activity events. `AuditInterceptor` records explicitly decorated mutations
-after guards and capability checks, including a success/failure outcome,
-actor/resource labels, request ID, normalized client IP, user agent, and
-sanitized metadata. Sensitive field values are never stored; only safe
-changed-field names are retained, with a fixed denylist of field names
-(password, tokens, etc.) stripped before logging.
-
-A mutation made while a platform administrator is impersonating a business
-keeps the business as its effective actor, so every business-scoped audit read
-continues to work unchanged; the administrator behind the session is recorded
-in the event's metadata instead. Impersonation start and end are separate
-`platform-admin`-attributed events. See
-[docs/security.md](security.md#platform-administrator-impersonation).
-
-Platform audit queries live in `platform-admin/AuditLogService` and require
-separate read/export capabilities. The query API is paginated and
-parameterized, and CSV exports are bounded. There is no application path for
-updating or deleting individual audit rows. Security audit events are
-permanent at the application boundary and are excluded from the configurable
-operational retention policy.
-
-High-volume HTTP telemetry is deliberately separate in `http_request_events`.
-Backend hooks record API requests, while the Next.js proxy submits page
-requests as background work using a server-only secret
-(`REQUEST_TRACKING_SECRET`). Paths are stored without query strings, and
-bodies, cookies, authorization headers, and tokens are never collected. These
-rows have a bounded retention period (`REQUEST_LOG_RETENTION_DAYS`, default
-30 days); security audit events are permanent and append-only.
-`AuditLogService` projects both sources into one read model without giving
-the high-volume telemetry lifecycle control over the security evidence.
-
-Telemetry writes are isolated from user-facing request latency by a bounded
-in-process buffer (`request-tracking.service.ts`) and batched PostgreSQL
-inserts. A failed flush is re-queued up to the configured memory bound
-(`REQUEST_LOG_MAX_QUEUE_SIZE`); if the bound is exhausted, telemetry is
-dropped rather than allowing logging to exhaust memory or take down the
-website. Shutdown drains the buffer when PostgreSQL is available. Every
-buffered event carries an `ingestion_key`, and the insert is a single CTE
-statement that does `INSERT ... ON CONFLICT (ingestion_key) DO NOTHING` and
-atomically upserts the matching row in `http_request_event_daily_stats` in
-the same query — so an uncertain retry after a dropped connection cannot
-duplicate the event or double-count its rollup.
-
-Retention uses small `FOR UPDATE SKIP LOCKED` batches (also used by the
-webhook and TikTok-outbox processors for the same reason). Multiple backend
-instances may therefore help with cleanup or delivery without blocking each
-other or issuing one large table-wide operation. `pg_trgm` GIN trigram
-indexes over `http_request_events` and `security_audit_events` back the
-Activity page's free-text search; it does not fall back to a full sequential
-scan as either table grows.
-
-Public analytics activity lives in the unified pipeline: `analytics_events`
-joined to `public_pages`, with idempotent event IDs and indexed
-business/page ownership. `platform-admin/AuditLogService` unions all four
-activity sources — `security_audit_events`, `http_request_events`,
-`analytics_events`, and `marketing_delivery_attempts` — described further in
-[docs/backend.md](backend.md#public-analytics-and-activity).
+Public analytics lives in the unified pipeline: `analytics_events` joined to
+`public_pages`, with idempotent event IDs and indexed business/page ownership.
+TikTok delivery uses the dedicated marketing outbox and delivery-attempt
+tables described in [docs/tracking.md](tracking.md).
 
 The superseded `page_views`, `link_clicks`, `analytics_totals`,
 `integration_delivery_events` and other legacy analytics tables — along with
@@ -361,8 +292,8 @@ An existing database is baselined only after its required tables, columns,
 indexes, removed columns, and catalog data pass compatibility checks. A
 partial, outdated, or unknown database, or one with ledger rows that do not
 include `full_schema.sql`, is rejected without a baseline row or automatic
-repair. The API, retention, media, and
-communications helpers now perform data/seed work only; they do not execute
+repair. The retention, media, and communications helpers now perform data/seed
+work only; they do not execute
 DDL outside the migration ledger.
 For a changed schema, recreate disposable databases with `db:reset`. Valuable
 databases require a separately reviewed backup, transfer, and replacement
@@ -374,9 +305,9 @@ operational detail of `db:migrate`/`db:reset`, and
 ## Storage
 
 Application code uses `StorageService`, not the filesystem directly.
-`LocalStorageDriver` preserves the current single-server upload behavior and
-legacy flat-file fallback. See [docs/backend.md](backend.md#upload-storage)
-for the current upload directory, size limits, and validation.
+`LocalStorageDriver` provides the current single-server upload behavior. See
+[docs/backend.md](backend.md#upload-storage) for the current upload directory,
+size limits, and validation.
 
 For multiple backend/frontend nodes, implement an object-storage driver for
 S3, R2, or MinIO, register it against the `STORAGE_DRIVER` injection token in

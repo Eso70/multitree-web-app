@@ -1,8 +1,9 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { HomeLanding } from "./HomeLanding";
 
-const { applyCursorColor } = vi.hoisted(() => ({
+const { applyCursorColor, publicSiteNavbar } = vi.hoisted(() => ({
   applyCursorColor: vi.fn().mockResolvedValue(undefined),
+  publicSiteNavbar: vi.fn(() => null),
 }));
 
 vi.mock("@/lib/utils/cursor-theme", () => ({
@@ -11,13 +12,9 @@ vi.mock("@/lib/utils/cursor-theme", () => ({
 }));
 
 vi.mock("@/components/public/PublicSiteNavbar", () => ({
-  PublicSiteNavbar: () => null,
+  PublicSiteNavbar: () => publicSiteNavbar(),
 }));
 vi.mock("./CustomScrollbar", () => ({ CustomScrollbar: () => null }));
-vi.mock("@/features/communications/HomepageCommunications", () => ({
-  HomepageCommunications: () => null,
-}));
-
 describe("HomeLanding platform theme", () => {
   afterEach(() => {
     document.documentElement.style.removeProperty("--sponsor-krd-accent");
@@ -56,15 +53,18 @@ describe("HomeLanding platform theme", () => {
     });
   });
 
-  it("presents both public products without invented performance claims", () => {
+  it("presents the advertising-account hero in the shared site chrome", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
 
     render(<HomeLanding />);
 
-    expect(screen.getAllByText("Linktree").length).toBeGreaterThan(0);
     expect(
-      screen.getByText("لە سێ هەنگاودا بڵاوی بکەرەوە"),
+      screen.getByRole("heading", { name: /بەڕێوەبردنی ڕیکلام/ }),
     ).toBeInTheDocument();
+    expect(screen.getByText(/هەژمارە ڕیکلامییەکانی TikTok/)).toBeInTheDocument();
+    expect(screen.getByText(/قۆناغی داهاتوودا/)).toBeInTheDocument();
+    expect(publicSiteNavbar).toHaveBeenCalledOnce();
+    expect(screen.getByRole("contentinfo")).toBeInTheDocument();
     expect(
       screen.queryByText(/10,000|1,000,000|revenue/i),
     ).not.toBeInTheDocument();

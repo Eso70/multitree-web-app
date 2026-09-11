@@ -1,14 +1,11 @@
 export const PLATFORM_ADMIN_PAGES = [
   "businesses",
   "linktrees",
-  "users",
   "templates",
   "campaigns",
   "blocklists",
   "access-control",
-  "activity",
   "communication-center",
-  "api",
   "settings",
   "billing",
 ] as const;

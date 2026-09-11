@@ -7,8 +7,7 @@ export type AccessRuleScope =
   | 'platform_admin'
   | 'business'
   | 'business_admin'
-  | 'public_linktree'
-  | 'business_api';
+  | 'public_linktree';
 
 export interface AccessRuleContext {
   scope: Exclude<AccessRuleScope, 'sponsor_krd'>;
@@ -52,7 +51,6 @@ export class AccessRuleEnforcementService {
       business: 40,
       business_admin: 60,
       public_linktree: 70,
-      business_api: 60,
     };
 
     for (const context of contexts) {
@@ -96,7 +94,7 @@ export class AccessRuleEnforcementService {
   async assertForBusinessSubdomain(
     rawIp: string,
     subdomain: string,
-    specializedScope?: 'business_admin' | 'business_api',
+    specializedScope?: 'business_admin',
   ): Promise<void> {
     const result = await this.database.query<{ id: string }>(
       `SELECT id::text FROM businesses

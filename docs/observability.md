@@ -74,7 +74,6 @@ Examples:
 - retryable failures
 - slow external services
 - quota nearing limits
-- deprecated API usage
 
 ---
 
@@ -85,7 +84,6 @@ Failures affecting one request or operation.
 Examples:
 
 - failed database transaction
-- failed webhook delivery
 - unexpected exception
 - upload failure
 
@@ -108,9 +106,9 @@ Examples:
 
 Prefer structured logs over plain text.
 
-Every completed backend request emits a JSON log event with request ID,
-tenant or API-client identifiers when authenticated, method, normalized route,
-status, and duration. The raw query string and sensitive headers are omitted.
+Every completed backend request emits a JSON log event with request ID, tenant
+identifier when authenticated, method, normalized route, status, and duration.
+The raw query string and sensitive headers are omitted.
 
 Include useful context such as:
 
@@ -119,7 +117,6 @@ Include useful context such as:
 - tenant ID
 - authenticated user ID
 - business ID
-- API client ID
 - endpoint
 - HTTP method
 - response status
@@ -156,7 +153,6 @@ When available, logs should include:
 - request ID
 - correlation ID
 - background job ID
-- webhook delivery ID
 
 This allows events across services to be connected.
 
@@ -231,14 +227,6 @@ Background Jobs
 - failed jobs
 - retry count
 
-Developer API
-
-- requests
-- rate-limit hits
-- webhook deliveries
-
----
-
 # Tracing
 
 Distributed tracing is not yet implemented. Request IDs are returned in the
@@ -251,7 +239,6 @@ Examples:
 
 - API requests
 - background jobs
-- webhook delivery
 - analytics processing
 - upload processing
 
@@ -270,9 +257,6 @@ Examples:
 - permission changes
 - administrator actions
 - business management
-- API key creation
-- API key deletion
-- webhook changes
 - subscription changes
 
 See `docs/security.md` for audit requirements.
@@ -309,7 +293,6 @@ Examples:
 - Redis unavailable
 - repeated failed deployments
 - excessive error rate
-- webhook failures
 - unusually slow responses
 - failed background jobs
 - storage nearly full
@@ -330,15 +313,14 @@ When investigating production issues:
 6. Verify database health.
 7. Verify Redis health.
 8. Confirm external service availability.
-9. Review audit events if security-related.
+9. Review the affected sessions and service-specific records if security-related.
 
 ---
 
 # Retention
 
-Retain logs and metrics according to the platform's operational data-retention
-policy. Security audit events are permanent application evidence and are not
-part of retention cleanup.
+Retain operational logs according to deployment policy. The in-application
+retention policy covers archived communication history.
 
 Automatically remove expired operational data where appropriate.
 

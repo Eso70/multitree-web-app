@@ -70,16 +70,14 @@ interface ActionRow {
 /**
  * The kind of page being inspected.
  *
- * Linktree analytics use the shared modal across business, Creator, client,
- * and platform workspaces.
+ * Linktree analytics use the shared modal across business and platform
+ * workspaces.
  */
 export type AnalyticsPageKind = "linktree";
 
 export type PageAnalyticsDataSource =
   | "business"
-  | "platform-linktree"
-  | "creator-linktree"
-  | "client-linktree";
+  | "platform-linktree";
 
 interface BusinessPageAnalyticsModalProps {
   isOpen: boolean;
@@ -278,19 +276,9 @@ function summaryUrl(
   if (from) params.set("from", from);
   if (to) params.set("to", to);
 
-  if (dataSource === "client-linktree") {
-    const query = params.toString();
-    return `/api/client-linktree-access/analytics/summary${query ? `?${query}` : ""}`;
-  }
-
   if (dataSource === "platform-linktree") {
     const query = params.toString();
     return `/api/platform/linktrees/${pageId}/analytics${query ? `?${query}` : ""}`;
-  }
-
-  if (dataSource === "creator-linktree") {
-    const query = params.toString();
-    return `/api/creator/linktrees/${pageId}/analytics${query ? `?${query}` : ""}`;
   }
 
   params.set("pageId", pageId);
@@ -315,16 +303,6 @@ function actionsUrl(
   if (from) params.set("from", from);
   if (to) params.set("to", to);
 
-  if (dataSource === "client-linktree") {
-    const query = params.toString();
-    return `/api/client-linktree-access/analytics/actions${query ? `?${query}` : ""}`;
-  }
-
-  if (dataSource === "creator-linktree") {
-    const query = params.toString();
-    return `/api/creator/linktrees/${pageId}/analytics/actions${query ? `?${query}` : ""}`;
-  }
-
   if (dataSource === "platform-linktree") {
     const query = params.toString();
     return `/api/platform/linktrees/${pageId}/analytics/actions${query ? `?${query}` : ""}`;
@@ -337,9 +315,7 @@ function actionsUrl(
 function clearUrl(dataSource: PageAnalyticsDataSource, pageId: string): string {
   return dataSource === "platform-linktree"
     ? `/api/platform/linktrees/${pageId}/analytics`
-    : dataSource === "creator-linktree"
-        ? `/api/creator/linktrees/${pageId}/analytics`
-        : `/api/analytics/v2/pages/${pageId}`;
+    : `/api/analytics/v2/pages/${pageId}`;
 }
 
 export function BusinessPageAnalyticsModal({
@@ -380,9 +356,8 @@ export function BusinessPageAnalyticsModal({
     async (bypassCache = false, range?: { from?: string; to?: string }) => {
       const reqId = ++dataRef.current;
 
-      // Both reads are addressed by data source, so a Creator workspace runs
-      // exactly this code path against its own endpoints rather than falling
-      // through to the business ones, which are behind `BusinessGuard`.
+      // Both reads are addressed by data source so platform requests never
+      // fall through to business endpoints protected by `BusinessGuard`.
       const [totalsResult, actionsResult] = await Promise.allSettled([
         fetchJson<Totals>(
           summaryUrl(dataSource, pageId, bypassCache, range?.from, range?.to),

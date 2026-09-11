@@ -8,9 +8,8 @@
 -- reasons, and 500 lines of INSERTs sitting between the tables and their
 -- constraints made both harder to follow.
 --
--- Applied immediately after `full_schema.sql`, inside the same transaction, by
--- `db-migrate.ts` and `db-reset.ts`. It is NOT a forward migration: the runner
--- only picks up dated `YYYY-MM-DD_*.sql` files.
+-- Applied as the final numbered baseline part, inside the same transaction, by
+-- `db-migrate.ts` and `db-reset.ts`. It is not a dated forward migration.
 --
 -- Note the ordering difference from a pg_dump: these rows now land after the
 -- primary keys, unique constraints and foreign keys exist, so they must be in
@@ -79,13 +78,9 @@ INSERT INTO public.auth_permissions (id, permission_key, resource, action, descr
 INSERT INTO public.auth_permissions (id, permission_key, resource, action, description, risk_level, created_at, category, display_order, field_schema, supports_approval, status, updated_at) VALUES ('ab2b6074-fe5d-44ba-9c80-b23277878c91', 'business:settings:security-access', 'business.settings', 'security-access', 'Open the account security settings section', 'standard', '2026-07-16 22:07:32.055836+03', 'Business navigation', 17, '{}', false, 'active', '2026-07-16 22:07:32.055836+03');
 INSERT INTO public.auth_permissions (id, permission_key, resource, action, description, risk_level, created_at, category, display_order, field_schema, supports_approval, status, updated_at) VALUES ('5c47877c-aa54-4988-a569-46149ef10803', 'business:settings:integrations-access', 'business.settings', 'integrations-access', 'Open the integrations settings section', 'sensitive', '2026-07-16 22:07:32.055836+03', 'Business navigation', 18, '{}', false, 'active', '2026-07-16 22:07:32.055836+03');
 
--- Registered by forward migrations. The application refuses to boot when a
--- catalog permission is missing, so they are part of the baseline now.
--- From 2026-08-12_add_business_session_impersonation.sql:
+-- The application refuses to boot when a catalog permission is missing, so
+-- these current permissions are part of the baseline.
 INSERT INTO public.auth_permissions (permission_key, resource, action, description, risk_level, category, display_order, field_schema, supports_approval, status) VALUES ('platform:businesses:impersonate', 'platform.businesses', 'impersonate', 'Open a business dashboard as that business', 'critical', 'Business administration', 600, '{}', false, 'active');
--- From 2026-08-13_remove_password_authentication.sql. The business-side key was
--- renamed in place above so its grants survive; these two had no seeded rows to
--- rename, so they are inserted.
 INSERT INTO public.auth_permissions (permission_key, resource, action, description, risk_level, category, display_order, field_schema, supports_approval, status) VALUES ('platform:businesses:sessions-revoke', 'platform.businesses', 'sessions-revoke', 'Revoke login sessions for a business', 'critical', 'Business administration', 540, '{}', false, 'active');
 INSERT INTO public.auth_permissions (permission_key, resource, action, description, risk_level, category, display_order, field_schema, supports_approval, status) VALUES ('platform:settings:sessions-revoke', 'platform.settings', 'sessions-revoke', 'Manage platform administrator login sessions', 'critical', 'Platform settings', 720, '{}', false, 'active');
 
@@ -94,17 +89,11 @@ INSERT INTO public.auth_permissions (permission_key, resource, action, descripti
 -- Data for Name: billing_entitlements; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('214c520c-3605-4507-aac9-323c2864a6cb', 'feature.api_access', 'API access', 'Allow business API clients', 'boolean', NULL, 'api', 'active', '2026-07-16 21:31:41.878112+03', '2026-07-16 21:31:41.878112+03');
-INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('4d1778f5-0a66-45c5-8a29-519030bcbdfb', 'feature.webhooks', 'Webhooks', 'Allow outbound webhooks', 'boolean', NULL, 'api', 'active', '2026-07-16 21:31:41.878112+03', '2026-07-16 21:31:41.878112+03');
 INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('53dfb3bf-cfc9-4189-9c7c-879fca9db420', 'feature.premium_templates', 'Premium templates', 'Allow premium visual templates', 'boolean', NULL, 'content', 'active', '2026-07-16 21:31:41.878112+03', '2026-07-16 21:31:41.878112+03');
 INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('3b9f4737-a022-4af9-ba7b-e4ccb1805e6f', 'feature.pixel_tracking', 'Pixel tracking', 'Allow supported advertising pixels', 'boolean', NULL, 'analytics', 'active', '2026-07-16 21:31:41.878112+03', '2026-07-16 21:31:41.878112+03');
 INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('a1d4e7c0-1b2f-4a63-9c81-5e0a7d3b4f20', 'feature.advertising_page', 'Advertising page', 'Allow the TikTok sponsorship service page', 'boolean', NULL, 'content', 'active', '2026-08-05 00:00:00+03', '2026-08-05 00:00:00+03');
 INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('bf2db4ff-f256-4fe8-9b8b-891b5feac367', 'feature.remove_branding', 'Remove branding', 'Allow platform branding removal', 'boolean', NULL, 'content', 'active', '2026-07-16 21:31:41.878112+03', '2026-07-16 21:31:41.878112+03');
 INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('fd265354-836b-4561-bae9-fda950a08d64', 'limit.linktrees', 'Public page limit', 'Maximum active Linktrees', 'integer', 'pages', 'limits', 'active', '2026-07-16 21:31:41.878112+03', '2026-08-01 00:00:00+03');
-INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('1fbcc8f4-3d50-4c5d-b35a-cca221b66421', 'limit.api_requests_monthly', 'Monthly API requests', 'Maximum API requests per billing period', 'integer', 'requests', 'limits', 'active', '2026-07-16 21:31:41.878112+03', '2026-07-16 21:31:41.878112+03');
-INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('44a0832d-86e8-4ab1-83a9-416b67d4ec33', 'limit.api_clients', 'API client limit', 'Maximum active API clients', 'integer', 'clients', 'limits', 'active', '2026-07-16 21:31:41.878112+03', '2026-07-16 21:31:41.878112+03');
-INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('5a1095de-55bd-4022-a2aa-5389df26ccc6', 'limit.webhook_endpoints', 'Webhook endpoint limit', 'Maximum active webhook endpoints', 'integer', 'endpoints', 'limits', 'active', '2026-07-16 21:31:41.878112+03', '2026-07-16 21:31:41.878112+03');
-INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('bbcdffe3-bb86-4f9b-a28d-ec3da6af4a61', 'retention.audit_days', 'Audit retention', 'Number of days audit records remain available', 'integer', 'days', 'retention', 'active', '2026-07-16 21:31:41.878112+03', '2026-07-16 21:31:41.878112+03');
 INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('a4da5bc4-110c-4fc9-b804-fe743ea6f372', 'feature.profile_editing', 'Profile editing', 'Allow business profile editing', 'boolean', NULL, 'profile', 'active', '2026-07-16 21:31:41.92101+03', '2026-07-16 21:31:41.92101+03');
 INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('0a5ce780-b980-4621-a91d-d182d0059f76', 'feature.branding_editing', 'Branding editing', 'Allow business branding asset editing', 'boolean', NULL, 'profile', 'active', '2026-07-16 21:31:41.92101+03', '2026-07-16 21:31:41.92101+03');
 INSERT INTO public.billing_entitlements (id, entitlement_key, name, description, value_type, unit, category, status, created_at, updated_at) VALUES ('c5584929-d8fe-4123-bdf8-58ecc25181cf', 'feature.page_defaults', 'Page defaults', 'Allow business page default editing', 'boolean', NULL, 'content', 'active', '2026-07-16 21:31:41.92101+03', '2026-07-16 21:31:41.92101+03');
@@ -340,8 +329,7 @@ WHERE NOT EXISTS (
 -- Data for Name: billing_plan_templates; Type: TABLE DATA; Schema: public; Owner: -
 --
 
--- Linktree keys are the post-rename ones (2026-08-12_rename_linktree_templates.sql);
--- hero-image and dark-card were retired by 2026-08-11_remove_hero_image_dark_card_templates.sql.
+-- Current Linktree template assignments.
 INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', 'spectrum', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', 'spotlight', '2026-07-16 22:06:14.312012+03');
 INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, created_at) VALUES ('3d7529e1-9c5e-4d75-bfc4-ab6553d5c0bd', 'frost', '2026-07-16 22:06:14.312012+03');
@@ -412,18 +400,6 @@ INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, 
 
 
 --
--- Data for Name: http_request_event_daily_stats; Type: TABLE DATA; Schema: public; Owner: -
---
-
-
-
---
--- Data for Name: http_request_events; Type: TABLE DATA; Schema: public; Owner: -
---
-
-
-
---
 -- Data for Name: links; Type: TABLE DATA; Schema: public; Owner: -
 --
 
@@ -454,12 +430,6 @@ INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, 
 
 
 --
--- Data for Name: security_audit_events; Type: TABLE DATA; Schema: public; Owner: -
---
-
-
-
---
 -- Data for Name: platform_admin_sessions; Type: TABLE DATA; Schema: public; Owner: -
 --
 
@@ -482,45 +452,6 @@ INSERT INTO public.billing_plan_templates (plan_configuration_id, template_key, 
 --
 
 
-
---
--- Name: http_request_events_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.http_request_events_id_seq', 1, false);
-
-
---
--- Name: security_audit_events_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.security_audit_events_id_seq', 1, false);
-
-
---
--- Derived catalog rows
---
--- Computed from the rows above rather than written out, so a plan's API
--- entitlements follow its code instead of being restated per configuration.
--- It has to run after `billing_plan_configurations`, `billing_plans` and
--- `billing_entitlements` are loaded, which is why it lives here and not beside
--- the API tables in `full_schema.sql`.
---
-
-INSERT INTO public.billing_plan_entitlements(plan_configuration_id, entitlement_id, value)
-SELECT configuration.id, entitlement.id,
-       CASE entitlement.entitlement_key
-         WHEN 'feature.api_access' THEN to_jsonb(plan.code IN ('pro','ultra'))
-         WHEN 'feature.webhooks' THEN to_jsonb(plan.code IN ('pro','ultra'))
-         WHEN 'limit.api_requests_monthly' THEN to_jsonb(CASE plan.code WHEN 'ultra' THEN 200000 WHEN 'pro' THEN 50000 ELSE 0 END)
-         WHEN 'limit.api_clients' THEN to_jsonb(CASE plan.code WHEN 'ultra' THEN 10 WHEN 'pro' THEN 3 ELSE 0 END)
-         WHEN 'limit.webhook_endpoints' THEN to_jsonb(CASE plan.code WHEN 'ultra' THEN 10 WHEN 'pro' THEN 3 ELSE 0 END)
-       END
-FROM public.billing_plan_configurations configuration
-JOIN public.billing_plans plan ON plan.id=configuration.plan_id
-CROSS JOIN public.billing_entitlements entitlement
-WHERE entitlement.entitlement_key IN ('feature.api_access','feature.webhooks','limit.api_requests_monthly','limit.api_clients','limit.webhook_endpoints')
-ON CONFLICT (plan_configuration_id, entitlement_id) DO NOTHING;
 
 -- The one non-customer workspace that owns Sponsor.krd root-domain content.
 INSERT INTO public.businesses (
@@ -565,7 +496,7 @@ INSERT INTO public.business_defaults (
   false
 );
 
--- Capabilities introduced with the platform-content and Creator domains.
+-- Capabilities introduced with the platform-content domain.
 INSERT INTO public.auth_permissions (
   permission_key, category, resource, action, description, risk_level,
   display_order, supports_approval, status
@@ -585,8 +516,4 @@ INSERT INTO public.auth_permissions (
   ('platform:linktrees:delete', 'Platform Linktrees', 'platform.linktrees', 'delete',
    'Delete Sponsor.krd root-domain Linktrees', 'critical', 775, false, 'active'),
   ('platform:linktrees:upload', 'Platform Linktrees', 'platform.linktrees', 'upload',
-   'Upload assets for Sponsor.krd root-domain Linktrees', 'sensitive', 776, false, 'active'),
-  ('platform:creators:read', 'Creator administration', 'platform.creators', 'read',
-   'View self-service Creator accounts and their trial state', 'standard', 782, false, 'active'),
-  ('platform:creators:manage', 'Creator administration', 'platform.creators', 'manage',
-   'Suspend, reactivate, extend, or activate Creator accounts', 'critical', 783, false, 'active');
+   'Upload assets for Sponsor.krd root-domain Linktrees', 'sensitive', 776, false, 'active');

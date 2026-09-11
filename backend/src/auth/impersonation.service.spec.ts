@@ -1,7 +1,6 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { RedisService } from '../redis/redis.service';
-import { SecurityAuditService } from './security-audit.service';
 import { SessionService } from './session.service';
 import { ImpersonationService } from './impersonation.service';
 import { authHandoffKey, AUTH_HANDOFF_TTL_SECONDS } from './auth-handoff';
@@ -28,15 +27,13 @@ function createService(businessRow?: Record<string, unknown>) {
       key === 'APP_BASE_URL' ? 'http://lvh.me:3011' : undefined,
     ),
   };
-  const audit = { record: jest.fn().mockResolvedValue(undefined) };
   const service = new ImpersonationService(
     database,
     redis,
     sessions,
     config as never,
-    audit as unknown as SecurityAuditService,
   );
-  return { service, database, redis, sessions, audit };
+  return { service, database, redis, sessions };
 }
 
 const activeBusiness = {
@@ -87,51 +84,25 @@ describe('ImpersonationService.start', () => {
     expect(result.redirectUrl).toContain('/business/auth/consume?code=');
   });
 
-  it('records a platform-attributed audit event', async () => {
-    const { service, audit } = createService(activeBusiness);
-
-    await service.start({ businessId: 'business-id', admin, context });
-
-    expect(audit.record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        actorType: 'platform-admin',
-        actorId: 'admin-id',
-        businessId: 'business-id',
-        eventType: 'platform.business.impersonation.start',
-        outcome: 'success',
-        ipAddress: '203.0.113.9',
-      }),
-    );
-  });
-
-  it('rejects an unknown business and records the denial', async () => {
-    const { service, redis, audit } = createService();
+  it('rejects an unknown business', async () => {
+    const { service, redis } = createService();
 
     await expect(
       service.start({ businessId: 'missing', admin, context }),
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(redis.set).not.toHaveBeenCalled();
-    expect(audit.record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        outcome: 'failure',
-        metadata: { reason: 'business_not_found' },
-      }),
-    );
   });
 
   it.each([
     ['suspended', { ...activeBusiness, status: 'suspended' }],
     ['subdomain-less', { ...activeBusiness, subdomain: null }],
-  ])('refuses a %s business and records the denial', async (_label, row) => {
-    const { service, redis, audit } = createService(row);
+  ])('refuses a %s business', async (_label, row) => {
+    const { service, redis } = createService(row);
 
     await expect(
       service.start({ businessId: 'business-id', admin, context }),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(redis.set).not.toHaveBeenCalled();
-    expect(audit.record).toHaveBeenCalledWith(
-      expect.objectContaining({ outcome: 'failure' }),
-    );
   });
 
   it('refuses to mint when the temporary store is unavailable', async () => {
@@ -144,19 +115,13 @@ describe('ImpersonationService.start', () => {
   });
 
   it('rate limits repeated attempts by the same administrator', async () => {
-    const { service, redis, audit } = createService(activeBusiness);
+    const { service, redis } = createService(activeBusiness);
     (redis.isRateLimited as jest.Mock).mockResolvedValue(true);
 
     await expect(
       service.start({ businessId: 'business-id', admin, context }),
     ).rejects.toThrow(/Too many impersonation attempts/i);
     expect(redis.set).not.toHaveBeenCalled();
-    expect(audit.record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        outcome: 'denied',
-        metadata: { reason: 'rate_limited' },
-      }),
-    );
   });
 });
 
@@ -176,8 +141,8 @@ describe('ImpersonationService.end', () => {
     },
   };
 
-  it('destroys the session and records the end of administrator access', async () => {
-    const { service, sessions, audit } = createService(activeBusiness);
+  it('destroys the impersonated session', async () => {
+    const { service, sessions } = createService(activeBusiness);
 
     const result = await service.end({
       sessionToken: 'token',
@@ -188,13 +153,6 @@ describe('ImpersonationService.end', () => {
     expect(sessions.destroySession).toHaveBeenCalledWith(
       'token',
       impersonatedUser,
-    );
-    expect(audit.record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        actorType: 'platform-admin',
-        actorId: 'admin-id',
-        eventType: 'platform.business.impersonation.end',
-      }),
     );
     expect(result.consoleUrl).toBe('http://lvh.me:3011');
   });

@@ -80,30 +80,19 @@ const LinktreeTemplatePreview = memo(function LinktreeTemplatePreview({
 });
 
 export interface TemplatesPageProps {
-  accessMode?: "all" | "entitlement" | "provided";
-  allowedTemplateKeys?: readonly string[];
+  accessMode?: "all" | "entitlement";
 }
 
-export function TemplatesPage({
-  accessMode = "all",
-  allowedTemplateKeys,
-}: TemplatesPageProps) {
+export function TemplatesPage({ accessMode = "all" }: TemplatesPageProps) {
   const enforceTemplateAccess = accessMode === "entitlement";
   const {
     isLoading: isEntitlementLoading,
     isTemplateAllowed: isEntitledToTemplate,
     refresh,
   } = useTemplateAccess(enforceTemplateAccess);
-  const providedTemplateKeys = useMemo(
-    () => new Set(allowedTemplateKeys ?? []),
-    [allowedTemplateKeys],
-  );
   const isTemplateAllowed = useCallback(
-    (templateKey: string) =>
-      accessMode === "provided"
-        ? providedTemplateKeys.has(templateKey)
-        : isEntitledToTemplate(templateKey),
-    [accessMode, isEntitledToTemplate, providedTemplateKeys],
+    (templateKey: string) => isEntitledToTemplate(templateKey),
+    [isEntitledToTemplate],
   );
   const shouldShowLockedTemplates = accessMode !== "all";
   const [searchQuery, setSearchQuery] = useState("");

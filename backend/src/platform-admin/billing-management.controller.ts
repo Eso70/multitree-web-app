@@ -8,10 +8,7 @@ import {
   Post,
   Query,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
-import { AuditEvent } from '../auth/audit-event.decorator';
-import { AuditInterceptor } from '../auth/audit.interceptor';
 import { AuthorizationGuard } from '../auth/authorization.guard';
 import { Capability } from '../auth/capabilities';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -37,7 +34,6 @@ import { BillingOverviewQueryDto } from './dto/billing-overview-query.dto';
 
 @Controller('api/platform/billing')
 @UseGuards(PlatformAdminGuard, AuthorizationGuard)
-@UseInterceptors(AuditInterceptor)
 export class BillingManagementController {
   constructor(private readonly service: BillingManagementService) {}
 
@@ -53,19 +49,12 @@ export class BillingManagementController {
 
   @Post('entitlements')
   @RequireCapabilities(Capability.PlatformBillingEntitlementsCreate)
-  @AuditEvent('platform.billing.entitlement.create', {
-    resourceType: 'billing-entitlement',
-  })
   async createEntitlement(@Body() dto: CreateEntitlementDto) {
     return { success: true, data: await this.service.createEntitlement(dto) };
   }
 
   @Patch('entitlements/:id')
   @RequireCapabilities(Capability.PlatformBillingEntitlementsUpdate)
-  @AuditEvent('platform.billing.entitlement.update', {
-    resourceType: 'billing-entitlement',
-    resourceIdParam: 'id',
-  })
   async updateEntitlement(
     @Param('id') id: string,
     @Body() dto: UpdateEntitlementDto,
@@ -78,7 +67,6 @@ export class BillingManagementController {
 
   @Post('plans')
   @RequireCapabilities(Capability.PlatformBillingPlansCreate)
-  @AuditEvent('platform.billing.plan.create', { resourceType: 'billing-plan' })
   async createPlan(
     @Body() dto: CreatePlanDto,
     @CurrentUser() user: SessionUser,
@@ -88,20 +76,12 @@ export class BillingManagementController {
 
   @Patch('plans/:id')
   @RequireCapabilities(Capability.PlatformBillingPlansUpdate)
-  @AuditEvent('platform.billing.plan.update', {
-    resourceType: 'billing-plan',
-    resourceIdParam: 'id',
-  })
   async updatePlan(@Param('id') id: string, @Body() dto: UpdatePlanDto) {
     return { success: true, data: await this.service.updatePlan(id, dto) };
   }
 
   @Patch('plans/:id/profile')
   @RequireCapabilities(Capability.PlatformBillingPlansUpdate)
-  @AuditEvent('platform.billing.permission_profile.update', {
-    resourceType: 'billing-plan',
-    resourceIdParam: 'id',
-  })
   async updatePermissionProfile(
     @Param('id') id: string,
     @Body() dto: UpdatePermissionProfileDto,
@@ -114,10 +94,6 @@ export class BillingManagementController {
 
   @Delete('plans/:id')
   @RequireCapabilities(Capability.PlatformBillingPlansUpdate)
-  @AuditEvent('platform.billing.permission_profile.delete', {
-    resourceType: 'billing-plan',
-    resourceIdParam: 'id',
-  })
   async deletePermissionProfile(@Param('id') id: string) {
     return {
       success: true,
@@ -127,9 +103,6 @@ export class BillingManagementController {
 
   @Post('subscription-plans')
   @RequireCapabilities(Capability.PlatformBillingPlansCreate)
-  @AuditEvent('platform.billing.subscription_plan.create', {
-    resourceType: 'billing-subscription-plan',
-  })
   async createSubscriptionPlan(
     @Body() dto: CreateSubscriptionPlanDto,
     @CurrentUser() user: SessionUser,
@@ -142,10 +115,6 @@ export class BillingManagementController {
 
   @Patch('subscription-plans/:id')
   @RequireCapabilities(Capability.PlatformBillingPlansUpdate)
-  @AuditEvent('platform.billing.subscription_plan.update', {
-    resourceType: 'billing-subscription-plan',
-    resourceIdParam: 'id',
-  })
   async updateSubscriptionPlan(
     @Param('id') id: string,
     @Body() dto: UpdateSubscriptionPlanDto,
@@ -158,10 +127,6 @@ export class BillingManagementController {
 
   @Delete('subscription-plans/:id')
   @RequireCapabilities(Capability.PlatformBillingPlansUpdate)
-  @AuditEvent('platform.billing.subscription_plan.delete', {
-    resourceType: 'billing-subscription-plan',
-    resourceIdParam: 'id',
-  })
   async deleteSubscriptionPlan(@Param('id') id: string) {
     return {
       success: true,
@@ -171,9 +136,6 @@ export class BillingManagementController {
 
   @Post('subscriptions')
   @RequireCapabilities(Capability.PlatformBillingSubscriptionsAssign)
-  @AuditEvent('platform.billing.subscription.upsert', {
-    resourceType: 'business-subscription',
-  })
   async subscription(
     @Body() dto: UpsertBusinessSubscriptionDto,
     @CurrentUser() user: SessionUser,
@@ -195,10 +157,6 @@ export class BillingManagementController {
 
   @Patch('plans/:id/configuration')
   @RequireCapabilities(Capability.PlatformBillingPlansUpdate)
-  @AuditEvent('platform.billing.plan_configuration.update', {
-    resourceType: 'billing-plan',
-    resourceIdParam: 'id',
-  })
   async updateConfiguration(
     @Param('id') id: string,
     @Body() dto: UpdatePlanConfigurationDto,
@@ -224,7 +182,6 @@ export class PermissionCatalogController {
 
 @Controller('api/platform/businesses')
 @UseGuards(PlatformAdminGuard, AuthorizationGuard)
-@UseInterceptors(AuditInterceptor)
 export class BusinessAccessController {
   constructor(private readonly authorization: AuthorizationService) {}
 
@@ -240,7 +197,6 @@ export class BusinessAccessController {
 
 @Controller('api/platform/approvals')
 @UseGuards(PlatformAdminGuard, AuthorizationGuard)
-@UseInterceptors(AuditInterceptor)
 export class ApprovalManagementController {
   constructor(private readonly approvals: ApprovalService) {}
 
@@ -252,10 +208,6 @@ export class ApprovalManagementController {
 
   @Post(':id/approve')
   @RequireCapabilities(Capability.PlatformBillingApprovalsReview)
-  @AuditEvent('platform.billing.approval.approve', {
-    resourceType: 'permission-approval',
-    resourceIdParam: 'id',
-  })
   async approve(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     return {
       success: true,
@@ -269,10 +221,6 @@ export class ApprovalManagementController {
 
   @Post(':id/reject')
   @RequireCapabilities(Capability.PlatformBillingApprovalsReview)
-  @AuditEvent('platform.billing.approval.reject', {
-    resourceType: 'permission-approval',
-    resourceIdParam: 'id',
-  })
   async reject(
     @Param('id') id: string,
     @Body() dto: ReviewApprovalDto,

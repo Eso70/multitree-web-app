@@ -10,7 +10,6 @@ import {
   HttpStatus,
   Req,
   Res,
-  UseInterceptors,
   Param,
   BadRequestException,
 } from '@nestjs/common';
@@ -25,8 +24,6 @@ import { AuthorizationGuard } from '../auth/authorization.guard';
 import { UpdateTikTokPixelConfigsDto } from '../auth/dto/update-tiktok-pixel-config.dto';
 import { Capability } from '../auth/capabilities';
 import { RequireCapabilities } from '../auth/require-capabilities.decorator';
-import { AuditInterceptor } from '../auth/audit.interceptor';
-import { AuditEvent } from '../auth/audit-event.decorator';
 import { UpdateTemplateSettingsDto } from './dto/update-template-settings.dto';
 import { validateImageUpload } from '../storage/image-upload';
 import {
@@ -43,7 +40,6 @@ import { TestTikTokEventsApiDto } from '../analytics/dto/test-tiktok-events-api.
 
 @Controller('api/platform/settings')
 @UseGuards(PlatformAdminGuard, AuthorizationGuard)
-@UseInterceptors(AuditInterceptor)
 export class PlatformSettingsController {
   constructor(
     private readonly platformSettingsService: PlatformSettingsService,
@@ -62,9 +58,6 @@ export class PlatformSettingsController {
 
   @Put('tiktok')
   @RequireCapabilities(Capability.PlatformSettingsTikTokUpdate)
-  @AuditEvent('platform.settings.tiktok.update', {
-    resourceType: 'platform-settings',
-  })
   async updateTikTokSettings(@Body() body: UpdateTikTokPixelConfigsDto) {
     return {
       success: true,
@@ -94,9 +87,6 @@ export class PlatformSettingsController {
 
   @Post('tiktok/retry-failed')
   @RequireCapabilities(Capability.PlatformSettingsTikTokUpdate)
-  @AuditEvent('platform.settings.tiktok.retry-failed', {
-    resourceType: 'platform-settings',
-  })
   async retryFailedTikTokEvents() {
     return {
       success: true,
@@ -129,9 +119,6 @@ export class PlatformSettingsController {
 
   @Put('media')
   @RequireCapabilities(Capability.PlatformSettingsMediaUpdate)
-  @AuditEvent('platform.settings.media.update', {
-    resourceType: 'platform-settings',
-  })
   async updateMediaSettings(
     @CurrentUser() user: SessionUser,
     @Body() body: UpdateMediaSettingsDto,
@@ -144,9 +131,6 @@ export class PlatformSettingsController {
 
   @Post('media/cleanup')
   @RequireCapabilities(Capability.PlatformSettingsMediaCleanup)
-  @AuditEvent('platform.settings.media.cleanup', {
-    resourceType: 'platform-settings',
-  })
   async cleanupMedia(@Body() body: RunMediaCleanupDto) {
     if (!body.confirm)
       throw new BadRequestException('Cleanup confirmation is required');
@@ -164,9 +148,6 @@ export class PlatformSettingsController {
 
   @Put('data-retention')
   @RequireCapabilities(Capability.PlatformSettingsRetentionUpdate)
-  @AuditEvent('platform.settings.data-retention.update', {
-    resourceType: 'platform-settings',
-  })
   async updateDataRetention(
     @CurrentUser() user: SessionUser,
     @Body() body: UpdateDataRetentionDto,
@@ -177,9 +158,6 @@ export class PlatformSettingsController {
 
   @Post('data-retention/run')
   @RequireCapabilities(Capability.PlatformSettingsRetentionRun)
-  @AuditEvent('platform.settings.data-retention.run', {
-    resourceType: 'platform-settings',
-  })
   async runDataRetention(
     @CurrentUser() user: SessionUser,
     @Body() body: RunDataRetentionDto,
@@ -200,9 +178,6 @@ export class PlatformSettingsController {
 
   @Put('profile')
   @RequireCapabilities(Capability.PlatformSettingsProfileUpdate)
-  @AuditEvent('platform.settings.profile.update', {
-    resourceType: 'platform-settings',
-  })
   @HttpCode(HttpStatus.OK)
   async updateProfile(
     @CurrentUser() user: SessionUser,
@@ -230,9 +205,6 @@ export class PlatformSettingsController {
 
   @Delete('sessions')
   @RequireCapabilities(Capability.PlatformSettingsSessionsRevoke)
-  @AuditEvent('platform.settings.sessions.revoke-others', {
-    resourceType: 'session',
-  })
   async revokeOtherSessions(
     @CurrentUser() user: SessionUser,
     @Req() request: FastifyRequest & { sessionToken?: string },
@@ -246,10 +218,6 @@ export class PlatformSettingsController {
 
   @Delete('sessions/:sessionId')
   @RequireCapabilities(Capability.PlatformSettingsSessionsRevoke)
-  @AuditEvent('platform.settings.session.revoke', {
-    resourceType: 'session',
-    resourceIdParam: 'sessionId',
-  })
   async revokeSession(
     @CurrentUser() user: SessionUser,
     @Req() request: FastifyRequest & { sessionToken?: string },
@@ -265,9 +233,6 @@ export class PlatformSettingsController {
 
   @Put('branding')
   @RequireCapabilities(Capability.PlatformSettingsBrandingUpdate)
-  @AuditEvent('platform.settings.branding.update', {
-    resourceType: 'platform-settings',
-  })
   @HttpCode(HttpStatus.OK)
   async updateBranding(
     @CurrentUser() user: SessionUser,
@@ -282,9 +247,6 @@ export class PlatformSettingsController {
 
   @Post('branding/upload')
   @RequireCapabilities(Capability.PlatformSettingsBrandingUpdate)
-  @AuditEvent('platform.settings.branding.upload', {
-    resourceType: 'platform-settings',
-  })
   @HttpCode(HttpStatus.OK)
   async uploadBrandingAsset(
     @CurrentUser() user: SessionUser,
@@ -326,7 +288,6 @@ export class PlatformSettingsController {
 
   @Post('flush-cache')
   @RequireCapabilities(Capability.PlatformSettingsCacheFlush)
-  @AuditEvent('platform.cache.clear', { resourceType: 'cache' })
   @HttpCode(HttpStatus.OK)
   async flushCache() {
     await this.platformSettingsService.flushCache();
@@ -344,10 +305,6 @@ export class PlatformSettingsController {
 
   @Put('templates/:templateKey')
   @RequireCapabilities(Capability.PlatformTemplatesGlobalUpdate)
-  @AuditEvent('platform.template.settings.update', {
-    resourceType: 'template',
-    resourceIdParam: 'templateKey',
-  })
   async updateTemplateSettings(
     @Req() request: FastifyRequest<{ Params: { templateKey: string } }>,
     @Body() body: UpdateTemplateSettingsDto,

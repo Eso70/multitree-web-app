@@ -109,8 +109,7 @@ invalid nested URLs and deletion IDs, and valid payload preservation.
 
 Response-boundary tests exercise the real Nest/Fastify serialization path.
 They cover canonical and legacy-compatible internal successes, validation
-details, generic unexpected failures, and unchanged success plus versioned
-error metadata for `/api/v1`.
+details, and generic unexpected failures.
 
 Frontend request-boundary tests cover shared credentials/cache defaults, JSON
 serialization, M2 envelope unwrapping, normalized error metadata, and abort
@@ -121,8 +120,7 @@ Shared-dialog tests cover focus entry, forward and reverse focus containment,
 and restoration to the element that opened the dialog.
 
 Administration-query tests verify pagination transformation and maximum
-limits, secret-free business list projections, fixed-count API dashboard
-queries without per-business entitlement lookups, and bounded billing joins.
+limits, secret-free business list projections, and bounded billing joins.
 
 H6 characterization coverage protects extracted hotspot seams: public-page
 projections retain every required alias, while the business analytics hook
@@ -138,8 +136,8 @@ Authorization tests verify that Linktree creation uses the public-page quota
 and that the quota query reads the tenant-owned Linktree table.
 
 Module-boundary tests keep the global-module allowlist limited to PostgreSQL
-and Redis and assert the explicit auth, billing, webhook, and observability
-imports of their consuming domains.
+and Redis and assert the explicit auth, billing, and observability imports of
+their consuming domains.
 
 Public-read tests protect the subdomain-scoped Linktree lookup and assert that
 the removed unscoped legacy method is not exposed again.
@@ -149,8 +147,7 @@ allow, records a winning rule, rejects a winning deny, accepts a more-specific
 allow, and never sends malformed addresses to PostgreSQL `inet` casts. CSP
 tests require a per-request nonce plus `'strict-dynamic'`, reject
 `'unsafe-inline'` from `script-src`, and keep `'unsafe-eval'` development-only.
-Retention tests assert that the policy and eligible counts no longer contain
-an audit-log bucket.
+Retention tests cover the communication-history policy and eligible counts.
 
 ## Critical architecture E2E matrix
 
@@ -163,9 +160,6 @@ services after applying the real migration command. The compact matrix covers:
 - cookie-origin rejection, per-request subdomain binding, and cross-tenant
   resource denial;
 - tenant-owned Linktree creation;
-- platform API-client management, developer API scope denial, and idempotent
-  write replay;
-- durable webhook delivery claiming with `SKIP LOCKED` semantics;
 - a supported pre-baseline schema fixture being verified and baselined without
   replaying schema SQL;
 - a reset fixture proving the whole database is dropped and recreated solely

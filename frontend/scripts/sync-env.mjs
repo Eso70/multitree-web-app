@@ -42,8 +42,8 @@ const FRONTEND_KEYS = [
   "NEXT_PUBLIC_APP_URL",
   // Server-only: the concealed platform-console route segment.
   "PLATFORM_ADMIN_PATH",
-  // Server-only: authenticates frontend request telemetry to the backend.
-  "REQUEST_TRACKING_SECRET",
+  // Server-only: authenticates trusted frontend proxy metadata to the backend.
+  "INTERNAL_PROXY_SECRET",
   // Server-only: upload passthrough route.
   "UPLOAD_DIR",
   "MAX_FILE_SIZE_MB",

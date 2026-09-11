@@ -73,12 +73,7 @@ export class AccessRulesService {
 
   async create(dto: CreateAccessRuleDto, createdBy?: string) {
     if (
-      [
-        'business',
-        'business_admin',
-        'public_linktree',
-        'business_api',
-      ].includes(dto.scope) &&
+      ['business', 'business_admin', 'public_linktree'].includes(dto.scope) &&
       !dto.businessId
     )
       throw new BadRequestException('A business is required for this scope');
@@ -114,12 +109,7 @@ export class AccessRulesService {
 
   async update(id: string, dto: CreateAccessRuleDto) {
     if (
-      [
-        'business',
-        'business_admin',
-        'public_linktree',
-        'business_api',
-      ].includes(dto.scope) &&
+      ['business', 'business_admin', 'public_linktree'].includes(dto.scope) &&
       !dto.businessId
     )
       throw new BadRequestException('A business is required for this scope');

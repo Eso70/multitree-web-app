@@ -38,7 +38,7 @@ function rows(
         id: 'uuid-personal',
         category_key: 'personal',
         label: 'Personal',
-        color: 'lime',
+        color: 'cyan',
       },
       {
         id: 'uuid-business',
@@ -199,7 +199,7 @@ describe('mergeConfig', () => {
         {
           id: 'personal',
           label: 'Renamed',
-          color: 'lime',
+          color: 'cyan',
           tiers: [{ id: 'p1', price: 99, views: '1K' }],
         },
       ],

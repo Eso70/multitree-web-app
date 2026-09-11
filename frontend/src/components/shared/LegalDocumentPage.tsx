@@ -1,7 +1,6 @@
 import { PublicSiteNavbar } from "@/components/public/PublicSiteNavbar";
 import { CustomScrollbar } from "@/components/home/CustomScrollbar";
 import { HomeFooter } from "@/components/home/HomeFooter";
-import { MARKETING_NAVIGATION } from "@/features/public-site/marketing-content";
 
 type Section = { title: string; paragraphs: string[] };
 
@@ -44,9 +43,7 @@ export function LegalDocumentPage({
           These documents have no such sections, so they resolve against `/`. */}
       <PublicSiteNavbar
         appearance="business"
-        navigationItems={MARKETING_NAVIGATION}
-        action={{ label: "هەژمار دروست بکە", href: "/signup" }}
-        secondaryAction={{ label: "چوونەژوورەوە", href: "/login" }}
+        navigationItems={[]}
         emphasizeFirstNavItem={false}
       />
       <main className="mx-auto w-full max-w-3xl flex-1 px-5 pb-24 pt-28 sm:px-6 sm:pt-32">

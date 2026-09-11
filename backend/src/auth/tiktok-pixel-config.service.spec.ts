@@ -24,7 +24,7 @@ describe('TikTokPixelConfigService', () => {
     ).toThrow('TikTok Pixel IDs must be unique');
   });
 
-  it('supports a stricter one-group policy for Creator workspaces', () => {
+  it('supports callers that enforce a stricter one-group policy', () => {
     expect(() =>
       service.normalize(
         [{ pixel_id: 'PIXEL_001' }, { pixel_id: 'PIXEL_002' }],

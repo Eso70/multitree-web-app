@@ -130,7 +130,7 @@ const PACKAGE_CATEGORY_ICONS: Record<string, LucideIcon> = {
 
 /** Explicit per-category color, chosen in the create/edit modal — stable across reordering and deletion, unlike an index-derived color would be. */
 const PACKAGE_CATEGORY_COLOR_THEME = {
-  lime: SPONSOR_CATEGORY_THEME.personal,
+  cyan: SPONSOR_CATEGORY_THEME.personal,
   violet: SPONSOR_CATEGORY_THEME.business,
   amber: {
     ring: "border-amber-500/30 dark:border-amber-400/40",
@@ -140,15 +140,6 @@ const PACKAGE_CATEGORY_COLOR_THEME = {
     solid: "border-amber-500 bg-amber-500 text-white",
     radioBorder: "border-amber-600 dark:border-amber-400",
     dot: "bg-amber-600 dark:bg-amber-400",
-  },
-  cyan: {
-    ring: "border-cyan-500/30 dark:border-cyan-400/40",
-    soft: "bg-cyan-500/10 dark:bg-cyan-400/10",
-    text: "text-cyan-700 dark:text-cyan-300",
-    rowBorder: "border-cyan-500/15 dark:border-cyan-400/15",
-    solid: "border-cyan-500 bg-cyan-500 text-white",
-    radioBorder: "border-cyan-600 dark:border-cyan-400",
-    dot: "bg-cyan-600 dark:bg-cyan-400",
   },
   rose: {
     ring: "border-rose-500/30 dark:border-rose-400/40",
@@ -218,7 +209,7 @@ function getPackageCategoryTheme(
   if (color && color in PACKAGE_CATEGORY_COLOR_THEME) {
     return PACKAGE_CATEGORY_COLOR_THEME[color as PackageCategoryColorId];
   }
-  return PACKAGE_CATEGORY_COLOR_THEME.lime;
+  return PACKAGE_CATEGORY_COLOR_THEME.cyan;
 }
 
 /** Sets the CSS variable `CUSTOM_PACKAGE_CATEGORY_THEME` reads from; undefined for preset colors, which need no variable. */
@@ -822,9 +813,8 @@ function TestimonialModal({
 type PackageCategoryModalState =
   { mode: "create" } | { mode: "edit"; category: AdvertisingPackageCategory };
 
-/** Legacy preset color IDs resolve to a hex so the shared linktree-style picker can highlight them. */
+/** Preset color IDs resolve to hex so the shared picker can highlight them. */
 const PACKAGE_PRESET_COLOR_HEX: Record<string, string> = {
-  lime: "#65a30d",
   violet: "#7c3aed",
   amber: "#d97706",
   cyan: "#06b6d4",
@@ -834,7 +824,7 @@ const PACKAGE_PRESET_COLOR_HEX: Record<string, string> = {
   emerald: "#10b981",
 };
 
-const DEFAULT_PACKAGE_COLOR = "#22c55e";
+const DEFAULT_PACKAGE_COLOR = "#06b6d4";
 
 function PackageCategoryModal({
   state,

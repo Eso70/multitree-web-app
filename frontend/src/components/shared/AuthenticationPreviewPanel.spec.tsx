@@ -25,7 +25,7 @@ describe("AuthenticationPreviewPanel", () => {
   it("supports a role-specific title without forking the shared design", () => {
     render(
       <AuthenticationPreviewPanel
-        description="Creator description"
+        description="Account description"
         title="پانێڵی بەکارهێنەر"
       />,
     );

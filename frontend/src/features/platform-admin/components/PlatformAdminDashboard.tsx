@@ -9,9 +9,7 @@ import {
   Search,
   LayoutTemplate,
   Shield,
-  History,
   MessagesSquare,
-  Key,
   Settings,
   CreditCard,
   UserCog,
@@ -24,8 +22,6 @@ import { TemplatesPage } from "@/features/templates/components/TemplatesPage";
 import { SearchModal } from "@/components/shared/SearchModal";
 import { Tooltip } from "@/components/shared/Tooltip";
 import { BlocklistsPage } from "@/features/platform-admin/components/BlocklistsPage";
-import { ActivityLogPage } from "@/features/platform-admin/components/ActivityLogPage";
-import { APIManagementPage } from "@/features/platform-admin/components/APIManagementPage";
 import { PlatformSettingsPage } from "@/features/platform-admin/components/PlatformSettingsPage";
 import { BillingPage } from "@/features/platform-admin/components/BillingPage";
 import dynamic from "next/dynamic";
@@ -66,7 +62,6 @@ import { DashboardHeader } from "@/components/shared/DashboardHeader";
 import { DASHBOARD_PAGE_LABELS } from "@/components/shared/dashboard-page-labels";
 import { apiRequest } from "@/lib/api/request";
 import { PlatformLinktreesPage } from "@/features/platform-admin/components/PlatformLinktreesPage";
-import { CreatorUsersPage } from "@/features/platform-admin/components/CreatorUsersPage";
 import {
   getPlatformPage,
   type PlatformPage,
@@ -298,14 +293,6 @@ export function PlatformAdminDashboard() {
         onClick: () => router.push(consoleBasePath),
       },
       {
-        id: "users",
-        label: "بەکارهێنەرەکان",
-        icon: <UserCog className="h-4 w-4" />,
-        active: activePage === "users",
-        hidden: permissionsLoaded && !canPage("users"),
-        onClick: () => router.push(`${consoleBasePath}/users`),
-      },
-      {
         id: "linktrees",
         label: DASHBOARD_PAGE_LABELS.linktrees,
         icon: <Link2 className="h-4 w-4" />,
@@ -354,26 +341,11 @@ export function PlatformAdminDashboard() {
         onClick: () => router.push(`${consoleBasePath}/billing`),
       },
       {
-        id: "activity",
-        label: "تۆماری چالاکییەکان",
-        icon: <History className="h-4 w-4" />,
-        active: activePage === "activity",
-        hidden: permissionsLoaded && !canPage("activity"),
-        onClick: () => router.push(`${consoleBasePath}/activity`),
-      },
-      {
         id: "communication-center",
         label: "ناوەندی پەیوەندی",
         icon: <MessagesSquare className="h-4 w-4" />,
         active: activePage === "communication-center",
         onClick: () => router.push(`${consoleBasePath}/communication-center`),
-      },
-      {
-        id: "api",
-        label: "بەڕێوەبردنی API",
-        icon: <Key className="h-4 w-4" />,
-        active: activePage === "api",
-        onClick: () => router.push(`${consoleBasePath}/api`),
       },
       {
         id: "settings",
@@ -390,15 +362,12 @@ export function PlatformAdminDashboard() {
   const pageTitle: Record<PlatformPage, string> = {
     businesses: "بەڕێوەبردنی بزنسەکان",
     linktrees: DASHBOARD_PAGE_LABELS.linktrees,
-    users: "بەکارهێنەرەکان",
     templates: DASHBOARD_PAGE_LABELS.templates,
     campaigns: DASHBOARD_PAGE_LABELS.campaigns,
     blocklists: "ڕێساکانی دەستگەیشتن",
     "access-control": "کۆنترۆڵی دەستگەیشتن",
     billing: "پارەدان و بەشدارییەکان",
-    activity: "تۆماری چالاکییەکان",
     "communication-center": "ناوەندی پەیوەندی",
-    api: "بەڕێوەبردنی API",
     settings: DASHBOARD_PAGE_LABELS.settings,
   };
 
@@ -672,8 +641,6 @@ export function PlatformAdminDashboard() {
               />
             ) : activePage === "linktrees" ? (
               <PlatformLinktreesPage />
-            ) : activePage === "users" ? (
-              <CreatorUsersPage />
             ) : activePage === "templates" ? (
               <TemplatesPage />
             ) : activePage === "campaigns" ? (
@@ -684,12 +651,8 @@ export function PlatformAdminDashboard() {
               <BlocklistsPage />
             ) : activePage === "access-control" ? (
               <AccessControlPage />
-            ) : activePage === "activity" ? (
-              <ActivityLogPage />
             ) : activePage === "communication-center" ? (
               <CommunicationCenterPage />
-            ) : activePage === "api" ? (
-              <APIManagementPage />
             ) : (
               <PlatformSettingsPage />
             )}

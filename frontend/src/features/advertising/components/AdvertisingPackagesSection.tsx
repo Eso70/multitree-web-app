@@ -29,7 +29,7 @@ export function AdvertisingPackagesSection({ packageTiers }: AdvertisingPackages
       id="packages"
       decorations={
         <BusinessSectionDecorations
-          colors={["#a3e635", "#a78bfa"]}
+          colors={["#25F4EE", "#a78bfa"]}
           labels={["پاکێجی گونجاو", "نرخی ڕوون"]}
           variant={2}
         />

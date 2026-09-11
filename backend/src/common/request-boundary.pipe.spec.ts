@@ -14,23 +14,6 @@ describe('RequestBoundaryPipe', () => {
     ).toThrow(BadRequestException);
   });
 
-  it('accepts numeric audit IDs and rejects unsafe generic IDs', () => {
-    expect(
-      pipe.transform('123', {
-        type: 'param',
-        data: 'auditId',
-        metatype: String,
-      }),
-    ).toBe('123');
-    expect(() =>
-      pipe.transform('../bad', {
-        type: 'param',
-        data: 'auditId',
-        metatype: String,
-      }),
-    ).toThrow(BadRequestException);
-  });
-
   it('rejects non-UUID generic resource IDs', () => {
     expect(() =>
       pipe.transform('123', {

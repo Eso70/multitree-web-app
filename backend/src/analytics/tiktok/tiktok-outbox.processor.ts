@@ -170,7 +170,7 @@ export class TikTokOutboxProcessor implements OnModuleInit, OnModuleDestroy {
 
   private token(payload: Buffer): string {
     const decrypted = this.secrets.decryptJson(payload);
-    const token = decrypted.events_token ?? decrypted.legacyValue;
+    const token = decrypted.events_token;
     return typeof token === 'string' ? token.trim() : '';
   }
 
@@ -463,7 +463,7 @@ export class TikTokOutboxProcessor implements OnModuleInit, OnModuleDestroy {
     // and never allowed to throw. Inside the transaction a failed insert would
     // roll back the `failed_permanently` status with it, and the same event
     // would be retried forever — the notification about a stuck queue would be
-    // the thing keeping it stuck. Same reasoning as the security audit writer.
+    // the thing keeping it stuck.
     const permanentlyFailed =
       !result.success &&
       (!result.retryable ||

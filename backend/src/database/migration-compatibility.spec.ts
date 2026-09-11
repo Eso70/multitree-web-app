@@ -9,13 +9,10 @@ function clientWithSchema(
   columns: string[],
   indexes = [
     'idx_communication_conversations_sponsor_krd_key',
-    'uq_api_versions_current',
     'uq_platform_retention_running',
     'idx_uploaded_media_assets_created',
     'idx_public_page_tombstones_slug',
     'uq_businesses_one_platform_workspace',
-    'creator_trial_claims_google_subject_hmac_idx',
-    'creator_trial_claims_device_hmac_idx',
     'idx_linktrees_business_campaign_active',
     'idx_linktrees_business_default_campaign',
     'idx_linktrees_business_archived',
@@ -26,7 +23,6 @@ function clientWithSchema(
     advertising_entitlement: true,
     linktree_update_fields: true,
     platform_content_permissions: true,
-    creator_permissions: true,
     platform_workspace: true,
   },
 ) {
@@ -82,20 +78,6 @@ describe('migration compatibility checks', () => {
     ).rejects.toThrow(/missing indexes/);
   });
 
-  it('rejects a schema that still has a removed column', async () => {
-    await expect(
-      assertSupportedSchema(
-        clientWithSchema(
-          [...REQUIRED_TABLES],
-          [
-            ...requiredColumns,
-            'platform_data_retention_settings.audit_log_days',
-          ],
-        ),
-      ),
-    ).rejects.toThrow(/obsolete columns/);
-  });
-
   it('rejects a schema with an outdated required catalog', async () => {
     await expect(
       assertSupportedSchema(
@@ -105,7 +87,6 @@ describe('migration compatibility checks', () => {
           advertising_entitlement: true,
           linktree_update_fields: true,
           platform_content_permissions: true,
-          creator_permissions: true,
           platform_workspace: true,
         }),
       ),

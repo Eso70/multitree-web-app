@@ -120,7 +120,7 @@ describe("ErrorPage", () => {
       <ErrorPage
         {...ERROR_PAGE_COPY.forbidden}
         theme={businessErrorTheme({
-          websiteColor: parseWebsiteColor("#84cc16"),
+          websiteColor: parseWebsiteColor("#25f4ee"),
           favicon: null,
           logo: null,
           name: "Business",
@@ -188,7 +188,7 @@ describe("ErrorPage", () => {
     // exactly how the old root-domain branch drifted.
     const surfaces = [
       businessErrorTheme({
-        websiteColor: parseWebsiteColor("#84cc16"),
+        websiteColor: parseWebsiteColor("#25f4ee"),
         favicon: null,
         logo: null,
         name: "Business",
@@ -224,7 +224,9 @@ describe("ErrorPage", () => {
     expect(
       sponsorKrd.container.querySelector('img[src*="business-logo-placeholder"]'),
     ).toBeNull();
-    expect(screen.getByRole("link", { name: "هەژمار دروست بکە" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "هەژمار دروست بکە" }),
+    ).toBeNull();
     sponsorKrd.unmount();
 
     const platform = render(

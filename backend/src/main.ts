@@ -11,7 +11,6 @@ import fastifyMultipart, {
   type FastifyMultipartOptions,
 } from '@fastify/multipart';
 import type { FastifyPluginCallback, FastifyPluginOptions } from 'fastify';
-import { RequestTrackingService } from './request-tracking/request-tracking.service';
 import { RequestBoundaryPipe } from './common/request-boundary.pipe';
 import {
   isAuthenticatedMutation,
@@ -48,14 +47,12 @@ async function bootstrap() {
   );
 
   const configService = app.get(ConfigService);
-  const requestTrackingService = app.get(RequestTrackingService);
   const operationalMetrics = app.get(OperationalMetricsService);
   const accessRules = app.get(AccessRuleEnforcementService);
   const requestLogger = new Logger('HttpRequest');
   const fastify = app.getHttpAdapter().getInstance();
 
   fastify.addHook('onRequest', (request, reply, done) => {
-    requestTrackingService.markStarted(request);
     (
       request as typeof request & { operationalStartedAt: number }
     ).operationalStartedAt = Date.now();
@@ -70,23 +67,19 @@ async function bootstrap() {
     operationalMetrics.recordHttpRequest(reply.statusCode, durationMs);
     const context = request as typeof request & {
       user?: { id?: string; role?: string };
-      apiPrincipal?: { businessId?: string; clientId?: string };
     };
     requestLogger.log(
       JSON.stringify({
         event: 'http_request',
         requestId: String(request.id),
         tenantId:
-          context.apiPrincipal?.businessId ||
-          (context.user?.role === 'business' ? context.user.id : undefined),
-        apiClientId: context.apiPrincipal?.clientId,
+          context.user?.role === 'business' ? context.user.id : undefined,
         method: request.method,
         route: request.routeOptions?.url || request.url.split('?')[0],
         statusCode: reply.statusCode,
         durationMs,
       }),
     );
-    await requestTrackingService.recordBackendRequest(request, reply);
   });
 
   await app.register(cookiePlugin, {
@@ -100,7 +93,6 @@ async function bootstrap() {
       '/api/linktrees',
       '/api/links',
       '/api/analytics',
-      '/api/v1',
       '/api/public/business',
       '/api/public/linktrees',
       '/api/public/linktree/',

@@ -9,10 +9,10 @@
  * primitives an administrator must not reach through a borrowed session:
  *
  * 1. Reading a decrypted tenant secret back in plaintext. The administrator
- *    can already rotate TikTok credentials through the audited platform route;
+ *    can already rotate TikTok credentials through the guarded platform route;
  *    there is no support reason to exfiltrate the existing value.
  * 2. Revoking the real owner's sessions from inside the tenant. The platform
- *    console owns that action under its own capability and audit event, where
+ *    console owns that action under its own capability, where
  *    it is attributed to the administrator rather than to the business.
  *
  * Keeping both rules here means widening or relaxing the policy is a change to

@@ -7,7 +7,7 @@ import { AccessRuleEnforcementService } from './access-rule-enforcement.service'
 
 const INTERNAL_PROXY_KEY = 'test-internal-proxy-key-at-least-32-chars-long';
 const ORIGINAL_SESSION_SECRET = process.env.SESSION_SECRET;
-const ORIGINAL_REQUEST_TRACKING_SECRET = process.env.REQUEST_TRACKING_SECRET;
+const ORIGINAL_INTERNAL_PROXY_SECRET = process.env.INTERNAL_PROXY_SECRET;
 
 /**
  * Property 1: Subdomain Mismatch Rejection
@@ -22,12 +22,12 @@ describe('BusinessGuard - Property Tests', () => {
 
   beforeAll(() => {
     process.env.SESSION_SECRET = INTERNAL_PROXY_KEY;
-    delete process.env.REQUEST_TRACKING_SECRET;
+    delete process.env.INTERNAL_PROXY_SECRET;
   });
 
   afterAll(() => {
     process.env.SESSION_SECRET = ORIGINAL_SESSION_SECRET;
-    process.env.REQUEST_TRACKING_SECRET = ORIGINAL_REQUEST_TRACKING_SECRET;
+    process.env.INTERNAL_PROXY_SECRET = ORIGINAL_INTERNAL_PROXY_SECRET;
   });
 
   // Custom arbitrary for valid subdomain format: lowercase alphanumeric + hyphens, 1-100 chars

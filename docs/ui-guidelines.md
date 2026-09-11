@@ -106,10 +106,13 @@ The Sponsor.krd root marketing website and tenant business websites share the
 neutral `PublicMarketingSiteShell`. Surface-specific shells are thin adapters:
 they may supply branding, navigation, actions, footer content, and explicit
 capabilities, but must not duplicate navbar behavior, theme handling,
-backdrops, scrolling, or page chrome. Root marketing sections live in
-`features/public-site/components`-style feature files (currently directly
-under `features/public-site`) and remain individually reusable across the home
-and dedicated marketing routes.
+backdrops, scrolling, or page chrome. Root marketing presentation lives in
+feature files under `features/public-site`; shared pieces remain reusable across
+the remaining root marketing routes.
+
+The root homepage is intentionally minimal: the shared Sponsor.krd navbar, one
+viewport-height hero, and the shared Sponsor.krd footer. It has no announcement
+placements, product preview, supporting sections, or sibling marketing routes.
 
 Marketing previews must demonstrate the real product category without
 pretending that mock people, revenue, traffic, endorsements, or pricing are
@@ -119,7 +122,7 @@ platform content manager can replace the source without replacing the UI.
 
 Sponsor.krd marketing prose and primary calls to action remain Kurdish. English
 is reserved for established product terms, concise top-level navigation, and
-the intentionally LTR root footer. Root marketing primary CTAs use the fixed
+the intentionally LTR marketing footer. Marketing primary CTAs use the fixed
 Sponsor.krd cyan-to-red brand gradient rather than the configurable platform accent. Visible
 marketing sentences do not use terminal full stops.
 

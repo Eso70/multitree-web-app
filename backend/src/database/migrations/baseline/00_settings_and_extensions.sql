@@ -11,15 +11,13 @@
 --
 -- PostgreSQL database dump
 --
--- The single source of truth for the schema. Every incremental migration has
--- been folded back into the statements below, so this file alone builds a
--- complete database and there is nothing to apply after it.
+-- The numbered baseline is the single source of truth for a fresh schema.
 --
 -- This repository intentionally uses a single-baseline model. `db-migrate`
--- creates a fresh database from this file or verifies that an existing
--- database already matches it; it does not replay dated forward migrations.
+-- applies the complete baseline when needed, verifies existing databases, and
+-- then applies any dated forward migrations that have not been recorded yet.
 -- Use `db-reset` only for disposable databases because it drops and recreates
--- the entire configured database before applying this file.
+-- the entire configured database before applying the numbered baseline.
 --
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -61,5 +59,4 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 --
 
 COMMENT ON EXTENSION pgcrypto IS 'cryptographic functions';
-
 

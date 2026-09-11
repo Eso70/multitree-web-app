@@ -748,7 +748,7 @@ function PlansTable({
                     </p>
                   </div>
                   {plan.isDefault && (
-                    <span className="rounded-full bg-lime-50 px-2 py-1 text-[9px] font-bold text-lime-700 dark:bg-lime-500/10 dark:text-lime-300">
+                    <span className="rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
                       بنەڕەتی
                     </span>
                   )}
@@ -914,7 +914,7 @@ function PlanDetailModal({
       title={plan?.name || ""}
       subtitle="وردەکاری پلانی بەشداربوون"
       icon={CreditCard}
-      iconClassName="border-lime-200 bg-lime-50 text-lime-600 dark:border-lime-900/40 dark:bg-lime-950/20 dark:text-lime-300"
+      iconClassName="border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-900/40 dark:bg-cyan-950/20 dark:text-cyan-300"
       fields={
         plan
           ? [

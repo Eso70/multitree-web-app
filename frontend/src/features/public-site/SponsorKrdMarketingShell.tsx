@@ -8,7 +8,6 @@ import {
   SPONSOR_KRD_ACCENT_VALUE,
 } from "@/lib/sponsor-krd-theme";
 import { parseWebsiteColor } from "@/lib/utils/parse-website-color";
-import { MARKETING_NAVIGATION } from "./marketing-content";
 import { SponsorKrdMarketingFooter } from "./SponsorKrdMarketingFooter";
 
 export function SponsorKrdMarketingShell({
@@ -41,11 +40,8 @@ export function SponsorKrdMarketingShell({
       accentBackground={accent.css}
       brandName="Sponsor.krd"
       logo={SPONSOR_KRD_LOGO}
-      navigationItems={MARKETING_NAVIGATION}
-      primaryAction={{ label: "هەژمار دروست بکە", href: "/signup" }}
       primaryActionColor={accent.css || SPONSOR_KRD_ACCENT_GRADIENT}
       primaryActionInk="#111827"
-      secondaryAction={{ label: "چوونەژوورەوە", href: "/login" }}
       footer={<SponsorKrdMarketingFooter accentColor={accent.primary} />}
     >
       {children}

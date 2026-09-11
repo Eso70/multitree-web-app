@@ -201,14 +201,6 @@ ALTER TABLE ONLY public.links
 
 
 --
--- Name: http_request_events http_request_events_business_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.http_request_events
-    ADD CONSTRAINT http_request_events_business_id_fkey FOREIGN KEY (business_id) REFERENCES public.businesses(id) ON DELETE SET NULL;
-
-
---
 -- Name: links links_business_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -265,14 +257,6 @@ ALTER TABLE ONLY public.platform_permission_denies
 
 
 --
--- Name: security_audit_events security_audit_events_business_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.security_audit_events
-    ADD CONSTRAINT security_audit_events_business_id_fkey FOREIGN KEY (business_id) REFERENCES public.businesses(id) ON DELETE SET NULL;
-
-
---
 -- Name: platform_admin_sessions platform_admin_sessions_platform_admin_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -291,4 +275,3 @@ ALTER TABLE ONLY public.whatsapp_questions
 --
 -- PostgreSQL database dump complete
 --
-

@@ -78,20 +78,6 @@ export type {
   LinktreeEditorSubmitData,
 } from "@/features/link-editor/editor-types";
 
-export interface LinktreeEditorWorkflow {
-  /** Local demo mode never calls availability or upload endpoints. */
-  persistence: "api" | "browser-local";
-  allowedTemplateKeys?: readonly string[];
-  maxLinks?: number;
-  allowImageUploads?: boolean;
-  maxImageBytes?: number;
-  hideBusinessFields?: boolean;
-  hideFooterSection?: boolean;
-  hideWhatsappQuestions?: boolean;
-  title?: string;
-  submitLabel?: string;
-}
-
 export interface LinktreeEditorModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -118,7 +104,6 @@ export interface LinktreeEditorModalProps {
     checkSlug: string;
     checkName: string;
   };
-  workflow?: LinktreeEditorWorkflow;
 }
 
 const DEFAULT_API_ENDPOINTS = {
@@ -189,15 +174,10 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
   businessIdentity,
   isDefault = false,
   apiEndpoints = DEFAULT_API_ENDPOINTS,
-  workflow = { persistence: "api" },
 }: LinktreeEditorModalProps) {
-  const isBrowserLocal = workflow.persistence === "browser-local";
-  const maxLinks = workflow.maxLinks
-    ? Math.max(1, Math.floor(workflow.maxLinks))
-    : undefined;
-  const defaultTemplateKey =
-    workflow.allowedTemplateKeys?.[0] ??
-    resolveDefaultTemplateKey(businessDefaults?.default_template);
+  const defaultTemplateKey = resolveDefaultTemplateKey(
+    businessDefaults?.default_template,
+  );
   const { color: businessTheme } = useTheme();
   const [currentStep, setCurrentStep] = useState<"basic" | "select" | "links">(
     "basic",
@@ -372,15 +352,9 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       if (!value || !isTemplateKey(value)) {
         return "تکایە شێوازی پەڕە هەڵبژێرە";
       }
-      if (
-        workflow.allowedTemplateKeys &&
-        !workflow.allowedTemplateKeys.includes(value)
-      ) {
-        return "ئەم شێوازی پەڕەیە بۆ ئەم بانگهێشتنامەیە ڕێگەپێنەدراوە";
-      }
       return undefined;
     },
-    [workflow.allowedTemplateKeys],
+    [],
   );
 
   const validatePlatforms = useCallback(
@@ -398,10 +372,6 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       if (!selected || selected.length === 0) {
         return "لانیکەم یەک پلاتفۆڕمەکان هەڵبژێرە";
       }
-      if (maxLinks && selected.length > maxLinks) {
-        return `زۆرترین ژمارەی لینک بۆ ئەم بانگهێشتنامەیە ${maxLinks} ـە`;
-      }
-
       let hasError = false;
       const newLinkErrors: Record<string, string> = {};
 
@@ -440,7 +410,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
 
       return undefined;
     },
-    [maxLinks],
+    [],
   );
 
   const validateFooterPhone = useCallback(
@@ -600,7 +570,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       if (file) {
         const validationError = validateUploadFile(file, {
           allowedMimeTypes: ["image/png", "image/jpeg"],
-          maxBytes: workflow.maxImageBytes ?? 10 * 1024 * 1024,
+          maxBytes: 10 * 1024 * 1024,
         });
         if (validationError) {
           setUploadError(validationError);
@@ -623,7 +593,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
         reader.readAsDataURL(file);
       }
     },
-    [workflow.maxImageBytes],
+    [],
   );
 
   const handleBackgroundImageChange = useCallback(
@@ -637,7 +607,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
 
       const validationError = validateUploadFile(file, {
         allowedMimeTypes: ["image/png", "image/jpeg"],
-        maxBytes: workflow.maxImageBytes ?? 10 * 1024 * 1024,
+        maxBytes: 10 * 1024 * 1024,
       });
       if (validationError) {
         setUploadError(validationError);
@@ -652,7 +622,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       };
       reader.readAsDataURL(file);
     },
-    [workflow.maxImageBytes],
+    [],
   );
 
   const handleRemoveBackgroundImage = useCallback(() => {
@@ -675,15 +645,6 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     file: File,
     assetType: "profile-image" | "background-image",
   ): Promise<string | null> => {
-    if (isBrowserLocal) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () =>
-          resolve(typeof reader.result === "string" ? reader.result : null);
-        reader.onerror = () => reject(new Error("Unable to read local image"));
-        reader.readAsDataURL(file);
-      });
-    }
     return enqueueImageUpload(async () => {
       setUploadError(null);
       try {
@@ -727,9 +688,9 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       setLinkErrors({});
       setBackgroundImage(null);
       setBackgroundImagePreview(null);
-      const defaultTemplate =
-        workflow.allowedTemplateKeys?.[0] ??
-        resolveDefaultTemplateKey(businessDefaults?.default_template);
+      const defaultTemplate = resolveDefaultTemplateKey(
+        businessDefaults?.default_template,
+      );
       setBackgroundColor(
         resolveDefaultBackgroundColor(
           businessDefaults?.default_background_color,
@@ -743,7 +704,6 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     businessDefaults?.default_background_color,
     businessDefaults?.default_template,
     resetSubmission,
-    workflow.allowedTemplateKeys,
   ]);
 
   // Initialize form data when editing (optimized - only runs when editData changes)
@@ -1069,11 +1029,6 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
    * last and paint an error for a slug the field no longer holds.
    */
   useEffect(() => {
-    if (isBrowserLocal) {
-      setSlugApiError(null);
-      setCheckingSlug(false);
-      return;
-    }
     const s = slug.trim();
     if (!s) {
       setSlugApiError(null);
@@ -1111,7 +1066,6 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     isEditMode,
     editData?.linktree?.id,
     apiEndpoints.checkSlug,
-    isBrowserLocal,
   ]);
 
   /**
@@ -1121,11 +1075,6 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
    * server would have accepted.
    */
   useEffect(() => {
-    if (isBrowserLocal) {
-      setNameWarning(null);
-      setCheckingName(false);
-      return;
-    }
     const trimmed = name.trim();
     if (trimmed.length < 2) {
       setNameWarning(null);
@@ -1162,7 +1111,6 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
     isEditMode,
     editData?.linktree?.id,
     apiEndpoints.checkName,
-    isBrowserLocal,
   ]);
 
   // Merge API slug error into displayed errors
@@ -1185,17 +1133,6 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
   // derived from this list so the selection and links steps cannot drift.
   const togglePlatform = useCallback(
     (platformId: string) => {
-      const isSelected = socialLinks.some(
-        (link) => link.platform === platformId,
-      );
-      if (!isSelected && maxLinks && socialLinks.length >= maxLinks) {
-        setErrors((previous) => ({
-          ...previous,
-          platforms: `زۆرترین ژمارەی لینک بۆ ئەم بانگهێشتنامەیە ${maxLinks} ـە`,
-        }));
-        setTouched((previous) => ({ ...previous, platforms: true }));
-        return;
-      }
       startTransition(() => {
         setSocialLinks((prevLinks) => {
           const existingLinks = prevLinks.filter(
@@ -1231,21 +1168,13 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
         });
       });
     },
-    [generateLinkId, maxLinks, socialLinks],
+    [generateLinkId],
   );
 
   // Add another instance of a platform - memoized for performance
   const addPlatformInstance = useCallback(
     (platformId: string) => {
       if (platformId === "gps") {
-        return;
-      }
-      if (maxLinks && socialLinks.length >= maxLinks) {
-        setErrors((previous) => ({
-          ...previous,
-          links: `زۆرترین ژمارەی لینک بۆ ئەم بانگهێشتنامەیە ${maxLinks} ـە`,
-        }));
-        setTouched((previous) => ({ ...previous, links: true }));
         return;
       }
       const newLinkId = generateLinkId(platformId);
@@ -1265,7 +1194,7 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
         return nextLinks.map((link, index) => ({ ...link, order: index }));
       });
     },
-    [generateLinkId, maxLinks, socialLinks.length],
+    [generateLinkId],
   );
 
   // Remove a link instance - memoized for performance
@@ -2040,12 +1969,11 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
       isOpen={isOpen}
       onClose={onClose}
       title={
-        workflow.title ??
-        (isEditMode
+        isEditMode
           ? "دەستکاریکردنی پەڕە"
           : isDefault
             ? "دروستکردنی پەڕەی بنەڕەتی"
-            : "پەڕەی نوێ دروست بکە")
+            : "پەڕەی نوێ دروست بکە"
       }
       description={
         currentStep === "basic"
@@ -2081,12 +2009,11 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
           }
           disableWhenInvalid={false}
           submitLabel={
-            workflow.submitLabel ??
-            (isEditMode
+            isEditMode
               ? "پاشەکەوتکردن"
               : isDefault
                 ? "دروستکردنی پەڕەی بنەڕەتی"
-                : "دروستکردن")
+                : "دروستکردن"
           }
           saveCurrentLabel="ئێستا پاشەکەوت بکە"
           onSaveCurrent={
@@ -2195,14 +2122,6 @@ export const LinktreeEditorModal = memo(function LinktreeEditorModal({
             onWhatsappModalTitleChange={setWhatsappModalTitle}
             onWhatsappModalSubtitleChange={setWhatsappModalSubtitle}
             onWhatsappQuestionsChange={setWhatsappQuestions}
-            hideFooterSection={
-              workflow.hideFooterSection ?? workflow.hideBusinessFields
-            }
-            hideWhatsappQuestions={
-              workflow.hideWhatsappQuestions ?? workflow.hideBusinessFields
-            }
-            hideImageUploads={workflow.allowImageUploads === false}
-            allowedTemplateKeys={workflow.allowedTemplateKeys}
           />
         )}
 

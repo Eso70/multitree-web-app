@@ -20,7 +20,7 @@ describe('PlatformSettingsService', () => {
       logo: '/images/upload/sponsor-krd/logo.png',
       avatar: '/images/upload/sponsor-krd/avatar.png',
       favicon: '/images/upload/sponsor-krd/favicon.ico',
-      accent_color: '#84cc16',
+      accent_color: '#25f4ee',
       accent_ink_color: '#ffffff',
       app_url: 'https://sponsor-krd.example',
     };
@@ -42,7 +42,7 @@ describe('PlatformSettingsService', () => {
     );
   });
 
-  it('fills empty legacy database fields from the server environment', async () => {
+  it('fills empty database fields from the current server environment', async () => {
     const database = {
       query: jest.fn().mockResolvedValue({
         rows: [
@@ -62,12 +62,13 @@ describe('PlatformSettingsService', () => {
       }),
     } as unknown as DatabaseService;
     const values: Record<string, string> = {
-      SA_EMAIL: 'admin@example.com',
-      SA_PHONE: '7502485829',
-      SA_LOGO_WITH_BACKGROUND: '/images/Logo.jpg',
-      SA_LOGO_WITHOUT_BACKGROUND: '/images/DefaultAvatar.png',
-      SA_FAVICON: '/favicon.ico',
-      SA_WEBSITE_COLOR: '#123456',
+      PLATFORM_ADMIN_EMAIL: 'admin@example.com',
+      PLATFORM_ADMIN_PHONE: '7502485829',
+      PLATFORM_ADMIN_LOGO_WITH_BACKGROUND: '/images/Logo.jpg',
+      PLATFORM_ADMIN_LOGO_WITHOUT_BACKGROUND:
+        '/images/sponsor-krd-logo-mark.png',
+      PLATFORM_ADMIN_FAVICON: '/favicon.ico',
+      PLATFORM_ADMIN_WEBSITE_COLOR: '#123456',
       NEXT_PUBLIC_APP_URL: 'https://sponsor-krd.example',
     };
     const service = new PlatformSettingsService(database, redis, {
@@ -78,7 +79,7 @@ describe('PlatformSettingsService', () => {
       email: 'admin@example.com',
       phone: '7502485829',
       logo: '/images/Logo.jpg',
-      avatar: '/images/DefaultAvatar.png',
+      avatar: '/images/sponsor-krd-logo-mark.png',
       favicon: '/favicon.ico',
       accent_color: '#123456',
       app_url: 'https://sponsor-krd.example',
@@ -170,14 +171,10 @@ describe('PlatformSettingsService', () => {
     ]);
   });
 
-  it('loads active sessions and recent platform login activity', async () => {
+  it('loads active platform sessions', async () => {
     const sessions = [{ id: 'session-id', is_current: true }];
-    const recentActivity = [{ id: '1', outcome: 'success' }];
     const database = {
-      query: jest
-        .fn()
-        .mockResolvedValueOnce({ rows: sessions })
-        .mockResolvedValueOnce({ rows: recentActivity }),
+      query: jest.fn().mockResolvedValueOnce({ rows: sessions }),
     } as unknown as DatabaseService;
     const service = new PlatformSettingsService(database, redis);
 
@@ -185,7 +182,6 @@ describe('PlatformSettingsService', () => {
       service.getLoginSecurity('admin-id', 'current-token'),
     ).resolves.toEqual({
       sessions,
-      recent_activity: recentActivity,
     });
     expect(mockArg(database.query, 0, 1)).toEqual([
       'admin-id',

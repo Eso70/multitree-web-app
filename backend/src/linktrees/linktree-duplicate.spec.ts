@@ -13,7 +13,6 @@ describe('LinktreesService duplication algorithms', () => {
       {} as any,
       {} as any,
       {} as any,
-      {} as any,
     );
   });
 
@@ -107,9 +106,6 @@ describe('LinktreesService duplication algorithms', () => {
     let mockEntitlements: {
       getInteger: jest.Mock;
     };
-    let mockWebhooks: {
-      emitWithClient: jest.Mock;
-    };
     let mockStorage: {
       claimBusinessAssets: jest.Mock;
     };
@@ -125,9 +121,6 @@ describe('LinktreesService duplication algorithms', () => {
       mockEntitlements = {
         getInteger: jest.fn().mockResolvedValue(-1),
       };
-      mockWebhooks = {
-        emitWithClient: jest.fn().mockResolvedValue(undefined),
-      };
       mockStorage = {
         claimBusinessAssets: jest.fn().mockResolvedValue(undefined),
       };
@@ -140,7 +133,6 @@ describe('LinktreesService duplication algorithms', () => {
         mockRedis as never,
         mockEntitlements as never,
         {} as never,
-        mockWebhooks as never,
         mockStorage as never,
         {} as never,
         {} as never,

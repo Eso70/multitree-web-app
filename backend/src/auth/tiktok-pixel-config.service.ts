@@ -132,7 +132,7 @@ export class TikTokPixelConfigService {
       return { events_token: '', token_last_four: row.token_last_four };
     }
     const decrypted = this.secrets.decryptJson(row.encrypted_events_token);
-    const token = decrypted.events_token ?? decrypted.legacyValue;
+    const token = decrypted.events_token;
     if (typeof token !== 'string' || !token) {
       throw new BadRequestException('TikTok token cannot be decrypted');
     }
@@ -308,7 +308,7 @@ export class TikTokPixelConfigService {
     const decrypted = this.secrets.decryptJson(
       targetPixel.encrypted_events_token,
     );
-    const rawToken = decrypted.events_token ?? decrypted.legacyValue;
+    const rawToken = decrypted.events_token;
     const token = typeof rawToken === 'string' ? rawToken.trim() : '';
     if (!token) {
       return {

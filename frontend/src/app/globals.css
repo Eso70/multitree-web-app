@@ -1420,20 +1420,7 @@ img {
     background-color: var(--color-bg-primary) !important;
   }
 
-  /* Override root layout background for login and business pages */
-  body > div[data-theme-background] > div:has([href*="/login"]) {
-    background: #ffffff !important;
-    background-color: #ffffff !important;
-    background-image: none !important;
-  }
-
-  /* Ensure login page container has white background */
-  [href*="/login"] ~ * {
-    background: #ffffff !important;
-  }
-
-  /* Public marketing navigation owns its CTA color. Keep it independent from
-     the legacy login-surface sibling override above. */
+  /* Public marketing navigation owns its CTA color. */
   .public-navbar-primary-action {
     background: var(--public-navbar-action-color) !important;
     background-color: var(--public-navbar-action-color) !important;

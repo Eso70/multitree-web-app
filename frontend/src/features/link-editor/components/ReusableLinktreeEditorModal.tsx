@@ -2,5 +2,4 @@
 export { LinktreeEditorModal as ReusableLinktreeEditorModal } from "@/components/business/LinktreeEditorModal";
 export type {
   LinktreeEditorModalProps,
-  LinktreeEditorWorkflow,
 } from "@/components/business/LinktreeEditorModal";

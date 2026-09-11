@@ -54,32 +54,4 @@ export async function ensureAdvertisingPages(
       );
     });
   }
-
-  await archiveLegacyAdvertisingActions(client);
-}
-
-/**
- * Retires `public_page_actions` rows an earlier build wrote on publish.
- *
- * Publishing used to seed four tracked actions per advertising page. Nothing on
- * either public advertising component ever reported against them and
- * `TIKTOK_FORWARDED_PAGE_TYPES` excludes the page type, so they were permanent
- * zeros padding every analytics breakdown — the failure docs/tracking.md warns
- * about. The writer is gone; rows already in a database that published under
- * the old code need retiring, and a fresh database simply has none to retire.
- *
- * Archived rather than deleted, matching how every other retired action row is
- * handled: anything already recorded against them keeps its referent.
- */
-async function archiveLegacyAdvertisingActions(
-  client: PoolClient,
-): Promise<void> {
-  await client.query(
-    `UPDATE public.public_page_actions action
-        SET status = 'archived', updated_at = now()
-       FROM public.public_pages page
-      WHERE page.id = action.public_page_id
-        AND page.page_type = 'advertising'
-        AND action.status <> 'archived'`,
-  );
 }

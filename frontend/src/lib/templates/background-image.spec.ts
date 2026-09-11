@@ -15,7 +15,7 @@ describe("isBackgroundImageUrl", () => {
   it.each([
     ["an absolute third-party URL", "https://evil.example/x.png"],
     ["a protocol-relative URL", "//evil.example/x.png"],
-    ["another same-origin path", "/api/v1/linktrees"],
+    ["another same-origin path", "/api/linktrees"],
     ["a CSS url() breakout", '/images/upload/x.png") , url("https://evil.example/x.png'],
     ["an embedded quote", '/images/upload/x".png'],
     ["a value with whitespace", "/images/upload/a b.png"],

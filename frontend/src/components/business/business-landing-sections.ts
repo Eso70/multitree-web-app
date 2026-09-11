@@ -28,6 +28,6 @@ export const BUSINESS_LANDING_DECORATION_COLORS = {
   workspace: ["#34d399", "#fbbf24"],
   trusted: ["#a78bfa", "#fb7185"],
   about: ["#22d3ee", "#f97316"],
-  digitalPresence: ["#84cc16", "#818cf8"],
+  digitalPresence: ["#25f4ee", "#818cf8"],
   mobileShowcase: ["#14b8a6", "#e879f9"],
 } as const;

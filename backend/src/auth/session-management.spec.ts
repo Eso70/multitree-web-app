@@ -13,35 +13,16 @@ describe('SessionService business session management', () => {
 
   beforeEach(() => jest.clearAllMocks());
 
-  it('returns active sessions and recent login activity', async () => {
+  it('returns active sessions', async () => {
     const sessions = [{ id: 'session-id', is_current: true }];
-    const activity = [{ id: '1', outcome: 'success' }];
     const database = {
-      query: jest
-        .fn()
-        .mockResolvedValueOnce({ rows: sessions })
-        .mockResolvedValueOnce({ rows: activity }),
+      query: jest.fn().mockResolvedValueOnce({ rows: sessions }),
     } as unknown as DatabaseService;
     const service = new SessionService(database, redis);
 
     await expect(
       service.getBusinessLoginSecurity('business-id', 'current-token'),
-    ).resolves.toEqual({ sessions, recent_activity: activity });
-  });
-
-  it('scopes Creator login activity to Creator audit events', async () => {
-    const database = {
-      query: jest.fn().mockResolvedValue({ rows: [] }),
-    } as unknown as DatabaseService;
-    const service = new SessionService(database, redis);
-
-    await service.getCreatorLoginSecurity('creator-business-id', 'token');
-
-    expect(mockArg(database.query, 1, 1)).toEqual([
-      'creator-business-id',
-      'creator',
-      ['creator.login', 'creator.account.create'],
-    ]);
+    ).resolves.toEqual({ sessions });
   });
 
   it('revokes a selected session from PostgreSQL and Redis', async () => {

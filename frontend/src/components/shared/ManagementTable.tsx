@@ -60,7 +60,7 @@ export type ManagementTablePagination =
   | { mode: "client"; pageSize?: number }
   /**
    * The server pages, and the screen owns the page number. Used by the
-   * platform admin's business and creator lists.
+   * platform administrator's paginated management lists.
    */
   | {
       mode: "server";

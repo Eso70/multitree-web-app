@@ -16,20 +16,6 @@ export const REQUIRED_TABLES = [
   'communication_notifications',
   'communication_conversations',
   'communication_messages',
-  'api_clients',
-  'api_rate_limit_policies',
-  'api_usage_daily',
-  'api_idempotency_keys',
-  'api_external_resource_mappings',
-  'api_assets',
-  'api_webhook_endpoints',
-  'api_webhook_subscriptions',
-  'api_webhook_events',
-  'api_webhook_deliveries',
-  'api_webhook_delivery_attempts',
-  'api_versions',
-  'api_catalog_groups',
-  'api_linktree_schedules',
   'platform_data_retention_settings',
   'platform_data_retention_runs',
   'platform_media_settings',
@@ -44,9 +30,6 @@ export const REQUIRED_TABLES = [
   'advertising_payment_providers',
   'advertising_page_versions',
   'public_page_tombstones',
-  'creator_accounts',
-  'creator_trial_claims',
-  'creator_registration_attempts',
   'root_public_slugs',
 ] as const;
 
@@ -57,37 +40,25 @@ export const REQUIRED_COLUMNS = [
   ['business_sessions', 'remembered'],
   ['platform_admin_sessions', 'remembered'],
   ['businesses', 'account_type'],
-  ['creator_trial_claims', 'google_subject_hmac'],
-  ['creator_trial_claims', 'device_hmac'],
   ['communication_announcements', 'encrypted_content'],
   ['communication_notifications', 'encrypted_content'],
   ['communication_conversations', 'encrypted_subject'],
   ['communication_conversations', 'sponsor_krd_key'],
   ['communication_messages', 'encrypted_body'],
-  ['api_versions', 'last_notified_at'],
-  ['api_versions', 'notification_count'],
   ['linktrees', 'subtitle_color'],
   ['linktrees', 'is_campaign_active'],
   ['linktrees', 'is_archived'],
   ['linktrees', 'archived_at'],
 ] as const;
 
-const OBSOLETE_COLUMNS = [
-  ['platform_data_retention_settings', 'audit_log_days'],
-  // Compatibility check for databases created before the SponsorKrd
-  // communication-key terminology was consolidated.
-  ['communication_conversations', 'system_key'],
-] as const;
+const OBSOLETE_COLUMNS: ReadonlyArray<readonly [string, string]> = [];
 
 const REQUIRED_INDEXES = [
   'idx_communication_conversations_sponsor_krd_key',
-  'uq_api_versions_current',
   'uq_platform_retention_running',
   'idx_uploaded_media_assets_created',
   'idx_public_page_tombstones_slug',
   'uq_businesses_one_platform_workspace',
-  'creator_trial_claims_google_subject_hmac_idx',
-  'creator_trial_claims_device_hmac_idx',
   'idx_linktrees_business_campaign_active',
   'idx_linktrees_business_default_campaign',
   'idx_linktrees_business_archived',
@@ -147,7 +118,6 @@ export async function assertSupportedSchema(client: PoolClient): Promise<void> {
     advertising_entitlement: boolean;
     linktree_update_fields: boolean;
     platform_content_permissions: boolean;
-    creator_permissions: boolean;
     platform_workspace: boolean;
   }>(`
     SELECT
@@ -195,13 +165,6 @@ export async function assertSupportedSchema(client: PoolClient): Promise<void> {
            'platform:linktrees:upload'
          ) AND status = 'active'
       ) AS platform_content_permissions,
-      (
-        SELECT count(*) = 2
-          FROM auth_permissions
-         WHERE permission_key IN (
-           'platform:creators:read', 'platform:creators:manage'
-         ) AND status = 'active'
-      ) AS creator_permissions,
       EXISTS (
         SELECT 1 FROM businesses
          WHERE id = '00000000-0000-4000-8000-000000000001'
@@ -224,9 +187,6 @@ export async function assertSupportedSchema(client: PoolClient): Promise<void> {
       : null,
     !catalogState?.platform_content_permissions
       ? 'platform content permission set'
-      : null,
-    !catalogState?.creator_permissions
-      ? 'platform Creator permission set'
       : null,
     !catalogState?.platform_workspace ? 'platform content workspace' : null,
   ].filter((entry): entry is string => entry !== null);

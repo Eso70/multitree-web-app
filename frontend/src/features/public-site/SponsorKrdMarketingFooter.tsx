@@ -21,31 +21,7 @@ export function SponsorKrdMarketingFooter({
         { label: "Terms", href: "/legal/terms" },
         { label: "Privacy", href: "/legal/privacy" },
       ]}
-      columns={[
-        {
-          title: "Product",
-          links: [
-            { label: "Linktree", href: "/link-in-bio" },
-            { label: "Features", href: "/features" },
-            { label: "Templates", href: "/templates" },
-          ],
-        },
-        {
-          title: "Company",
-          links: [
-            { label: "Pricing", href: "/pricing" },
-            { label: "About", href: "/about" },
-            { label: "Contact", href: "/contact" },
-          ],
-        },
-        {
-          title: "Account",
-          links: [
-            { label: "Sign up free", href: "/signup" },
-            { label: "Sign in", href: "/login" },
-          ],
-        },
-      ]}
+      columns={[]}
     />
   );
 }

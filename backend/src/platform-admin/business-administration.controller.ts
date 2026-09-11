@@ -13,7 +13,6 @@ import {
   Req,
   Res,
   BadRequestException,
-  UseInterceptors,
 } from '@nestjs/common';
 import {
   BusinessAdministrationService,
@@ -28,8 +27,6 @@ import { AuthorizationGuard } from '../auth/authorization.guard';
 import { Capability } from '../auth/capabilities';
 import { RequireCapabilities } from '../auth/require-capabilities.decorator';
 import { validateImageUpload } from '../storage/image-upload';
-import { AuditInterceptor } from '../auth/audit.interceptor';
-import { AuditEvent } from '../auth/audit-event.decorator';
 import { SessionService, type SessionUser } from '../auth/session.service';
 import { BusinessListQueryDto } from '../common/dto/admin-list-query.dto';
 import { ImpersonationService } from '../auth/impersonation.service';
@@ -38,7 +35,6 @@ import { requestIp } from '../common/request-context';
 
 @Controller('api/platform/businesses')
 @UseGuards(PlatformAdminGuard, AuthorizationGuard)
-@UseInterceptors(AuditInterceptor)
 export class BusinessAdministrationController {
   constructor(
     private readonly businessAdministrationService: BusinessAdministrationService,
@@ -104,7 +100,6 @@ export class BusinessAdministrationController {
 
   @Post('upload')
   @RequireCapabilities(Capability.PlatformBusinessesAssetsUpload)
-  @AuditEvent('platform.asset.upload', { resourceType: 'asset' })
   @HttpCode(HttpStatus.OK)
   async upload(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
     const data = await req.file();
@@ -157,10 +152,6 @@ export class BusinessAdministrationController {
 
   @Delete(':id/sessions')
   @RequireCapabilities(Capability.PlatformBusinessesSessionsRevoke)
-  @AuditEvent('platform.business.sessions.revoke-all', {
-    resourceType: 'business',
-    resourceIdParam: 'id',
-  })
   async revokeBusinessSessions(@Param('id') id: string) {
     const revoked = await this.sessionService.revokeBusinessSessions(id);
     return { success: true, data: { revoked } };
@@ -168,10 +159,6 @@ export class BusinessAdministrationController {
 
   @Delete(':id/sessions/:sessionId')
   @RequireCapabilities(Capability.PlatformBusinessesSessionsRevoke)
-  @AuditEvent('platform.business.session.revoke', {
-    resourceType: 'business',
-    resourceIdParam: 'id',
-  })
   async revokeBusinessSession(
     @Param('id') id: string,
     @Param('sessionId') sessionId: string,
@@ -187,10 +174,6 @@ export class BusinessAdministrationController {
    * endpoint, and the administrator's root-domain console session is left
    * intact so exiting returns to it.
    */
-  // No `@AuditEvent` here: `ImpersonationService` is the single owner of this
-  // action's audit trail. It records every outcome, including the rejections
-  // that never reach a handler result, with the target subdomain and support
-  // reason a generic route event cannot carry.
   @Post(':id/impersonation')
   @RequireCapabilities(Capability.PlatformBusinessesImpersonate)
   @HttpCode(HttpStatus.OK)
@@ -219,10 +202,6 @@ export class BusinessAdministrationController {
 
   @Patch(':id')
   @RequireCapabilities(Capability.PlatformBusinessesUpdate)
-  @AuditEvent('platform.business.update', {
-    resourceType: 'business',
-    resourceIdParam: 'id',
-  })
   async updateBusiness(
     @Param('id') id: string,
     @Body() updateDto: UpdateBusinessDto,
@@ -236,10 +215,6 @@ export class BusinessAdministrationController {
 
   @Delete(':id')
   @RequireCapabilities(Capability.PlatformBusinessesDelete)
-  @AuditEvent('platform.business.delete', {
-    resourceType: 'business',
-    resourceIdParam: 'id',
-  })
   async deleteBusiness(@Param('id') id: string) {
     await this.businessAdministrationService.deleteBusiness(id);
     return { success: true, message: 'Business deleted successfully' };
@@ -274,10 +249,6 @@ export class BusinessAdministrationController {
 
   @Post(':id/linktrees-import')
   @RequireCapabilities(Capability.PlatformBusinessesLinktreesImport)
-  @AuditEvent('platform.business.linktrees.import', {
-    resourceType: 'business',
-    resourceIdParam: 'id',
-  })
   @HttpCode(HttpStatus.OK)
   async importBusinessLinktrees(
     @Param('id') id: string,
@@ -302,10 +273,6 @@ export class BusinessAdministrationController {
 
   @Post(':id/tiktok')
   @RequireCapabilities(Capability.PlatformBusinessesTikTokUpdate)
-  @AuditEvent('platform.business.tiktok.update', {
-    resourceType: 'business',
-    resourceIdParam: 'id',
-  })
   @HttpCode(HttpStatus.OK)
   async updateTikTok(@Param('id') id: string, @Body() body: UpdateTikTokDto) {
     const business =

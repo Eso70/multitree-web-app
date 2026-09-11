@@ -17,7 +17,6 @@ export const configValidationSchema = Joi.object({
   REDIS_HOST: Joi.string().required(),
   REDIS_PORT: Joi.number().default(6379),
   SESSION_SECRET: Joi.string().min(32).required(),
-  API_KEY_PEPPER: Joi.string().min(32).optional(),
   APP_ENCRYPTION_KEY: Joi.string().min(32).optional(),
   CORS_ORIGIN: Joi.string().default('http://localhost:3011'),
   UPLOAD_DIR: Joi.string().optional(),
@@ -25,10 +24,6 @@ export const configValidationSchema = Joi.object({
   PLATFORM_ADMIN_USERNAME: Joi.string().allow('').optional(),
   PLATFORM_ADMIN_NAME: Joi.string().allow('').optional(),
   PLATFORM_ADMIN_EMAIL: Joi.string().email().lowercase().allow('').optional(),
-  // Deprecated aliases kept so an already-deployed .env survives the rename.
-  // See src/common/platform-admin-env.ts for the resolution order.
-  SA_USERNAME: Joi.string().allow('').optional(),
-  SA_NAME: Joi.string().allow('').optional(),
   ROOT_DOMAIN: Joi.string().default('localhost'),
   APP_BASE_URL: Joi.string()
     .uri({ scheme: ['http', 'https'] })
@@ -50,34 +45,7 @@ export const configValidationSchema = Joi.object({
   SMTP_USER: Joi.string().email().allow('').optional(),
   SMTP_APP_PASSWORD: Joi.string().allow('').optional(),
   EMAIL_FROM_NAME: Joi.string().max(100).default('Sponsor.krd'),
-  CREATOR_TRIAL_DAYS: Joi.number().integer().valid(7, 30).default(7),
-  REQUEST_TRACKING_SECRET: Joi.string().min(32).optional(),
+  INTERNAL_PROXY_SECRET: Joi.string().min(32).optional(),
   OPERATIONS_SECRET: Joi.string().min(32).optional(),
   ANALYTICS_HASH_SECRET: Joi.string().min(32).optional(),
-  REQUEST_LOG_RETENTION_DAYS: Joi.number()
-    .integer()
-    .min(1)
-    .max(365)
-    .default(30),
-  REQUEST_LOG_BATCH_SIZE: Joi.number().integer().min(10).max(2000).default(250),
-  REQUEST_LOG_FLUSH_INTERVAL_MS: Joi.number()
-    .integer()
-    .min(50)
-    .max(5000)
-    .default(250),
-  REQUEST_LOG_MAX_QUEUE_SIZE: Joi.number()
-    .integer()
-    .min(1000)
-    .max(1000000)
-    .default(50000),
-  REQUEST_LOG_CLEANUP_BATCH_SIZE: Joi.number()
-    .integer()
-    .min(1000)
-    .max(50000)
-    .default(10000),
-  REQUEST_LOG_CLEANUP_MAX_BATCHES: Joi.number()
-    .integer()
-    .min(1)
-    .max(1000)
-    .default(100),
 });

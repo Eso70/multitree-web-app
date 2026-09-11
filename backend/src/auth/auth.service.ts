@@ -907,7 +907,7 @@ export class AuthService {
     const decrypted = this.requireSecretCrypto().decryptJson(
       result.rows[0].encrypted_events_token,
     );
-    const token = decrypted.events_token ?? decrypted.legacyValue;
+    const token = decrypted.events_token;
     if (typeof token !== 'string' || !token) {
       throw new BadRequestException('TikTok token cannot be decrypted');
     }

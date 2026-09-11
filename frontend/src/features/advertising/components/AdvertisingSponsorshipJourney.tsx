@@ -223,7 +223,7 @@ export function AdvertisingSponsorshipJourney({
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-black",
                   sponsorType === "personal"
-                    ? "bg-lime-500/12 text-lime-700 dark:text-lime-300"
+                    ? "bg-cyan-500/12 text-cyan-700 dark:text-cyan-300"
                     : "bg-violet-500/12 text-violet-700 dark:text-violet-300",
                 )}
               >

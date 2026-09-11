@@ -71,15 +71,6 @@ type PlatformLinktreeContext = {
   publicPathPrefix: string;
 };
 
-export interface RootLinktreesPageProps {
-  apiBase?: string;
-  analyticsDataSource?: "platform-linktree" | "creator-linktree";
-  ownerLabel?: string;
-  maxPages?: number;
-  canDelete?: boolean;
-  onCreated?: () => void;
-}
-
 const EMPTY_TOTALS: AnalyticsTotals = {
   total_views: 0,
   unique_views: 0,
@@ -90,18 +81,7 @@ const EMPTY_TOTALS: AnalyticsTotals = {
 };
 
 export function PlatformLinktreesPage() {
-  return <RootLinktreesPage />;
-}
-
-export function RootLinktreesPage({
-  apiBase = "/api/platform/linktrees",
-  analyticsDataSource = "platform-linktree",
-  ownerLabel = "پلاتفۆرم",
-  maxPages,
-  canDelete = true,
-  onCreated,
-}: RootLinktreesPageProps) {
-  const isPlatform = analyticsDataSource === "platform-linktree";
+  const apiBase = "/api/platform/linktrees";
   const [context, setContext] = useState<PlatformLinktreeContext | null>(null);
   const [items, setItems] = useState<LinktreeListItem[]>([]);
   const [totals, setTotals] = useState<AnalyticsTotals>(EMPTY_TOTALS);
@@ -136,15 +116,11 @@ export function RootLinktreesPage({
       else setLoading(true);
       try {
         const contextUrl =
-          apiBase === "/api/creator/linktrees"
-            ? "/api/creator/context"
-            : `${apiBase}/context`;
+          `${apiBase}/context`;
         const [nextContext, nextItems, nextTotals] = await Promise.all([
           apiRequest<PlatformLinktreeContext>(contextUrl),
           apiRequest<LinktreeListItem[]>(apiBase),
-          isPlatform
-            ? apiRequest<AnalyticsTotals>(`${apiBase}/analytics/summary`)
-            : Promise.resolve(null),
+          apiRequest<AnalyticsTotals>(`${apiBase}/analytics/summary`),
         ]);
         setContext(nextContext);
         setItems(nextItems);
@@ -176,7 +152,7 @@ export function RootLinktreesPage({
         setRefreshing(false);
       }
     },
-    [apiBase, isPlatform],
+    [apiBase],
   );
 
   useEffect(() => {
@@ -212,7 +188,6 @@ export function RootLinktreesPage({
   }, [items, query]);
   const analyticsPage =
     items.find((item) => item.id === analyticsPageId) ?? null;
-  const pageLimitReached = maxPages !== undefined && items.length >= maxPages;
   const hasAnalyticsData =
     totals.total_views > 0 || totals.total_clicks > 0 || totals.conversions > 0;
 
@@ -249,7 +224,6 @@ export function RootLinktreesPage({
         toast.success(
           editId ? "پەڕەی لینکتری نوێ کرایەوە" : "پەڕەی لینکتری دروست کرا",
         );
-        if (!editId) onCreated?.();
         await load(true);
       } catch (error) {
         toast.error(
@@ -260,7 +234,7 @@ export function RootLinktreesPage({
         throw error;
       }
     },
-    [apiBase, load, onCreated],
+    [apiBase, load],
   );
 
   const updateBoolean = useCallback(
@@ -369,43 +343,28 @@ export function RootLinktreesPage({
         }
         onViewModeChange={setView}
         onCreate={() => {
-          if (!pageLimitReached) {
-            setEditData(null);
-            setEditorOpen(true);
-          }
+          setEditData(null);
+          setEditorOpen(true);
         }}
         onEdit={(id) => void openEdit(id)}
-        onDuplicate={isPlatform ? setDuplicateTarget : undefined}
-        onDelete={
-          canDelete
-            ? (id) => setDeleting(items.find((item) => item.id === id) ?? null)
-            : undefined
+        onDuplicate={setDuplicateTarget}
+        onDelete={(id) =>
+          setDeleting(items.find((item) => item.id === id) ?? null)
         }
         onViewAnalytics={(id) => setAnalyticsPageId(id)}
-        onToggleCampaign={
-          isPlatform
-            ? (id, value) =>
-                updateBoolean(
-                  id,
-                  "is_campaign_active",
-                  value,
-                  "campaign-status",
-                )
-            : undefined
+        onToggleCampaign={(id, value) =>
+          updateBoolean(id, "is_campaign_active", value, "campaign-status")
         }
-        onToggleArchive={
-          isPlatform
-            ? (id, value) => updateBoolean(id, "is_archived", value, "archive")
-            : undefined
+        onToggleArchive={(id, value) =>
+          updateBoolean(id, "is_archived", value, "archive")
         }
         onToggleStatus={handleToggleStatus}
-        description={`پەڕە گشتییەکانی ${ownerLabel} دروست و بەڕێوە ببە لە sponsor.krd/linktree/name.`}
-        createDisabled={pageLimitReached}
+        description="پەڕە گشتییەکانی پلاتفۆرم دروست و بەڕێوە ببە لە sponsor.krd/linktree/name."
         publicPathPrefix={context?.publicPathPrefix || "/linktree"}
         emptyTitle={
           query.trim()
             ? "هیچ ئەنجامێک بۆ گەڕانەکەت نەدۆزرایەوە"
-            : `هێشتا هیچ پەڕەیەکی لینکتریی ${ownerLabel} نییە`
+            : "هێشتا هیچ پەڕەیەکی لینکتریی پلاتفۆرم نییە"
         }
         emptyDescription={
           query.trim()
@@ -445,7 +404,7 @@ export function RootLinktreesPage({
           pageKind="linktree"
           canClearAnalytics
           summaryOnly={false}
-          dataSource={analyticsDataSource}
+          dataSource="platform-linktree"
           onAnalyticsCleared={load}
         />
       ) : null}
@@ -470,7 +429,7 @@ export function RootLinktreesPage({
       />
 
       <ConfirmDeleteModal
-        isOpen={canDelete && Boolean(deleting)}
+        isOpen={Boolean(deleting)}
         onClose={() => setDeleting(null)}
         isDeleting={isDeleting}
         title="سڕینەوەی پەڕەی لینکتری"

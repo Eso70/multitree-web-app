@@ -10,7 +10,6 @@ import {
   HttpCode,
   HttpStatus,
   HttpException,
-  UseInterceptors,
   Optional,
   BadRequestException,
 } from '@nestjs/common';
@@ -25,8 +24,6 @@ import { RequireCapabilities } from './require-capabilities.decorator';
 import { CurrentUser } from './current-user.decorator';
 import { Subdomain } from './subdomain.decorator';
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { AuditInterceptor } from './audit.interceptor';
-import { AuditEvent } from './audit-event.decorator';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { AuthorizationService } from './authorization.service';
 import type { PermissionKey } from './capabilities';
@@ -43,7 +40,6 @@ import { compactSettingsPayload } from './settings-payload';
 import { ImpersonationService } from './impersonation.service';
 
 @Controller('api/auth')
-@UseInterceptors(AuditInterceptor)
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -90,7 +86,6 @@ export class AuthController {
   @Post('logout')
   @UseGuards(BusinessGuard)
   @HttpCode(HttpStatus.OK)
-  @AuditEvent('business.logout', { resourceType: 'session' })
   async logout(
     @Req() req: FastifyRequest & { sessionToken?: string },
     @Res({ passthrough: true }) res: FastifyReply,
@@ -163,9 +158,8 @@ export class AuthController {
   /**
    * Ends an impersonated session from inside the tenant.
    *
-   * Separate from `logout` so the audit trail distinguishes an administrator
-   * releasing borrowed access from an owner signing themselves out, and so the
-   * caller receives the console URL to return to.
+   * Separate from `logout` so the caller receives the console URL to return to
+   * after releasing borrowed access.
    */
   @Post('impersonation/exit')
   @UseGuards(BusinessGuard)
@@ -204,7 +198,6 @@ export class AuthController {
 
   @Patch('onboarding')
   @UseGuards(BusinessGuard)
-  @AuditEvent('business.onboarding.update', { resourceType: 'business' })
   async updateOnboarding(
     @CurrentUser() user: SessionUser,
     @Body() body: UpdateBusinessOnboardingDto,
@@ -216,7 +209,6 @@ export class AuthController {
 
   @Post('onboarding/complete')
   @UseGuards(BusinessGuard)
-  @AuditEvent('business.onboarding.complete', { resourceType: 'business' })
   async completeOnboarding(
     @CurrentUser() user: SessionUser,
     @Body() _body: CompleteBusinessOnboardingDto,
@@ -354,7 +346,6 @@ export class AuthController {
   @Delete('sessions')
   @UseGuards(BusinessGuard, AuthorizationGuard)
   @RequireCapabilities(Capability.BusinessSecuritySessionsRevoke)
-  @AuditEvent('business.sessions.revoke-others', { resourceType: 'session' })
   async revokeOtherSessions(
     @CurrentUser() user: SessionUser,
     @Req() request: FastifyRequest & { sessionToken?: string },
@@ -369,10 +360,6 @@ export class AuthController {
   @Delete('sessions/:sessionId')
   @UseGuards(BusinessGuard, AuthorizationGuard)
   @RequireCapabilities(Capability.BusinessSecuritySessionsRevoke)
-  @AuditEvent('business.session.revoke', {
-    resourceType: 'session',
-    resourceIdParam: 'sessionId',
-  })
   async revokeSession(
     @CurrentUser() user: SessionUser,
     @Req() request: FastifyRequest & { sessionToken?: string },
@@ -388,7 +375,6 @@ export class AuthController {
 
   @Patch('settings')
   @UseGuards(BusinessGuard)
-  @AuditEvent('business.settings.update', { resourceType: 'business' })
   async updateSettings(
     @CurrentUser() user: SessionUser,
     @Body() body: UpdateSettingsDto,

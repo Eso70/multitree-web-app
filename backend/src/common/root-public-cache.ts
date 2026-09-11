@@ -1,7 +1,7 @@
 /**
  * The cached copies of one root-domain public Linktree.
  *
- * Root-domain pages — the platform's own and every Creator's — are read through
+ * Root-domain platform pages are read through
  * `getPlatformPublicLinktree`, which caches the rendered body under the slug or
  * uid the visitor asked for, for two hours. That is a different key space from
  * the `cache:linktree:uid:*` entries a business subdomain uses, so the

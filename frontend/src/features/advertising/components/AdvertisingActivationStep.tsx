@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import confetti from "canvas-confetti";
 import { PartyPopper } from "lucide-react";
 
-const FIREWORK_COLORS = ["#84cc16", "#8b5cf6", "#f43f5e", "#06b6d4", "#f59e0b", "#d946ef"];
+const FIREWORK_COLORS = ["#25f4ee", "#8b5cf6", "#fe2c55", "#06b6d4", "#f59e0b", "#d946ef"];
 const MOBILE_BREAKPOINT_PX = 640;
 const SHOW_DURATION_MS = 1600;
 

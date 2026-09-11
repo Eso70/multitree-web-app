@@ -10,15 +10,6 @@ export type InternalApiError = {
   requestId: string;
 };
 
-export type DeveloperApiError = {
-  success: false;
-  error: ApiErrorBody;
-  meta: {
-    version: 'v1';
-    requestId: string;
-  };
-};
-
 type CompatibilityFields = Record<string, unknown>;
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -44,21 +35,13 @@ export function apiErrorEnvelope(
   error: ApiErrorBody,
   requestId: string,
   compatibility: CompatibilityFields = {},
-): InternalApiError | DeveloperApiError {
+): InternalApiError {
   const aliases = {
     statusCode,
     code: error.code,
     message: error.message,
     ...compatibility,
   };
-  if (path.startsWith('/api/v1')) {
-    return {
-      success: false,
-      error,
-      meta: { version: 'v1', requestId },
-      ...aliases,
-    };
-  }
   return {
     success: false,
     error,

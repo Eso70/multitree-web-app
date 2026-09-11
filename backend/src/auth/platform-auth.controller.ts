@@ -7,18 +7,14 @@
   UseGuards,
   HttpCode,
   HttpStatus,
-  UseInterceptors,
 } from '@nestjs/common';
 import { SessionService } from './session.service';
 import type { SessionUser } from './session.service';
 import { PlatformAdminGuard } from './platform-admin.guard';
 import { CurrentUser } from './current-user.decorator';
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { AuditInterceptor } from './audit.interceptor';
-import { AuditEvent } from './audit-event.decorator';
 
 @Controller('api/platform/auth')
-@UseInterceptors(AuditInterceptor)
 export class PlatformAuthController {
   constructor(private readonly sessionService: SessionService) {}
 
@@ -44,7 +40,6 @@ export class PlatformAuthController {
   @Post('logout')
   @UseGuards(PlatformAdminGuard)
   @HttpCode(HttpStatus.OK)
-  @AuditEvent('platform_admin.logout', { resourceType: 'session' })
   async logout(
     @Req() req: FastifyRequest & { sessionToken?: string },
     @Res({ passthrough: true }) res: FastifyReply,

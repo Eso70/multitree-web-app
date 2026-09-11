@@ -20,18 +20,18 @@ export interface AdvertisingPriceTableTheme {
   shadow?: string;
 }
 
-/** Canonical lime (personal) / violet (business) theme, shared by every sponsorship-pricing surface. */
+/** Canonical cyan (personal) / violet (business) theme, shared by every sponsorship-pricing surface. */
 export const SPONSOR_CATEGORY_THEME: Record<SponsorCategory, AdvertisingPriceTableTheme> = {
   personal: {
-    ring: "border-lime-600/30 dark:border-lime-400/40",
-    soft: "bg-lime-500/10 dark:bg-lime-400/10",
-    text: "text-lime-700 dark:text-lime-300",
-    rowBorder: "border-lime-600/15 dark:border-lime-400/15",
-    solid: "border-lime-500 bg-lime-500 text-white",
-    radioBorder: "border-lime-600 dark:border-lime-400",
-    dot: "bg-lime-600 dark:bg-lime-400",
+    ring: "border-cyan-600/30 dark:border-cyan-400/40",
+    soft: "bg-cyan-500/10 dark:bg-cyan-400/10",
+    text: "text-cyan-700 dark:text-cyan-300",
+    rowBorder: "border-cyan-600/15 dark:border-cyan-400/15",
+    solid: "border-cyan-500 bg-cyan-500 text-slate-950",
+    radioBorder: "border-cyan-600 dark:border-cyan-400",
+    dot: "bg-cyan-600 dark:bg-cyan-400",
     shadow:
-      "shadow-[0_20px_60px_-42px_rgba(101,163,13,.35)] dark:shadow-[0_0_50px_-16px_rgba(163,230,53,.45)]",
+      "shadow-[0_20px_60px_-42px_rgba(8,145,178,.35)] dark:shadow-[0_0_50px_-16px_rgba(34,211,238,.45)]",
   },
   business: {
     ring: "border-violet-600/30 dark:border-violet-400/40",

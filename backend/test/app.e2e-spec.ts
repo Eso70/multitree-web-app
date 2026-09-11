@@ -13,11 +13,8 @@ import {
   isAuthenticatedMutation,
   isSameOriginBrowserRequest,
 } from '../src/common/request-origin';
-import { DatabaseService } from '../src/database/database.service';
 import { RedisService } from '../src/redis/redis.service';
-import { SecretCryptoService } from '../src/auth/secret-crypto.service';
 import { SessionService } from '../src/auth/session.service';
-import { WebhookDeliveryService } from '../src/api-platform/webhook-delivery.service';
 
 const cookiePlugin = ((fastifyCookie as unknown as { default?: unknown })
   .default ?? fastifyCookie) as FastifyPluginCallback<FastifyCookieOptions>;
@@ -63,7 +60,6 @@ describe('critical architecture matrix (e2e)', () => {
   let fixturePool: Pool;
   let businessACookie: string;
   let businessBCookie: string;
-  let platformCookie: string;
 
   beforeAll(async () => {
     assertDisposableDatabase();
@@ -210,7 +206,6 @@ describe('critical architecture matrix (e2e)', () => {
     expect(platform.sessionToken).toBeTruthy();
     businessACookie = `business_session=${tenantA.sessionToken}`;
     businessBCookie = `business_session=${tenantB.sessionToken}`;
-    platformCookie = `platform_admin_session=${platform.sessionToken}`;
   });
 
   it('enforces cookie origin and tenant binding before controller work', async () => {
@@ -269,98 +264,5 @@ describe('critical architecture matrix (e2e)', () => {
       },
     });
     expect(crossTenant.statusCode).toBe(404);
-  });
-
-  it('covers API management, scope denial, and idempotent developer writes', async () => {
-    const createClient = async (name: string, scopes: string[]) => {
-      const response = await app.inject({
-        method: 'POST',
-        url: '/api/platform/api-management/clients',
-        headers: {
-          cookie: platformCookie,
-          host: 'localhost',
-          origin: 'http://localhost',
-        },
-        payload: {
-          businessId: BUSINESS_A_ID,
-          name,
-          environment: 'sandbox',
-          scopes,
-          expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
-        },
-      });
-      expect(response.statusCode).toBe(201);
-      return String(data(response).secret);
-    };
-    const writeKey = await createClient('H8 writer', [
-      'linktrees:read',
-      'linktrees:write',
-    ]);
-    const readKey = await createClient('H8 reader', ['linktrees:read']);
-    const idempotencyKey = 'h8-create-linktree-0001';
-    const developerCreate = (key: string, slug: string) =>
-      app.inject({
-        method: 'POST',
-        url: '/api/v1/linktrees',
-        headers: {
-          authorization: `Bearer ${key}`,
-          'idempotency-key': idempotencyKey,
-        },
-        payload: { name: 'Developer API page', slug },
-      });
-
-    const first = await developerCreate(writeKey, 'h8-api-page');
-    const replay = await developerCreate(writeKey, 'h8-api-page');
-    const denied = await developerCreate(readKey, 'h8-denied-page');
-
-    expect(first.statusCode).toBe(201);
-    expect(replay.statusCode).toBe(201);
-    expect(replay.headers['idempotency-replayed']).toBe('true');
-    expect(data(replay).id).toBe(data(first).id);
-    expect(denied.statusCode).toBe(403);
-  });
-
-  it('claims queued webhook delivery exactly once through the real worker SQL', async () => {
-    const database = app.get(DatabaseService);
-    const crypto = app.get(SecretCryptoService);
-    const endpoint = await database.query<{ id: string }>(
-      `INSERT INTO api_webhook_endpoints
-         (business_id,name,encrypted_url,url_host,encrypted_signing_secret,signing_secret_prefix,created_by)
-       VALUES($1,'H8 claim fixture',$2,'example.com',$3,'whsec_h8',$4)
-       RETURNING id::text`,
-      [
-        BUSINESS_A_ID,
-        crypto.encryptText('https://example.com/webhook'),
-        crypto.encryptText('whsec_h8_fixture'),
-        ADMIN_ID,
-      ],
-    );
-    const event = await database.query<{ id: string }>(
-      `INSERT INTO api_webhook_events (business_id,event_type,resource_type,payload)
-       VALUES($1,'linktree.created','linktree','{}') RETURNING id::text`,
-      [BUSINESS_A_ID],
-    );
-    await database.query(
-      `INSERT INTO api_webhook_deliveries (endpoint_id,event_id,next_attempt_at)
-       VALUES($1,$2,now())`,
-      [endpoint.rows[0].id, event.rows[0].id],
-    );
-    const worker = app.get(WebhookDeliveryService);
-    const claimJobs = (
-      worker as unknown as {
-        claimJobs(limit: number): Promise<Array<{ id: string }>>;
-      }
-    ).claimJobs.bind(worker);
-
-    const claimed = await claimJobs(10);
-    const claimedAgain = await claimJobs(10);
-
-    expect(claimed).toHaveLength(1);
-    expect(claimedAgain).toHaveLength(0);
-    const status = await database.query<{ status: string }>(
-      'SELECT status FROM api_webhook_deliveries WHERE id=$1',
-      [claimed[0].id],
-    );
-    expect(status.rows[0].status).toBe('processing');
   });
 });

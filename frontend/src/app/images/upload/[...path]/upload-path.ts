@@ -1,9 +1,6 @@
 import { existsSync } from "fs";
 import { basename, isAbsolute, join, relative, resolve } from "path";
 
-const LEGACY_SYSTEM_UPLOAD_SEGMENT = "system";
-const SPONSOR_KRD_UPLOAD_SEGMENT = "sponsor-krd";
-
 export function getUploadDirectories(
   workingDirectory = process.cwd(),
   configuredDirectory = process.env.UPLOAD_DIR,
@@ -18,18 +15,7 @@ export function getUploadDirectories(
     /* turbopackIgnore: true */
     configuredDirectory || join(projectRoot, ".runtime", "uploads"),
   );
-  const legacyPublicDirectory = join(
-    basename(resolvedWorkingDirectory).toLowerCase() === "frontend"
-      ? resolvedWorkingDirectory
-      : join(projectRoot, "frontend"),
-    "public",
-    "images",
-    "upload",
-  );
-
-  return runtimeDirectory === legacyPublicDirectory
-    ? [runtimeDirectory]
-    : [runtimeDirectory, legacyPublicDirectory];
+  return [runtimeDirectory];
 }
 
 function isInsideDirectory(rootDirectory: string, filePath: string): boolean {
@@ -60,32 +46,19 @@ export function resolveUploadPath(
     return null;
   }
 
-  const candidatePaths = [pathArray];
-  if (pathArray[0] === LEGACY_SYSTEM_UPLOAD_SEGMENT) {
-    candidatePaths.push([SPONSOR_KRD_UPLOAD_SEGMENT, ...pathArray.slice(1)]);
-  }
-  if (pathArray[0] === SPONSOR_KRD_UPLOAD_SEGMENT) {
-    candidatePaths.push([LEGACY_SYSTEM_UPLOAD_SEGMENT, ...pathArray.slice(1)]);
-  }
-  if (pathArray.length === 1) {
-    candidatePaths.push(["_legacy", "flat", pathArray[0]]);
-  }
-
   for (const uploadDirectory of uploadDirectories) {
     const resolvedUploadDirectory = resolve(
       /* turbopackIgnore: true */ uploadDirectory,
     );
-    for (const candidatePath of candidatePaths) {
-      const filePath = resolve(
-        /* turbopackIgnore: true */ resolvedUploadDirectory,
-        ...candidatePath,
-      );
-      if (
-        isInsideDirectory(resolvedUploadDirectory, filePath) &&
-        fileExists(filePath)
-      ) {
-        return filePath;
-      }
+    const filePath = resolve(
+      /* turbopackIgnore: true */ resolvedUploadDirectory,
+      ...pathArray,
+    );
+    if (
+      isInsideDirectory(resolvedUploadDirectory, filePath) &&
+      fileExists(filePath)
+    ) {
+      return filePath;
     }
   }
 

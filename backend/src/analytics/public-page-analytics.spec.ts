@@ -108,11 +108,4 @@ describe('TikTok forwarding scope', () => {
     expect(insert?.[0]).toContain('TIKTOK_OWNER_ELIGIBLE_SQL');
     expect(eligibility).toContain('entitledSql(ENTITLEMENT.tiktok)');
   });
-
-  it('allows active paid or live Creator pages through the shared owner gate', () => {
-    expect(eligibility).toContain("business.account_type = 'creator'");
-    expect(eligibility).toContain("creator.status = 'active'");
-    expect(eligibility).toContain('creator.paid_started_at IS NOT NULL');
-    expect(eligibility).toContain('creator.grace_ends_at > NOW()');
-  });
 });

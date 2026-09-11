@@ -1,25 +1,5 @@
 # Security
 
-Creator signup uses verified Google identity, rate limits, isolated sessions,
-and durable trial-claim records. A verified Google identity proves control of
-that Google account; it is not legal identity proof.
-Creator dashboards receive only an allowlisted identity projection. Platform
-Creator management may use verified email, display name, avatar, authentication
-timestamps, account timestamps, and active-session counts for support and
-security operations. Google provider subjects, OAuth tokens, trial/device/IP
-HMACs, and internal risk levels are never exposed to Creator or platform UI.
-
-The one-page Creator restriction is enforced by the server-side reservation
-and attachment transaction, not by disabled navigation alone. Creator sessions
-cannot delete either page type. Platform deletion requires the dedicated
-Creator-management capability and produces an audit event; durable trial claim
-records remain intact so deletion cannot be used to obtain another trial.
-Creator TikTok configuration never accepts an owner identifier. The Creator
-guard supplies the internal workspace id, update requests pass the shared DTO
-and encrypted secret service, and audit records stay associated with that
-Creator workspace. API responses expose neither the Events API token nor the
-Google or anti-abuse identity claims.
-
 ## Marketing tracking ownership and consent
 
 TikTok destinations are owner-scoped. A customer public page can resolve only
@@ -113,8 +93,7 @@ callback; single-use state and PKCE protect that callback from login CSRF.
   five minutes. Google and email login accept the same explicit private-device
   choice; it changes session lifetime only and never bypasses identity checks.
 - Successful Google login creates a durable platform session, caches it in
-  Redis, revokes every older platform session, and records a security audit
-  event with the Google provider marker.
+  Redis, and revokes every older platform session.
 - Sessions are stored durably in Postgres (`business_sessions` /
   `platform_admin_sessions`) and cached in Redis with a cache-aside pattern: a
   Redis miss falls back to Postgres and re-populates the cache.
@@ -133,7 +112,7 @@ callback; single-use state and PKCE protect that callback from login CSRF.
   `x-subdomain` header itself is trusted only when paired with a matching
   `x-tenant-proxy-key` header proving the request came from the Next.js
   proxy (`backend/src/common/internal-proxy-trust.ts`, constant-time
-  comparison against `REQUEST_TRACKING_SECRET`/`SESSION_SECRET`); Caddy
+  comparison against `INTERNAL_PROXY_SECRET`/`SESSION_SECRET`); Caddy
   strips any inbound `x-subdomain` before it reaches either process, but
   that is infrastructure, not application, defense, so a caller that
   reaches the backend directly without the proxy key falls back to `Host`
@@ -295,13 +274,12 @@ SESSION_SECRET)` — the fallback chain described in
 [docs/backend.md](backend.md#secrets-and-telemetry) is real, not
 aspirational. Encryption is AES-256-GCM with a random
 12-byte IV per call and the auth tag stored alongside the ciphertext. The
-stored payload is versioned (`[version byte][iv][tag][ciphertext]`); a legacy
-unversioned value is still read back as plaintext, which is the migration
-path from an earlier unencrypted format.
+stored payload is versioned (`[version byte][iv][tag][ciphertext]`).
+Unversioned or malformed secret payloads are rejected instead of being treated
+as plaintext.
 
-This service encrypts TikTok Events API tokens and webhook signing
-secrets/URLs at rest — both are decrypted only at the point of use (sending a
-marketing event, delivering a webhook).
+This service encrypts TikTok Events API tokens at rest and decrypts them only
+when sending a marketing event.
 
 A business's TikTok credentials live in `business_tiktok_pixels` and nowhere
 else: `encrypted_events_token` holds the ciphertext and `token_last_four`
@@ -311,33 +289,6 @@ be written beside it, holding the same token in a plain `text` column and
 again inside a `configs` jsonb blob; it has been removed, along with its five
 write sites and two readers. `schema-secrets.spec.ts` fails if a second table
 holding a pixel, or a plaintext `events_token` column, is reintroduced.
-
-Developer API keys are handled differently and more strictly: they are
-**not** encrypted for later retrieval. A key is HMAC-SHA256 hashed with
-`API_KEY_PEPPER` (falling back to `SESSION_SECRET`) at creation, only the hash
-is stored, and an incoming request's key is checked with a constant-time
-(`timingSafeEqual`) comparison. The raw key is shown to the business exactly
-once, at creation, and cannot be recovered afterward.
-
-## Audit logging
-
-`SecurityAuditService.record()` inserts append-only rows into
-`security_audit_events`. Recording is wrapped in its own try/catch that only
-logs a warning on failure — a broken audit write never blocks or fails the
-request being audited, by explicit design.
-
-`AuditInterceptor` fires automatically on any handler annotated with
-`@AuditEvent(...)`, recording both success and failure outcomes. It strips a
-fixed set of sensitive field names before logging changed fields — `password`,
-`password_hash`, `current_password`, `new_password`, `events_token`, `token`,
-`session_token` — and logs field _names_ only, never values, and never full
-request or response bodies. Submitted IP addresses are validated before
-storage; unparsable values are stored as `null` rather than raw.
-
-Audit rows are permanent and append-only at the application boundary. There
-is no update or delete path, and `DataRetentionService` never counts or purges
-`security_audit_events`. The administrator-editable retention policy contains
-no audit-log duration.
 
 ## CSRF / origin protection
 
@@ -357,23 +308,15 @@ theft mitigations, not this header check.
 
 "Cookie-authenticated" is decided by a list of session cookie names kept in
 `backend/src/common/request-origin.ts` and mirrored in the proxy's
-`lib/security/request-origin.ts`: `business_session`,
-`platform_admin_session`, and `creator_session`. A session type missing from
-that list is not recognised as authenticated, so the check is **skipped rather
-than failed** and that surface silently loses this defence — which is what
-happened to Creator writes until `creator_session` was added. Add the cookie to
-both lists when a new session type is introduced.
+`lib/security/request-origin.ts`: `business_session` and
+`platform_admin_session`. A session type missing from that list is not
+recognised as authenticated, so the check is **skipped rather than failed**
+and that surface silently loses this defence. Add the cookie to both lists
+when a new session type is introduced.
 
 ## Rate limiting
 
 - Login: see [Authentication](#authentication).
-- Developer API requests: a per-minute limit (default 60 if no
-  `api_rate_limit_policies` row exists for the client) enforced with a
-  UTC-minute-keyed Redis bucket whose TTL is the number of seconds remaining
-  in that minute. A new fixed window starts at the next minute boundary.
-- Developer API monthly quota: checked against summed `api_usage_daily`
-  rows; a policy can enable automatic suspension, which flips the API
-  client's status to `suspended` once the quota is exceeded.
 - Public analytics ingestion: `POST /api/public/analytics/events` uses an
   IP-keyed Redis rate limit of 180 requests per 60 seconds and returns HTTP
   `429` when the limit is exceeded.
@@ -392,8 +335,7 @@ remain responsible for business rules, not malformed-input parsing.
 
 Link synchronization is capped at 500 items per array. Each nested link has
 bounded text fields and an absolute HTTP(S) URL, and batch deletion identifiers
-must be UUIDs. These checks apply consistently to business and developer API
-routes, including the legacy-compatible batch payload shape.
+must be UUIDs.
 
 Every stored page colour — Linktree background, banner
 colour, onboarding and platform branding — is validated against the single
@@ -416,7 +358,7 @@ request.
 
 Database access is parameterized (`$1`, `$2`, ...) throughout the service
 files exercised during this review, spanning authentication, authorization,
-sessions, webhook delivery, API-key handling, and data retention. No
+sessions, and data retention. No
 string-concatenated SQL was found in any of them.
 
 ## Upload validation
@@ -428,8 +370,8 @@ layers:
   (JPEG, PNG, or ICO signatures) against the declared type — not the
   filename extension or the `Content-Type` header — and rejects anything
   else. This is applied consistently at every upload call site in the
-  codebase (business auth, Linktrees, platform business
-  administration, platform settings, developer API assets).
+  codebase (business auth, Linktrees, platform business administration, and
+  platform settings).
 - **Path safety**: the storage driver resolves the target key and asserts the
   result stays within its configured root directory before writing, and the
   frontend's upload-serving route independently rejects `..`, `~`, and a
@@ -453,21 +395,21 @@ type does not match their magic bytes return 422, and oversized payloads return
 
 ## IP allow/deny rules
 
-`access_rules` supports six scopes, enforced at the database level via a
-`CHECK` constraint: `sponsor_krd`, `platform_admin`, `business`, `business_admin`,
-`public_linktree`, `business_api`. The platform console can fully manage
+`access_rules` supports five scopes, enforced at the database level via a
+`CHECK` constraint: `sponsor_krd`, `platform_admin`, `business`,
+`business_admin`, and `public_linktree`. The platform console can fully manage
 these rules (list, create, update, enable/disable, delete).
 
 `AccessRuleEnforcementService` enforces active, unexpired rules using
 PostgreSQL's native `inet`/`cidr` containment operator. Enforcement covers
-Sponsor.krd-wide endpoints, platform-administrator login and guarded requests, business
-login and guarded requests, developer API clients, public business reads,
-public Linktrees and public analytics ingestion. Every
+Sponsor.krd-wide endpoints, platform-administrator login and guarded requests,
+business login and guarded requests, public business reads, public Linktrees,
+and public analytics ingestion. Every
 winning match increments
 `match_count` and updates `last_matched_at`.
 
 Rule resolution is deterministic. The most specific applicable scope wins
-(`public_linktree`, specialized admin/API scope, business, then `sponsor_krd`), then
+(`public_linktree`, specialized admin scope, business, then `sponsor_krd`), then
 the longest network prefix. A deny wins only when scope and prefix specificity
 are equal. An explicit host allow such as `/32` can therefore override a
 broader denied subnet, while an equally specific conflict fails closed.
@@ -489,35 +431,13 @@ require `account_type='business'`; platform reads require
 `account_type='platform'`, preventing hostname ambiguity from crossing the
 ownership boundary.
 
-## Webhook security
-
-Webhook delivery (`api-platform`) validates a destination URL before every
-attempt, not just at creation: it must be `https:`, may not contain
-credentials or a custom port, and its resolved hostname/IP (checked at
-delivery time, including DNS resolution) must not be `localhost` or a
-private/loopback/link-local address, covering both IPv4 and IPv6 ranges,
-carrier-grade NAT (`100.64.0.0/10`), and the IPv6 forms that carry an IPv4
-address inside them. That last case matters because the owner of a hostname
-controls its zone: an `AAAA` record of `::ffff:127.0.0.1` — or the same
-address written as `::ffff:7f00:1` — is classified as IPv6 by `net.isIP`, so a
-prefix-only check read it as public while a socket opened to it landed on
-loopback. Those forms are unwrapped to their IPv4 address and checked against
-the IPv4 rules. Redirects are disabled on the delivery request
-(`redirect: 'error'`) so a target cannot pass validation and then redirect the
-request into an internal network afterward. Delivery has a 10-second timeout.
-
-Deliveries are signed with HMAC-SHA256 over `${unixTimestamp}.${jsonBody}`,
-sent as `x-sponsor-krd-signature: v1=<hex>`. Failed deliveries retry up to 6
-times with backoff of 1m / 5m / 30m / 2h / 6h / 12h. An endpoint is
-automatically disabled after 20 consecutive failures.
-
 ## Security headers and CORS
 
 Backend CORS (`main.ts`) matches each configured `CORS_ORIGIN` entry exactly
 or as a single-level wildcard subdomain pattern, plus a development-only
 localhost fallback and a root-domain-and-subdomains fallback that requires
 HTTPS in production. `credentials: true` is enabled. Requests with no
-`Origin` header (server-to-server calls, curl, the developer API) are always
+`Origin` header (server-to-server calls and curl) are always
 allowed — expected, since CORS defends browsers, not arbitrary HTTP clients.
 
 **The backend sends no browser security headers of its own** — there is no
@@ -546,16 +466,12 @@ runtime style elements; that permission does not apply to scripts.
 
 ## Data retention
 
-Request-log retention defaults to 30 days (`REQUEST_LOG_RETENTION_DAYS`,
-range 1–365). Separately, `platform_data_retention_settings` gives a platform
-administrator independent, configurable day-counts for three operational
-buckets — request log, API history, and communication history — enforced by a
+`platform_data_retention_settings` gives a platform administrator a
+configurable day-count for communication history, enforced by a
 background job that runs automatically at most every 15 minutes when a
-bucket is due, with manual-run support and a logged history in
-`platform_data_retention_runs`. The API-history bucket purges completed and
-failed webhook events and expired linktree schedules. The communications
-bucket purges only already-read, archived, or expired rows — never active
-conversations.
+cleanup is due, with manual-run support and a run history in
+`platform_data_retention_runs`. The communications bucket purges only
+already-read, archived, or expired rows — never active conversations.
 
 ## Secret scanning
 
@@ -570,45 +486,24 @@ Environment templates keep secret values empty. Real values belong only in the
 ignored root `.env` or the deployment platform's secret store; the generated
 `frontend/.env` receives only its explicit frontend allowlist.
 
-## Client invitation secrets
-
-Client Linktree invitations are bearer capabilities protected by a separately
-shared mandatory PIN. Raw invitation and guest-session tokens are returned only
-at issuance and stored only as SHA-256 digests; PINs are stored as an HMAC keyed
-by `SESSION_SECRET`. Tokens travel in URL fragments and are removed before an
-explicit same-origin exchange. Guest mutations use a path-scoped HttpOnly,
-`SameSite=Lax`, production-`Secure` cookie registered with the global origin
-check. Per-IP and per-invitation limits, a persisted attempt lock, one active
-session, thirty-day absolute expiry, audit events without secrets, and database
-uniqueness bound the capability. A submitted invitation may reopen its
-restricted dashboard until manual expiry; its analytics resolver accepts no
-page or tenant identifier from the browser. Guest images pass the shared
-magic-byte, MIME, size, format, optimization, and inventory pipeline, with
-additional session/IP limits and tenant-ownership verification at submission.
-Revocation affects access only and cannot delete the resulting business-owned
-Linktree.
-
 ## Dependency install scripts
 
 Installing a dependency normally lets it execute arbitrary `preinstall`,
 `install`, and `postinstall` scripts on the machine running `pnpm install` —
 developer laptops and CI runners alike. The root `package.json` restricts
 that with `pnpm.onlyBuiltDependencies`, which allows build scripts for
-exactly four packages that genuinely need to compile or fetch a native
-binary: `bcrypt`, `msgpackr-extract`, `sharp`, and `unrs-resolver`. Every
+exactly three packages that genuinely need to compile or fetch a native
+binary: `msgpackr-extract`, `sharp`, and `unrs-resolver`. Every
 other package in the tree is installed without running its scripts.
 
-The key must stay in the root `package.json`. pnpm reads settings from
-`package.json` in the version pinned by `packageManager` (pnpm 9); the
-`pnpm-workspace.yaml` settings block is a pnpm 10+ feature and is ignored
-there. Adding a dependency that legitimately needs a build step means adding
-it to this list deliberately, which is the intended review point.
+The allowlist stays in `pnpm-workspace.yaml`. Adding a dependency that
+legitimately needs a build step means adding it to this list deliberately,
+which is the intended review point.
 
 ## Resolved security findings
 
-The August 2026 security-hardening migration closed the five findings that
+The August 2026 security-hardening migration closed the remaining findings that
 were previously listed here: password authentication has since been removed
-entirely, access rules are enforced, audit rows are excluded from retention cleanup,
-developer API fixed-window keys expire at the minute boundary, and production
-scripts use request nonces instead of `'unsafe-inline'`. Regression coverage
+entirely, access rules are enforced, audit rows are excluded from retention
+cleanup, and production scripts use request nonces instead of `'unsafe-inline'`. Regression coverage
 for these boundaries is listed in [docs/testing.md](testing.md).

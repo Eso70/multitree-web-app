@@ -11,14 +11,10 @@ import { StorageModule } from './storage/storage.module';
 import { PlatformAdminModule } from './platform-admin/platform-admin.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { RequestTrackingModule } from './request-tracking/request-tracking.module';
 import { CommunicationModule } from './communications/communication.module';
-import { ApiPlatformModule } from './api-platform/api-platform.module';
 import { AdvertisingModule } from './advertising/advertising.module';
 import { ObservabilityModule } from './observability/observability.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
-import { CreatorModule } from './creator/creator.module';
-import { ClientLinktreeAccessModule } from './client-linktree-access/client-linktree-access.module';
 
 @Module({
   imports: [
@@ -27,7 +23,6 @@ import { ClientLinktreeAccessModule } from './client-linktree-access/client-link
     RedisModule,
     ObservabilityModule,
     CommunicationModule,
-    ApiPlatformModule,
     AuthModule,
     AnalyticsModule,
     LinktreesModule,
@@ -36,10 +31,7 @@ import { ClientLinktreeAccessModule } from './client-linktree-access/client-link
     PublicModule,
     StorageModule,
     PlatformAdminModule,
-    RequestTrackingModule,
     OnboardingModule,
-    CreatorModule,
-    ClientLinktreeAccessModule,
   ],
   controllers: [AppController],
   providers: [AppService],

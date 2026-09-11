@@ -3,9 +3,8 @@ import { rethrowRootSlugConflict } from './root-slug-conflict';
 
 /**
  * Every writer of a root-domain page shares this translation. The rule lived
- * as a private copy on one surface, which is why the two platform surfaces
- * answered a lost slug race with a 500 while the Creator surface answered it
- * with a 409.
+ * as a private copy on one surface, which is why another platform surface
+ * answered a lost slug race with a 500 instead of a 409.
  */
 describe('rethrowRootSlugConflict', () => {
   it('reports a lost race for a root slug as a conflict', () => {

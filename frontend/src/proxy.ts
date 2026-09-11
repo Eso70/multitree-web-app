@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { createRuntimeId } from "@/lib/utils/random-id";
-import type { NextFetchEvent, NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { createContentSecurityPolicy } from "@/lib/security/content-security-policy";
 import {
   INTERNAL_PROXY_KEY_HEADER,
@@ -11,18 +10,6 @@ const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost";
 const PLATFORM_ADMIN_PATH = normalizePrivatePath(
   process.env.PLATFORM_ADMIN_PATH,
 );
-// Compatibility/security tombstone: the former physical console path must
-// remain concealed rather than becoming a discoverable route.
-const LEGACY_PLATFORM_ADMIN_PATH = "/system";
-const ROOT_MARKETING_PATHS = new Set([
-  "/features",
-  "/link-in-bio",
-  "/templates",
-  "/pricing",
-  "/about",
-  "/contact",
-]);
-
 function normalizePrivatePath(value: string | undefined): string {
   const normalized = (value || "").trim().replace(/^\/+|\/+$/g, "");
   if (!/^[a-zA-Z0-9_-]{20,}$/.test(normalized)) {
@@ -131,47 +118,7 @@ async function isRegisteredSubdomain(
   }
 }
 
-async function trackFrontendRequest(
-  request: NextRequest,
-  backendUrl: string,
-  subdomain: string,
-): Promise<void> {
-  const secret =
-    process.env.REQUEST_TRACKING_SECRET || process.env.SESSION_SECRET;
-  if (!secret) return;
-
-  let path = request.nextUrl.pathname;
-  if (isPlatformAdminPath(path)) {
-    path = `/platform-console${path.slice(PLATFORM_ADMIN_PATH.length)}`;
-  }
-
-  try {
-    await fetch(`${backendUrl}/api/internal/request-events`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-request-tracking-key": secret,
-      },
-      body: JSON.stringify({
-        method: request.method,
-        path,
-        requestId:
-          request.headers.get("x-request-id") || createRuntimeId("req-"),
-        subdomain: subdomain || undefined,
-        ipAddress:
-          request.headers.get("x-forwarded-for") ||
-          request.headers.get("x-real-ip") ||
-          undefined,
-        userAgent: request.headers.get("user-agent") || undefined,
-      }),
-      cache: "no-store",
-    });
-  } catch {
-    // Telemetry must never delay or break the visitor's request.
-  }
-}
-
-export async function proxy(request: NextRequest, event: NextFetchEvent) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host") || "";
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -193,12 +140,6 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
 
   // Extract subdomain
   const subdomain = extractSubdomain(host);
-
-  // API calls are recorded by the backend itself. Page requests are submitted
-  // in the background so telemetry cannot slow down navigation.
-  if (pathname !== "/api" && !pathname.startsWith("/api/")) {
-    event.waitUntil(trackFrontendRequest(request, backendUrl, subdomain));
-  }
 
   // Block unregistered subdomains entirely
   if (
@@ -227,19 +168,6 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     }
   }
 
-  // The old physical console route is internal-only and always concealed.
-  if (
-    pathname === LEGACY_PLATFORM_ADMIN_PATH ||
-    pathname.startsWith(`${LEGACY_PLATFORM_ADMIN_PATH}/`)
-  ) {
-    return rewriteNotFound(
-      request,
-      subdomain ? "/__public-not-found" : "/__root-not-found",
-      requestHeaders,
-      csp,
-    );
-  }
-
   if (subdomain && isPlatformAdminPath(pathname)) {
     return rewriteNotFound(request, "/__public-not-found", requestHeaders, csp);
   }
@@ -247,31 +175,6 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // ── Route blocking: root domain (no subdomain) + /business/* → 404 ──────────
   if (!subdomain && pathname.startsWith("/business")) {
     return rewriteNotFound(request, "/__root-not-found", requestHeaders, csp);
-  }
-
-  if (
-    subdomain &&
-    (pathname === "/signup" ||
-      pathname === "/account" ||
-      pathname.startsWith("/account/") ||
-      ROOT_MARKETING_PATHS.has(pathname))
-  ) {
-    return rewriteNotFound(request, "/__public-not-found", requestHeaders, csp);
-  }
-
-  if (
-    !subdomain &&
-    (pathname === "/account" || pathname.startsWith("/account/"))
-  ) {
-    if (!request.cookies.get("creator_session")?.value) {
-      return createRedirect(request, "/login", "creator_session", csp);
-    }
-    const response = NextResponse.next({
-      request: { headers: requestHeaders },
-    });
-    response.headers.set("Cache-Control", "no-store, private");
-    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
-    return withCsp(response, csp);
   }
 
   // ── Business routes on a subdomain ──────────────────────────────────────────
@@ -355,16 +258,6 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     });
     response.headers.set("Cache-Control", "no-store, private");
     response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
-    return withCsp(response, csp);
-  }
-
-  if (pathname === "/client-linktree") {
-    const response = NextResponse.next({
-      request: { headers: requestHeaders },
-    });
-    response.headers.set("Cache-Control", "no-store, private");
-    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
-    response.headers.set("Referrer-Policy", "no-referrer");
     return withCsp(response, csp);
   }
 

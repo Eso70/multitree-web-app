@@ -25,7 +25,7 @@ import type {
 import { StatCardGrid } from "@/components/shared/StatCardGrid";
 import { Tooltip } from "@/components/shared/Tooltip";
 import { SignupApplicationsPanel } from "@/features/platform-admin/components/SignupApplicationsPanel";
-import { InvitationCreator } from "@/features/platform-admin/components/InvitationCreator";
+import { BusinessInvitationButton } from "@/features/platform-admin/components/BusinessInvitationButton";
 import {
   SegmentedTabs,
   type SegmentedTab,
@@ -236,7 +236,7 @@ export function PlatformBusinessesPage({
                 </button>
               </Tooltip>
 
-              <InvitationCreator showLabel />
+              <BusinessInvitationButton showLabel />
             </div>
           }
         />

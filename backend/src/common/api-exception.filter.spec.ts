@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ForbiddenException,
   HttpException,
   HttpStatus,
   Logger,
@@ -48,32 +47,6 @@ describe('ApiExceptionFilter', () => {
       statusCode: 400,
       code: 'VALIDATION_ERROR',
       message: 'Validation failed',
-    });
-  });
-
-  it('keeps the versioned developer API code and compatibility fields', () => {
-    const target = host('/api/v1/linktrees');
-
-    filter.catch(
-      new ForbiddenException({
-        code: 'insufficient_scope',
-        message: 'API client does not have the required scope',
-        requiredScopes: ['linktrees:read'],
-      }),
-      target.host,
-    );
-
-    expect(target.reply.send).toHaveBeenCalledWith({
-      success: false,
-      error: {
-        code: 'insufficient_scope',
-        message: 'API client does not have the required scope',
-      },
-      meta: { version: 'v1', requestId: 'request-id' },
-      statusCode: 403,
-      code: 'insufficient_scope',
-      message: 'API client does not have the required scope',
-      requiredScopes: ['linktrees:read'],
     });
   });
 

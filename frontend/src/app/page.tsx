@@ -168,7 +168,7 @@ export async function generateMetadata() {
   return {
     title: "Sponsor.krd",
     description:
-      "Create branded public link pages, manage multiple businesses, and understand every connection from one secure platform.",
+      "A secure SaaS platform for structured TikTok advertising-account connections, with isolated platform administration and future business account connectivity.",
     icons: {
       icon: [
         { url: SPONSOR_KRD_FAVICON },

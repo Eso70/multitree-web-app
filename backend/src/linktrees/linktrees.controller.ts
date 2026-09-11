@@ -12,7 +12,6 @@ import {
   Res,
   HttpCode,
   HttpStatus,
-  UseInterceptors,
 } from '@nestjs/common';
 import { LinktreesService } from './linktrees.service';
 import { LinksService } from '../links/links.service';
@@ -32,13 +31,10 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import { AuthorizationGuard } from '../auth/authorization.guard';
 import { Capability } from '../auth/capabilities';
 import { RequireCapabilities } from '../auth/require-capabilities.decorator';
-import { AuditInterceptor } from '../auth/audit.interceptor';
-import { AuditEvent } from '../auth/audit-event.decorator';
 import { uploadLinktreeImage } from './linktree-image-upload';
 
 @Controller('api/linktrees')
 @UseGuards(BusinessGuard, AuthorizationGuard)
-@UseInterceptors(AuditInterceptor)
 export class LinktreesController {
   constructor(
     private readonly linktreesService: LinktreesService,
@@ -116,7 +112,6 @@ export class LinktreesController {
 
   @Post('default')
   @RequireCapabilities(Capability.BusinessLinktreesCreate)
-  @AuditEvent('business.linktree.default.create', { resourceType: 'linktree' })
   async createDefault(@CurrentUser() business: SessionUser) {
     const linktree = await this.linktreesService.createDefaultLinktree(
       business.id,
@@ -136,7 +131,6 @@ export class LinktreesController {
 
   @Post()
   @RequireCapabilities(Capability.BusinessLinktreesCreate)
-  @AuditEvent('business.linktree.create', { resourceType: 'linktree' })
   async create(
     @Body() createDto: CreateLinktreeDto,
     @CurrentUser() business: SessionUser,
@@ -150,10 +144,6 @@ export class LinktreesController {
 
   @Post(':id/duplicate')
   @RequireCapabilities(Capability.BusinessLinktreesCreate)
-  @AuditEvent('business.linktree.duplicate', {
-    resourceType: 'linktree',
-    resourceIdParam: 'id',
-  })
   async duplicate(
     @Param('id') id: string,
     @Body() duplicateDto: DuplicateLinktreeDto,
@@ -169,10 +159,6 @@ export class LinktreesController {
 
   @Patch(':id')
   @RequireCapabilities(Capability.BusinessLinktreesUpdate)
-  @AuditEvent('business.linktree.update', {
-    resourceType: 'linktree',
-    resourceIdParam: 'id',
-  })
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateLinktreeDto,
@@ -188,10 +174,6 @@ export class LinktreesController {
 
   @Patch(':id/archive')
   @RequireCapabilities(Capability.BusinessLinktreesUpdate)
-  @AuditEvent('business.linktree.archive_status.update', {
-    resourceType: 'linktree',
-    resourceIdParam: 'id',
-  })
   async toggleArchiveStatus(
     @Param('id') id: string,
     @Body() dto: ToggleLinktreeArchiveDto,
@@ -207,10 +189,6 @@ export class LinktreesController {
 
   @Patch(':id/status')
   @RequireCapabilities(Capability.BusinessLinktreesUpdate)
-  @AuditEvent('business.linktree.status.update', {
-    resourceType: 'linktree',
-    resourceIdParam: 'id',
-  })
   async toggleStatus(
     @Param('id') id: string,
     @Body() dto: ToggleLinktreeStatusDto,
@@ -226,10 +204,6 @@ export class LinktreesController {
 
   @Delete(':id')
   @RequireCapabilities(Capability.BusinessLinktreesDelete)
-  @AuditEvent('business.linktree.delete', {
-    resourceType: 'linktree',
-    resourceIdParam: 'id',
-  })
   async delete(@Param('id') id: string, @CurrentUser() business: SessionUser) {
     await this.linktreesService.deleteLinktree(id, business.id);
     return { success: true, message: 'Linktree deleted successfully' };
@@ -248,10 +222,6 @@ export class LinktreesController {
   @Post(':id/links/batch')
   @RequireCapabilities(Capability.BusinessLinksSync)
   @HttpCode(HttpStatus.OK)
-  @AuditEvent('business.linktree.links.sync', {
-    resourceType: 'linktree',
-    resourceIdParam: 'id',
-  })
   async batchLinks(
     @Param('id') id: string,
     @Body() body: BatchSyncLinksDto,
@@ -267,7 +237,6 @@ export class LinktreesController {
   @Post('upload')
   @RequireCapabilities(Capability.BusinessLinktreesUpload)
   @HttpCode(HttpStatus.OK)
-  @AuditEvent('business.asset.upload', { resourceType: 'asset' })
   async upload(
     @Req() req: FastifyRequest,
     @Res() res: FastifyReply,

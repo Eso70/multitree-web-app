@@ -20,28 +20,12 @@ class InternalContractController {
   }
 }
 
-@Controller('api/v1/contract')
-class DeveloperContractController {
-  @Get()
-  success() {
-    return { success: true, data: { version: 'v1' } };
-  }
-
-  @Get('invalid')
-  invalid(): never {
-    throw new BadRequestException({
-      code: 'invalid_request',
-      message: 'Request is invalid',
-    });
-  }
-}
-
 describe('API response HTTP boundary', () => {
   let app: NestFastifyApplication;
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
-      controllers: [InternalContractController, DeveloperContractController],
+      controllers: [InternalContractController],
     }).compile();
     app = module.createNestApplication<NestFastifyApplication>(
       new FastifyAdapter(),
@@ -83,26 +67,6 @@ describe('API response HTTP boundary', () => {
         details: ['name must be a string'],
       },
       statusCode: 400,
-    });
-  });
-
-  it('keeps v1 success stable and versions v1 errors', async () => {
-    const success = await app
-      .getHttpAdapter()
-      .getInstance()
-      .inject({ method: 'GET', url: '/api/v1/contract' });
-    const failure = await app
-      .getHttpAdapter()
-      .getInstance()
-      .inject({ method: 'GET', url: '/api/v1/contract/invalid' });
-
-    expect(success.json()).toEqual({ success: true, data: { version: 'v1' } });
-    expect(failure.json()).toMatchObject({
-      success: false,
-      error: { code: 'invalid_request', message: 'Request is invalid' },
-      meta: { version: 'v1' },
-      code: 'invalid_request',
-      message: 'Request is invalid',
     });
   });
 });

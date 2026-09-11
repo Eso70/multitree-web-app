@@ -4,15 +4,13 @@ const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
  * Every cookie that authenticates a mutation.
  *
  * A surface missing here is not treated as authenticated, so the proxy skips
- * the same-origin check instead of failing it. `creator_session` was absent
- * while the Creator workspace shipped its own writes. Add the cookie when a new
+ * the same-origin check instead of failing it. Add the cookie when a new
  * session type is introduced; the backend keeps the matching list in
  * `common/request-origin.ts`.
  */
 const SESSION_COOKIE_NAMES = [
   "business_session",
   "platform_admin_session",
-  "creator_session",
 ] as const;
 
 export function isAuthenticatedMutation(method: string, cookieHeader: string | null): boolean {

@@ -1,6 +1,5 @@
 import {
-  PLATFORM_ADMIN_ENV_ALIASES,
-  legacyPlatformAdminEnvKey,
+  PLATFORM_ADMIN_ENV_KEYS,
   readPlatformAdminEnv,
 } from './platform-admin-env';
 
@@ -8,28 +7,20 @@ describe('readPlatformAdminEnv', () => {
   const from = (values: Record<string, string | undefined>) => (name: string) =>
     values[name];
 
-  it('prefers the current PLATFORM_ADMIN_* name', () => {
-    const read = from({
-      PLATFORM_ADMIN_USERNAME: 'new-admin',
-      SA_USERNAME: 'old-admin',
-    });
+  it('reads the current PLATFORM_ADMIN_* name', () => {
+    const read = from({ PLATFORM_ADMIN_USERNAME: 'sponsor-admin' });
     expect(readPlatformAdminEnv('PLATFORM_ADMIN_USERNAME', read)).toBe(
-      'new-admin',
+      'sponsor-admin',
     );
   });
 
-  it('falls back to the deprecated SA_* name', () => {
-    const read = from({ SA_USERNAME: 'old-admin' });
-    expect(readPlatformAdminEnv('PLATFORM_ADMIN_USERNAME', read)).toBe(
-      'old-admin',
-    );
-  });
-
-  it('treats an empty current value as unset so the alias still applies', () => {
-    const read = from({ PLATFORM_ADMIN_NAME: '', SA_NAME: 'Sponsor.krd' });
-    expect(readPlatformAdminEnv('PLATFORM_ADMIN_NAME', read)).toBe(
-      'Sponsor.krd',
-    );
+  it('treats an empty current value as unset', () => {
+    expect(
+      readPlatformAdminEnv(
+        'PLATFORM_ADMIN_NAME',
+        from({ PLATFORM_ADMIN_NAME: '' }),
+      ),
+    ).toBeUndefined();
   });
 
   it('returns undefined when neither name is set', () => {
@@ -38,16 +29,8 @@ describe('readPlatformAdminEnv', () => {
     ).toBeUndefined();
   });
 
-  it('exposes the legacy alias for every supported key', () => {
-    for (const key of Object.keys(
-      PLATFORM_ADMIN_ENV_ALIASES,
-    ) as (keyof typeof PLATFORM_ADMIN_ENV_ALIASES)[]) {
-      expect(legacyPlatformAdminEnvKey(key)).toMatch(/^SA_/);
-    }
-  });
-
   it('covers every documented initial-administrator setting', () => {
-    expect(Object.keys(PLATFORM_ADMIN_ENV_ALIASES).sort()).toEqual(
+    expect([...PLATFORM_ADMIN_ENV_KEYS].sort()).toEqual(
       [
         'PLATFORM_ADMIN_EMAIL',
         'PLATFORM_ADMIN_FAVICON',

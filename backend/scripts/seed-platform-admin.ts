@@ -7,7 +7,7 @@ import { SPONSOR_KRD_ACCENT_VALUE } from '../src/common/platform-brand';
 
 const fromEnvironment = (name: string) => process.env[name];
 
-/** Reads a setting by its current name, falling back to the legacy SA_* one. */
+/** Reads a current platform-administrator setting from the environment. */
 function setting(key: PlatformAdminEnvKey): string | undefined {
   return readPlatformAdminEnv(key, fromEnvironment)?.trim() || undefined;
 }

@@ -13,7 +13,7 @@ export class InternalOperationsGuard implements CanActivate {
     const received = this.firstHeader(request.headers['x-operations-key']);
     const expected =
       this.config.get<string>('OPERATIONS_SECRET') ||
-      this.config.get<string>('REQUEST_TRACKING_SECRET') ||
+      this.config.get<string>('INTERNAL_PROXY_SECRET') ||
       this.config.get<string>('SESSION_SECRET') ||
       '';
     return secretsMatch(received, expected);

@@ -20,7 +20,7 @@ import type { SessionUser } from './session.service';
 export interface AuthorizationContext {
   scopeType: 'platform' | 'business';
   scopeId?: string | null;
-  subjectType?: 'platform-admin' | 'business' | 'api-client';
+  subjectType?: 'platform-admin' | 'business';
   ipAddress?: string | null;
   at?: Date;
 }

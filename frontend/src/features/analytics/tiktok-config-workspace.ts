@@ -1,4 +1,4 @@
-export type TikTokConfigOwner = "business" | "platform" | "creator";
+export type TikTokConfigOwner = "business" | "platform";
 
 export interface TikTokConfigWorkspace {
   settingsEndpoint: string;
@@ -38,17 +38,5 @@ export const TIKTOK_CONFIG_WORKSPACES: Record<
     pixelLimit: 3,
     description:
       "Pixel و Events APIی تایبەت بە پەڕە گشتییەکانی Sponsor.krd. هیچ کاتێک بۆ پەڕەی بزنسەکان بەکار نایەت.",
-  },
-  creator: {
-    settingsEndpoint: "/api/creator/settings/tiktok",
-    saveMethod: "PUT",
-    accessEndpoint: null,
-    healthEndpoint: "/api/creator/settings/tiktok/health",
-    errorsEndpoint: "/api/creator/settings/tiktok/errors",
-    testEndpoint: "/api/creator/settings/tiktok/test",
-    secretEndpoint: (id: string) => `/api/creator/settings/tiktok/${id}/secret`,
-    pixelLimit: 1,
-    description:
-      "Pixel و Events API بۆ پەیجە گشتییەکەت بەکاربهێنە. نهێنیی Events API بە شێوەی پارێزراو هەڵدەگیرێت.",
   },
 };

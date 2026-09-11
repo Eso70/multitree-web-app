@@ -1,6 +1,5 @@
 // @vitest-environment node
 
-import type { NextFetchEvent } from "next/server";
 import { NextRequest } from "next/server";
 import {
   afterAll,
@@ -22,13 +21,6 @@ function request(path: string, session?: string) {
       ...(session ? { cookie: `business_session=${session}` } : {}),
     },
   });
-}
-
-function event(): NextFetchEvent {
-  return {
-    waitUntil: vi.fn(),
-    passThroughOnException: vi.fn(),
-  } as unknown as NextFetchEvent;
 }
 
 describe("business route protection", () => {
@@ -54,7 +46,7 @@ describe("business route protection", () => {
     async (path) => {
       vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null));
 
-      const response = await proxy(request(path), event());
+      const response = await proxy(request(path));
 
       expect(response.status).toBe(404);
       expect(response.headers.get("x-middleware-rewrite")).toContain(
@@ -67,7 +59,7 @@ describe("business route protection", () => {
   it("keeps only the workspace entry route publicly reachable", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null));
 
-    const response = await proxy(request("/business/workspace-entry"), event());
+    const response = await proxy(request("/business/workspace-entry"));
 
     expect(response.status).toBe(200);
     expect(response.headers.get("x-middleware-next")).toBe("1");

@@ -15,7 +15,6 @@ export class CreateAccessRuleDto {
     'business',
     'business_admin',
     'public_linktree',
-    'business_api',
   ])
   scope: string;
   @IsString() @Length(2, 64) ipNetwork: string;

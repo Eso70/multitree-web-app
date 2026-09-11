@@ -15,8 +15,6 @@ type RetentionPolicy = UpdateDataRetentionDto & {
 };
 
 type DeletedCounts = {
-  request_logs: number;
-  api_history: number;
   communications: number;
 };
 
@@ -40,25 +38,11 @@ export class DataRetentionService implements OnModuleInit, OnModuleDestroy {
   async getStatus() {
     const policy = await this.getPolicy();
     const [eligibleResult, latestResult] = await Promise.all([
-      this.database.query<{
-        request_logs: string;
-        api_history: string;
-        communications: string;
-      }>(
-        `SELECT
-          (SELECT COUNT(*) FROM http_request_events WHERE created_at < now() - ($1::int * interval '1 day'))::text AS request_logs,
-          ((SELECT COUNT(*) FROM api_usage_daily WHERE usage_date < current_date - $2::int)
-           + (SELECT COUNT(*) FROM api_webhook_events event WHERE event.created_at < now() - ($2::int * interval '1 day')
-              AND NOT EXISTS (SELECT 1 FROM api_webhook_deliveries delivery WHERE delivery.event_id=event.id AND delivery.status IN ('queued','processing','retrying')))
-           + (SELECT COUNT(*) FROM api_linktree_schedules WHERE updated_at < now() - ($2::int * interval '1 day') AND status IN ('completed','failed','cancelled')))::text AS api_history,
-          ((SELECT COUNT(*) FROM communication_notifications WHERE created_at < now() - ($3::int * interval '1 day') AND (read_at IS NOT NULL OR archived_at IS NOT NULL))
-           + (SELECT COUNT(*) FROM communication_announcements WHERE updated_at < now() - ($3::int * interval '1 day') AND status IN ('expired','archived'))
-           + (SELECT COUNT(*) FROM communication_conversations WHERE updated_at < now() - ($3::int * interval '1 day') AND status='archived'))::text AS communications`,
-        [
-          policy.request_log_days,
-          policy.api_history_days,
-          policy.communication_history_days,
-        ],
+      this.database.query<{ communications: string }>(
+        `SELECT ((SELECT COUNT(*) FROM communication_notifications WHERE created_at < now() - ($1::int * interval '1 day') AND (read_at IS NOT NULL OR archived_at IS NOT NULL))
+           + (SELECT COUNT(*) FROM communication_announcements WHERE updated_at < now() - ($1::int * interval '1 day') AND status IN ('expired','archived'))
+           + (SELECT COUNT(*) FROM communication_conversations WHERE updated_at < now() - ($1::int * interval '1 day') AND status='archived'))::text AS communications`,
+        [policy.communication_history_days],
       ),
       this.database.query(
         `SELECT id, trigger_type, status, deleted_counts, error_message, started_at, completed_at
@@ -69,8 +53,6 @@ export class DataRetentionService implements OnModuleInit, OnModuleDestroy {
     return {
       policy,
       eligible: {
-        request_logs: Number(row?.request_logs || 0),
-        api_history: Number(row?.api_history || 0),
         communications: Number(row?.communications || 0),
       },
       last_run: latestResult.rows[0] || null,
@@ -80,16 +62,13 @@ export class DataRetentionService implements OnModuleInit, OnModuleDestroy {
   async updatePolicy(adminId: string, dto: UpdateDataRetentionDto) {
     const result = await this.database.query<RetentionPolicy>(
       `UPDATE platform_data_retention_settings SET
-         request_log_days=$1, api_history_days=$2,
-         communication_history_days=$3, automatic_cleanup=$4,
-         cleanup_hour_utc=$5, updated_by=$6, updated_at=now()
+         communication_history_days=$1,
+         automatic_cleanup=$2, cleanup_hour_utc=$3,
+         updated_by=$4, updated_at=now()
        WHERE id=1
-       RETURNING request_log_days, api_history_days,
-         communication_history_days, automatic_cleanup, cleanup_hour_utc,
+       RETURNING communication_history_days, automatic_cleanup, cleanup_hour_utc,
          batch_size, updated_at`,
       [
-        dto.request_log_days,
-        dto.api_history_days,
         dto.communication_history_days,
         dto.automatic_cleanup,
         dto.cleanup_hour_utc,
@@ -107,8 +86,7 @@ export class DataRetentionService implements OnModuleInit, OnModuleDestroy {
 
   private async getPolicy(): Promise<RetentionPolicy> {
     const result = await this.database.query<RetentionPolicy>(
-      `SELECT request_log_days, api_history_days,
-              communication_history_days, automatic_cleanup, cleanup_hour_utc,
+      `SELECT communication_history_days, automatic_cleanup, cleanup_hour_utc,
               batch_size, updated_at
        FROM platform_data_retention_settings WHERE id=1`,
     );
@@ -163,38 +141,9 @@ export class DataRetentionService implements OnModuleInit, OnModuleDestroy {
     }
 
     const counts: DeletedCounts = {
-      request_logs: 0,
-      api_history: 0,
       communications: 0,
     };
     try {
-      counts.request_logs = await this.deleteRequestLogs(
-        policy.request_log_days,
-        policy.batch_size,
-      );
-      counts.api_history += await this.deleteSimple(
-        `DELETE FROM api_usage_daily WHERE (usage_date,client_id) IN (
-           SELECT usage_date,client_id FROM api_usage_daily WHERE usage_date < current_date - $1::int
-           ORDER BY usage_date LIMIT $2 FOR UPDATE SKIP LOCKED)`,
-        policy.api_history_days,
-        policy.batch_size,
-      );
-      counts.api_history += await this.deleteSimple(
-        `DELETE FROM api_webhook_events event WHERE id IN (
-           SELECT candidate.id FROM api_webhook_events candidate
-           WHERE candidate.created_at < now() - ($1::int * interval '1 day')
-             AND NOT EXISTS (SELECT 1 FROM api_webhook_deliveries delivery WHERE delivery.event_id=candidate.id AND delivery.status IN ('queued','processing','retrying'))
-           ORDER BY candidate.created_at LIMIT $2 FOR UPDATE SKIP LOCKED)`,
-        policy.api_history_days,
-        policy.batch_size,
-      );
-      counts.api_history += await this.deleteSimple(
-        `DELETE FROM api_linktree_schedules WHERE id IN (
-           SELECT id FROM api_linktree_schedules WHERE updated_at < now() - ($1::int * interval '1 day')
-             AND status IN ('completed','failed','cancelled') ORDER BY updated_at LIMIT $2 FOR UPDATE SKIP LOCKED)`,
-        policy.api_history_days,
-        policy.batch_size,
-      );
       counts.communications += await this.deleteSimple(
         `DELETE FROM communication_notifications WHERE id IN (
            SELECT id FROM communication_notifications WHERE created_at < now() - ($1::int * interval '1 day')
@@ -246,40 +195,5 @@ export class DataRetentionService implements OnModuleInit, OnModuleDestroy {
       if ((result.rowCount || 0) < batchSize) return total;
       await new Promise<void>((resolve) => setImmediate(resolve));
     }
-  }
-
-  private async deleteRequestLogs(
-    days: number,
-    batchSize: number,
-  ): Promise<number> {
-    let total = 0;
-    for (;;) {
-      const result = await this.database.query<{ deleted: number }>(
-        `WITH expired AS (
-           SELECT id FROM http_request_events WHERE created_at < now() - ($1::int * interval '1 day')
-           ORDER BY created_at,id LIMIT $2 FOR UPDATE SKIP LOCKED
-         ), deleted AS (
-           DELETE FROM http_request_events target USING expired WHERE target.id=expired.id
-           RETURNING target.created_at::date event_day,target.source,target.method,target.actor_type,
-             CASE WHEN target.status_code IN (401,403) THEN 'denied' WHEN target.status_code>=400 THEN 'failure' ELSE 'success' END outcome
-         ), decrements AS (
-           SELECT event_day,source,method,actor_type,outcome,count(*)::bigint total FROM deleted GROUP BY 1,2,3,4,5
-         ), adjusted AS (
-           UPDATE http_request_event_daily_stats stats SET total=greatest(0,stats.total-decrements.total)
-           FROM decrements WHERE stats.event_day=decrements.event_day AND stats.source=decrements.source
-             AND stats.method=decrements.method AND stats.actor_type=decrements.actor_type AND stats.outcome=decrements.outcome
-           RETURNING stats.total
-         ) SELECT count(*)::int deleted FROM deleted`,
-        [days, batchSize],
-      );
-      const deleted = Number(result.rows[0]?.deleted || 0);
-      total += deleted;
-      if (deleted < batchSize) break;
-      await new Promise<void>((resolve) => setImmediate(resolve));
-    }
-    await this.database.query(
-      'DELETE FROM http_request_event_daily_stats WHERE total=0',
-    );
-    return total;
   }
 }

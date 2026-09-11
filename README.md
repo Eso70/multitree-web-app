@@ -11,7 +11,6 @@ It includes:
 - Analytics and conversion tracking
 - Role, permission, and access management
 - Subscription, entitlement, and quota management
-- Developer API and webhooks
 - Background jobs and notifications
 - Secure authentication and authorization
 - Invite-only Google business onboarding with administrator review
@@ -104,11 +103,10 @@ The detailed project documentation lives in the `docs/` directory.
 | ----------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `AGENTS.md`                               | AI development rules, engineering principles, project-wide conventions                     |
 | `docs/architecture.md`                    | Sponsor.krd architecture, module boundaries, storage, scaling, repository structure          |
-| `docs/security.md`                        | Authentication, authorization, encryption, rate limiting, uploads, webhooks, audit logging |
+| `docs/security.md`                        | Authentication, authorization, encryption, rate limiting, and uploads                      |
 | `docs/frontend.md`                        | Frontend architecture, routing, implemented features, dashboard, public pages              |
 | `docs/backend.md`                         | Backend architecture, analytics, uploads, environment configuration                        |
 | `docs/database.md`                        | PostgreSQL schema, Redis usage, migrations, reset workflow, demo data                      |
-| `docs/api-standards.md`                   | REST conventions, API design, scopes, webhooks, versioning                                 |
 | `docs/testing.md`                         | Testing workflow, verification commands, testing strategy                                  |
 | `docs/deployment.md`                      | Local development, production deployment, PM2, Caddy, scaling                              |
 | `docs/observability.md`                   | Health checks, operational metrics, logging, and incident guidance                         |

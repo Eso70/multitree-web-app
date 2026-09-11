@@ -125,7 +125,7 @@ CREATE TABLE public.communication_conversations (
     CONSTRAINT communication_conversations_status_check CHECK (
       status IN ('open', 'waiting_business', 'waiting_platform', 'resolved', 'archived')
     ),
-    CONSTRAINT communication_conversations_creator_check CHECK (
+    CONSTRAINT communication_conversations_created_by_check CHECK (
       created_by_type IN ('platform-admin', 'business')
     )
 );
@@ -338,4 +338,3 @@ BEGIN
   END LOOP;
 END
 $communication_seed$;
-

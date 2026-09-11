@@ -93,8 +93,8 @@ CREATE TABLE public.advertising_package_categories (
   label varchar(30) NOT NULL DEFAULT '',
   -- A preset name or an explicit hex; the shared colour picker produces both.
   -- Constrained as a canonical hex colour.
-  color varchar(20) NOT NULL DEFAULT 'lime'
-    CHECK (color ~ '^(#[0-9A-Fa-f]{6}|lime|violet|amber|cyan|rose|blue|fuchsia|emerald)$'),
+  color varchar(20) NOT NULL DEFAULT 'cyan'
+    CHECK (color ~ '^(#[0-9A-Fa-f]{6}|violet|amber|cyan|rose|blue|fuchsia|emerald)$'),
   position integer NOT NULL DEFAULT 0 CHECK (position >= 0),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),

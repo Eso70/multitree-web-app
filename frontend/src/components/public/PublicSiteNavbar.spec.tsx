@@ -6,8 +6,8 @@ describe("PublicSiteNavbar", () => {
     render(
       <PublicSiteNavbar
         appearance="business"
-        branding={{ name: "Sponsor.krd", accentColor: "#84cc16" }}
-        navigationItems={[{ label: "تایبەتمەندییەکان", href: "/features" }]}
+        branding={{ name: "Sponsor.krd", accentColor: "#25f4ee" }}
+        navigationItems={[{ label: "سەرەتا", href: "/" }]}
         action={{ label: "هەژمار دروست بکە", href: "/signup" }}
         actionColor="#25F4EE"
         actionInk="#111827"
@@ -17,8 +17,8 @@ describe("PublicSiteNavbar", () => {
     );
 
     expect(
-      screen.getByRole("link", { name: "تایبەتمەندییەکان" }),
-    ).toHaveAttribute("href", "/features");
+      screen.getByRole("link", { name: "سەرەتا" }),
+    ).toHaveAttribute("href", "/");
     expect(
       screen.getByRole("link", { name: "هەژمار دروست بکە" }),
     ).toHaveStyle({

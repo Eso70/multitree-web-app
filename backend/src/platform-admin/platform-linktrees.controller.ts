@@ -13,13 +13,10 @@ import {
   Req,
   Res,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { PlatformAdminGuard } from '../auth/platform-admin.guard';
 import { AuthorizationGuard } from '../auth/authorization.guard';
-import { AuditInterceptor } from '../auth/audit.interceptor';
-import { AuditEvent } from '../auth/audit-event.decorator';
 import { Capability } from '../auth/capabilities';
 import { RequireCapabilities } from '../auth/require-capabilities.decorator';
 import { CreateLinktreeDto } from '../linktrees/dto/create-linktree.dto';
@@ -36,7 +33,6 @@ import { PlatformLinktreesService } from './platform-linktrees.service';
 
 @Controller('api/platform/linktrees')
 @UseGuards(PlatformAdminGuard, AuthorizationGuard)
-@UseInterceptors(AuditInterceptor)
 export class PlatformLinktreesController {
   constructor(
     private readonly platformLinktrees: PlatformLinktreesService,
@@ -129,17 +125,12 @@ export class PlatformLinktreesController {
 
   @Post()
   @RequireCapabilities(Capability.PlatformLinktreesCreate)
-  @AuditEvent('platform.linktree.create', { resourceType: 'linktree' })
   async create(@Body() body: CreateLinktreeDto) {
     return { success: true, data: await this.platformLinktrees.create(body) };
   }
 
   @Post(':id/duplicate')
   @RequireCapabilities(Capability.PlatformLinktreesCreate)
-  @AuditEvent('platform.linktree.duplicate', {
-    resourceType: 'linktree',
-    resourceIdParam: 'id',
-  })
   async duplicate(@Param('id') id: string, @Body() body: DuplicateLinktreeDto) {
     return {
       success: true,
@@ -149,10 +140,6 @@ export class PlatformLinktreesController {
 
   @Patch(':id')
   @RequireCapabilities(Capability.PlatformLinktreesUpdate)
-  @AuditEvent('platform.linktree.update', {
-    resourceType: 'linktree',
-    resourceIdParam: 'id',
-  })
   async update(@Param('id') id: string, @Body() body: CreateLinktreeDto) {
     return {
       success: true,
@@ -162,10 +149,6 @@ export class PlatformLinktreesController {
 
   @Patch(':id/status')
   @RequireCapabilities(Capability.PlatformLinktreesUpdate)
-  @AuditEvent('platform.linktree.status', {
-    resourceType: 'linktree',
-    resourceIdParam: 'id',
-  })
   async toggleStatus(
     @Param('id') id: string,
     @Body() body: ToggleLinktreeStatusDto,
@@ -178,10 +161,6 @@ export class PlatformLinktreesController {
 
   @Patch(':id/campaign-status')
   @RequireCapabilities(Capability.PlatformLinktreesUpdate)
-  @AuditEvent('platform.linktree.campaign_status.update', {
-    resourceType: 'linktree',
-    resourceIdParam: 'id',
-  })
   async toggleCampaign(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: ToggleLinktreeCampaignDto,
@@ -197,10 +176,6 @@ export class PlatformLinktreesController {
 
   @Patch(':id/archive')
   @RequireCapabilities(Capability.PlatformLinktreesUpdate)
-  @AuditEvent('platform.linktree.archive_status.update', {
-    resourceType: 'linktree',
-    resourceIdParam: 'id',
-  })
   async toggleArchive(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: ToggleLinktreeArchiveDto,
@@ -213,9 +188,6 @@ export class PlatformLinktreesController {
 
   @Delete('analytics')
   @RequireCapabilities(Capability.PlatformLinktreesDelete)
-  @AuditEvent('platform.linktree.analytics.clear-all', {
-    resourceType: 'linktree-analytics',
-  })
   async clearAllAnalytics() {
     await this.platformLinktrees.clearAllAnalytics();
     return { success: true };
@@ -223,10 +195,6 @@ export class PlatformLinktreesController {
 
   @Delete(':id')
   @RequireCapabilities(Capability.PlatformLinktreesDelete)
-  @AuditEvent('platform.linktree.delete', {
-    resourceType: 'linktree',
-    resourceIdParam: 'id',
-  })
   async delete(@Param('id') id: string) {
     await this.platformLinktrees.delete(id);
     return { success: true, message: 'Platform Linktree deleted successfully' };
@@ -234,10 +202,6 @@ export class PlatformLinktreesController {
 
   @Delete(':id/analytics')
   @RequireCapabilities(Capability.PlatformLinktreesDelete)
-  @AuditEvent('platform.linktree.analytics.clear', {
-    resourceType: 'linktree',
-    resourceIdParam: 'id',
-  })
   async clearAnalytics(@Param('id', ParseUUIDPipe) id: string) {
     await this.platformLinktrees.clearAnalytics(id);
     return { success: true };
@@ -246,7 +210,6 @@ export class PlatformLinktreesController {
   @Post('upload')
   @RequireCapabilities(Capability.PlatformLinktreesUpload)
   @HttpCode(HttpStatus.OK)
-  @AuditEvent('platform.linktree.asset.upload', { resourceType: 'asset' })
   async upload(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
     const data = await req.file();
     if (!data) return res.status(400).send({ error: 'No file provided' });

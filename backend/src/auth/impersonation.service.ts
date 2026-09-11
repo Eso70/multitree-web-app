@@ -10,7 +10,6 @@ import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../database/database.service';
 import { RedisService } from '../redis/redis.service';
 import { buildTenantUrl } from '../common/root-domain';
-import { SecurityAuditService } from './security-audit.service';
 import { SessionService, type SessionUser } from './session.service';
 import {
   authHandoffKey,
@@ -56,7 +55,6 @@ export class ImpersonationService {
     private readonly redis: RedisService,
     private readonly sessions: SessionService,
     private readonly config: ConfigService,
-    private readonly securityAudit: SecurityAuditService,
   ) {}
 
   async start(input: {
@@ -79,7 +77,6 @@ export class ImpersonationService {
         300,
       )
     ) {
-      await this.recordAudit(input, 'denied', { reason: 'rate_limited' });
       throw new HttpException(
         'Too many impersonation attempts. Try again later.',
         HttpStatus.TOO_MANY_REQUESTS,
@@ -99,19 +96,12 @@ export class ImpersonationService {
     );
     const target = business.rows[0];
     if (!target) {
-      await this.recordAudit(input, 'failure', {
-        reason: 'business_not_found',
-      });
       throw new NotFoundException('Business not found');
     }
     // The shared session lookup only resolves sessions for active businesses,
     // so an impersonated session on a suspended tenant would stop working the
     // moment its Redis entry expired. Fail here instead, with a clear reason.
     if (target.status !== 'active' || !target.subdomain) {
-      await this.recordAudit(input, 'failure', {
-        reason:
-          target.status !== 'active' ? 'business_inactive' : 'no_subdomain',
-      });
       throw new ForbiddenException(
         'Only an active business with a subdomain can be opened',
       );
@@ -140,11 +130,6 @@ export class ImpersonationService {
       AUTH_HANDOFF_TTL_SECONDS,
     );
 
-    await this.recordAudit(input, 'success', {
-      subdomain: target.subdomain,
-      ...(input.reason?.trim() ? { reason: input.reason.trim() } : {}),
-    });
-
     return {
       redirectUrl: buildTenantUrl(
         this.applicationBaseUrl(),
@@ -157,8 +142,7 @@ export class ImpersonationService {
 
   /**
    * Ends an impersonated session from inside the tenant. Separate from business
-   * logout so the audit trail records the end of administrator access rather
-   * than an owner signing themselves out.
+   * logout so administrator access can end without signing out the owner.
    */
   async end(input: {
     sessionToken: string;
@@ -170,45 +154,7 @@ export class ImpersonationService {
       throw new ForbiddenException('This session is not an impersonation');
     }
     await this.sessions.destroySession(input.sessionToken, input.user);
-    await this.securityAudit.record({
-      actorType: 'platform-admin',
-      actorId: impersonation.platformAdminId,
-      actorLabel: impersonation.platformAdminName,
-      businessId: input.user.id,
-      eventType: 'platform.business.impersonation.end',
-      outcome: 'success',
-      resourceType: 'business',
-      resourceId: input.user.id,
-      resourceLabel: input.user.name,
-      ipAddress: input.context.ipAddress,
-      userAgent: input.context.userAgent,
-      metadata: { startedAt: impersonation.startedAt },
-    });
     return { consoleUrl: this.applicationBaseUrl() };
-  }
-
-  private async recordAudit(
-    input: {
-      businessId: string;
-      admin: ImpersonatingAdmin;
-      context: RequestContext;
-    },
-    outcome: 'success' | 'failure' | 'denied',
-    metadata: Record<string, unknown>,
-  ): Promise<void> {
-    await this.securityAudit.record({
-      actorType: 'platform-admin',
-      actorId: input.admin.id,
-      actorLabel: input.admin.name,
-      businessId: input.businessId,
-      eventType: 'platform.business.impersonation.start',
-      outcome,
-      resourceType: 'business',
-      resourceId: input.businessId,
-      ipAddress: input.context.ipAddress,
-      userAgent: input.context.userAgent,
-      metadata,
-    });
   }
 
   private applicationBaseUrl(): string {

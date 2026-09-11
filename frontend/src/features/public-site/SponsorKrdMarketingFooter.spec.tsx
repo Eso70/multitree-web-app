@@ -8,10 +8,10 @@ describe("SponsorKrdMarketingFooter", () => {
     );
 
     expect(container.querySelector("footer")).toHaveAttribute("dir", "ltr");
-    expect(screen.getByRole("navigation", { name: "Product" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Linktree" })).toHaveAttribute(
+    expect(screen.queryByRole("navigation", { name: "Product" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Terms" })).toHaveAttribute(
       "href",
-      "/link-in-bio",
+      "/legal/terms",
     );
     expect(screen.getByText(/All rights reserved$/)).toBeInTheDocument();
   });

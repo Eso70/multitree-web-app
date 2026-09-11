@@ -7,7 +7,7 @@ import { Monitor, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
 import { Tooltip } from "@/components/shared/Tooltip";
-import { SkeletonActivityList, SkeletonSessionList } from "@/components/shared/SkeletonCommunicationLayouts";
+import { SkeletonSessionList } from "@/components/shared/SkeletonCommunicationLayouts";
 
 type Session = {
   id: string;
@@ -19,14 +19,6 @@ type Session = {
   remembered: boolean;
 };
 
-type LoginActivity = {
-  id: string;
-  outcome: "success" | "failure" | "denied";
-  ip_address: string | null;
-  user_agent: string | null;
-  created_at: string;
-};
-
 export function SessionManagementPanel({
   endpoint,
   administratorMode = false,
@@ -35,7 +27,6 @@ export function SessionManagementPanel({
   administratorMode?: boolean;
 }) {
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [activity, setActivity] = useState<LoginActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [revoking, setRevoking] = useState(false);
   const [pendingRevoke, setPendingRevoke] = useState<"all" | Session | null>(
@@ -53,7 +44,6 @@ export function SessionManagementPanel({
       if (!response.ok)
         throw new Error(payload.message || "Unable to load sessions");
       setSessions(payload.data?.sessions || []);
-      setActivity(payload.data?.recent_activity || []);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Unable to load sessions",
@@ -75,7 +65,6 @@ export function SessionManagementPanel({
       .then((payload) => {
         if (cancelled) return;
         setSessions(payload.data?.sessions || []);
-        setActivity(payload.data?.recent_activity || []);
       })
       .catch((error: unknown) => {
         if (!cancelled)
@@ -137,7 +126,9 @@ export function SessionManagementPanel({
           <div className="flex items-center gap-3">
             <ShieldCheck
               className="h-5 w-5"
-              style={{ color: "var(--theme-primary, var(--sponsor-krd-accent))" }}
+              style={{
+                color: "var(--theme-primary, var(--sponsor-krd-accent))",
+              }}
             />
             <div>
               <h3 className="text-sm font-bold text-slate-800 dark:text-white">
@@ -201,7 +192,10 @@ export function SessionManagementPanel({
                   </p>
                 </div>
                 {(administratorMode || !session.is_current) && (
-                  <Tooltip content="لابردنی دەستگەیشتنی ئەم دانیشتنە" side="top">
+                  <Tooltip
+                    content="لابردنی دەستگەیشتنی ئەم دانیشتنە"
+                    side="top"
+                  >
                     <button
                       type="button"
                       onClick={() => setPendingRevoke(session)}
@@ -218,7 +212,14 @@ export function SessionManagementPanel({
         </div>
 
         {revocableSessions.length > 0 && (
-          <Tooltip content={administratorMode ? "لابردنی دەستگەیشتنی هەموو دانیشتنەکان" : "چوونەدەرەوە لە هەموو ئامێرەکانی تر"} side="top">
+          <Tooltip
+            content={
+              administratorMode
+                ? "لابردنی دەستگەیشتنی هەموو دانیشتنەکان"
+                : "چوونەدەرەوە لە هەموو ئامێرەکانی تر"
+            }
+            side="top"
+          >
             <button
               type="button"
               onClick={() => setPendingRevoke("all")}
@@ -232,43 +233,6 @@ export function SessionManagementPanel({
         )}
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-white/10 dark:bg-white/[0.04]">
-        <h3 className="text-sm font-bold text-slate-800 dark:text-white">
-          Recent login activity
-        </h3>
-        <div className="mt-3 divide-y divide-slate-200 dark:divide-white/5">
-          {loading && activity.length === 0 ? (
-            <SkeletonActivityList rows={4} />
-          ) : activity.length === 0 ? (
-            <p className="py-6 text-center text-xs text-slate-400">
-              No recent login activity.
-            </p>
-          ) : (
-            activity.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between gap-3 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold text-slate-700 dark:text-slate-200">
-                    {describeUserAgent(item.user_agent)}
-                  </p>
-                  <p className="mt-1 text-[11px] text-slate-400">
-                    {item.ip_address || "Unknown IP"} ·{" "}
-                    {formatDate(item.created_at)}
-                  </p>
-                </div>
-                <span
-                  className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${item.outcome === "success" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400"}`}
-                >
-                  {item.outcome === "success" ? "Successful" : "Failed"}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
       <ConfirmDeleteModal
         isOpen={pendingRevoke !== null}
         onClose={() => setPendingRevoke(null)}
@@ -277,7 +241,7 @@ export function SessionManagementPanel({
         title="Revoke session access"
         confirmLabel="Revoke access"
         loadingLabel="Revoking…"
-        message="This device will immediately lose access. The action is recorded in the security activity log."
+        message="This device will immediately lose access."
         zIndexClassName="z-[80]"
       />
     </div>

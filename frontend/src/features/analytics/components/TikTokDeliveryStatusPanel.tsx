@@ -147,9 +147,7 @@ export function TikTokDeliveryStatusPanel({
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {owner === "platform"
               ? "ئەوەی TikTok وەڵامی داوەتەوە بۆ پەڕەکانی پلاتفۆرم."
-              : owner === "creator"
-                ? "ئەوەی TikTok وەڵامی داوەتەوە بۆ پەیجەکەت."
-                : "ئەوەی TikTok وەڵامی داوەتەوە بۆ ئەم بزنسە."}
+              : "ئەوەی TikTok وەڵامی داوەتەوە بۆ ئەم بزنسە."}
           </p>
         </div>
         <span className="text-xs text-slate-500 dark:text-slate-400">

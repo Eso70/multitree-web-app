@@ -7,7 +7,6 @@
   Body,
   Param,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { LinksService } from './links.service';
 import { CreateLinkDto } from './dto/create-link.dto';
@@ -19,12 +18,9 @@ import type { SessionUser } from '../auth/session.service';
 import { AuthorizationGuard } from '../auth/authorization.guard';
 import { Capability } from '../auth/capabilities';
 import { RequireCapabilities } from '../auth/require-capabilities.decorator';
-import { AuditInterceptor } from '../auth/audit.interceptor';
-import { AuditEvent } from '../auth/audit-event.decorator';
 
 @Controller('api/links')
 @UseGuards(BusinessGuard, AuthorizationGuard)
-@UseInterceptors(AuditInterceptor)
 export class LinksController {
   constructor(private readonly linksService: LinksService) {}
 
@@ -43,10 +39,6 @@ export class LinksController {
 
   @Post()
   @RequireCapabilities(Capability.BusinessLinksCreate)
-  @AuditEvent('business.link.create', {
-    resourceType: 'link',
-    resourceLabelField: 'display_name',
-  })
   async create(
     @Body() createDto: CreateLinkDto,
     @CurrentUser() business: SessionUser,
@@ -57,11 +49,6 @@ export class LinksController {
 
   @Patch(':id')
   @RequireCapabilities(Capability.BusinessLinksUpdate)
-  @AuditEvent('business.link.update', {
-    resourceType: 'link',
-    resourceIdParam: 'id',
-    resourceLabelField: 'display_name',
-  })
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateLinkDto,
@@ -73,10 +60,6 @@ export class LinksController {
 
   @Delete(':id')
   @RequireCapabilities(Capability.BusinessLinksDelete)
-  @AuditEvent('business.link.delete', {
-    resourceType: 'link',
-    resourceIdParam: 'id',
-  })
   async delete(@Param('id') id: string, @CurrentUser() business: SessionUser) {
     await this.linksService.deleteLink(id, business.id);
     return { success: true, message: 'Link deleted successfully' };
@@ -84,10 +67,6 @@ export class LinksController {
 
   @Post('sync/:linktreeId')
   @RequireCapabilities(Capability.BusinessLinksSync)
-  @AuditEvent('business.linktree.links.sync', {
-    resourceType: 'linktree',
-    resourceIdParam: 'linktreeId',
-  })
   async sync(
     @Param('linktreeId') linktreeId: string,
     @Body() body: SyncLinksDto,

@@ -92,22 +92,10 @@ describe("TemplatesPage", () => {
     expect(screen.queryAllByRole("tab")).toHaveLength(0);
   });
 
-  it("supports the shared Creator view-only catalogue without business entitlement loading", () => {
+  it("supports a view-only catalogue without business entitlement loading", () => {
     render(<TemplatesPage accessMode="all" />);
 
     expect(mockUseTemplateAccess).toHaveBeenCalledWith(false);
-  });
-
-  it("uses provided session template keys for the client catalogue", () => {
-    render(
-      <TemplatesPage
-        accessMode="provided"
-        allowedTemplateKeys={["spectrum"]}
-      />,
-    );
-
-    expect(mockUseTemplateAccess).toHaveBeenCalledWith(false);
-    expect(screen.getByText("بەردەستەکان: 1")).toBeInTheDocument();
   });
 
   it("keeps the template catalogue inside the SponsorKrd theme boundary", () => {

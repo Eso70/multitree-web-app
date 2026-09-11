@@ -455,22 +455,16 @@ export class PublicService {
     identifier: string,
   ): Promise<PublicLinktreePayload> {
     const ownerResult = await this.databaseService.query<{
-      account_type: 'platform' | 'creator';
+      account_type: 'platform';
       linktree_id: string;
     }>(
       `SELECT business.account_type, root_slug.linktree_id
          FROM root_public_slugs root_slug
          JOIN businesses business ON business.id = root_slug.business_id
-         LEFT JOIN creator_accounts creator ON creator.business_id = business.id
         WHERE root_slug.page_type = 'linktree'
           AND root_slug.slug = $1
           AND business.status = 'active'
-          AND (
-            business.account_type = 'platform'
-            OR (business.account_type = 'creator' AND creator.status = 'active'
-                AND (creator.paid_started_at IS NOT NULL
-                     OR creator.grace_ends_at > NOW()))
-          )
+          AND business.account_type = 'platform'
         LIMIT 1`,
       [identifier],
     );
@@ -494,7 +488,7 @@ export class PublicService {
     const result = await this.databaseService.query<PublicLinktreeRow>(
       `${base}
        WHERE (lt.uid = $1 OR lt.seo_name = $1)
-         AND a.account_type IN ('platform', 'creator')
+         AND a.account_type = 'platform'
          AND EXISTS (
            SELECT 1 FROM root_public_slugs root_slug
             WHERE root_slug.page_type = 'linktree'
@@ -512,7 +506,7 @@ export class PublicService {
              JOIN businesses business ON business.id = tombstone.business_id
             WHERE tombstone.page_type = 'linktree'
               AND (tombstone.public_identifier = $1 OR tombstone.slug = $1)
-              AND business.account_type IN ('platform', 'creator')
+              AND business.account_type = 'platform'
          ) AS exists`,
         [identifier],
       );

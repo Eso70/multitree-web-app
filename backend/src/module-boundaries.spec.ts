@@ -33,18 +33,10 @@ describe('Nest module boundaries', () => {
       ['AuthModule', 'BillingModule', 'ObservabilityModule'],
     ],
     [
-      'api-platform/api-platform.module.ts',
-      ['AuthModule', 'BillingModule', 'WebhookModule'],
-    ],
-    [
       'communications/communication.module.ts',
       ['AuthModule', 'ObservabilityModule'],
     ],
-    [
-      'linktrees/linktrees.module.ts',
-      ['AuthModule', 'BillingModule', 'WebhookModule'],
-    ],
-    ['api-platform/webhook.module.ts', ['AuthModule', 'ObservabilityModule']],
+    ['linktrees/linktrees.module.ts', ['AuthModule', 'BillingModule']],
   ] as const)(
     '%s declares its non-global domain dependencies',
     (modulePath, dependencies) => {
