@@ -2,7 +2,15 @@
 
 import { memo, useState } from "react";
 import Image from "next/image";
-import { Edit, Trash2, Eye, Globe, ShieldCheck, LogIn, Users } from "lucide-react";
+import {
+  Edit,
+  Trash2,
+  Eye,
+  Globe,
+  ShieldCheck,
+  LogIn,
+  Users,
+} from "lucide-react";
 import { EmptyState } from "@/components/shared/EmptyState";
 import {
   useManagementPagination,
@@ -89,9 +97,7 @@ const BusinessCard = memo(function BusinessCard({
           <h3 className="text-xs sm:text-base font-bold text-gray-900 mb-0.5 sm:mb-1 truncate">
             {item.name}
           </h3>
-          <p className="text-xs text-gray-600 truncate">
-            @{item.username}
-          </p>
+          <p className="text-xs text-gray-600 truncate">@{item.username}</p>
           <BusinessMetaBadges item={item} className="mt-1.5" />
         </div>
       </div>
@@ -100,17 +106,33 @@ const BusinessCard = memo(function BusinessCard({
       <div className="mb-2 sm:mb-3 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gray-50 border border-gray-200">
         <div className="flex items-center gap-1 sm:gap-1.5">
           <Globe className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-          <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide shrink-0">سەب دۆمەین</span>
-          <span className="text-xs text-gray-700 font-mono truncate">{item.subdomain ? `${item.subdomain}.${getRootDomain()}` : "دیاری نەکراوە"}</span>
+          <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide shrink-0">
+            سەب دۆمەین
+          </span>
+          <span className="text-xs text-gray-700 font-mono truncate">
+            {item.subdomain
+              ? `${item.subdomain}.${getRootDomain()}`
+              : "دیاری نەکراوە"}
+          </span>
         </div>
       </div>
 
       {/* Details Section */}
       <div className="mb-2 grid grid-cols-2 gap-2 sm:mb-3">
         <BusinessMetaField label="ئیمەیڵ" value={item.email?.trim() || "—"} />
-        <BusinessMetaField label="مۆبایل" value={item.phone?.trim() || "—"} mono />
-        <BusinessMetaField label="دروستکراوە" value={formatDate(item.created_at)} />
-        <BusinessMetaField label="نوێکراوە" value={formatDate(item.updated_at)} />
+        <BusinessMetaField
+          label="مۆبایل"
+          value={item.phone?.trim() || "—"}
+          mono
+        />
+        <BusinessMetaField
+          label="دروستکراوە"
+          value={formatDate(item.created_at)}
+        />
+        <BusinessMetaField
+          label="نوێکراوە"
+          value={formatDate(item.updated_at)}
+        />
       </div>
 
       {/* Actions Section */}

@@ -431,6 +431,16 @@ require `account_type='business'`; platform reads require
 `account_type='platform'`, preventing hostname ambiguity from crossing the
 ownership boundary.
 
+## Business backup boundary
+
+Full-business backups are platform-administrator-only and require both the
+business update and Linktree import/export capabilities. A backup contains
+portable tenant configuration and public content, but never session hashes,
+OAuth state, handoff codes, analytics events, approval payloads, advertising
+Events API tokens, encrypted secrets, or external billing-provider identifiers.
+Imports are create-only and reject identity or tenancy conflicts before writing,
+which prevents a backup from taking over or silently replacing a live tenant.
+
 ## Security headers and CORS
 
 Backend CORS (`main.ts`) matches each configured `CORS_ORIGIN` entry exactly

@@ -103,9 +103,7 @@ const TableRow = memo(function TableRow({
         </div>
       </td>
       <td className="px-3 py-3">
-        <div className="text-xs text-gray-600 truncate">
-          @{item.username}
-        </div>
+        <div className="text-xs text-gray-600 truncate">@{item.username}</div>
         <Tooltip content={item.email?.trim() || "—"} side="top">
           <div className="mt-0.5 text-[11px] text-gray-400 truncate">
             {item.email?.trim() || "—"}
@@ -175,7 +173,12 @@ const TableRow = memo(function TableRow({
           )}
           {onManageSessions && (
             <Tooltip content="بەڕێوەبردنی دانیشتنەکان" side="top">
-              <button onClick={() => onManageSessions(item)} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-emerald-50 transition-colors duration-200 shrink-0 cursor-pointer sm:h-9 sm:w-9" title="Manage sessions" aria-label={`Manage sessions for ${item.name}`}>
+              <button
+                onClick={() => onManageSessions(item)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-emerald-50 transition-colors duration-200 shrink-0 cursor-pointer sm:h-9 sm:w-9"
+                title="Manage sessions"
+                aria-label={`Manage sessions for ${item.name}`}
+              >
                 <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-600" />
               </button>
             </Tooltip>
@@ -226,43 +229,93 @@ const MobileCard = memo(function MobileCard({
     >
       <div className="relative h-14 w-14 shrink-0 rounded-full overflow-hidden border border-gray-200">
         {avatarUrl && !imgError ? (
-          <Image src={avatarUrl} alt={item.name} fill sizes="56px" unoptimized onError={() => setImgError(true)} className="object-cover" />
+          <Image
+            src={avatarUrl}
+            alt={item.name}
+            fill
+            sizes="56px"
+            unoptimized
+            onError={() => setImgError(true)}
+            className="object-cover"
+          />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white">{item.name.charAt(0).toUpperCase()}</div>
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white">
+            {item.name.charAt(0).toUpperCase()}
+          </div>
         )}
       </div>
       <div className="flex-1 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="text-base font-semibold text-gray-900 leading-tight truncate">{item.name}</div>
-            <div className="text-xs text-gray-600 truncate mt-0.5">@{item.username}</div>
-            <div className="mt-0.5 text-[11px] text-gray-400 truncate">{item.email?.trim() || "—"}</div>
-            <div className="mt-0.5 font-mono text-[11px] text-gray-400 truncate">{item.phone?.trim() || "—"}</div>
+            <div className="text-base font-semibold text-gray-900 leading-tight truncate">
+              {item.name}
+            </div>
+            <div className="text-xs text-gray-600 truncate mt-0.5">
+              @{item.username}
+            </div>
+            <div className="mt-0.5 text-[11px] text-gray-400 truncate">
+              {item.email?.trim() || "—"}
+            </div>
+            <div className="mt-0.5 font-mono text-[11px] text-gray-400 truncate">
+              {item.phone?.trim() || "—"}
+            </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {onViewAnalytics && (
               <Tooltip content="بینینی ئامار" side="top">
-                <button onClick={() => onViewAnalytics(item)} className="flex items-center justify-center p-2 rounded-lg hover:bg-sky-50 transition-colors cursor-pointer" aria-label={`بینینی ئاماری ${item.name}`}><Eye className="h-4 w-4 text-sky-600" /></button>
+                <button
+                  onClick={() => onViewAnalytics(item)}
+                  className="flex items-center justify-center p-2 rounded-lg hover:bg-sky-50 transition-colors cursor-pointer"
+                  aria-label={`بینینی ئاماری ${item.name}`}
+                >
+                  <Eye className="h-4 w-4 text-sky-600" />
+                </button>
               </Tooltip>
             )}
             {onEdit && (
               <Tooltip content="دەستکاریکردن" side="top">
-                <button onClick={() => onEdit(item)} className="flex items-center justify-center p-2 rounded-lg hover:bg-yellow-50 transition-colors cursor-pointer" aria-label={`دەستکاریکردنی ${item.name}`}><Edit className="h-4 w-4 text-yellow-600" /></button>
+                <button
+                  onClick={() => onEdit(item)}
+                  className="flex items-center justify-center p-2 rounded-lg hover:bg-yellow-50 transition-colors cursor-pointer"
+                  aria-label={`دەستکاریکردنی ${item.name}`}
+                >
+                  <Edit className="h-4 w-4 text-yellow-600" />
+                </button>
               </Tooltip>
             )}
             {onOpenDashboard && item.subdomain && item.status === "active" && (
               <Tooltip content="چوونە ناو داشبۆرد وەک ئەم بزنسە" side="top">
-                <button onClick={() => onOpenDashboard(item)} className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-indigo-50 transition-colors cursor-pointer" title="Open dashboard as this business" aria-label={`Open the dashboard as ${item.name}`}><LogIn className="h-4 w-4 text-indigo-600" /></button>
+                <button
+                  onClick={() => onOpenDashboard(item)}
+                  className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-indigo-50 transition-colors cursor-pointer"
+                  title="Open dashboard as this business"
+                  aria-label={`Open the dashboard as ${item.name}`}
+                >
+                  <LogIn className="h-4 w-4 text-indigo-600" />
+                </button>
               </Tooltip>
             )}
             {onManageSessions && (
               <Tooltip content="بەڕێوەبردنی دانیشتنەکان" side="top">
-                <button onClick={() => onManageSessions(item)} className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-emerald-50 transition-colors cursor-pointer" title="Manage sessions" aria-label={`Manage sessions for ${item.name}`}><ShieldCheck className="h-4 w-4 text-emerald-600" /></button>
+                <button
+                  onClick={() => onManageSessions(item)}
+                  className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-emerald-50 transition-colors cursor-pointer"
+                  title="Manage sessions"
+                  aria-label={`Manage sessions for ${item.name}`}
+                >
+                  <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                </button>
               </Tooltip>
             )}
             {onDelete && (
               <Tooltip content="سڕینەوە" side="top">
-                <button onClick={() => onDelete(item.id, item.name)} className="flex items-center justify-center p-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer" aria-label={`سڕینەوەی ${item.name}`}><Trash2 className="h-4 w-4 text-red-600" /></button>
+                <button
+                  onClick={() => onDelete(item.id, item.name)}
+                  className="flex items-center justify-center p-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                  aria-label={`سڕینەوەی ${item.name}`}
+                >
+                  <Trash2 className="h-4 w-4 text-red-600" />
+                </button>
               </Tooltip>
             )}
           </div>

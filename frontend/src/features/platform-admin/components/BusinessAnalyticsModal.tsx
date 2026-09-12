@@ -34,6 +34,10 @@ import { AnalyticsSummaryCards } from "@/features/analytics/components/Analytics
 import { ANALYTICS_TERMS } from "@/components/shared/analytics-terminology";
 import { analyticsModalScrollbarStyles } from "@/features/analytics/modalStyles";
 import type { BusinessLinktreeAnalyticsSummary } from "@linktree/types";
+import {
+  downloadBusinessBackup,
+  uploadBusinessBackup,
+} from "@/features/platform-admin/business-backup-transfer";
 
 /**
  * Every header control is the same 40px square. They were `p-2.5` with 20px
@@ -166,29 +170,10 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
     setIsTransferring(true);
     setError(null);
     try {
-      const response = await fetch(
+      await downloadBusinessBackup(
         `/api/platform/businesses/${businessId}/linktrees-export`,
-        { credentials: "include" },
+        `${businessName}-linktrees.sponsor-krd.json`,
       );
-      if (!response.ok)
-        throw new Error(
-          (await response.json().catch(() => null))?.message || "Export failed",
-        );
-      const blob = await response.blob();
-      const disposition = response.headers.get("content-disposition") || "";
-      const filename =
-        disposition.match(/filename="?([^";]+)"?/i)?.[1] ||
-        `${businessName}-linktrees.sponsor-krd.json`;
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = filename;
-      // Firefox only follows an anchor that is in the document, and revoking
-      // the object URL in the same tick can cancel the download outright.
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Export failed");
     } finally {
@@ -200,19 +185,10 @@ export const BusinessAnalyticsModal = memo(function BusinessAnalyticsModal({
     setIsTransferring(true);
     setError(null);
     try {
-      const form = new FormData();
-      form.append("file", file);
-      const response = await fetch(
+      await uploadBusinessBackup(
         `/api/platform/businesses/${businessId}/linktrees-import`,
-        {
-          method: "POST",
-          credentials: "include",
-          body: form,
-        },
+        file,
       );
-      const result = await response.json().catch(() => null);
-      if (!response.ok || result?.success === false)
-        throw new Error(result?.message || "Import failed");
       await fetchData(true);
       toast.success("لینکترییەکان بە سەرکەوتوویی هاوردە کران");
     } catch (err) {

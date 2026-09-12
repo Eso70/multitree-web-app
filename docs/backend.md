@@ -217,6 +217,28 @@ workspace; no parallel platform page or analytics tables are used.
 platform-owned Linktree and leaves other platform public routes untouched. It
 uses the same delete capability and records a dedicated clear-all audit event.
 
+## Business backup portability
+
+Platform Business Management exposes `GET /api/platform/businesses/export`,
+`GET /api/platform/businesses/:id/export`, and
+`POST /api/platform/businesses/import`. The versioned
+`sponsor-krd-business` document preserves the business profile, owner and Google
+identity, membership, branding, defaults, portable subscription state, every
+Linktree (including the default page), links, WhatsApp questions, archive and
+campaign state, timestamps, and uploaded asset bytes. Subscription products are
+resolved by stable plan code on restore so backups remain portable between
+installations.
+
+The collection endpoint wraps every individual document in a versioned
+`sponsor-krd-businesses` backup. The import endpoint accepts either format, so
+the header's complete export can be restored through the matching header import.
+
+Import is create-only and transactional for PostgreSQL data. An existing
+business ID, username, subdomain, owner ID/email, or Google identity produces a
+conflict instead of overwriting live data. The narrower analytics-modal backup
+continues to use `sponsor-krd-linktrees` and can replace non-default page content
+inside a selected business.
+
 ## Request validation boundaries
 
 The backend applies a global `RequestBoundaryPipe` before the global
@@ -434,12 +456,12 @@ and `db:reset`.
 
 ### Secrets
 
-| Variable                    | Current use                                                                                             |
-| --------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `SESSION_SECRET`            | Required 32+ character cookie/session secret and fallback cryptographic key                             |
-| `APP_ENCRYPTION_KEY`        | Optional dedicated key for encrypted secrets and private communications; falls back to `SESSION_SECRET` |
-| `ANALYTICS_HASH_SECRET`     | Optional visitor/contact hashing secret; falls back to `APP_ENCRYPTION_KEY`, then `SESSION_SECRET`      |
-| `INTERNAL_PROXY_SECRET`     | Optional key for trusted frontend proxy metadata; falls back to `SESSION_SECRET`                         |
+| Variable                | Current use                                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------------------------- |
+| `SESSION_SECRET`        | Required 32+ character cookie/session secret and fallback cryptographic key                             |
+| `APP_ENCRYPTION_KEY`    | Optional dedicated key for encrypted secrets and private communications; falls back to `SESSION_SECRET` |
+| `ANALYTICS_HASH_SECRET` | Optional visitor/contact hashing secret; falls back to `APP_ENCRYPTION_KEY`, then `SESSION_SECRET`      |
+| `INTERNAL_PROXY_SECRET` | Optional key for trusted frontend proxy metadata; falls back to `SESSION_SECRET`                        |
 
 Use distinct generated values for all production secrets even where a
 fallback exists. See [docs/security.md](security.md#secrets-and-encryption)

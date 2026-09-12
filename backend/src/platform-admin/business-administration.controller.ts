@@ -16,6 +16,8 @@ import {
 } from '@nestjs/common';
 import {
   BusinessAdministrationService,
+  type BusinessBackup,
+  type BusinessesBackup,
   type LinktreeBackup,
 } from './business-administration.service';
 import { UpdateBusinessDto } from './dto/update-business.dto';
@@ -87,6 +89,22 @@ export class BusinessAdministrationController {
       success: true,
       data: await this.businessAdministrationService.getBusinessOptions(query),
     };
+  }
+
+  @Get('export')
+  @RequireCapabilities(
+    Capability.PlatformBusinessesRead,
+    Capability.PlatformBusinessesLinktreesExport,
+  )
+  async exportBusinesses(@Res() res: FastifyReply) {
+    const backup = await this.businessAdministrationService.exportBusinesses();
+    return res
+      .header('Content-Type', 'application/json; charset=utf-8')
+      .header(
+        'Content-Disposition',
+        'attachment; filename="sponsor-krd-businesses.json"',
+      )
+      .send(JSON.stringify(backup, null, 2));
   }
 
   @Get(':id')
@@ -268,6 +286,53 @@ export class BusinessAdministrationController {
         id,
         backup as LinktreeBackup,
       );
+    return { success: true, data: result };
+  }
+
+  @Get(':id/export')
+  @RequireCapabilities(
+    Capability.PlatformBusinessesRead,
+    Capability.PlatformBusinessesLinktreesExport,
+  )
+  async exportBusiness(@Param('id') id: string, @Res() res: FastifyReply) {
+    const backup = await this.businessAdministrationService.exportBusiness(id);
+    const business = backup.business as { username?: unknown };
+    const username =
+      typeof business.username === 'string' ? business.username : 'business';
+    const safeName = username.replace(/[^a-z0-9_-]/gi, '-') || 'business';
+    return res
+      .header('Content-Type', 'application/json; charset=utf-8')
+      .header(
+        'Content-Disposition',
+        `attachment; filename="${safeName}.sponsor-krd-business.json"`,
+      )
+      .send(JSON.stringify(backup, null, 2));
+  }
+
+  @Post('import')
+  @RequireCapabilities(
+    Capability.PlatformBusinessesUpdate,
+    Capability.PlatformBusinessesLinktreesImport,
+  )
+  @HttpCode(HttpStatus.OK)
+  async importBusiness(@Req() req: FastifyRequest) {
+    const data = await req.file();
+    if (!data) return { success: false, message: 'No backup file provided' };
+    let backup: unknown;
+    try {
+      backup = JSON.parse((await data.toBuffer()).toString('utf8'));
+    } catch {
+      throw new BadRequestException('The selected file is not valid JSON');
+    }
+    const document = backup as { format?: unknown };
+    const result =
+      document?.format === 'sponsor-krd-businesses'
+        ? await this.businessAdministrationService.importBusinesses(
+            backup as BusinessesBackup,
+          )
+        : await this.businessAdministrationService.importBusiness(
+            backup as BusinessBackup,
+          );
     return { success: true, data: result };
   }
 

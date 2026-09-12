@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { RedisService } from '../redis/redis.service';
 import { StorageService } from '../storage/storage.service';
@@ -213,10 +213,10 @@ describe('BusinessAdministrationService', () => {
       Number(match[1]),
     );
     expect([...new Set(placeholders)].sort((a, b) => a - b)).toEqual(
-      Array.from({ length: 18 }, (_, index) => index + 1),
+      Array.from({ length: 23 }, (_, index) => index + 1),
     );
-    expect(values).toHaveLength(18);
-    expect(values[17]).toBe('Imported description');
+    expect(values).toHaveLength(23);
+    expect(values[5]).toBe('Imported description');
     expect(
       clientQuery.mock.calls.some(([statement]) =>
         /DELETE FROM analytics_(events|page_daily|action_daily)/.test(
@@ -224,5 +224,236 @@ describe('BusinessAdministrationService', () => {
         ),
       ),
     ).toBe(false);
+  });
+
+  it('restores a complete business backup in one database transaction', async () => {
+    const clientQuery = jest.fn((statement: string) => {
+      if (statement.includes('FROM billing_subscription_plans sp')) {
+        return Promise.resolve({
+          rows: [
+            {
+              subscription_plan_id: '90000000-0000-4000-8000-000000000001',
+              plan_id: '90000000-0000-4000-8000-000000000002',
+              plan_configuration_id: '90000000-0000-4000-8000-000000000003',
+            },
+          ],
+        });
+      }
+      return Promise.resolve({ rows: [] });
+    });
+    const database = {
+      transaction: jest.fn(
+        (
+          callback: (client: { query: typeof clientQuery }) => Promise<unknown>,
+        ) => callback({ query: clientQuery }),
+      ),
+    } as unknown as DatabaseService;
+    const redis = {
+      del: jest.fn().mockResolvedValue(undefined),
+      clearBusinessSessions: jest.fn().mockResolvedValue(undefined),
+    } as unknown as RedisService;
+    const storage = {
+      restoreUploadedAsset: jest.fn().mockResolvedValue(undefined),
+      claimBusinessAssets: jest.fn().mockResolvedValue(undefined),
+    } as unknown as StorageService;
+    const advertising = {
+      invalidatePublicCacheForBusiness: jest.fn().mockResolvedValue(undefined),
+    } as unknown as AdvertisingService;
+    const service = new BusinessAdministrationService(
+      database,
+      redis,
+      storage,
+      advertising,
+    );
+
+    const result = await service.importBusiness({
+      format: 'sponsor-krd-business',
+      version: 1,
+      business: {
+        id: '10000000-0000-4000-8000-000000000001',
+        username: 'acme',
+        name: 'Acme',
+        email: 'owner@example.com',
+        subdomain: 'acme',
+      },
+      owner: {
+        id: '20000000-0000-4000-8000-000000000001',
+        email: 'owner@example.com',
+        display_name: 'Owner',
+      },
+      membership: {
+        id: '30000000-0000-4000-8000-000000000001',
+        role: 'owner',
+        status: 'active',
+      },
+      identity: {
+        id: '40000000-0000-4000-8000-000000000001',
+        provider: 'google',
+        provider_subject: 'google-subject',
+        provider_email: 'owner@example.com',
+        email_verified: true,
+      },
+      branding: {},
+      defaults: {},
+      subscription: {
+        id: '50000000-0000-4000-8000-000000000001',
+        plan_code: 'basic',
+      },
+      linktrees: [
+        {
+          id: '60000000-0000-4000-8000-000000000001',
+          name: 'Acme',
+          seo_name: 'acme',
+          uid: 'acme',
+          is_default: true,
+          links: [
+            {
+              id: '70000000-0000-4000-8000-000000000001',
+              platform: 'website',
+              url: 'https://example.com',
+            },
+          ],
+          whatsapp_questions: [
+            {
+              id: '80000000-0000-4000-8000-000000000001',
+              question_text: 'Question',
+              message: 'Message',
+            },
+          ],
+        },
+      ],
+      assets: {},
+    });
+
+    expect(result).toMatchObject({
+      business_id: '10000000-0000-4000-8000-000000000001',
+      imported_linktrees: 1,
+      imported_links: 1,
+    });
+    for (const table of [
+      'businesses',
+      'users',
+      'user_identities',
+      'business_memberships',
+      'business_branding',
+      'business_defaults',
+      'business_subscriptions',
+      'linktrees',
+      'links',
+      'whatsapp_questions',
+    ]) {
+      expect(
+        clientQuery.mock.calls.some(([statement]) =>
+          statement.includes(`INSERT INTO ${table}`),
+        ),
+      ).toBe(true);
+    }
+    expect(database.transaction).toHaveBeenCalledTimes(1);
+  });
+
+  it('never overwrites an existing business during full import', async () => {
+    const clientQuery = jest.fn((_statement: string) =>
+      Promise.resolve({ rows: [{ '?column?': 1 }] }),
+    );
+    const database = {
+      transaction: jest.fn(
+        (
+          callback: (client: { query: typeof clientQuery }) => Promise<unknown>,
+        ) => callback({ query: clientQuery }),
+      ),
+    } as unknown as DatabaseService;
+    const service = new BusinessAdministrationService(
+      database,
+      {} as RedisService,
+      {} as StorageService,
+      {} as AdvertisingService,
+    );
+
+    await expect(
+      service.importBusiness({
+        format: 'sponsor-krd-business',
+        version: 1,
+        business: {
+          id: '10000000-0000-4000-8000-000000000001',
+          username: 'acme',
+          name: 'Acme',
+          subdomain: 'acme',
+        },
+        subscription: { plan_code: 'basic' },
+        linktrees: [
+          {
+            id: '60000000-0000-4000-8000-000000000001',
+            name: 'Acme',
+            seo_name: 'acme',
+            uid: 'acme',
+            is_default: true,
+            links: [],
+            whatsapp_questions: [],
+          },
+        ],
+        assets: {},
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(
+      clientQuery.mock.calls.some(([statement]) =>
+        statement.includes('INSERT INTO businesses'),
+      ),
+    ).toBe(false);
+  });
+
+  it('exports and reimports the page-header businesses collection format', async () => {
+    const query = jest.fn().mockResolvedValue({
+      rows: [
+        { id: '10000000-0000-4000-8000-000000000001' },
+        { id: '10000000-0000-4000-8000-000000000002' },
+      ],
+    });
+    const service = buildService(query);
+    const exportSpy = jest
+      .spyOn(service, 'exportBusiness')
+      .mockImplementation(async (id) => ({
+        format: 'sponsor-krd-business' as const,
+        version: 1 as const,
+        exported_at: new Date(0).toISOString(),
+        business: { id, username: id, subdomain: id },
+        owner: null,
+        identity: {},
+        membership: null,
+        branding: {},
+        defaults: {},
+        subscription: {},
+        linktrees: [],
+        assets: {},
+      }));
+
+    const exported = await service.exportBusinesses();
+
+    expect(exported.format).toBe('sponsor-krd-businesses');
+    expect(exported.businesses).toHaveLength(2);
+    expect(exportSpy).toHaveBeenCalledTimes(2);
+
+    query.mockResolvedValueOnce({ rows: [] });
+    const importSpy = jest
+      .spyOn(service, 'importBusiness')
+      .mockImplementation(async (document) => ({
+        business_id: (document.business as { id: string }).id,
+        imported_linktrees: 1,
+        imported_links: 0,
+      }));
+    const imported = await service.importBusinesses({
+      format: 'sponsor-krd-businesses',
+      version: 1,
+      businesses: exported.businesses.map((document, index) => ({
+        ...document,
+        business: {
+          id: `10000000-0000-4000-8000-00000000000${index + 1}`,
+          username: `business-${index + 1}`,
+          subdomain: `business-${index + 1}`,
+        },
+      })),
+    });
+
+    expect(imported.imported_businesses).toBe(2);
+    expect(importSpy).toHaveBeenCalledTimes(2);
   });
 });

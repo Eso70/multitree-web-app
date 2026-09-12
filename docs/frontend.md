@@ -776,9 +776,13 @@ The console provides:
   and per-button click rows through platform-guarded endpoints; platform role
   configuration keeps root-domain URLs and excludes business-only client
   invitations and default-page behavior;
-- business editing, deletion, session revocation, profile-change
-  request review, session revocation, asset uploads, TikTok configuration,
-  and linktree import/export;
+- business editing, deletion, session revocation, profile-change request review,
+  asset uploads, TikTok configuration, Linktree import/export, and full-business
+  backup import/export. Business Management exposes icon-only import and export
+  controls together in its header. Export creates one portable collection for
+  every business, while import accepts either that collection or an individual
+  business backup; both use the same transfer helper and feedback behavior as
+  the analytics modal's Linktree backup;
 - global linktree template availability and configuration;
 - IP/CIDR allow and deny rules scoped to Sponsor.krd, platform administrators,
   businesses, business administrators, or public linktrees (see

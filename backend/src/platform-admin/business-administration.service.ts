@@ -94,6 +94,7 @@ type ExportedLinktreeRow = {
   id: string;
   name: string;
   subtitle: string | null;
+  subtitle_color: string | null;
   description: string | null;
   seo_name: string;
   uid: string;
@@ -107,6 +108,9 @@ type ExportedLinktreeRow = {
   whatsapp_modal_enabled: boolean | null;
   status: string;
   is_default?: boolean;
+  is_campaign_active?: boolean;
+  is_archived?: boolean;
+  archived_at?: Date | null;
   created_at?: Date;
   updated_at?: Date;
 };
@@ -136,12 +140,34 @@ export type LinktreeBackup = {
   assets?: unknown;
 };
 
+/** A complete, portable business backup. Secrets and ephemeral records are excluded. */
+export type BusinessBackup = {
+  format?: unknown;
+  version?: unknown;
+  business?: unknown;
+  owner?: unknown;
+  identity?: unknown;
+  membership?: unknown;
+  branding?: unknown;
+  defaults?: unknown;
+  subscription?: unknown;
+  linktrees?: unknown;
+  assets?: unknown;
+};
+
+export type BusinessesBackup = {
+  format?: unknown;
+  version?: unknown;
+  businesses?: unknown;
+};
+
 type BackupPage = {
   id?: unknown;
   uid?: unknown;
   name?: unknown;
   seo_name?: unknown;
   subtitle?: unknown;
+  subtitle_color?: unknown;
   description?: unknown;
   image?: unknown;
   background_color?: unknown;
@@ -153,6 +179,9 @@ type BackupPage = {
   whatsapp_modal_enabled?: unknown;
   status?: unknown;
   is_default?: unknown;
+  is_campaign_active?: unknown;
+  is_archived?: unknown;
+  archived_at?: unknown;
   created_at?: unknown;
   updated_at?: unknown;
   links?: unknown;
@@ -166,6 +195,15 @@ type BackupChild = { id?: unknown } & Record<string, unknown>;
 function asArray(value: unknown): BackupChild[] {
   return Array.isArray(value) ? (value as BackupChild[]) : [];
 }
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type BusinessLinktreeStatsRow = {
   id: string;
@@ -1086,21 +1124,16 @@ export class BusinessAdministrationService {
     return urls;
   }
 
-  async exportBusinessLinktrees(id: string) {
-    const businessRes = await this.databaseService.query<
-      Pick<BusinessRow, 'id' | 'username' | 'name' | 'subdomain'>
-    >(
-      `SELECT id, username, name, subdomain FROM businesses
-       WHERE id = $1 AND account_type = 'business'`,
-      [id],
-    );
-    if (!businessRes.rows.length)
-      throw new NotFoundException('Business not found');
+  private async exportLinktreePages(id: string, includeDefault: boolean) {
     const pagesRes = await this.databaseService.query<ExportedLinktreeRow>(
-      `SELECT id, name, subtitle, description, seo_name, uid, image, background_color, footer_text, footer_phone,
-              footer_hidden, template_key, template_config, whatsapp_modal_enabled, status, created_at, updated_at
-       FROM linktrees WHERE business_id = $1 AND is_default = false ORDER BY created_at ASC`,
-      [id],
+      `SELECT id, name, subtitle, subtitle_color, description, seo_name, uid, image,
+              background_color, footer_text, footer_phone, footer_hidden, template_key,
+              template_config, whatsapp_modal_enabled, status, is_default,
+              is_campaign_active, is_archived, archived_at, created_at, updated_at
+       FROM linktrees
+       WHERE business_id = $1 AND ($2::boolean OR is_default = false)
+       ORDER BY is_default DESC, created_at ASC`,
+      [id, includeDefault],
     );
     const pages: ExportedPage[] = [];
     for (const page of pagesRes.rows) {
@@ -1123,6 +1156,240 @@ export class BusinessAdministrationService {
         whatsapp_questions: questionsRes.rows,
       });
     }
+    return pages;
+  }
+
+  private validateBackupPages(value: unknown, allowDefault: boolean) {
+    if (!Array.isArray(value)) {
+      throw new BadRequestException('Backup linktrees must be an array');
+    }
+    const pages = value as BackupPage[];
+    if (!allowDefault && pages.some((page) => page.is_default === true)) {
+      throw new BadRequestException('Default linktrees cannot be imported');
+    }
+    if (
+      allowDefault &&
+      pages.filter((page) => page.is_default === true).length !== 1
+    ) {
+      throw new BadRequestException(
+        'A business backup must contain exactly one default linktree',
+      );
+    }
+    const ids: unknown[] = pages.flatMap((page) => [
+      page.id,
+      ...asArray(page.links).map((link) => link.id),
+      ...asArray(page.whatsapp_questions).map((question) => question.id),
+    ]);
+    if (
+      ids.some(
+        (value) => typeof value !== 'string' || !UUID_PATTERN.test(value),
+      )
+    ) {
+      throw new BadRequestException('Backup contains invalid UUIDs');
+    }
+    for (const page of pages) {
+      if (
+        typeof page.name !== 'string' ||
+        typeof page.seo_name !== 'string' ||
+        typeof page.uid !== 'string' ||
+        !page.name.trim() ||
+        !page.seo_name.trim() ||
+        !page.uid.trim()
+      ) {
+        throw new BadRequestException('Backup contains an incomplete linktree');
+      }
+      for (const link of asArray(page.links)) {
+        if (typeof link.platform !== 'string' || typeof link.url !== 'string') {
+          throw new BadRequestException('Backup contains an incomplete link');
+        }
+      }
+      for (const question of asArray(page.whatsapp_questions)) {
+        if (
+          typeof question.question_text !== 'string' ||
+          typeof question.message !== 'string'
+        ) {
+          throw new BadRequestException(
+            'Backup contains an incomplete WhatsApp question',
+          );
+        }
+      }
+    }
+    return pages;
+  }
+
+  private async importLinktreePages(
+    client: Pick<PoolClient, 'query'>,
+    businessId: string,
+    pages: BackupPage[],
+    allowDefault: boolean,
+  ) {
+    let importedLinks = 0;
+    for (const page of pages) {
+      const destinationMatches = await client.query<{ id: string }>(
+        `SELECT id FROM linktrees WHERE business_id = $1 AND (seo_name = $2 OR uid = $3)`,
+        [businessId, page.seo_name, page.uid],
+      );
+      if (destinationMatches.rows.length > 1) {
+        throw new ConflictException(
+          `UID and slug belong to different destination pages: ${toText(page.name)}`,
+        );
+      }
+      let targetPageId = destinationMatches.rows[0]?.id;
+      if (!targetPageId) {
+        const uuidOwner = await client.query<{ business_id: string }>(
+          'SELECT business_id FROM linktrees WHERE id = $1',
+          [page.id],
+        );
+        targetPageId =
+          uuidOwner.rows.length === 0 ||
+          uuidOwner.rows[0].business_id === businessId
+            ? (page.id as string)
+            : this.businessScopedUuid(businessId);
+      }
+      const isDefault = allowDefault && page.is_default === true;
+      await client.query(
+        `INSERT INTO linktrees (
+           id, business_id, name, subtitle, subtitle_color, description, seo_name, uid,
+           image, background_color, footer_text, footer_phone, footer_hidden, template_key,
+           template_config, whatsapp_modal_enabled, status, is_default, is_campaign_active,
+           is_archived, archived_at, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb,$16,$17,$18,$19,$20,$21,$22,$23)
+         ON CONFLICT (id) DO UPDATE SET
+           name=EXCLUDED.name, subtitle=EXCLUDED.subtitle, subtitle_color=EXCLUDED.subtitle_color,
+           description=EXCLUDED.description, seo_name=EXCLUDED.seo_name, uid=EXCLUDED.uid,
+           image=EXCLUDED.image, background_color=EXCLUDED.background_color,
+           footer_text=EXCLUDED.footer_text, footer_phone=EXCLUDED.footer_phone,
+           footer_hidden=EXCLUDED.footer_hidden, template_key=EXCLUDED.template_key,
+           template_config=EXCLUDED.template_config,
+           whatsapp_modal_enabled=EXCLUDED.whatsapp_modal_enabled, status=EXCLUDED.status,
+           is_default=EXCLUDED.is_default, is_campaign_active=EXCLUDED.is_campaign_active,
+           is_archived=EXCLUDED.is_archived, archived_at=EXCLUDED.archived_at,
+           updated_at=EXCLUDED.updated_at`,
+        [
+          targetPageId,
+          businessId,
+          page.name,
+          toText(page.subtitle) || null,
+          toText(page.subtitle_color) || null,
+          toText(page.description) || null,
+          page.seo_name,
+          page.uid,
+          toText(page.image) || null,
+          toText(page.background_color) || '#000000',
+          toText(page.footer_text) || null,
+          toText(page.footer_phone) || null,
+          page.footer_hidden === true,
+          toText(page.template_key) || 'spectrum',
+          JSON.stringify(asRecord(page.template_config)),
+          page.whatsapp_modal_enabled === true,
+          page.status === 'inactive' ? 'inactive' : 'active',
+          isDefault,
+          !isDefault && page.is_campaign_active === true,
+          !isDefault && page.is_archived === true,
+          !isDefault && page.is_archived === true
+            ? page.archived_at || new Date()
+            : null,
+          page.created_at || new Date(),
+          page.updated_at || new Date(),
+        ],
+      );
+      await client.query(
+        'DELETE FROM whatsapp_questions WHERE linktree_id = $1',
+        [targetPageId],
+      );
+      await client.query('DELETE FROM links WHERE linktree_id = $1', [
+        targetPageId,
+      ]);
+      for (const question of asArray(page.whatsapp_questions)) {
+        const owner = await client.query<ExistsProbeRow>(
+          'SELECT 1 FROM whatsapp_questions WHERE id = $1',
+          [question.id],
+        );
+        await client.query(
+          `INSERT INTO whatsapp_questions
+             (id, linktree_id, question_text, message, display_order, created_at, updated_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+          [
+            owner.rows.length
+              ? this.businessScopedUuid(businessId)
+              : question.id,
+            targetPageId,
+            question.question_text,
+            question.message,
+            Number(question.display_order) || 0,
+            question.created_at || new Date(),
+            question.updated_at || new Date(),
+          ],
+        );
+      }
+      for (const link of asArray(page.links)) {
+        const owner = await client.query<ExistsProbeRow>(
+          'SELECT 1 FROM links WHERE id = $1',
+          [link.id],
+        );
+        await client.query(
+          `INSERT INTO links (
+             id, linktree_id, business_id, platform, url, display_name, description,
+             default_message, display_order, original_input, country_code, gps_lat,
+             gps_lng, custom_color, custom_icon, created_at, updated_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+          [
+            owner.rows.length ? this.businessScopedUuid(businessId) : link.id,
+            targetPageId,
+            businessId,
+            link.platform,
+            link.url,
+            toText(link.display_name) || null,
+            toText(link.description) || null,
+            toText(link.default_message) || null,
+            Number(link.display_order) || 0,
+            toText(link.original_input) || null,
+            toText(link.country_code) || null,
+            link.gps_lat ?? null,
+            link.gps_lng ?? null,
+            toText(link.custom_color) || null,
+            toText(link.custom_icon) || null,
+            link.created_at || new Date(),
+            link.updated_at || new Date(),
+          ],
+        );
+        importedLinks++;
+      }
+    }
+    return { imported_linktrees: pages.length, imported_links: importedLinks };
+  }
+
+  private async restoreBackupAssets(
+    businessId: string,
+    backup: { linktrees?: unknown; assets?: unknown },
+  ) {
+    const assets = asRecord(backup.assets);
+    for (const [url, base64] of Object.entries(assets)) {
+      if (typeof base64 === 'string' && url.startsWith('/images/upload/')) {
+        await this.storageService.restoreUploadedAsset(
+          url,
+          Buffer.from(base64, 'base64'),
+        );
+      }
+    }
+    await this.storageService.claimBusinessAssets(
+      businessId,
+      backup.linktrees,
+      backup.assets,
+    );
+  }
+
+  async exportBusinessLinktrees(id: string) {
+    const businessRes = await this.databaseService.query<
+      Pick<BusinessRow, 'id' | 'username' | 'name' | 'subdomain'>
+    >(
+      `SELECT id, username, name, subdomain FROM businesses
+       WHERE id = $1 AND account_type = 'business'`,
+      [id],
+    );
+    if (!businessRes.rows.length)
+      throw new NotFoundException('Business not found');
+    const pages = await this.exportLinktreePages(id, false);
     const assets: Record<string, string> = {};
     for (const url of this.collectUploadUrls(pages)) {
       const buffer = await this.storageService.readUploadedAsset(url);
@@ -1156,22 +1423,7 @@ export class BusinessAdministrationService {
     );
     if (!businessRes.rows.length)
       throw new NotFoundException('Business not found');
-    const backupPages = backup.linktrees as BackupPage[];
-    if (backupPages.some((page) => page.is_default === true)) {
-      throw new BadRequestException('Default linktrees cannot be imported');
-    }
-    const ids: unknown[] = backupPages.flatMap((page) => [
-      page.id,
-      ...asArray(page.links).map((link) => link.id),
-      ...asArray(page.whatsapp_questions).map((q) => q.id),
-    ]);
-    if (
-      ids.some(
-        (value) => typeof value !== 'string' || !/^[0-9a-f-]{36}$/i.test(value),
-      )
-    ) {
-      throw new BadRequestException('Backup contains invalid UUIDs');
-    }
+    const backupPages = this.validateBackupPages(backup.linktrees, false);
 
     const previousPageAssets = await this.databaseService.query<{
       image: string | null;
@@ -1182,151 +1434,10 @@ export class BusinessAdministrationService {
       [id],
     );
 
-    const result = await this.databaseService.transaction(async (client) => {
-      let importedLinks = 0;
-      for (const page of backupPages) {
-        if (!page.name || !page.seo_name || !page.uid)
-          throw new BadRequestException(
-            'Backup contains an incomplete linktree',
-          );
-        // A UUID can only exist once globally. When cloning while the source
-        // business still exists, keep the public UID/slug but allocate a new DB
-        // UUID. A repeated import into the destination updates that copy.
-        const destinationMatches = await client.query<{ id: string }>(
-          `SELECT id FROM linktrees WHERE business_id = $1 AND (seo_name = $2 OR uid = $3)`,
-          [id, page.seo_name, page.uid],
-        );
-        if (destinationMatches.rows.length > 1) {
-          throw new ConflictException(
-            `UID and slug belong to different destination pages: ${toText(page.name)}`,
-          );
-        }
-        let targetPageId = destinationMatches.rows[0]?.id as string | undefined;
-        if (!targetPageId) {
-          const uuidOwner = await client.query<{ business_id: string }>(
-            'SELECT business_id FROM linktrees WHERE id = $1',
-            [page.id],
-          );
-          targetPageId =
-            uuidOwner.rows.length === 0 || uuidOwner.rows[0].business_id === id
-              ? (page.id as string)
-              : this.businessScopedUuid(id);
-        }
-        await client.query(
-          `INSERT INTO linktrees (id, business_id, name, subtitle, description, seo_name, uid, image, background_color, footer_text,
-             footer_phone, footer_hidden, template_key, template_config, whatsapp_modal_enabled, status, is_default, created_at, updated_at)
-           VALUES ($1,$2,$3,$4,$18,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15,false,$16,$17)
-           ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, subtitle=EXCLUDED.subtitle, description=EXCLUDED.description, seo_name=EXCLUDED.seo_name,
-             uid=EXCLUDED.uid, image=EXCLUDED.image, background_color=EXCLUDED.background_color,
-             footer_text=EXCLUDED.footer_text, footer_phone=EXCLUDED.footer_phone, footer_hidden=EXCLUDED.footer_hidden,
-             template_key=EXCLUDED.template_key, template_config=EXCLUDED.template_config,
-             whatsapp_modal_enabled=EXCLUDED.whatsapp_modal_enabled, status=EXCLUDED.status, updated_at=EXCLUDED.updated_at`,
-          [
-            targetPageId,
-            id,
-            page.name,
-            page.subtitle || null,
-            page.seo_name,
-            page.uid,
-            page.image || null,
-            page.background_color || '#000000',
-            page.footer_text || null,
-            page.footer_phone || null,
-            !!page.footer_hidden,
-            page.template_key || 'spectrum',
-            JSON.stringify(page.template_config || {}),
-            !!page.whatsapp_modal_enabled,
-            page.status === 'inactive' ? 'inactive' : 'active',
-            page.created_at || new Date(),
-            page.updated_at || new Date(),
-            toText(page.description) || null,
-          ],
-        );
-        // Import replaces content only. The preserved page UUID also preserves
-        // its page-level analytics; replaced buttons start new action history
-        // while archived action rows keep the historical event relationships.
-        await client.query(
-          'DELETE FROM whatsapp_questions WHERE linktree_id = $1',
-          [targetPageId],
-        );
-        await client.query('DELETE FROM links WHERE linktree_id = $1', [
-          targetPageId,
-        ]);
-        for (const q of asArray(page.whatsapp_questions)) {
-          const questionOwner = await client.query<ExistsProbeRow>(
-            'SELECT 1 FROM whatsapp_questions WHERE id = $1',
-            [q.id],
-          );
-          const targetQuestionId = questionOwner.rows.length
-            ? this.businessScopedUuid(id)
-            : q.id;
-          await client.query(
-            `INSERT INTO whatsapp_questions (id, linktree_id, question_text, message, display_order, created_at, updated_at)
-            VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-            [
-              targetQuestionId,
-              targetPageId,
-              q.question_text,
-              q.message,
-              q.display_order || 0,
-              q.created_at || new Date(),
-              q.updated_at || new Date(),
-            ],
-          );
-        }
-        for (const link of asArray(page.links)) {
-          const linkOwner = await client.query<ExistsProbeRow>(
-            'SELECT 1 FROM links WHERE id = $1',
-            [link.id],
-          );
-          const targetLinkId = linkOwner.rows.length
-            ? this.businessScopedUuid(id)
-            : link.id;
-          await client.query(
-            `INSERT INTO links (id, linktree_id, business_id, platform, url, display_name, description, default_message,
-              display_order, original_input, country_code, gps_lat, gps_lng, custom_color, custom_icon, created_at, updated_at)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
-            [
-              targetLinkId,
-              targetPageId,
-              id,
-              link.platform,
-              link.url,
-              link.display_name || null,
-              link.description || null,
-              link.default_message || null,
-              link.display_order || 0,
-              link.original_input || null,
-              link.country_code || null,
-              link.gps_lat ?? null,
-              link.gps_lng ?? null,
-              link.custom_color || null,
-              link.custom_icon || null,
-              link.created_at || new Date(),
-              link.updated_at || new Date(),
-            ],
-          );
-          importedLinks++;
-        }
-      }
-      return {
-        imported_linktrees: backupPages.length,
-        imported_links: importedLinks,
-      };
-    });
-    const backupAssets = (backup.assets || {}) as Record<string, unknown>;
-    for (const [url, base64] of Object.entries(backupAssets)) {
-      if (typeof base64 === 'string' && url.startsWith('/images/upload/'))
-        await this.storageService.restoreUploadedAsset(
-          url,
-          Buffer.from(base64, 'base64'),
-        );
-    }
-    await this.storageService.claimBusinessAssets(
-      id,
-      backup.linktrees,
-      backup.assets,
+    const result = await this.databaseService.transaction((client) =>
+      this.importLinktreePages(client, id, backupPages, false),
     );
+    await this.restoreBackupAssets(id, backup);
     await this.storageService.deleteUnreferencedFromValues(
       previousPageAssets.rows,
     );
@@ -1340,6 +1451,462 @@ export class BusinessAdministrationService {
         );
       }
     }
+    return result;
+  }
+
+  async exportBusiness(id: string) {
+    const businessRes = await this.databaseService.query<
+      Record<string, unknown>
+    >(
+      `SELECT id::text, username, name, email, phone, subdomain, status, plan,
+              max_linktrees, last_login_at, profile_changed_at,
+              onboarding_step, onboarding_version,
+              onboarding_completed_at, created_at, updated_at
+       FROM businesses WHERE id=$1::uuid AND account_type='business'`,
+      [id],
+    );
+    if (!businessRes.rows.length) {
+      throw new NotFoundException('Business not found');
+    }
+    const [ownerRes, brandingRes, defaultsRes, subscriptionRes, pages] =
+      await Promise.all([
+        this.databaseService.query<Record<string, unknown>>(
+          `SELECT u.id::text, u.email, u.display_name, u.avatar_url, u.status, u.last_login_at,
+                  u.created_at, u.updated_at,
+                  m.id::text AS membership_id, m.role AS membership_role,
+                  m.status AS membership_status, m.created_at AS membership_created_at,
+                  m.updated_at AS membership_updated_at
+           FROM business_memberships m
+           JOIN users u ON u.id=m.user_id
+           WHERE m.business_id=$1::uuid AND m.role='owner' AND m.status='active'
+           ORDER BY m.created_at ASC LIMIT 1`,
+          [id],
+        ),
+        this.databaseService.query<Record<string, unknown>>(
+          `SELECT logo, favicon, default_avatar, website_color, updated_at
+           FROM business_branding WHERE business_id=$1::uuid`,
+          [id],
+        ),
+        this.databaseService.query<Record<string, unknown>>(
+          `SELECT footer_text, footer_phone, footer_hidden, template_key,
+                  background_color, whatsapp_enabled, updated_at
+           FROM business_defaults WHERE business_id=$1::uuid`,
+          [id],
+        ),
+        this.databaseService.query<Record<string, unknown>>(
+          `SELECT bs.id::text, sp.code AS plan_code, bs.status, bs.billing_cycle,
+                  bs.starts_at, bs.current_period_start, bs.current_period_end,
+                  bs.cancels_at, bs.ended_at, bs.metadata, bs.created_at, bs.updated_at
+           FROM business_subscriptions bs
+           JOIN billing_subscription_plans sp ON sp.id=bs.subscription_plan_id
+           WHERE bs.business_id=$1::uuid`,
+          [id],
+        ),
+        this.exportLinktreePages(id, true),
+      ]);
+    const ownerRow = ownerRes.rows[0];
+    const identityRes = ownerRow
+      ? await this.databaseService.query<Record<string, unknown>>(
+          `SELECT id::text, provider, provider_subject, provider_email,
+                  email_verified, profile, last_authenticated_at, created_at, updated_at
+           FROM user_identities WHERE user_id=$1::uuid
+           ORDER BY created_at ASC LIMIT 1`,
+          [ownerRow.id],
+        )
+      : { rows: [] as Record<string, unknown>[] };
+    const owner = ownerRow
+      ? {
+          id: ownerRow.id,
+          email: ownerRow.email,
+          display_name: ownerRow.display_name,
+          avatar_url: ownerRow.avatar_url,
+          status: ownerRow.status,
+          last_login_at: ownerRow.last_login_at,
+          created_at: ownerRow.created_at,
+          updated_at: ownerRow.updated_at,
+        }
+      : null;
+    const membership = ownerRow
+      ? {
+          id: ownerRow.membership_id,
+          role: ownerRow.membership_role,
+          status: ownerRow.membership_status,
+          created_at: ownerRow.membership_created_at,
+          updated_at: ownerRow.membership_updated_at,
+        }
+      : null;
+    const document = {
+      format: 'sponsor-krd-business',
+      version: 1,
+      exported_at: new Date().toISOString(),
+      business: businessRes.rows[0],
+      owner,
+      identity: identityRes.rows[0] || null,
+      membership,
+      branding: brandingRes.rows[0] || null,
+      defaults: defaultsRes.rows[0] || null,
+      subscription: subscriptionRes.rows[0] || null,
+      linktrees: pages,
+    };
+    const assets: Record<string, string> = {};
+    for (const url of this.collectUploadUrls(document)) {
+      const buffer = await this.storageService.readUploadedAsset(url);
+      if (buffer) assets[url] = buffer.toString('base64');
+    }
+    return { ...document, assets };
+  }
+
+  async exportBusinesses() {
+    const result = await this.databaseService.query<{ id: string }>(
+      `SELECT id::text FROM businesses
+       WHERE account_type='business' ORDER BY created_at ASC, id ASC`,
+    );
+    const businesses = [];
+    for (const row of result.rows) {
+      businesses.push(await this.exportBusiness(row.id));
+    }
+    return {
+      format: 'sponsor-krd-businesses',
+      version: 1,
+      exported_at: new Date().toISOString(),
+      businesses,
+    };
+  }
+
+  async importBusinesses(backup: BusinessesBackup) {
+    if (
+      !backup ||
+      backup.format !== 'sponsor-krd-businesses' ||
+      backup.version !== 1 ||
+      !Array.isArray(backup.businesses) ||
+      backup.businesses.length === 0
+    ) {
+      throw new BadRequestException(
+        'Invalid or unsupported Sponsor.krd businesses backup',
+      );
+    }
+    const documents = backup.businesses as BusinessBackup[];
+    const identities = documents.map((document) => {
+      if (
+        document.format !== 'sponsor-krd-business' ||
+        document.version !== 1
+      ) {
+        throw new BadRequestException(
+          'Businesses backup contains an invalid business document',
+        );
+      }
+      const business = asRecord(document.business);
+      return {
+        id: toText(business.id),
+        username: toText(business.username).trim().toLowerCase(),
+        subdomain: toText(business.subdomain).trim().toLowerCase(),
+      };
+    });
+    for (const key of ['id', 'username', 'subdomain'] as const) {
+      const values = identities.map((identity) => identity[key]);
+      if (
+        values.some((value) => !value) ||
+        new Set(values).size !== values.length
+      ) {
+        throw new BadRequestException(
+          `Businesses backup contains duplicate or missing ${key} values`,
+        );
+      }
+    }
+    if (identities.some((identity) => !UUID_PATTERN.test(identity.id))) {
+      throw new BadRequestException('Businesses backup contains invalid IDs');
+    }
+    const conflicts = await this.databaseService.query<ExistsProbeRow>(
+      `SELECT 1 FROM businesses
+       WHERE id=ANY($1::uuid[]) OR username=ANY($2::text[]) OR subdomain=ANY($3::text[])
+       LIMIT 1`,
+      [
+        identities.map((identity) => identity.id),
+        identities.map((identity) => identity.username),
+        identities.map((identity) => identity.subdomain),
+      ],
+    );
+    if (conflicts.rows.length) {
+      throw new ConflictException(
+        'One or more businesses in this backup already exist',
+      );
+    }
+    const imported = [];
+    for (const document of documents) {
+      imported.push(await this.importBusiness(document));
+    }
+    return { imported_businesses: imported.length, businesses: imported };
+  }
+
+  async importBusiness(backup: BusinessBackup) {
+    if (
+      !backup ||
+      backup.format !== 'sponsor-krd-business' ||
+      backup.version !== 1
+    ) {
+      throw new BadRequestException(
+        'Invalid or unsupported Sponsor.krd business backup',
+      );
+    }
+    const business = asRecord(backup.business);
+    const owner = asRecord(backup.owner);
+    const identity = asRecord(backup.identity);
+    const membership = asRecord(backup.membership);
+    const branding = asRecord(backup.branding);
+    const defaults = asRecord(backup.defaults);
+    const subscription = asRecord(backup.subscription);
+    const requiredBusinessFields = ['id', 'username', 'name', 'subdomain'];
+    if (
+      requiredBusinessFields.some(
+        (key) =>
+          typeof business[key] !== 'string' || !toText(business[key]).trim(),
+      ) ||
+      !UUID_PATTERN.test(toText(business.id))
+    ) {
+      throw new BadRequestException('Business backup is incomplete');
+    }
+    const hasOwner = Object.keys(owner).length > 0;
+    if (
+      hasOwner &&
+      (!UUID_PATTERN.test(toText(owner.id)) ||
+        !UUID_PATTERN.test(toText(membership.id)) ||
+        typeof owner.email !== 'string' ||
+        typeof owner.display_name !== 'string')
+    ) {
+      throw new BadRequestException('Business owner backup is incomplete');
+    }
+    const hasIdentity = Object.keys(identity).length > 0;
+    if (
+      hasIdentity &&
+      (!hasOwner ||
+        !UUID_PATTERN.test(toText(identity.id)) ||
+        identity.provider !== 'google' ||
+        typeof identity.provider_subject !== 'string' ||
+        typeof identity.provider_email !== 'string')
+    ) {
+      throw new BadRequestException('Business identity backup is incomplete');
+    }
+    const pages = this.validateBackupPages(backup.linktrees, true);
+    const businessId = toText(business.id);
+
+    const result = await this.databaseService.transaction(async (client) => {
+      const conflict = await client.query<ExistsProbeRow>(
+        `SELECT 1 FROM businesses
+         WHERE id=$1::uuid OR username=$2 OR subdomain=$3 LIMIT 1`,
+        [businessId, toText(business.username), toText(business.subdomain)],
+      );
+      if (conflict.rows.length) {
+        throw new ConflictException(
+          'A business with this ID, username, or subdomain already exists',
+        );
+      }
+      if (hasOwner) {
+        const ownerConflict = await client.query<ExistsProbeRow>(
+          `SELECT 1 FROM users WHERE id=$1::uuid OR email=$2 LIMIT 1`,
+          [owner.id, toText(owner.email).trim().toLowerCase()],
+        );
+        if (ownerConflict.rows.length) {
+          throw new ConflictException(
+            'A user with this ID or email already exists',
+          );
+        }
+      }
+      if (hasIdentity) {
+        const identityConflict = await client.query<ExistsProbeRow>(
+          `SELECT 1 FROM user_identities
+           WHERE id=$1::uuid OR (provider=$2 AND provider_subject=$3) LIMIT 1`,
+          [identity.id, identity.provider, identity.provider_subject],
+        );
+        if (identityConflict.rows.length) {
+          throw new ConflictException('This login identity already exists');
+        }
+      }
+      const plan = await client.query<SubscriptionPlanLookupRow>(
+        `SELECT sp.id AS subscription_plan_id, sp.permission_profile_id AS plan_id,
+                pc.id AS plan_configuration_id
+         FROM billing_subscription_plans sp
+         JOIN billing_plan_configurations pc ON pc.plan_id=sp.permission_profile_id
+         WHERE sp.code=$1 AND sp.status='active' LIMIT 1`,
+        [toText(subscription.plan_code)],
+      );
+      if (!plan.rows.length) {
+        throw new BadRequestException(
+          `Subscription plan is unavailable: ${toText(subscription.plan_code)}`,
+        );
+      }
+
+      await client.query(
+        `INSERT INTO businesses (
+           id, username, name, email, phone, subdomain, status, plan, max_linktrees,
+           last_login_at, profile_changed_at,
+           onboarding_step, onboarding_version, onboarding_completed_at,
+           account_type, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'business',$15,$16)`,
+        [
+          businessId,
+          toText(business.username).trim().toLowerCase(),
+          toText(business.name).trim(),
+          toText(business.email).trim() || null,
+          toText(business.phone).trim() || null,
+          toText(business.subdomain).trim().toLowerCase(),
+          business.status === 'suspended' ? 'suspended' : 'active',
+          ['trial', 'premium', 'enterprise'].includes(toText(business.plan))
+            ? business.plan
+            : 'trial',
+          Number(business.max_linktrees) > 0
+            ? Number(business.max_linktrees)
+            : 5,
+          business.last_login_at || null,
+          business.profile_changed_at || null,
+          [1, 2, 3].includes(Number(business.onboarding_step))
+            ? Number(business.onboarding_step)
+            : 3,
+          toText(business.onboarding_version) || '2026-08',
+          business.onboarding_completed_at || null,
+          business.created_at || new Date(),
+          business.updated_at || new Date(),
+        ],
+      );
+      // The insert trigger creates the current default plan; replace that row
+      // with the exported subscription below.
+      await client.query(
+        'DELETE FROM business_subscriptions WHERE business_id=$1::uuid',
+        [businessId],
+      );
+      if (hasOwner) {
+        await client.query(
+          `INSERT INTO users
+             (id,email,display_name,avatar_url,status,last_login_at,created_at,updated_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [
+            owner.id,
+            toText(owner.email).trim().toLowerCase(),
+            owner.display_name,
+            toText(owner.avatar_url) || null,
+            owner.status === 'suspended' ? 'suspended' : 'active',
+            owner.last_login_at || null,
+            owner.created_at || new Date(),
+            owner.updated_at || new Date(),
+          ],
+        );
+        if (hasIdentity) {
+          await client.query(
+            `INSERT INTO user_identities (
+               id,user_id,provider,provider_subject,provider_email,email_verified,
+               profile,last_authenticated_at,created_at,updated_at)
+             VALUES ($1,$2,'google',$3,$4,$5,$6::jsonb,$7,$8,$9)`,
+            [
+              identity.id,
+              owner.id,
+              identity.provider_subject,
+              toText(identity.provider_email).trim().toLowerCase(),
+              identity.email_verified === true,
+              JSON.stringify(asRecord(identity.profile)),
+              identity.last_authenticated_at || new Date(),
+              identity.created_at || new Date(),
+              identity.updated_at || new Date(),
+            ],
+          );
+        }
+        await client.query(
+          `INSERT INTO business_memberships
+             (id,business_id,user_id,role,status,created_at,updated_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+          [
+            membership.id,
+            businessId,
+            owner.id,
+            ['owner', 'admin', 'member'].includes(toText(membership.role))
+              ? membership.role
+              : 'owner',
+            membership.status === 'suspended' ? 'suspended' : 'active',
+            membership.created_at || new Date(),
+            membership.updated_at || new Date(),
+          ],
+        );
+      }
+      await client.query(
+        `INSERT INTO business_branding
+           (business_id,logo,favicon,default_avatar,website_color,updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6)`,
+        [
+          businessId,
+          toText(branding.logo) || BUSINESS_LOGO_PLACEHOLDER,
+          toText(branding.favicon) || BUSINESS_FAVICON_PLACEHOLDER,
+          toText(branding.default_avatar) || DEFAULT_AVATAR,
+          toText(branding.website_color) || null,
+          branding.updated_at || new Date(),
+        ],
+      );
+      await client.query(
+        `INSERT INTO business_defaults (
+           business_id,footer_text,footer_phone,footer_hidden,template_key,
+           background_color,whatsapp_enabled,updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [
+          businessId,
+          toText(defaults.footer_text) || null,
+          toText(defaults.footer_phone) || null,
+          defaults.footer_hidden !== false,
+          toText(defaults.template_key) || DEFAULT_LINKTREE_TEMPLATE_KEY,
+          toText(defaults.background_color) ||
+            DEFAULT_LINKTREE_BACKGROUND_COLOR,
+          defaults.whatsapp_enabled === true,
+          defaults.updated_at || new Date(),
+        ],
+      );
+      const resolvedPlan = plan.rows[0];
+      await client.query(
+        `INSERT INTO business_subscriptions (
+           id,business_id,subscription_plan_id,plan_id,plan_configuration_id,
+           status,billing_cycle,starts_at,current_period_start,current_period_end,
+           cancels_at,ended_at,metadata,created_at,updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,$15)`,
+        [
+          UUID_PATTERN.test(toText(subscription.id))
+            ? subscription.id
+            : randomUUID(),
+          businessId,
+          resolvedPlan.subscription_plan_id,
+          resolvedPlan.plan_id,
+          resolvedPlan.plan_configuration_id,
+          [
+            'trialing',
+            'active',
+            'past_due',
+            'grace_period',
+            'paused',
+            'canceled',
+            'expired',
+            'incomplete',
+          ].includes(toText(subscription.status))
+            ? subscription.status
+            : 'active',
+          ['free', 'monthly', 'yearly', 'custom'].includes(
+            toText(subscription.billing_cycle),
+          )
+            ? subscription.billing_cycle
+            : 'free',
+          subscription.starts_at || new Date(),
+          subscription.current_period_start || new Date(),
+          subscription.current_period_end || null,
+          subscription.cancels_at || null,
+          subscription.ended_at || null,
+          JSON.stringify(asRecord(subscription.metadata)),
+          subscription.created_at || new Date(),
+          subscription.updated_at || new Date(),
+        ],
+      );
+      const imported = await this.importLinktreePages(
+        client,
+        businessId,
+        pages,
+        true,
+      );
+      return { business_id: businessId, ...imported };
+    });
+    await this.restoreBackupAssets(businessId, backup);
+    await this.refreshBusinessRuntimeState(businessId);
     return result;
   }
 }
